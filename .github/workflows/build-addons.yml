@@ -135,7 +135,7 @@ jobs:
             -   name: Compile Godot Library
                 if: steps.cache-godot-cpp.outputs.cache-hit != 'true'
                 run: |
-                      scons platform=${{ matrix.platform }} target=${{ matrix.target }}
+                      scons - platform=${{ matrix.platform }} target=${{ matrix.target }}
                 working-directory: godot-cpp
 
             -   name: MSVC Developer Command Prompt
@@ -144,7 +144,7 @@ jobs:
 
 
             -   name: Compile Addon
-                run: scons platform=windows target=template_release \
+                run: scons platform=${{ matrix.platform }} ${{ matrix.target }} \
                     -DBoost_INCLUDE_DIR=${{steps.install-boost.outputs.BOOST_ROOT}}/include\
                     -DBoost_LIBRARY_DIRS=${{steps.install-boost.outputs.BOOST_ROOT}}/lib
                 env:
