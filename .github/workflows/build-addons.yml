@@ -135,7 +135,7 @@ jobs:
             -   name: Compile Godot Library
                 if: steps.cache-godot-cpp.outputs.cache-hit != 'true'
                 run: |
-                      scons - platform=${{ matrix.platform }} target=${{ matrix.target }}
+                      scons platform=${{ matrix.platform }} target=${{ matrix.target }}
                 working-directory: godot-cpp
 
             -   name: MSVC Developer Command Prompt
