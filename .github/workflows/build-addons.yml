@@ -106,7 +106,7 @@ jobs:
                     # Whether the boost libraries are linked statically or dynamically
                     #link: # optional, default is 
                     # The architecture the binaries were built for
-                    arch: ${{ matrix.arch }} # optional, default is x86
+                    arch: x86 # optional, default is x86
                     # The dirctory to install boost into
                     #boost_install_dir: boost_1_81_0 # optional, default is 
                     # Wheter to use actions/cache to improve build times
