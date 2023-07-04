@@ -115,7 +115,7 @@ jobs:
                     # The dirctory to install boost into
                     #boost_install_dir: boost_1_81_0 # optional, default is 
                     # Wheter to use actions/cache to improve build times
-                    cache: # optional, default is true
+                    cache: true # optional, default is true
             
             -   name: Submodule Hash Windows
                 if: ${{ matrix.platform == 'windows' }}
