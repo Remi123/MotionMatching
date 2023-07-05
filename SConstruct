@@ -21,6 +21,7 @@ print(env["Boost_INCLUDE_DIR"])
 boost_path = Dir(env['Boost_INCLUDE_DIR'])
 
 env.Append(CPPPATH=["src/","thirdparty/",boost_path])
+env.Append(CPPDEFINES=['BOOST_NO_USER_CONFIG', 'BOOST_NO_CONFIG'])
 
 sources = Glob("src/*.cpp","src/*.hpp")
 sources += Glob("thirdparty/*.cpp","thirdparty/*.hpp")

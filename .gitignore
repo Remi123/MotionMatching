@@ -35,3 +35,5 @@
 # Scons 
 .vscode/
 .sconsign.dblite
+
+.DS_Store
