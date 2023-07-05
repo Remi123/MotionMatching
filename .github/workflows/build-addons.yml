@@ -126,21 +126,21 @@ jobs:
                 if: ${{ matrix.platform == 'windows' }}
                 uses: ilammy/msvc-dev-cmd@v1
 
-            -   name: Cache Godot Library
-                id: cache-godot-cpp
-                uses: actions/cache@v3
-                with:
-                    path: |
-                        ${{ github.workspace }}/godot-cpp/bin
-                        ${{ github.workspace }}/godot-cpp/include
-                        ${{ github.workspace }}/godot-cpp/gen
-                    key: ${{ runner.os }}-${{ env.SUBMODULE_HASH }}
+            # -   name: Cache Godot Library
+            #     id: cache-godot-cpp
+            #     uses: actions/cache@v3
+            #     with:
+            #         path: |
+            #             ${{ github.workspace }}/godot-cpp/bin
+            #             ${{ github.workspace }}/godot-cpp/include
+            #             ${{ github.workspace }}/godot-cpp/gen
+            #         key: ${{ runner.os }}-${{ env.SUBMODULE_HASH }}
             
-            -   name: Compile Godot Library
-                if: steps.cache-godot-cpp.outputs.cache-hit != 'true'
-                run: |
-                      scons -j8 platform=${{ matrix.platform }} target=${{ matrix.target }} arch=${{ matrix.arch }}
-                working-directory: godot-cpp
+            # -   name: Compile Godot Library
+            #     if: steps.cache-godot-cpp.outputs.cache-hit != 'true'
+            #     run: |
+            #           scons -j8 platform=${{ matrix.platform }} target=${{ matrix.target }} arch=${{ matrix.arch }}
+            #     working-directory: godot-cpp
 
             -   name: Compile Addon
                 run:  scons -j8 
