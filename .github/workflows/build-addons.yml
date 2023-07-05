@@ -18,7 +18,8 @@ env:
 
 jobs:
     build:
-        runs-on:  ${{matrix.os}}
+        #runs-on:  ${{matrix.os}}
+        runs-on: [self-hosted]
         name: ${{matrix.name}}
         strategy:
           fail-fast: false
