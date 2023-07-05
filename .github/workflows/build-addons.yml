@@ -134,7 +134,7 @@ jobs:
                         ${{ github.workspace }}/godot-cpp/bin
                         ${{ github.workspace }}/godot-cpp/include
                         ${{ github.workspace }}/godot-cpp/gen
-                    key: ${{ runner.os }}-${{ env.SUBMODULE_HASH }}-${{ secrets.GODOT_CPP_CACHE_VERSION }}
+                    key: ${{ runner.os }}-${{ env.SUBMODULE_HASH }}
             
             -   name: Compile Godot Library
                 if: steps.cache-godot-cpp.outputs.cache-hit != 'true'
@@ -147,8 +147,8 @@ jobs:
                         platform=${{ matrix.platform }} 
                         target=${{ matrix.target }} 
                         arch=${{ matrix.arch }} 
-                        Boost_INCLUDE_DIR=${{steps.install-boost.outputs.BOOST_ROOT}} 
-                        Boost_LIBRARY_DIRS=${{steps.install-boost.outputs.BOOST_ROOT}}/lib
+                        Boost_INCLUDE_DIR=${{steps.install-boost.outputs.BOOST_ROOT}}/../
+                        Boost_LIBRARY_DIRS=${{steps.install-boost.outputs.BOOST_ROOT}}/../lib
                 env:
                     BOOST_ROOT: ${{ steps.install-boost.outputs.BOOST_ROOT }}
         
