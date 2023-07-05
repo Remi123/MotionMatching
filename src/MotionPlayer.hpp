@@ -337,7 +337,7 @@ struct MotionPlayer : public Node {
 
         for(auto& v : variances )
         {
-            if (v <= FLT_EPSILON)
+            if (v <= std::numeric_limits<float>::epsilon() )
             {
                 v = 1.0f;
             }

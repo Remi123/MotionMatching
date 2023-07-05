@@ -7,7 +7,6 @@
 #include <godot_cpp/godot.hpp>
 
 #include "CritSpringDamper.hpp"
-#include "HamiltonPath.hpp"
 #include "MotionFeatures.hpp"
 #include "MotionPlayer.hpp"
 //#include "dep/kdtree.hpp"
@@ -32,7 +31,6 @@ void gdextension_initialize(ModuleInitializationLevel p_level)
 		
 		ClassDB::register_class<MotionPlayer>();
 		ClassDB::register_class<CritDampSpring>();
-		ClassDB::register_class<HamiltonPath>();
 	}
 }
 
