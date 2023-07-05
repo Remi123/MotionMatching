@@ -32,14 +32,6 @@ jobs:
                 arch: x86_64
                 toolset: msvc
                 platform_version: 2022
-              - identifier: windows-release
-                os: windows-latest
-                name: 🏁 Windows Release
-                target: template_release
-                platform: windows
-                arch: x86_64
-                toolset: msvc
-                platform_version: 2022
     
         steps:
 
@@ -113,8 +105,8 @@ jobs:
                         platform=${{ matrix.platform }} 
                         target=${{ matrix.target }} 
                         arch=${{ matrix.arch }} 
-                        Boost_INCLUDE_DIR=${{steps.install-boost.outputs.BOOST_ROOT}}/../
-                        Boost_LIBRARY_DIRS=${{steps.install-boost.outputs.BOOST_ROOT}}/../lib
+                        Boost_INCLUDE_DIR=${{steps.install-boost.outputs.BOOST_ROOT}}/include/
+                        Boost_LIBRARY_DIRS=${{steps.install-boost.outputs.BOOST_ROOT}}/../libs
                 env:
                     BOOST_ROOT: ${{ steps.install-boost.outputs.BOOST_ROOT }}
         
