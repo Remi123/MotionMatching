@@ -18,20 +18,12 @@ env:
 
 jobs:
     build:
-        runs-on:  ${{matrix.os}}
+        runs-on: [self-hosted]
         name: ${{matrix.name}}
         strategy:
           fail-fast: false
           matrix:
             include:
-              - identifier: windows-self-hosted
-                os: self-hosted
-                name: 🏁 Windows Debug
-                target: template_debug
-                platform: windows
-                arch: x86_64
-                toolset: msvc
-                platform_version: 2022
               - identifier: windows-debug
                 os: windows-latest
                 name: 🏁 Windows Debug
@@ -48,40 +40,6 @@ jobs:
                 arch: x86_64
                 toolset: msvc
                 platform_version: 2022
-              - identifier: macos-debug
-                os: macos-latest
-                name: 🍎 macOS (universal) Debug
-                target: template_debug
-                platform: macos
-                arch: universal
-                toolset: clang
-                platform_version: 11
-              - identifier: macos-release
-                os: macos-latest
-                name: 🍎 macOS (universal) Release
-                target: template_release
-                platform: macos
-                arch: universal
-                toolset: clang
-                platform_version: 11
-              - identifier: linux-debug
-                os: ubuntu-latest
-                name: 🐧 Linux Debug
-                runner: ubuntu-20.04
-                target: template_debug
-                platform: linux
-                arch: x86_64
-                toolset: gcc
-                platform_version: 20.04
-              - identifier: linux-release
-                os: ubuntu-latest
-                name: 🐧 Linux Release
-                runner: ubuntu-20.04
-                target: template_release
-                platform: linux
-                arch: x86_64
-                toolset: gcc
-                platform_version: 20.04
     
         steps:
 
