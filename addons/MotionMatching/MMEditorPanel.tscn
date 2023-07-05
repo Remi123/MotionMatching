@@ -1,0 +1,191 @@
+[gd_scene load_steps=2 format=3 uid="uid://cgx5x8caibsnl"]
+
+[ext_resource type="Script" path="res://addons/MM/MMEditorPanel.gd" id="1_wva2m"]
+
+[node name="MMEditorPanel" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_wva2m")
+
+[node name="TabContainer" type="TabContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Info" type="PanelContainer" parent="TabContainer"]
+clip_contents = true
+layout_mode = 2
+
+[node name="PanelContainer" type="ScrollContainer" parent="TabContainer/Info"]
+layout_mode = 2
+follow_focus = true
+horizontal_scroll_mode = 2
+vertical_scroll_mode = 2
+
+[node name="InfoText" type="RichTextLabel" parent="TabContainer/Info/PanelContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+size_flags_stretch_ratio = 10.0
+bbcode_enabled = true
+fit_content = true
+autowrap_mode = 0
+threaded = true
+
+[node name="Data" type="VBoxContainer" parent="TabContainer"]
+visible = false
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="TabContainer/Data"]
+layout_mode = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="TabContainer/Data/HBoxContainer"]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="Button" type="Button" parent="TabContainer/Data/HBoxContainer/MarginContainer"]
+layout_mode = 2
+text = "Bake Data"
+
+[node name="MarginContainer2" type="MarginContainer" parent="TabContainer/Data/HBoxContainer"]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="HBoxContainer" type="HBoxContainer" parent="TabContainer/Data/HBoxContainer/MarginContainer2"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="TabContainer/Data/HBoxContainer/MarginContainer2/HBoxContainer"]
+layout_mode = 2
+text = "Show lign"
+
+[node name="SpinBox" type="SpinBox" parent="TabContainer/Data/HBoxContainer/MarginContainer2/HBoxContainer"]
+layout_mode = 2
+rounded = true
+allow_greater = true
+
+[node name="MarginContainer3" type="MarginContainer" parent="TabContainer/Data/HBoxContainer"]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="Button" type="Button" parent="TabContainer/Data/HBoxContainer/MarginContainer3"]
+layout_mode = 2
+text = "Look for similar"
+
+[node name="MarginContainer4" type="MarginContainer" parent="TabContainer/Data/HBoxContainer"]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="Button" type="Button" parent="TabContainer/Data/HBoxContainer/MarginContainer4"]
+layout_mode = 2
+text = "Recalculate weights"
+
+[node name="MarginContainer5" type="MarginContainer" parent="TabContainer/Data/HBoxContainer"]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="ChooseAnimation" type="MenuButton" parent="TabContainer/Data/HBoxContainer/MarginContainer5"]
+layout_mode = 2
+text = "Animation:"
+
+[node name="ScrollContainer" type="ScrollContainer" parent="TabContainer/Data"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="PoseData" type="RichTextLabel" parent="TabContainer/Data/ScrollContainer"]
+clip_contents = false
+custom_minimum_size = Vector2(0, 100)
+layout_mode = 2
+size_flags_horizontal = 3
+focus_mode = 2
+theme_override_colors/font_selected_color = Color(0, 0, 0, 1)
+bbcode_enabled = true
+text = "[table=16][cell][img=24]res://icon.svg[/img][/cell][cell]Hello World[/cell][cell]Hello World[/cell][cell]Hello World[/cell][cell]Hello World[/cell][cell]Hello World[/cell][cell]Hello World[/cell][cell]Hello World[/cell][cell]Hello World[/cell][cell]Hello World[/cell][cell]Hello World[/cell][cell]Hello World[/cell][cell]Hello World[/cell][cell]Hello World[/cell][cell]Hello World[/cell][cell]Hello World[/cell][/table]"
+fit_content = true
+scroll_following = true
+autowrap_mode = 0
+context_menu_enabled = true
+selection_enabled = true
+
+[node name="Test" type="HFlowContainer" parent="TabContainer"]
+visible = false
+layout_mode = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="TabContainer/Test"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="HFlowContainer" type="HFlowContainer" parent="TabContainer/Test/MarginContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Label2" type="Label" parent="TabContainer/Test/MarginContainer/HFlowContainer"]
+layout_mode = 2
+text = "Discover Halflife from Derivative  -  Start:"
+
+[node name="SpinBox" type="SpinBox" parent="TabContainer/Test/MarginContainer/HFlowContainer"]
+layout_mode = 2
+step = 0.1
+value = 1.0
+allow_greater = true
+allow_lesser = true
+
+[node name="Label3" type="Label" parent="TabContainer/Test/MarginContainer/HFlowContainer"]
+layout_mode = 2
+text = "End
+"
+
+[node name="SpinBox2" type="SpinBox" parent="TabContainer/Test/MarginContainer/HFlowContainer"]
+layout_mode = 2
+step = 0.1
+value = 1.0
+allow_greater = true
+allow_lesser = true
+
+[node name="Label4" type="Label" parent="TabContainer/Test/MarginContainer/HFlowContainer"]
+layout_mode = 2
+text = "Max Derivative"
+
+[node name="SpinBox3" type="SpinBox" parent="TabContainer/Test/MarginContainer/HFlowContainer"]
+layout_mode = 2
+step = 0.1
+value = 1.0
+allow_greater = true
+allow_lesser = true
+
+[node name="equal" type="Label" parent="TabContainer/Test/MarginContainer/HFlowContainer"]
+layout_mode = 2
+text = "="
+
+[node name="Answer2" type="Label" parent="TabContainer/Test/MarginContainer/HFlowContainer"]
+layout_mode = 2
+
+[connection signal="pressed" from="TabContainer/Data/HBoxContainer/MarginContainer/Button" to="." method="bake_data_current"]
+[connection signal="value_changed" from="TabContainer/Data/HBoxContainer/MarginContainer2/HBoxContainer/SpinBox" to="." method="update_shown_pose_data"]
+[connection signal="pressed" from="TabContainer/Data/HBoxContainer/MarginContainer3/Button" to="." method="on_look_for_similar_pressed"]
+[connection signal="pressed" from="TabContainer/Data/HBoxContainer/MarginContainer4/Button" to="." method="on_recalculate_weights"]
+[connection signal="pressed" from="TabContainer/Data/HBoxContainer/MarginContainer5/ChooseAnimation" to="." method="_on_choose_animation_pressed"]
+[connection signal="value_changed" from="TabContainer/Test/MarginContainer/HFlowContainer/SpinBox" to="." method="_max_der_calculate"]
+[connection signal="value_changed" from="TabContainer/Test/MarginContainer/HFlowContainer/SpinBox2" to="." method="_max_der_calculate"]
+[connection signal="value_changed" from="TabContainer/Test/MarginContainer/HFlowContainer/SpinBox3" to="." method="_max_der_calculate"]
