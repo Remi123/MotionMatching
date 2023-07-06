@@ -279,7 +279,7 @@ public:
 protected:
 	static void _bind_methods();
 #ifdef TOOLS_ENABLED
-	virtual void debug_pose_gizmo(Ref<EditorNode3DGizmo> gizmo, const PackedFloat32Array data, Transform3D tr = Transform3D{});
+	virtual void debug_pose_gizmo(Ref<EditorNode3DGizmo> gizmo, const PackedFloat32Array data, Transform3D tr = Transform3D{}) override;
 #endif
 };
 
