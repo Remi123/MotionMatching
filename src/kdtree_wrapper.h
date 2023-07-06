@@ -28,8 +28,8 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef KDTREE_WRAPPER_HPP
-#define KDTREE_WRAPPER_HPP
+#ifndef KDTREE_WRAPPER_H
+#define KDTREE_WRAPPER_H
 
 #include "core/io/resource.h"
 #include "core/object/class_db.h"
@@ -158,4 +158,4 @@ protected:
 	}
 };
 
-#endif KDTREE_WRAPPER_HPP
+#endif // KDTREE_WRAPPER_H

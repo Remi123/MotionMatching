@@ -322,4 +322,4 @@ protected:
 	}
 };
 
-#endif
+#endif // CRIT_SPRING_DAMPER_H

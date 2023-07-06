@@ -28,8 +28,8 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef AABB_TREE_HPP
-#define AABB_TREE_HPP
+#ifndef AABB_TREE_H
+#define AABB_TREE_H
 
 #include "../thirdparty/AABB.h"
 
@@ -138,4 +138,5 @@ protected:
 		ClassDB::bind_method(D_METHOD("query_bounds", "lowerbound", "upperbound"), &AABBTree::query_bounds);
 	}
 };
-#endif
+
+#endif // AABB_TREE_H
