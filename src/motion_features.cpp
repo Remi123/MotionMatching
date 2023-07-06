@@ -373,11 +373,10 @@ PackedFloat32Array BonePositionVelocityMotionFeature::bake_animation_pose(Ref<An
 }
 
 void BonePositionVelocityMotionFeature::set_skeleton_to_animation_timestamp(Ref<Animation> anim, float time) {
-	// UtilityFunctions::print((skeleton == nullptr)?"Skeleton error, path not found":"Skeleton set");
 	if (anim == nullptr || skeleton == nullptr) {
 		return;
 	}
-	for (size_t bone_id = 0; bone_id < skeleton->get_bone_count(); ++bone_id) {
+	for (int32_t bone_id = 0; bone_id < skeleton->get_bone_count(); ++bone_id) {
 		if (!bone_tracks.has(bone_id)) {
 			continue;
 		}
