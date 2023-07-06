@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="MotionPlayer" inherits="Node" version="4.1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../doc/class.xsd">
+	<brief_description>
+	</brief_description>
+	<description>
+	</description>
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="baking_data">
+			<return type="void" />
+			<description>
+			</description>
+		</method>
+		<method name="check_query_results">
+			<return type="Array" />
+			<param index="0" name="Query" type="PackedFloat32Array" />
+			<param index="1" name="Result count" type="int" />
+			<description>
+			</description>
+		</method>
+		<method name="query_pose">
+			<return type="Dictionary[]" />
+			<param index="0" name="include_category" type="int" default="9223372036854775807" />
+			<param index="1" name="exclude_category" type="int" default="0" />
+			<description>
+			</description>
+		</method>
+		<method name="recalculate_weights">
+			<return type="void" />
+			<description>
+			</description>
+		</method>
+		<method name="reset_skeleton_poses">
+			<return type="void" />
+			<description>
+			</description>
+		</method>
+		<method name="set_skeleton_to_pose">
+			<return type="void" />
+			<param index="0" name="animation" type="Animation" />
+			<param index="1" name="time" type="float" />
+			<description>
+			</description>
+		</method>
+	</methods>
+	<members>
+		<member name="MotionData" type="PackedFloat32Array" setter="set_MotionData" getter="get_MotionData" default="PackedFloat32Array()">
+		</member>
+		<member name="animation_library" type="AnimationLibrary" setter="set_animation_library" getter="get_animation_library">
+		</member>
+		<member name="blackboard" type="Dictionary" setter="set_blackboard" getter="get_blackboard" default="{}">
+		</member>
+		<member name="category_track_names" type="String[]" setter="set_category_track_names" getter="get_category_track_names" default="[]">
+		</member>
+		<member name="category_value" type="int" setter="set_category_value" getter="get_category_value" default="0">
+		</member>
+		<member name="db_anim_category" type="PackedInt32Array" setter="set_db_anim_category" getter="get_db_anim_category" default="PackedInt32Array()">
+		</member>
+		<member name="db_anim_index" type="PackedInt32Array" setter="set_db_anim_index" getter="get_db_anim_index" default="PackedInt32Array()">
+		</member>
+		<member name="db_anim_timestamp" type="PackedFloat32Array" setter="set_db_anim_timestamp" getter="get_db_anim_timestamp" default="PackedFloat32Array()">
+		</member>
+		<member name="densities" type="Array" setter="set_densities" getter="get_densities" default="[]">
+		</member>
+		<member name="distance_type" type="int" setter="set_distance_type" getter="get_distance_type" default="1">
+		</member>
+		<member name="main_node" type="NodePath" setter="set_main_node" getter="get_main_node" default="NodePath(&quot;&quot;)">
+		</member>
+		<member name="means" type="PackedFloat32Array" setter="set_means" getter="get_means" default="PackedFloat32Array()">
+		</member>
+		<member name="motion_features" type="Array" setter="set_motion_features" getter="get_motion_features" default="[]">
+		</member>
+		<member name="skeleton_node_path" type="NodePath" setter="set_skeleton_path" getter="get_skeleton" default="NodePath(&quot;&quot;)">
+		</member>
+		<member name="variances" type="PackedFloat32Array" setter="set_variances" getter="get_variances" default="PackedFloat32Array()">
+		</member>
+		<member name="weights" type="PackedFloat32Array" setter="set_weights" getter="get_weights" default="PackedFloat32Array()">
+		</member>
+	</members>
+</class>

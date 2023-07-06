@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="PredictionMotionFeature" inherits="MotionFeature" version="4.1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../doc/class.xsd">
+	<brief_description>
+	</brief_description>
+	<description>
+	</description>
+	<tutorials>
+	</tutorials>
+	<members>
+		<member name="future_time_dt" type="PackedFloat32Array" setter="set_future_time_dt" getter="get_future_time_dt" default="PackedFloat32Array()">
+		</member>
+		<member name="past_time_dt" type="PackedFloat32Array" setter="set_past_time_dt" getter="get_past_time_dt" default="PackedFloat32Array()">
+		</member>
+		<member name="root_bone_name" type="float" setter="set_root_bone_name" getter="get_root_bone_name" default="1.0">
+		</member>
+		<member name="weight_history_pos" type="float" setter="set_weight_history_pos" getter="get_weight_history_pos" default="1.0">
+		</member>
+		<member name="weight_prediction_angle" type="float" setter="set_weight_prediction_angle" getter="get_weight_prediction_angle" default="1.0">
+		</member>
+		<member name="weight_prediction_pos" type="float" setter="set_weight_prediction_pos" getter="get_weight_prediction_pos" default="1.0">
+		</member>
+	</members>
+</class>

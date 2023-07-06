@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="RootVelocityMotionFeature" inherits="MotionFeature" version="4.1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../doc/class.xsd">
+	<brief_description>
+	</brief_description>
+	<description>
+	</description>
+	<tutorials>
+	</tutorials>
+	<members>
+		<member name="Root Bone" type="String" setter="set_root_bone_name" getter="get_root_bone_name" default="&quot;%GeneralSkeleton:Root&quot;">
+		</member>
+		<member name="weight" type="float" setter="set_weight" getter="get_weight" default="1.0">
+		</member>
+	</members>
+</class>

@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="MotionFeature" inherits="Resource" version="4.1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../doc/class.xsd">
+	<brief_description>
+	</brief_description>
+	<description>
+	</description>
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="bake_animation_pose">
+			<return type="PackedFloat32Array" />
+			<param index="0" name="animation" type="Animation" />
+			<param index="1" name="time" type="float" />
+			<description>
+			</description>
+		</method>
+		<method name="broadphase_query_pose">
+			<return type="PackedFloat32Array" />
+			<param index="0" name="blackboard" type="Dictionary" />
+			<param index="1" name="delta" type="float" />
+			<description>
+			</description>
+		</method>
+		<method name="debug_pose_gizmo">
+			<return type="void" />
+			<param index="0" name="gizmo" type="EditorNode3DGizmo" />
+			<param index="1" name="data" type="PackedFloat32Array" />
+			<param index="2" name="root_transform" type="Transform3D" />
+			<description>
+			</description>
+		</method>
+		<method name="get_dimension">
+			<return type="int" />
+			<description>
+			</description>
+		</method>
+		<method name="get_weights">
+			<return type="PackedFloat32Array" />
+			<description>
+			</description>
+		</method>
+		<method name="narrowphase_evaluate_cost">
+			<return type="float" />
+			<param index="0" name="data_to_evaluate" type="PackedFloat32Array" />
+			<description>
+			</description>
+		</method>
+		<method name="setup_for_animation">
+			<return type="void" />
+			<param index="0" name="animation" type="Animation" />
+			<description>
+			</description>
+		</method>
+		<method name="setup_nodes">
+			<return type="void" />
+			<param index="0" name="character" type="Variant" />
+			<description>
+			</description>
+		</method>
+	</methods>
+	<members>
+		<member name="resource_local_to_scene" type="bool" setter="set_local_to_scene" getter="is_local_to_scene" overrides="Resource" default="true" />
+	</members>
+</class>

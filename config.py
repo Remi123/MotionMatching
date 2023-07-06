@@ -7,7 +7,14 @@ def configure(env):
 
 
 def get_doc_classes():
-    return []
+    return [
+        "MotionPlayer",
+        "MotionFeature",
+        "CritDampSpring",
+        "PredictionMotionFeature",
+        "RootVelocityMotionFeature",
+        "BonePositionVelocityMotionFeature",
+    ]
 
 
 def get_doc_path():
