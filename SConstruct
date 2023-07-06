@@ -6,23 +6,13 @@ import os
 
 # Initial options inheriting from CLI args
 opts = Variables([], ARGUMENTS)
-# Define options
-opts.Add("Boost_INCLUDE_DIR", "boost library include path", "")
-opts.Add("Boost_LIBRARY_DIRS", "boost library library path", "")
 
 # TODO: Do not copy environment after godot-cpp/test is updated <https://github.com/godotengine/godot-cpp/blob/master/test/SConstruct>.
 env = SConscript("godot-cpp/SConstruct")
 opts.Update(env)
 
-print(env["Boost_INCLUDE_DIR"])
-
 
 # Add source files.
-boost_path = Dir(env['Boost_INCLUDE_DIR'])
-
-env.Append(CPPPATH=["src/","thirdparty/",boost_path])
-env.Append(CPPDEFINES=['BOOST_NO_USER_CONFIG', 'BOOST_NO_CONFIG'])
-
 sources = Glob("src/*.cpp","src/*.hpp")
 sources += Glob("thirdparty/*.cpp","thirdparty/*.hpp")
 
