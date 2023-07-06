@@ -19,7 +19,7 @@ import xml.dom.minidom
 
 
 def usage():
-    print '''
+    print ('''
 Usage:
     %s options
 
@@ -30,7 +30,7 @@ Options:
     --title         The title of the top level BoostBook section.
     --enable-index  Generate additional index sections for classes and
                     types.
-''' % ( sys.argv[0] )
+''' % ( sys.argv[0] ))
 
 
 def get_args( argv = sys.argv[1:] ):
