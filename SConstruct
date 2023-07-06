@@ -10,20 +10,26 @@ opts = Variables([], ARGUMENTS)
 opts.Add("Boost_INCLUDE_DIR", "boost library include path", "")
 opts.Add("Boost_LIBRARY_DIRS", "boost library library path", "")
 
+
 # TODO: Do not copy environment after godot-cpp/test is updated <https://github.com/godotengine/godot-cpp/blob/master/test/SConstruct>.
 env = SConscript("godot-cpp/SConstruct")
 opts.Update(env)
 
-print(env["Boost_INCLUDE_DIR"])
+# Add Included files files.
 
-
-# Add source files.
 boost_path = Dir(env['Boost_INCLUDE_DIR'])
-
 env.Append(CPPPATH=["src/","thirdparty/",boost_path])
 
-sources = Glob("src/*.cpp","src/*.hpp")
-sources += Glob("thirdparty/*.cpp","thirdparty/*.hpp")
+sources = []
+for root,dirnames,filenames in os.walk("./src/"):
+    for filename in fnmatch.filter(filenames,"*.cpp"):
+        print(os.path.join(root, filename))
+        sources.append(Glob(os.path.join(root, filename)))
+for root,dirnames,filenames in os.walk("./thirdparty/"):
+    for filename in fnmatch.filter(filenames,"*.cpp"):
+        sources.append(Glob(os.path.join(root, filename)))
+
+
 
 
 # Find gdextension path even if the directory or extension is renamed (e.g. project/addons/example/example.gdextension).

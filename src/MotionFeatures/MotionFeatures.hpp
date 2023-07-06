@@ -77,8 +77,6 @@ struct MotionFeature : public Resource{
 
         ClassDB::bind_method( D_METHOD("get_weights"), &MotionFeature::get_weights);
 
-        // BIND_VIRTUAL_METHOD(MotionFeature,get_dimension);
-
         ClassDB::bind_method( D_METHOD("setup_nodes","character"), &MotionFeature::setup_nodes);
         
         ClassDB::bind_method( D_METHOD("setup_for_animation","animation"), &MotionFeature::setup_for_animation);
@@ -116,15 +114,12 @@ struct RootVelocityMotionFeature : public MotionFeature {
     }
 
     virtual void setup_nodes(Variant character) override{
-        // Node::get_node();
         body = Object::cast_to<CharacterBody3D>(character);  
 
     }
     virtual void setup_for_animation(Ref<Animation> animation)override{
         root_track_pos = animation->find_track(NodePath(root_bone_name),Animation::TrackType::TYPE_POSITION_3D);
         root_track_quat = animation->find_track(NodePath(root_bone_name),Animation::TrackType::TYPE_ROTATION_3D);
-        // root_track_scale = animation->find_track(NodePath(root_bone_name),Animation::TrackType::TYPE_SCALE_3D);
-        // u::prints("Root Tracks for",root_track_pos,root_track_quat);
     }
 
     virtual PackedFloat32Array bake_animation_pose(Ref<Animation> animation,float time){

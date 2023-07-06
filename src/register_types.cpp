@@ -7,10 +7,8 @@
 #include <godot_cpp/godot.hpp>
 
 #include "CritSpringDamper.hpp"
-#include "MotionFeatures.hpp"
+#include "MotionFeatures/MotionFeatures.hpp"
 #include "MotionPlayer.hpp"
-//#include "dep/kdtree.hpp"
-//#include "AABBTree.hpp"
 #include "CircularBuffer.hpp"
 
 using namespace godot;

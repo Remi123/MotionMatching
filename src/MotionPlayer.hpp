@@ -28,17 +28,12 @@
 
 #include "godot_cpp/core/math.hpp"
 
-#include "kdtree.hpp"
-#include "MotionFeatures.hpp"
+#include "kdtree-cpp/kdtree.hpp"
+#include "MotionFeatures/MotionFeatures.hpp"
 
 #include <boost/accumulators/accumulators.hpp>
-#include <boost/accumulators/statistics/stats.hpp>
-#include <boost/accumulators/statistics/min.hpp>
-#include <boost/accumulators/statistics/max.hpp>
-#include <boost/accumulators/statistics/count.hpp>
-#include <boost/accumulators/statistics/median.hpp>
-#include <boost/accumulators/statistics/skewness.hpp>
-#include <boost/accumulators/statistics/variance.hpp>
+#include <boost/accumulators/statistics.hpp>
+
 
 using namespace godot;
 
