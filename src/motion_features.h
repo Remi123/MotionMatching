@@ -78,7 +78,7 @@ public:
 		set_local_to_scene(true);
 	}
 
-	virtual void physics_update(double delta) {}
+	virtual void physics_update(double p_delta) {}
 
 	virtual int get_dimension() { return 0; }
 
@@ -87,9 +87,9 @@ public:
 	virtual void setup_nodes(Variant character) {}
 
 	virtual void setup_for_animation(Ref<Animation> animation) {}
-	virtual PackedFloat32Array bake_animation_pose(Ref<Animation> animation, float time) { return {}; }
+	virtual PackedFloat32Array bake_animation_pose(Ref<Animation> animation, float p_time) { return {}; }
 
-	virtual PackedFloat32Array broadphase_query_pose(Dictionary blackboard, float delta) { return {}; }
+	virtual PackedFloat32Array broadphase_query_pose(Dictionary blackboard, float p_delta) { return {}; }
 
 	virtual float narrowphase_evaluate_cost(PackedFloat32Array to_convert) { return 0.0; }
 #ifdef TOOLS_ENABLED
@@ -167,7 +167,7 @@ public:
 		return result;
 	}
 
-	virtual PackedFloat32Array broadphase_query_pose(Dictionary blackboard, float delta) override {
+	virtual PackedFloat32Array broadphase_query_pose(Dictionary blackboard, float p_delta) override {
 		auto vel = body->get_quaternion().xform_inv(body->get_velocity());
 		PackedFloat32Array result{};
 		result.push_back(vel.x);
@@ -216,7 +216,7 @@ struct BonePositionVelocityMotionFeature : public MotionFeature {
 	PackedVector3Array last_known_velocities{};
 	PackedFloat32Array last_known_result{};
 	float last_time_queried = 0.0f;
-	virtual PackedFloat32Array broadphase_query_pose(Dictionary blackboard, float delta) override;
+	virtual PackedFloat32Array broadphase_query_pose(Dictionary blackboard, float p_delta) override;
 	virtual float narrowphase_evaluate_cost(PackedFloat32Array to_convert) override;
 	GETSET(float, weight_bone_pos, 1.0f);
 	GETSET(float, weight_bone_vel, 1.0f);
@@ -270,9 +270,9 @@ public:
 
 	virtual void setup_for_animation(Ref<Animation> animation) override;
 
-	virtual PackedFloat32Array bake_animation_pose(Ref<Animation> animation, float time) override;
+	virtual PackedFloat32Array bake_animation_pose(Ref<Animation> animation, float p_time) override;
 
-	virtual PackedFloat32Array broadphase_query_pose(Dictionary blackboard, float delta) override;
+	virtual PackedFloat32Array broadphase_query_pose(Dictionary blackboard, float p_delta) override;
 
 	virtual float narrowphase_evaluate_cost(PackedFloat32Array to_convert) override { return 0.0; }
 
