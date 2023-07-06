@@ -33,7 +33,6 @@
 
 #ifdef TOOLS_ENABLED
 void PredictionMotionFeature::debug_pose_gizmo(Ref<EditorNode3DGizmo> gizmo, const PackedFloat32Array data, Transform3D tr) {
-	constexpr int s = 3;
 	Ref<StandardMaterial3D> white = gizmo->get_plugin()->get_material("white", gizmo);
 	Ref<StandardMaterial3D> green = gizmo->get_plugin()->get_material("green", gizmo);
 	Ref<StandardMaterial3D> orange = gizmo->get_plugin()->get_material("orange", gizmo);
