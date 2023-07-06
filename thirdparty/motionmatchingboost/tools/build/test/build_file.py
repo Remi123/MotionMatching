@@ -19,20 +19,27 @@ import BoostBuild
 #
 ###############################################################################
 
+
 def test_building_file_from_specific_project():
     t = BoostBuild.Tester(use_test_config=False)
 
-    t.write("jamroot.jam", """\
+    t.write(
+        "jamroot.jam",
+        """\
 exe hello : hello.cpp ;
 exe hello2 : hello.cpp ;
 build-project sub ;
-""")
+""",
+    )
     t.write("hello.cpp", "int main() {}\n")
-    t.write("sub/jamfile.jam", """
+    t.write(
+        "sub/jamfile.jam",
+        """
 exe hello : hello.cpp ;
 exe hello2 : hello.cpp ;
 exe sub : hello.cpp ;
-""")
+""",
+    )
     t.write("sub/hello.cpp", "int main() {}\n")
 
     t.run_build_system(["sub", t.adjust_suffix("hello.obj")])
@@ -50,14 +57,18 @@ exe sub : hello.cpp ;
 #
 ###############################################################################
 
+
 def test_building_file_from_specific_target():
     t = BoostBuild.Tester(use_test_config=False)
 
-    t.write("jamroot.jam", """\
+    t.write(
+        "jamroot.jam",
+        """\
 exe hello1 : hello1.cpp ;
 exe hello2 : hello2.cpp ;
 exe hello3 : hello3.cpp ;
-""")
+""",
+    )
     t.write("hello1.cpp", "int main() {}\n")
     t.write("hello2.cpp", "int main() {}\n")
     t.write("hello3.cpp", "int main() {}\n")
@@ -76,14 +87,18 @@ exe hello3 : hello3.cpp ;
 #
 ###############################################################################
 
+
 def test_building_missing_file_from_specific_target():
     t = BoostBuild.Tester(use_test_config=False)
 
-    t.write("jamroot.jam", """\
+    t.write(
+        "jamroot.jam",
+        """\
 exe hello1 : hello1.cpp ;
 exe hello2 : hello2.cpp ;
 exe hello3 : hello3.cpp ;
-""")
+""",
+    )
     t.write("hello1.cpp", "int main() {}\n")
     t.write("hello2.cpp", "int main() {}\n")
     t.write("hello3.cpp", "int main() {}\n")
@@ -103,20 +118,23 @@ exe hello3 : hello3.cpp ;
 #
 ###############################################################################
 
+
 def test_building_multiple_files_with_different_names():
     t = BoostBuild.Tester(use_test_config=False)
 
-    t.write("jamroot.jam", """\
+    t.write(
+        "jamroot.jam",
+        """\
 exe hello1 : hello1.cpp ;
 exe hello2 : hello2.cpp ;
 exe hello3 : hello3.cpp ;
-""")
+""",
+    )
     t.write("hello1.cpp", "int main() {}\n")
     t.write("hello2.cpp", "int main() {}\n")
     t.write("hello3.cpp", "int main() {}\n")
 
-    t.run_build_system([t.adjust_suffix("hello1.obj"), t.adjust_suffix(
-        "hello2.obj")])
+    t.run_build_system([t.adjust_suffix("hello1.obj"), t.adjust_suffix("hello2.obj")])
     t.expect_addition("bin/$toolset/debug*/hello1.obj")
     t.expect_addition("bin/$toolset/debug*/hello2.obj")
     t.expect_nothing_more()
@@ -131,20 +149,27 @@ exe hello3 : hello3.cpp ;
 #
 ###############################################################################
 
+
 def test_building_multiple_files_with_the_same_name():
     t = BoostBuild.Tester(use_test_config=False)
 
-    t.write("jamroot.jam", """\
+    t.write(
+        "jamroot.jam",
+        """\
 exe hello : hello.cpp ;
 exe hello2 : hello.cpp ;
 build-project sub ;
-""")
+""",
+    )
     t.write("hello.cpp", "int main() {}\n")
-    t.write("sub/jamfile.jam", """
+    t.write(
+        "sub/jamfile.jam",
+        """
 exe hello : hello.cpp ;
 exe hello2 : hello.cpp ;
 exe sub : hello.cpp ;
-""")
+""",
+    )
     t.write("sub/hello.cpp", "int main() {}\n")
 
     t.run_build_system([t.adjust_suffix("hello.obj")])

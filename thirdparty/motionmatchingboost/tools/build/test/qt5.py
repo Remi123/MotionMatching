@@ -16,5 +16,5 @@ t = BoostBuild.Tester(workdir=qt5_dir)
 
 t.run_build_system()
 # Fails if a warning is thrown
-t.fail_test( t.stdout().find("warning") != -1 )
+t.fail_test(t.stdout().find("warning") != -1)
 t.cleanup()

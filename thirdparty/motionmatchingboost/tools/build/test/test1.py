@@ -8,11 +8,14 @@ import BoostBuild
 
 t = BoostBuild.Tester(pass_toolset=0)
 
-t.write("test.jam", """
+t.write(
+    "test.jam",
+    """
 actions unbuilt { }
 unbuilt all ;
 ECHO "Hi" ;
-""")
+""",
+)
 
 t.run_build_system(["-ftest.jam", "-d0"], stdout="Hi\n")
 t.cleanup()

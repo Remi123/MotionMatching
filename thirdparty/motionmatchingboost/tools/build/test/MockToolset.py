@@ -7,8 +7,11 @@
 
 import sys
 
+
 def create(t):
-  t.write('''mockinfo.py''', '''
+    t.write(
+        """mockinfo.py""",
+        """
 from __future__ import print_function
 import re
 import optparse
@@ -171,9 +174,12 @@ class MockInfo(object):
     if self.verbose:
       print("    Matched")
     return True
-''')
+""",
+    )
 
-  t.write('mock.py', '''
+    t.write(
+        "mock.py",
+        """
 from __future__ import print_function
 import mockinfo
 import markup
@@ -185,9 +191,12 @@ if status is not None:
 else:
   print("Unrecognized command: " + ' '.join(sys.argv))
   exit(1)
-''')
+""",
+    )
 
-  t.write('mock.jam', '''
+    t.write(
+        "mock.jam",
+        """
 import feature ;
 import toolset ;
 import path ;
@@ -253,15 +262,23 @@ actions link.dll
     $(.config-cmd) mock.py --dll "$(>)" -o "$(<)" $(USER_OPTIONS) -L"$(LINK_PATH)" --static-lib=$(FINDLIBS-STATIC) --shared-lib=$(FINDLIBS-SHARED)
 }
 
-''' % sys.executable.replace('\\', '\\\\'))
+"""
+        % sys.executable.replace("\\", "\\\\"),
+    )
+
 
 def set_expected(t, markup):
-  verbose = "True" if t.verbose else "False"
-  t.write('markup.py', '''
+    verbose = "True" if t.verbose else "False"
+    t.write(
+        "markup.py",
+        """
 import mockinfo
 info = mockinfo.MockInfo(%s)
 def source_file(name, contents):
   info.source_file(name, contents)
 def action(command, status=0):
   info.action(command, status)
-''' % (verbose) + markup)
+"""
+        % (verbose)
+        + markup,
+    )

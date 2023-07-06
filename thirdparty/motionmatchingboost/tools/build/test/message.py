@@ -12,7 +12,9 @@ import BoostBuild
 # Create a temporary working directory.
 t = BoostBuild.Tester(["-d0"], use_test_config=False)
 
-t.write("Jamroot.jam", """
+t.write(
+    "Jamroot.jam",
+    """
 project
   :
   : usage-requirements <define>TEST=1
@@ -21,16 +23,23 @@ project
 message hello : "Hello World!" ;
 alias hello : : <link>shared ;
 obj test : test.cpp hello : <link>static ;
-""")
+""",
+)
 
-t.write("test.cpp", """
+t.write(
+    "test.cpp",
+    """
 #ifndef TEST
 #error TEST not defined
 #endif
-""")
+""",
+)
 
-t.run_build_system(["test"], stdout="""Hello World!
-""")
+t.run_build_system(
+    ["test"],
+    stdout="""Hello World!
+""",
+)
 
 t.expect_addition("bin/$toolset/link-static*/test.obj")
 t.expect_nothing_more()

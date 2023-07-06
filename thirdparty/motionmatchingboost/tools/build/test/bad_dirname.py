@@ -11,11 +11,17 @@ import BoostBuild
 
 t = BoostBuild.Tester()
 
-t.write("bad[abc]dirname/jamfile.jam", """
-""")
+t.write(
+    "bad[abc]dirname/jamfile.jam",
+    """
+""",
+)
 
-t.write("bad[abc]dirname/jamroot.jam", """
-""")
+t.write(
+    "bad[abc]dirname/jamroot.jam",
+    """
+""",
+)
 
 t.run_build_system(subdir="bad[abc]dirname")
 

@@ -14,7 +14,9 @@ t = BoostBuild.Tester(["-d+2"], use_test_config=False)
 t.write("a.cpp", "int main() {}\n")
 t.write("b.cpp", "\n")
 t.write("b.xyz", "")
-t.write("jamroot.jam", """\
+t.write(
+    "jamroot.jam",
+    """\
 import "class" : new ;
 import modules ;
 import project ;
@@ -56,7 +58,8 @@ rule make-b-main-target
 exe a : a.cpp b c ;
 make-b-main-target ;
 alias c ;  # Expands to nothing, intentionally.
-""")
+""",
+)
 
 t.run_build_system()
 
@@ -69,13 +72,16 @@ t.run_build_system(["-sGENERATE_ONLY_UNUSABLE=1"], stdout="")
 
 # Check that even if main target generates nothing, its usage requirements are
 # still propagated to dependants.
-t.write("a.cpp", """\
+t.write(
+    "a.cpp",
+    """\
 #ifndef FOO
     #error We refuse to compile without FOO being defined!
     We_refuse_to_compile_without_FOO_being_defined
 #endif
 int main() {}
-""")
+""",
+)
 t.run_build_system(["-sGENERATE_NOTHING=1"])
 
 t.cleanup()

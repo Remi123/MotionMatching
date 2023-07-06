@@ -12,18 +12,24 @@ import os
 
 t = BoostBuild.Tester()
 
-t.write("jamroot.jam", """\
+t.write(
+    "jamroot.jam",
+    """\
 import notfile ;
 notfile say : "echo hi" ;
 exe hello : hello.cpp ;
 notfile hello_valgrind : @valgrind : hello ;
 actions valgrind { valgrind $(>[1]) }
-""")
+""",
+)
 
-t.write("hello.cpp", """\
+t.write(
+    "hello.cpp",
+    """\
 #include <iostream>
 int main() { std::cout << "Hello!\\n"; }
-""")
+""",
+)
 
 t.run_build_system(["-n", "-d+2"])
 

@@ -10,38 +10,53 @@ import BoostBuild
 import TestCmd
 import re
 
+
 def split_stdin_stdout(text):
     """stdin is all text after the prompt up to and including
     the next newline.  Everything else is stdout.  stdout
     may contain regular expressions enclosed in {{}}."""
-    prompt = re.escape('(gdb) \n')
-    pattern = re.compile('(?<=%s)((?:\d*-.*)\n)' % prompt)
-    stdin = ''.join(re.findall(pattern, text))
-    stdout = re.sub(pattern, '', text)
-    outside_pattern = re.compile(r'(?:\A|(?<=\}\}))(?:[^\{]|(?:\{(?!\{)))*(?:(?=\{\{)|\Z)')
+    prompt = re.escape("(gdb) \n")
+    pattern = re.compile("(?<=%s)((?:\d*-.*)\n)" % prompt)
+    stdin = "".join(re.findall(pattern, text))
+    stdout = re.sub(pattern, "", text)
+    outside_pattern = re.compile(r"(?:\A|(?<=\}\}))(?:[^\{]|(?:\{(?!\{)))*(?:(?=\{\{)|\Z)")
 
     def escape_line(line):
         line = re.sub(outside_pattern, lambda m: re.escape(m.group(0)), line)
-        return re.sub(r'\{\{|\}\}', '', line)
+        return re.sub(r"\{\{|\}\}", "", line)
 
-    stdout = '\n'.join([escape_line(line) for line in stdout.split('\n')])
-    return (stdin,stdout)
+    stdout = "\n".join([escape_line(line) for line in stdout.split("\n")])
+    return (stdin, stdout)
+
 
 def run(tester, io):
-    (input,output) = split_stdin_stdout(io)
+    (input, output) = split_stdin_stdout(io)
     tester.run_build_system(stdin=input, stdout=output, match=TestCmd.match_re)
 
+
 def make_tester():
-    return BoostBuild.Tester(["-dmi"], pass_toolset=False, pass_d0=False,
-        use_test_config=False, ignore_toolset_requirements=False, match=TestCmd.match_re)
+    return BoostBuild.Tester(
+        ["-dmi"],
+        pass_toolset=False,
+        pass_d0=False,
+        use_test_config=False,
+        ignore_toolset_requirements=False,
+        match=TestCmd.match_re,
+    )
+
 
 def test_exec_run():
     t = make_tester()
-    t.write("test.jam", """\
+    t.write(
+        "test.jam",
+        """\
         UPDATE ;
-    """)
+    """,
+    )
 
-    run(t, """\
+    run(
+        t,
+        """\
 =thread-group-added,id="i1"
 (gdb)
 72-exec-run -ftest.jam
@@ -52,16 +67,23 @@ def test_exec_run():
 (gdb)
 73-gdb-exit
 73^exit
-""")
+""",
+    )
 
     t.cleanup()
 
+
 def test_exit_status():
     t = make_tester()
-    t.write("test.jam", """\
+    t.write(
+        "test.jam",
+        """\
         EXIT : 1 ;
-    """)
-    run(t, """\
+    """,
+    )
+    run(
+        t,
+        """\
 =thread-group-added,id="i1"
 (gdb)
 72-exec-run -ftest.jam
@@ -73,12 +95,16 @@ def test_exit_status():
 (gdb)
 73-gdb-exit
 73^exit
-""")
+""",
+    )
     t.cleanup()
+
 
 def test_exec_step():
     t = make_tester()
-    t.write("test.jam", """\
+    t.write(
+        "test.jam",
+        """\
         rule g ( )
         {
             a = 1 ;
@@ -90,8 +116,11 @@ def test_exec_step():
             c = 3 ;
         }
         f ;
-    """)
-    run(t, """\
+    """,
+    )
+    run(
+        t,
+        """\
 =thread-group-added,id="i1"
 (gdb)
 -break-insert f
@@ -120,12 +149,16 @@ def test_exec_step():
 (gdb)
 73-gdb-exit
 73^exit
-""")
+""",
+    )
     t.cleanup()
+
 
 def test_exec_next():
     t = make_tester()
-    t.write("test.jam", """\
+    t.write(
+        "test.jam",
+        """\
         rule g ( )
         {
             a = 1 ;
@@ -143,8 +176,11 @@ def test_exec_next():
         }
         h ;
         d = 4 ;
-    """)
-    run(t, """\
+    """,
+    )
+    run(
+        t,
+        """\
 =thread-group-added,id="i1"
 (gdb)
 -break-insert f
@@ -178,12 +214,16 @@ def test_exec_next():
 (gdb)
 73-gdb-exit
 73^exit
-""")
+""",
+    )
     t.cleanup()
+
 
 def test_exec_finish():
     t = make_tester()
-    t.write("test.jam", """\
+    t.write(
+        "test.jam",
+        """\
         rule f ( )
         {
             a = 1 ;
@@ -205,8 +245,11 @@ def test_exec_finish():
         }
         h ;
         d = 4 ;
-    """)
-    run(t, """\
+    """,
+    )
+    run(
+        t,
+        """\
 =thread-group-added,id="i1"
 (gdb)
 -break-insert f
@@ -235,7 +278,8 @@ def test_exec_finish():
 (gdb)
 73-gdb-exit
 73^exit
-""")
+""",
+    )
     t.cleanup()
 
 
@@ -243,7 +287,9 @@ def test_breakpoints():
     """Tests the interaction between the following commands:
     break, clear, delete, disable, enable"""
     t = make_tester()
-    t.write("test.jam", """\
+    t.write(
+        "test.jam",
+        """\
         rule f ( )
         {
             a = 1 ;
@@ -261,8 +307,11 @@ def test_breakpoints():
         g ;
         h ;
         UPDATE ;
-    """)
-    run(t, """\
+    """,
+    )
+    run(
+        t,
+        """\
 =thread-group-added,id="i1"
 (gdb)
 -break-insert f
@@ -315,8 +364,10 @@ def test_breakpoints():
 (gdb)
 76-gdb-exit
 76^exit
-""")
+""",
+    )
     t.cleanup()
+
 
 test_exec_run()
 test_exit_status()

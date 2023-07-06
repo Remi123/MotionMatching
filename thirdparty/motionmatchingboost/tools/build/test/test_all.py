@@ -20,8 +20,7 @@ toolset = BoostBuild.get_toolset()
 
 # Clear environment for testing.
 #
-for s in ("BOOST_ROOT", "BOOST_BUILD_PATH", "JAM_TOOLSET", "BCCROOT",
-    "MSVCDir", "MSVC", "MSVCNT", "MINGW", "watcom"):
+for s in ("BOOST_ROOT", "BOOST_BUILD_PATH", "JAM_TOOLSET", "BCCROOT", "MSVCDir", "MSVC", "MSVCNT", "MINGW", "watcom"):
     try:
         del os.environ[s]
     except:
@@ -55,7 +54,7 @@ def run_tests(critical_tests, other_tests):
     for test in all_tests:
         if not xml:
             s = "%%-%ds :" % max_test_name_len % test
-            print(s, end='')
+            print(s, end="")
 
         passed = 0
         try:
@@ -72,8 +71,7 @@ def run_tests(critical_tests, other_tests):
         except:
             exc_type, exc_value, exc_tb = sys.exc_info()
             try:
-                BoostBuild.annotation("failure - unhandled exception", "%s - "
-                    "%s" % (exc_type.__name__, exc_value))
+                BoostBuild.annotation("failure - unhandled exception", "%s - " "%s" % (exc_type.__name__, exc_value))
                 BoostBuild.annotate_stack_trace(exc_tb)
             finally:
                 #   Explicitly clear a hard-to-garbage-collect traceback
@@ -106,16 +104,26 @@ def run_tests(critical_tests, other_tests):
             rs = "succeed"
             if not passed:
                 rs = "fail"
-            print('''
+            print(
+                """
 <test-log library="build" test-name="%s" test-type="run" toolset="%s" test-program="%s" target-directory="%s">
-<run result="%s">''' % (test, toolset, "tools/build/v2/test/" + test + ".py",
-                "boost/bin.v2/boost.build.tests/" + toolset + "/" + test, rs))
+<run result="%s">"""
+                % (
+                    test,
+                    toolset,
+                    "tools/build/v2/test/" + test + ".py",
+                    "boost/bin.v2/boost.build.tests/" + toolset + "/" + test,
+                    rs,
+                )
+            )
             if not passed:
                 BoostBuild.flush_annotations(1)
-            print('''
+            print(
+                """
 </run>
 </test-log>
-''')
+"""
+            )
         sys.stdout.flush()  # Makes testing under emacs more entertaining.
         BoostBuild.clear_annotations()
 
@@ -124,15 +132,19 @@ def run_tests(critical_tests, other_tests):
         open("test_results.txt", "w").close()
 
     if not xml:
-        print('''
+        print(
+            """
         === Test summary ===
         PASS: %d
         FAIL: %d
-        ''' % (pass_count, failures_count))
+        """
+            % (pass_count, failures_count)
+        )
 
     # exit with failure with failures
     if failures_count > 0:
         sys.exit(1)
+
 
 def last_failed_test():
     "Returns the name of the last failed test or None."
@@ -149,14 +161,22 @@ def last_failed_test():
 def reorder_tests(tests, first_test):
     try:
         n = tests.index(first_test)
-        return [first_test] + tests[:n] + tests[n + 1:]
+        return [first_test] + tests[:n] + tests[n + 1 :]
     except ValueError:
         return tests
 
 
-critical_tests = ["unit_tests", "module_actions", "core_d12",
-    "core_typecheck", "core_delete_module", "core_language", "core_arguments",
-    "core_varnames", "core_import_module"]
+critical_tests = [
+    "unit_tests",
+    "module_actions",
+    "core_d12",
+    "core_typecheck",
+    "core_delete_module",
+    "core_language",
+    "core_arguments",
+    "core_varnames",
+    "core_import_module",
+]
 
 # We want to collect debug information about the test site before running any
 # of the tests, but only when not running the tests interactively. Then the
@@ -166,168 +186,169 @@ critical_tests = ["unit_tests", "module_actions", "core_d12",
 if xml:
     critical_tests.insert(0, "collect_debug_info")
 
-tests = ["abs_workdir",
-         "absolute_sources",
-         "alias",
-         "alternatives",
-         "always",
-         "bad_dirname",
-         "build_dir",
-         "build_file",
-         "build_hooks",
-         "build_no",
-         "builtin_echo",
-         "builtin_exit",
-         "builtin_glob",
-         "builtin_readlink",
-         "builtin_split_by_characters",
-         "bzip2",
-         "c_file",
-         "chain",
-         "clean",
-         "cli_property_expansion",
-         "command_line_properties",
-         "composite",
-         "conditionals",
-         "conditionals2",
-         "conditionals3",
-         "conditionals4",
-         "conditionals_multiple",
-         "configuration",
-         "configure",
-         "copy_time",
-         "core_action_output",
-         "core_action_status",
-         "core_actions_quietly",
-         "core_at_file",
-         "core_bindrule",
-         "core_dependencies",
-         "core_syntax_error_exit_status",
-         "core_fail_expected",
-         "core_jamshell",
-         "core_modifiers",
-         "core_multifile_actions",
-         "core_nt_cmd_line",
-         "core_option_d2",
-         "core_option_l",
-         "core_option_n",
-         "core_parallel_actions",
-         "core_parallel_multifile_actions_1",
-         "core_parallel_multifile_actions_2",
-         "core_scanner",
-         "core_source_line_tracking",
-         "core_update_now",
-         "core_variables_in_actions",
-         "custom_generator",
-         "debugger",
-# Newly broken?
-#         "debugger-mi",
-         "default_build",
-         "default_features",
-# This test is known to be broken itself.
-#         "default_toolset",
-         "dependency_property",
-         "dependency_test",
-         "disambiguation",
-         "dll_path",
-         "double_loading",
-         "duplicate",
-         "example_libraries",
-         "example_make",
-         "exit_status",
-         "expansion",
-         "explicit",
-         "feature_cxxflags",
-         "feature_implicit_dependency",
-         "feature_relevant",
-         "feature_suppress_import_lib",
-         "file_types",
-         "flags",
-         "generator_selection",
-         "generators_test",
-         "implicit_dependency",
-         "indirect_conditional",
-         "inherit_toolset",
-         "inherited_dependency",
-         "inline",
-         "install_build_no",
-         "libjpeg",
-         "liblzma",
-         "libpng",
-         "libtiff",
-         "libzstd",
-         "lib_source_property",
-         "lib_zlib",
-         "library_chain",
-         "library_property",
-         "link",
-         "load_order",
-         "loop",
-         "make_rule",
-         "message",
-         "ndebug",
-         "no_type",
-         "notfile",
-         "ordered_include",
-# FIXME: Disabled due to bug in B2
-#         "ordered_properties",
-         "out_of_tree",
-         "package",
-         "param",
-         "path_features",
-         "prebuilt",
-         "preprocessor",
-         "print",
-         "project_dependencies",
-         "project_glob",
-         "project_id",
-         "project_root_constants",
-         "project_root_rule",
-         "project_test3",
-         "project_test4",
-         "property_expansion",
-# FIXME: Disabled due lack of qt5 detection
-#         "qt5",
-         "rebuilds",
-         "relative_sources",
-         "remove_requirement",
-         "rescan_header",
-         "resolution",
-         "rootless",
-         "scanner_causing_rebuilds",
-         "searched_lib",
-         "skipping",
-         "sort_rule",
-         "source_locations",
-         "source_order",
-         "space_in_path",
-         "stage",
-         "standalone",
-         "static_and_shared_library",
-         "suffix",
-         "tag",
-         "test_rc",
-         "test1",
-         "test2",
-         "testing",
-         "timedata",
-         "toolset_clang_darwin",
-         "toolset_clang_linux",
-         "toolset_clang_vxworks",
-         "toolset_darwin",
-         "toolset_defaults",
-         "toolset_gcc",
-         "toolset_intel_darwin",
-         "toolset_msvc",
-         "toolset_requirements",
-         "transitive_skip",
-         "unit_test",
-         "unused",
-         "use_requirements",
-         "using",
-         "wrapper",
-         "wrong_project",
-         ]
+tests = [
+    "abs_workdir",
+    "absolute_sources",
+    "alias",
+    "alternatives",
+    "always",
+    "bad_dirname",
+    "build_dir",
+    "build_file",
+    "build_hooks",
+    "build_no",
+    "builtin_echo",
+    "builtin_exit",
+    "builtin_glob",
+    "builtin_readlink",
+    "builtin_split_by_characters",
+    "bzip2",
+    "c_file",
+    "chain",
+    "clean",
+    "cli_property_expansion",
+    "command_line_properties",
+    "composite",
+    "conditionals",
+    "conditionals2",
+    "conditionals3",
+    "conditionals4",
+    "conditionals_multiple",
+    "configuration",
+    "configure",
+    "copy_time",
+    "core_action_output",
+    "core_action_status",
+    "core_actions_quietly",
+    "core_at_file",
+    "core_bindrule",
+    "core_dependencies",
+    "core_syntax_error_exit_status",
+    "core_fail_expected",
+    "core_jamshell",
+    "core_modifiers",
+    "core_multifile_actions",
+    "core_nt_cmd_line",
+    "core_option_d2",
+    "core_option_l",
+    "core_option_n",
+    "core_parallel_actions",
+    "core_parallel_multifile_actions_1",
+    "core_parallel_multifile_actions_2",
+    "core_scanner",
+    "core_source_line_tracking",
+    "core_update_now",
+    "core_variables_in_actions",
+    "custom_generator",
+    "debugger",
+    # Newly broken?
+    #         "debugger-mi",
+    "default_build",
+    "default_features",
+    # This test is known to be broken itself.
+    #         "default_toolset",
+    "dependency_property",
+    "dependency_test",
+    "disambiguation",
+    "dll_path",
+    "double_loading",
+    "duplicate",
+    "example_libraries",
+    "example_make",
+    "exit_status",
+    "expansion",
+    "explicit",
+    "feature_cxxflags",
+    "feature_implicit_dependency",
+    "feature_relevant",
+    "feature_suppress_import_lib",
+    "file_types",
+    "flags",
+    "generator_selection",
+    "generators_test",
+    "implicit_dependency",
+    "indirect_conditional",
+    "inherit_toolset",
+    "inherited_dependency",
+    "inline",
+    "install_build_no",
+    "libjpeg",
+    "liblzma",
+    "libpng",
+    "libtiff",
+    "libzstd",
+    "lib_source_property",
+    "lib_zlib",
+    "library_chain",
+    "library_property",
+    "link",
+    "load_order",
+    "loop",
+    "make_rule",
+    "message",
+    "ndebug",
+    "no_type",
+    "notfile",
+    "ordered_include",
+    # FIXME: Disabled due to bug in B2
+    #         "ordered_properties",
+    "out_of_tree",
+    "package",
+    "param",
+    "path_features",
+    "prebuilt",
+    "preprocessor",
+    "print",
+    "project_dependencies",
+    "project_glob",
+    "project_id",
+    "project_root_constants",
+    "project_root_rule",
+    "project_test3",
+    "project_test4",
+    "property_expansion",
+    # FIXME: Disabled due lack of qt5 detection
+    #         "qt5",
+    "rebuilds",
+    "relative_sources",
+    "remove_requirement",
+    "rescan_header",
+    "resolution",
+    "rootless",
+    "scanner_causing_rebuilds",
+    "searched_lib",
+    "skipping",
+    "sort_rule",
+    "source_locations",
+    "source_order",
+    "space_in_path",
+    "stage",
+    "standalone",
+    "static_and_shared_library",
+    "suffix",
+    "tag",
+    "test_rc",
+    "test1",
+    "test2",
+    "testing",
+    "timedata",
+    "toolset_clang_darwin",
+    "toolset_clang_linux",
+    "toolset_clang_vxworks",
+    "toolset_darwin",
+    "toolset_defaults",
+    "toolset_gcc",
+    "toolset_intel_darwin",
+    "toolset_msvc",
+    "toolset_requirements",
+    "transitive_skip",
+    "unit_test",
+    "unused",
+    "use_requirements",
+    "using",
+    "wrapper",
+    "wrong_project",
+]
 
 if os.name == "posix":
     tests.append("symlink")
@@ -347,7 +368,7 @@ if toolset.startswith("gcc") and os.name != "nt":
 
 if toolset.startswith("clang") or toolset.startswith("gcc") or toolset.startswith("msvc"):
     tests.append("pch")
-    if sys.platform != "darwin": # clang-darwin does not yet support
+    if sys.platform != "darwin":  # clang-darwin does not yet support
         tests.append("feature_force_include")
 
 # Clang includes Objective-C driver everywhere, but GCC usually in a separate gobj package
@@ -355,7 +376,7 @@ if toolset.startswith("clang") or "darwin" in toolset:
     tests.append("lang_objc")
 
 # Disable on OSX as it doesn't seem to work for unknown reasons.
-if sys.platform != 'darwin':
+if sys.platform != "darwin":
     tests.append("builtin_glob_archive")
 
 if "--extras" in sys.argv:

@@ -13,16 +13,22 @@ import BoostBuild
 
 t = BoostBuild.Tester(use_test_config=False)
 
-t.write("jamroot.jam", """
+t.write(
+    "jamroot.jam",
+    """
 lib a : : <source>a.cpp ;
-""")
+""",
+)
 
-t.write("a.cpp", """
+t.write(
+    "a.cpp",
+    """
 #ifdef _WIN32
 __declspec(dllexport)
 #endif
 void foo() {}
-""")
+""",
+)
 
 t.run_build_system()
 t.expect_addition("bin/$toolset/debug*/a.obj")
@@ -31,13 +37,16 @@ t.rm("bin")
 
 
 # Now try with <conditional>.
-t.write("jamroot.jam", """
+t.write(
+    "jamroot.jam",
+    """
 rule test ( properties * )
 {
     return <source>a.cpp ;
 }
 lib a : : <conditional>@test ;
-""")
+""",
+)
 
 t.run_build_system()
 t.expect_addition("bin/$toolset/debug*/a.obj")

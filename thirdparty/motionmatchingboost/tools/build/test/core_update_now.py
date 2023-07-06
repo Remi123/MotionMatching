@@ -11,7 +11,9 @@ import os
 def basic():
     t = BoostBuild.Tester(pass_toolset=0)
 
-    t.write("file.jam", """\
+    t.write(
+        "file.jam",
+        """\
 actions do-print
 {
     echo updating $(<)
@@ -24,16 +26,20 @@ do-print target1 ;
 UPDATE_NOW target1 ;
 
 DEPENDS all : target1 ;
-""")
+""",
+    )
 
-    t.run_build_system(["-ffile.jam"], stdout="""\
+    t.run_build_system(
+        ["-ffile.jam"],
+        stdout="""\
 ...found 1 target...
 ...updating 1 target...
 do-print target1
 updating target1
 ...updated 1 target...
 ...found 1 target...
-""")
+""",
+    )
 
     t.cleanup()
 
@@ -41,7 +47,9 @@ updating target1
 def ignore_minus_n():
     t = BoostBuild.Tester(pass_toolset=0)
 
-    t.write("file.jam", """\
+    t.write(
+        "file.jam",
+        """\
 actions do-print
 {
     echo updating $(<)
@@ -54,9 +62,12 @@ do-print target1 ;
 UPDATE_NOW target1 : : ignore-minus-n ;
 
 DEPENDS all : target1 ;
-""")
+""",
+    )
 
-    t.run_build_system(["-ffile.jam", "-n"], stdout="""\
+    t.run_build_system(
+        ["-ffile.jam", "-n"],
+        stdout="""\
 ...found 1 target...
 ...updating 1 target...
 do-print target1
@@ -66,7 +77,8 @@ do-print target1
 updating target1
 ...updated 1 target...
 ...found 1 target...
-""")
+""",
+    )
 
     t.cleanup()
 
@@ -74,7 +86,9 @@ updating target1
 def failed_target():
     t = BoostBuild.Tester(pass_toolset=0)
 
-    t.write("file.jam", """\
+    t.write(
+        "file.jam",
+        """\
 actions fail
 {
     exit 1
@@ -96,9 +110,12 @@ DEPENDS target2 : target1 ;
 UPDATE_NOW target1 : : ignore-minus-n ;
 
 DEPENDS all : target1 target2 ;
-""")
+""",
+    )
 
-    t.run_build_system(["-ffile.jam", "-n"], stdout="""\
+    t.run_build_system(
+        ["-ffile.jam", "-n"],
+        stdout="""\
 ...found 1 target...
 ...updating 1 target...
 fail target1
@@ -114,7 +131,8 @@ do-print target2
     echo updating target2
 
 ...updated 1 target...
-""")
+""",
+    )
 
     t.cleanup()
 
@@ -122,7 +140,9 @@ do-print target2
 def missing_target():
     t = BoostBuild.Tester(pass_toolset=0)
 
-    t.write("file.jam", """\
+    t.write(
+        "file.jam",
+        """\
 actions do-print
 {
     echo updating $(<)
@@ -135,15 +155,20 @@ DEPENDS target2 : target1 ;
 UPDATE_NOW target1 : : ignore-minus-n ;
 
 DEPENDS all : target1 target2 ;
-""")
+""",
+    )
 
-    t.run_build_system(["-ffile.jam", "-n"], status=1, stdout="""\
+    t.run_build_system(
+        ["-ffile.jam", "-n"],
+        status=1,
+        stdout="""\
 don't know how to make target1
 ...found 1 target...
 ...can't find 1 target...
 ...found 2 targets...
 ...can't make 1 target...
-""")
+""",
+    )
 
     t.cleanup()
 
@@ -157,7 +182,9 @@ def build_once():
     """
     t = BoostBuild.Tester(pass_toolset=0)
 
-    t.write("file.jam", """\
+    t.write(
+        "file.jam",
+        """\
 actions do-print
 {
     echo updating $(<)
@@ -172,9 +199,12 @@ UPDATE_NOW target1 : : ignore-minus-n ;
 UPDATE_NOW target1 : : ignore-minus-n ;
 
 DEPENDS all : target1 ;
-""")
+""",
+    )
 
-    t.run_build_system(["-ffile.jam", "-n"], stdout="""\
+    t.run_build_system(
+        ["-ffile.jam", "-n"],
+        stdout="""\
 ...found 1 target...
 ...updating 1 target...
 do-print target1
@@ -189,7 +219,8 @@ do-print target1
 updating target1
 ...updated 1 target...
 ...found 1 target...
-""")
+""",
+    )
 
     t.cleanup()
 
@@ -201,7 +232,9 @@ def return_status():
     """
     t = BoostBuild.Tester(pass_toolset=0)
 
-    t.write("file.jam", """\
+    t.write(
+        "file.jam",
+        """\
 actions fail
 {
     exit 1
@@ -215,9 +248,13 @@ ECHO "update1:" [ UPDATE_NOW target1 ] ;
 ECHO "update2:" [ UPDATE_NOW target1 ] ;
 
 DEPENDS all : target1 ;
-""")
+""",
+    )
 
-    t.run_build_system(["-ffile.jam"], status=1, stdout="""\
+    t.run_build_system(
+        ["-ffile.jam"],
+        status=1,
+        stdout="""\
 ...found 1 target...
 ...updating 1 target...
 fail target1
@@ -229,7 +266,8 @@ fail target1
 update1:
 update2:
 ...found 1 target...
-""")
+""",
+    )
 
     t.cleanup()
 
@@ -239,7 +277,9 @@ def save_restore():
     local to the call to UPDATE_NOW"""
     t = BoostBuild.Tester(pass_toolset=0)
 
-    t.write("actions.jam", """\
+    t.write(
+        "actions.jam",
+        """\
 rule fail
 {
     NOTFILE $(<) ;
@@ -259,8 +299,11 @@ actions pass
 {
     echo updating $(<)
 }
-""")
-    t.write("file.jam", """
+""",
+    )
+    t.write(
+        "file.jam",
+        """
 include actions.jam ;
 fail target1 ;
 fail target2 ;
@@ -269,9 +312,11 @@ fail target3 ;
 fail target4 ;
 UPDATE_NOW target3 target4 ;
 UPDATE ;
-""")
-    t.run_build_system(['-n', '-sIGNORE_MINUS_N=1', '-ffile.jam'],
-                       stdout='''...found 2 targets...
+""",
+    )
+    t.run_build_system(
+        ["-n", "-sIGNORE_MINUS_N=1", "-ffile.jam"],
+        stdout="""...found 2 targets...
 ...updating 2 targets...
 fail target1
 
@@ -295,10 +340,13 @@ fail target4
     exit 1
 
 ...updated 2 targets...
-''')
+""",
+    )
 
-    t.run_build_system(['-q', '-sIGNORE_MINUS_N=1', '-ffile.jam'],
-                       status=1, stdout='''...found 2 targets...
+    t.run_build_system(
+        ["-q", "-sIGNORE_MINUS_N=1", "-ffile.jam"],
+        status=1,
+        stdout="""...found 2 targets...
 ...updating 2 targets...
 fail target1
 
@@ -314,10 +362,12 @@ fail target3
 
 ...failed fail target3...
 ...failed updating 1 target...
-''')
+""",
+    )
 
-    t.run_build_system(['-n', '-sIGNORE_MINUS_Q=1', '-ffile.jam'],
-                       stdout='''...found 2 targets...
+    t.run_build_system(
+        ["-n", "-sIGNORE_MINUS_Q=1", "-ffile.jam"],
+        stdout="""...found 2 targets...
 ...updating 2 targets...
 fail target1
 
@@ -339,10 +389,13 @@ fail target4
     exit 1
 
 ...updated 2 targets...
-''')
+""",
+    )
 
-    t.run_build_system(['-q', '-sIGNORE_MINUS_Q=1', '-ffile.jam'],
-                       status=1, stdout='''...found 2 targets...
+    t.run_build_system(
+        ["-q", "-sIGNORE_MINUS_Q=1", "-ffile.jam"],
+        status=1,
+        stdout="""...found 2 targets...
 ...updating 2 targets...
 fail target1
 
@@ -363,7 +416,8 @@ fail target3
 
 ...failed fail target3...
 ...failed updating 1 target...
-''')
+""",
+    )
 
     t.cleanup()
 

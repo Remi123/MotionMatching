@@ -19,13 +19,19 @@ except (AttributeError, OSError) as e:
     t.cleanup()
     sys.exit()
 
-t.write("file.jam", """
+t.write(
+    "file.jam",
+    """
 ECHO [ READLINK link ] ;
 EXIT [ READLINK link-target ] : 0 ;
-""")
+""",
+)
 
-t.run_build_system(["-ffile.jam"], stdout="""link-target
+t.run_build_system(
+    ["-ffile.jam"],
+    stdout="""link-target
 
-""")
+""",
+)
 
 t.cleanup()

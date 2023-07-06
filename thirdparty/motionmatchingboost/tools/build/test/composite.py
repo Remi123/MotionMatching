@@ -10,13 +10,19 @@ import BoostBuild
 
 t = BoostBuild.Tester(use_test_config=False)
 
-t.write("jamroot.jam", """
+t.write(
+    "jamroot.jam",
+    """
 exe hello : hello.cpp : <variant>release ;
-""")
+""",
+)
 
-t.write("hello.cpp", """
+t.write(
+    "hello.cpp",
+    """
 int main() {}
-""")
+""",
+)
 
 t.run_build_system()
 

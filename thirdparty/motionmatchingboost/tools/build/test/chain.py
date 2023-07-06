@@ -18,7 +18,9 @@ t = BoostBuild.Tester(use_test_config=False)
 
 t.write("jamroot.jam", "import gcc ;")
 
-t.write("jamfile.jam", r'''
+t.write(
+    "jamfile.jam",
+    r"""
 import os ;
 if [ os.name ] = NT
 {
@@ -43,7 +45,8 @@ exe a : l dummy.cpp ;
 static-lib l : a.cpp b.cpp ;
 
 make b.cpp : : create ;
-''')
+""",
+)
 
 t.write("a.cpp", "")
 

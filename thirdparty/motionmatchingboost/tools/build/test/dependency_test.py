@@ -12,44 +12,64 @@ import BoostBuild
 def test_basic():
     t = BoostBuild.Tester(["-d3", "-d+12"], use_test_config=False)
 
-    t.write("a.cpp", """
+    t.write(
+        "a.cpp",
+        """
 #include <a.h>
 # include "a.h"
 #include <x.h>
 int main() {}
-""")
+""",
+    )
     t.write("a.h", "\n")
-    t.write("a_c.c", """\
+    t.write(
+        "a_c.c",
+        """\
 #include <a.h>
 # include "a.h"
 #include <x.h>
-""")
-    t.write("b.cpp", """\
+""",
+    )
+    t.write(
+        "b.cpp",
+        """\
 #include "a.h"
 int main() {}
-""")
+""",
+    )
     t.write("b.h", "\n")
-    t.write("c.cpp", """\
+    t.write(
+        "c.cpp",
+        """\
 #include "x.h"
 int main() {}
-""")
-    t.write("e.cpp", """\
+""",
+    )
+    t.write(
+        "e.cpp",
+        """\
 #include "x.h"
 int main() {}
-""")
+""",
+    )
     t.write("x.foo", "")
     t.write("y.foo", "")
 
     t.write("src1/a.h", '#include "b.h"\n')
     t.write("src1/b.h", '#include "c.h"\n')
     t.write("src1/c.h", "\n")
-    t.write("src1/z.h", """\
+    t.write(
+        "src1/z.h",
+        """\
 extern int dummy_variable_suppressing_empty_file_warning_on_hp_cxx_compiler;
-""")
+""",
+    )
 
     t.write("src2/b.h", "\n")
 
-    t.write("jamroot.jam", """\
+    t.write(
+        "jamroot.jam",
+        """\
 import foo ;
 import types/cpp ;
 import types/exe ;
@@ -87,9 +107,12 @@ exe b : b.cpp ;
 # Boost Jam will not have a reason to actually build those targets in spite of
 # knowing about them.
 exe c : c.cpp : <define>FOO <implicit-dependency>a ;
-""")
+""",
+    )
 
-    t.write("foo.jam", """\
+    t.write(
+        "foo.jam",
+        """\
 import generators ;
 import modules ;
 import os ;
@@ -119,10 +142,12 @@ rule foo ( targets * : sources * : properties * )
     print.output $(<[2]) ;
     print.text "#include <z.h>"$(nl) ;
 }
-""")
+""",
+    )
 
-    t.write("foo.py",
-r"""import bjam
+    t.write(
+        "foo.py",
+        r"""import bjam
 import b2.build.type as type
 import b2.build.generators as generators
 
@@ -139,7 +164,8 @@ def prepare_foo(targets, sources, properties):
 get_manager().engine().register_action("foo.foo",
     "echo -e $(DECL:E=//)\\n > $(<[1])\n"
     "echo -e "#include <z.h>\\n" > $(<[2])\n", function=prepare_foo)
-""")
+""",
+    )
 
     # Check that main target 'c' was able to find 'x.h' from 'a's dependency
     # graph.
@@ -217,15 +243,21 @@ def test_scanned_includes_with_absolute_paths():
     """
     t = BoostBuild.Tester(["-d3", "-d+12"])
 
-    t.write("jamroot.jam", """\
+    t.write(
+        "jamroot.jam",
+        """\
 path-constant TOP : . ;
 exe app : main.cpp : <include>$(TOP)/include ;
-""");
+""",
+    )
 
-    t.write("main.cpp", """\
+    t.write(
+        "main.cpp",
+        """\
 #include <dir/header.h>
 int main() {}
-""")
+""",
+    )
 
     t.write("include/dir/header.h", "\n")
 

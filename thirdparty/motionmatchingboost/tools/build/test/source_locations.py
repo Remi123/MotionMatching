@@ -11,7 +11,9 @@ import BoostBuild
 
 t = BoostBuild.Tester(use_test_config=False)
 
-t.write("jamroot.jam", """
+t.write(
+    "jamroot.jam",
+    """
 path-constant SRC1  : "./src1" ;
 path-constant SRC2  : "./src2" ;
 path-constant SRC3  : "./src3" ;
@@ -21,13 +23,17 @@ project : requirements <include>$(SRC1)/include <threading>multi
     : build-dir $(BUILD) ;
 
 build-project project1 ;
-""")
+""",
+)
 
-t.write("project1/jamfile.jam", """
+t.write(
+    "project1/jamfile.jam",
+    """
 project project1 : source-location $(SRC1) $(SRC2) $(SRC3) ;
 SRCS = s1.cpp s2.cpp testfoo.cpp ;
 exe test : $(SRCS) ;
-""")
+""",
+)
 
 t.write("src1/s1.cpp", "int main() {}\n")
 t.write("src2/s2.cpp", "void hello() {}\n")

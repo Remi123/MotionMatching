@@ -32,17 +32,21 @@ def included_resource_newer_than_rc_script():
     #     Disable reading any external Boost Build configuration. This test is
     #   self sufficient so these options protect it from being adversly
     #   affected by any local (mis)configuration..
-    t = BoostBuild.Tester(["-d4", "--debug-configuration",
-        "--ignore-site-config", "--user-config=", "toolset=%s" % toolsetName],
-        pass_toolset=False, use_test_config=False,
-        translate_suffixes=False)
+    t = BoostBuild.Tester(
+        ["-d4", "--debug-configuration", "--ignore-site-config", "--user-config=", "toolset=%s" % toolsetName],
+        pass_toolset=False,
+        use_test_config=False,
+        translate_suffixes=False,
+    )
 
     # Prepare a dummy toolset so we do not get errors in case the default one
     # is not found and that we can test rc.jam functionality without having to
     # depend on the externally specified toolset actually supporting it exactly
     # the way it is required for this test, e.g. gcc toolset, under some
     # circumstances, uses a quiet action for generating its null RC targets.
-    t.write(toolsetName + ".jam", """\
+    t.write(
+        toolsetName + ".jam",
+        """\
 import feature ;
 import rc ;
 import type ;
@@ -71,11 +75,13 @@ local rule set-generated-obj-suffix ( target-os ? )
 set-generated-obj-suffix ;
 set-generated-obj-suffix windows ;
 set-generated-obj-suffix cygwin ;
-""" % toolsetName)
+"""
+        % toolsetName,
+    )
 
     t.write(
-        toolsetName + '.py',
-"""
+        toolsetName + ".py",
+        """
 from b2.build import feature, type as type_
 from b2.manager import get_manager
 from b2.tools import rc, common
@@ -108,14 +114,19 @@ def set_generated_obj_suffix(target_os=''):
 set_generated_obj_suffix()
 set_generated_obj_suffix('windows')
 set_generated_obj_suffix('cygwin')
-""".format(toolsetName)
+""".format(
+            toolsetName
+        ),
     )
 
     # Prepare project source files.
-    t.write("jamroot.jam", """\
+    t.write(
+        "jamroot.jam",
+        """\
 ECHO "{{{" [ modules.peek : XXX ] [ modules.peek : NOEXEC ] "}}}" ;
 obj xxx : xxx.rc ;
-""")
+""",
+    )
     t.write("xxx.rc", '1 MESSAGETABLE "xxx.bin"\n')
     t.write("xxx.bin", "foo")
 

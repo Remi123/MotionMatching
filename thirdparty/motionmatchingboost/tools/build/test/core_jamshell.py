@@ -9,7 +9,9 @@ import sys
 
 t = BoostBuild.Tester(pass_toolset=False)
 
-t.write("file.jam", """
+t.write(
+    "file.jam",
+    """
 actions run {
     $(ACTION)
 }
@@ -43,13 +45,12 @@ print(\\\",\\\".join([str(x) for x in range(3)]))
 run test-py ;
 
 DEPENDS all : test-raw test-raw-fail test-py ;
-""")
+""",
+)
 
 t.run_build_system(["-ffile.jam", "-d1", "-sPYTHON=" + sys.executable], status=1)
-t.expect_output_lines([
-    "...failed run test-raw-fail...",
-    "0,1,2",
-    "...failed updating 1 target...",
-    "...updated 2 targets..."])
+t.expect_output_lines(
+    ["...failed run test-raw-fail...", "0,1,2", "...failed updating 1 target...", "...updated 2 targets..."]
+)
 
 t.cleanup()

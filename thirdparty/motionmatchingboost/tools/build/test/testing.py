@@ -10,6 +10,7 @@
 import BoostBuild
 import TestCmd
 
+
 def test_run():
     t = BoostBuild.Tester(use_test_config=False)
 
@@ -18,12 +19,15 @@ def test_run():
     t.write("fail-link.cpp", "int f();\nint main() { return f(); }\n")
     t.write("fail-run.cpp", "int main() { return 1; }\n")
 
-    t.write("Jamroot.jam", """import testing ;
+    t.write(
+        "Jamroot.jam",
+        """import testing ;
 run pass.cpp ;
 run fail-compile.cpp ;
 run fail-link.cpp ;
 run fail-run.cpp ;
-""")
+""",
+    )
 
     t.run_build_system(status=1)
     t.expect_addition("bin/pass.test/$toolset/debug*/pass.obj")
@@ -46,6 +50,7 @@ run fail-run.cpp ;
 
     t.cleanup()
 
+
 def test_run_fail():
     t = BoostBuild.Tester(use_test_config=False)
 
@@ -54,12 +59,15 @@ def test_run_fail():
     t.write("fail-link.cpp", "int f();\nint main() { return f(); }\n")
     t.write("fail-run.cpp", "int main() { return 1; }\n")
 
-    t.write("Jamroot.jam", """import testing ;
+    t.write(
+        "Jamroot.jam",
+        """import testing ;
 run-fail pass.cpp ;
 run-fail fail-compile.cpp ;
 run-fail fail-link.cpp ;
 run-fail fail-run.cpp ;
-""")
+""",
+    )
 
     t.run_build_system(status=1)
     t.expect_addition("bin/pass.test/$toolset/debug*/pass.obj")
@@ -82,6 +90,7 @@ run-fail fail-run.cpp ;
 
     t.cleanup()
 
+
 def test_run_change():
     """Tests that the test file is removed when a test fails after it
     previously passed."""
@@ -93,12 +102,15 @@ def test_run_change():
     t.write("fail-link.cpp", "int main() {}\n")
     t.write("fail-run.cpp", "int main() {}\n")
 
-    t.write("Jamroot.jam", """import testing ;
+    t.write(
+        "Jamroot.jam",
+        """import testing ;
 run-fail pass.cpp ;
 run fail-compile.cpp ;
 run fail-link.cpp ;
 run fail-run.cpp ;
-""")
+""",
+    )
     t.run_build_system()
     # Sanity check
     t.expect_addition("bin/pass.test/$toolset/debug*/pass.test")
@@ -121,6 +133,7 @@ run fail-run.cpp ;
 
     t.cleanup()
 
+
 def test_run_path():
     """Tests that run can find shared libraries even without
     hardcode-dll-paths.  Important: The library is in neither the
@@ -129,19 +142,25 @@ def test_run_path():
     help from B2."""
     t = BoostBuild.Tester(["hardcode-dll-paths=false"], use_test_config=False)
 
-    t.write("l.cpp", """
+    t.write(
+        "l.cpp",
+        """
 void
 #if defined(_WIN32)
 __declspec(dllexport)
 #endif
 f() {}
-""")
+""",
+    )
     t.write("pass.cpp", "void f(); int main() { f(); }\n")
 
-    t.write("Jamroot.jam", """import testing ;
+    t.write(
+        "Jamroot.jam",
+        """import testing ;
 lib l : l.cpp : <link>shared ;
 run pass.cpp l ;
-""")
+""",
+    )
 
     t.run_build_system()
     t.expect_addition("bin/$toolset/debug*/l.obj")
@@ -154,10 +173,13 @@ run pass.cpp l ;
 
     t.cleanup()
 
+
 def test_run_args():
     """Tests the handling of args and input-files"""
     t = BoostBuild.Tester(use_test_config=False)
-    t.write("test.cpp", """
+    t.write(
+        "test.cpp",
+        """
 #include <iostream>
 #include <fstream>
 int main(int argc, const char ** argv)
@@ -175,10 +197,13 @@ int main(int argc, const char ** argv)
         }
     }
 }
-""")
+""",
+    )
     t.write("input1.in", "first input\n")
     t.write("input2.in", "second input\n")
-    t.write("Jamroot.jam", """import testing ;
+    t.write(
+        "Jamroot.jam",
+        """import testing ;
 import common ;
 # FIXME: The order actually depends on the lexigraphical
 # ordering of the virtual target objects, which is just
@@ -189,17 +214,22 @@ import common ;
 make input1.txt : input1.in : @common.copy ;
 make input2.txt : input2.in : @common.copy ;
 run test.cpp : -y -a : input1.txt input2.txt ;
-""")
+""",
+    )
     t.run_build_system()
-    t.expect_content("bin/test.test/$toolset/debug*/test.output", """\
+    t.expect_content(
+        "bin/test.test/$toolset/debug*/test.output",
+        """\
 -y
 -a
 first input
 second input
 
 EXIT STATUS: 0
-""")
+""",
+    )
     t.cleanup()
+
 
 def test_link():
     t = BoostBuild.Tester(use_test_config=False)
@@ -209,12 +239,15 @@ def test_link():
     t.write("fail-link.cpp", "int f();\nint main() { return f(); }\n")
     t.write("fail-run.cpp", "int main() { return 1; }\n")
 
-    t.write("Jamroot.jam", """import testing ;
+    t.write(
+        "Jamroot.jam",
+        """import testing ;
 link pass.cpp ;
 link fail-compile.cpp ;
 link fail-link.cpp ;
 link fail-run.cpp ;
-""")
+""",
+    )
 
     t.run_build_system(status=1)
     t.expect_addition("bin/pass.test/$toolset/debug*/pass.obj")
@@ -235,6 +268,7 @@ link fail-run.cpp ;
 
     t.cleanup()
 
+
 def test_link_fail():
     t = BoostBuild.Tester(use_test_config=False)
 
@@ -243,12 +277,15 @@ def test_link_fail():
     t.write("fail-link.cpp", "int f();\nint main() { return f(); }\n")
     t.write("fail-run.cpp", "int main() { return 1; }\n")
 
-    t.write("Jamroot.jam", """import testing ;
+    t.write(
+        "Jamroot.jam",
+        """import testing ;
 link-fail pass.cpp ;
 link-fail fail-compile.cpp ;
 link-fail fail-link.cpp ;
 link-fail fail-run.cpp ;
-""")
+""",
+    )
 
     t.run_build_system(status=1)
     t.expect_addition("bin/pass.test/$toolset/debug*/pass.obj")
@@ -267,6 +304,7 @@ link-fail fail-run.cpp ;
 
     t.cleanup()
 
+
 def test_link_change():
     """Tests that the test file is removed when a test fails after it
     previously passed."""
@@ -277,11 +315,14 @@ def test_link_change():
     t.write("fail-compile.cpp", "int main() {}\n")
     t.write("fail-link.cpp", "int main() {}\n")
 
-    t.write("Jamroot.jam", """import testing ;
+    t.write(
+        "Jamroot.jam",
+        """import testing ;
 link-fail pass.cpp ;
 link fail-compile.cpp ;
 link fail-link.cpp ;
-""")
+""",
+    )
     t.run_build_system()
     # Sanity check
     t.expect_addition("bin/pass.test/$toolset/debug*/pass.test")
@@ -301,6 +342,7 @@ link fail-link.cpp ;
 
     t.cleanup()
 
+
 def test_compile():
     t = BoostBuild.Tester(use_test_config=False)
 
@@ -309,12 +351,15 @@ def test_compile():
     t.write("fail-link.cpp", "int f();\nint main() { return f(); }\n")
     t.write("fail-run.cpp", "int main() { return 1; }\n")
 
-    t.write("Jamroot.jam", """import testing ;
+    t.write(
+        "Jamroot.jam",
+        """import testing ;
 compile pass.cpp ;
 compile fail-compile.cpp ;
 compile fail-link.cpp ;
 compile fail-run.cpp ;
-""")
+""",
+    )
 
     t.run_build_system(status=1)
     t.expect_addition("bin/pass.test/$toolset/debug*/pass.obj")
@@ -330,6 +375,7 @@ compile fail-run.cpp ;
 
     t.cleanup()
 
+
 def test_compile_fail():
     t = BoostBuild.Tester(use_test_config=False)
 
@@ -338,12 +384,15 @@ def test_compile_fail():
     t.write("fail-link.cpp", "int f();\nint main() { return f(); }\n")
     t.write("fail-run.cpp", "int main() { return 1; }\n")
 
-    t.write("Jamroot.jam", """import testing ;
+    t.write(
+        "Jamroot.jam",
+        """import testing ;
 compile-fail pass.cpp ;
 compile-fail fail-compile.cpp ;
 compile-fail fail-link.cpp ;
 compile-fail fail-run.cpp ;
-""")
+""",
+    )
 
     t.run_build_system(status=1)
     t.expect_addition("bin/fail-compile.test/$toolset/debug*/fail-compile.obj")
@@ -352,6 +401,7 @@ compile-fail fail-run.cpp ;
     t.expect_nothing_more()
 
     t.cleanup()
+
 
 def test_compile_change():
     """Tests that the test file is removed when a test fails after it
@@ -362,10 +412,13 @@ def test_compile_change():
     t.write("pass.cpp", "#error expected to fail\n")
     t.write("fail-compile.cpp", "int main() {}\n")
 
-    t.write("Jamroot.jam", """import testing ;
+    t.write(
+        "Jamroot.jam",
+        """import testing ;
 compile-fail pass.cpp ;
 compile fail-compile.cpp ;
-""")
+""",
+    )
     t.run_build_system()
     # Sanity check
     t.expect_addition("bin/pass.test/$toolset/debug*/pass.test")
@@ -382,6 +435,7 @@ compile fail-compile.cpp ;
 
     t.cleanup()
 
+
 def test_remove_test_targets(option):
     t = BoostBuild.Tester(use_test_config=False)
 
@@ -393,7 +447,9 @@ def test_remove_test_targets(option):
     t.write("fail-run.cpp", "int main() { return 1; }\n")
     t.write("source.cpp", "int f();\n")
 
-    t.write("Jamroot.jam", """import testing ;
+    t.write(
+        "Jamroot.jam",
+        """import testing ;
 obj source.o : source.cpp ;
 compile pass-compile.cpp ;
 link pass-link.cpp source.o ;
@@ -401,7 +457,8 @@ run pass-run.cpp source.o ;
 compile-fail fail-compile.cpp ;
 link-fail fail-link.cpp ;
 run-fail fail-run.cpp ;
-""")
+""",
+    )
 
     t.run_build_system([option])
 
@@ -432,6 +489,7 @@ run-fail fail-run.cpp ;
 
     t.cleanup()
 
+
 def test_dump_tests():
     """Tests the output of the --dump-tests option"""
     t = BoostBuild.Tester(use_test_config=False)
@@ -443,7 +501,9 @@ def test_dump_tests():
     t.write("fail-link.cpp", "int f();\nint main() { return f(); }\n")
     t.write("fail-run.cpp", "int main() { return 1; }\n")
 
-    t.write("Jamroot.jam", """import testing ;
+    t.write(
+        "Jamroot.jam",
+        """import testing ;
 run pass-run.cpp ;
 run-fail fail-run.cpp ;
 link pass-link.cpp ;
@@ -458,10 +518,13 @@ build-project tools/bcp/example ;
 build-project subdir/test ;
 build-project status ;
 build-project outside/project ;
-""")
+""",
+    )
+
     def write_subdir(dir):
         t.write(dir + "/test.cpp", "int main() {}\n")
         t.write(dir + "/Jamfile", "run test.cpp ;")
+
     write_subdir("libs/any/test")
     write_subdir("libs/any/example")
     write_subdir("libs/any")
@@ -471,9 +534,10 @@ build-project outside/project ;
     write_subdir("subdir/test")
     t.write("outside/other/test.cpp", "int main() {}\n")
     t.write("outside/project/Jamroot", "run ../other/test.cpp ;")
-    t.run_build_system(["--dump-tests", "-n", "-d0"],
-                       match=TestCmd.match_re, stdout=
-"""boost-test\(RUN\) ".*/pass-run" : "pass-run\.cpp"
+    t.run_build_system(
+        ["--dump-tests", "-n", "-d0"],
+        match=TestCmd.match_re,
+        stdout="""boost-test\(RUN\) ".*/pass-run" : "pass-run\.cpp"
 boost-test\(RUN_FAIL\) ".*/fail-run" : "fail-run\.cpp"
 boost-test\(LINK\) ".*/pass-link" : "pass-link\.cpp"
 boost-test\(LINK_FAIL\) ".*/fail-link" : "fail-link\.cpp"
@@ -487,8 +551,10 @@ boost-test\(RUN\) "bcp/test" : "tools/bcp/example/test\.cpp"
 boost-test\(RUN\) ".*/subdir/test/test" : "subdir/test/test\.cpp"
 boost-test\(RUN\) "test" : "status/test\.cpp"
 boost-test\(RUN\) ".*/outside/project/test" : "../other/test.cpp"
-""")
+""",
+    )
     t.cleanup()
+
 
 ################################################################################
 #
@@ -497,6 +563,7 @@ boost-test\(RUN\) ".*/outside/project/test" : "../other/test.cpp"
 #
 ################################################################################
 
+
 def test_files_with_spaces_in_their_name():
     """Regression test making sure test result files get created correctly when
     testing files with spaces in their name.
@@ -504,15 +571,18 @@ def test_files_with_spaces_in_their_name():
 
     t = BoostBuild.Tester(use_test_config=False)
 
-    t.write("valid source.cpp", "int main() {}\n");
+    t.write("valid source.cpp", "int main() {}\n")
 
-    t.write("invalid source.cpp", "this is not valid source code");
+    t.write("invalid source.cpp", "this is not valid source code")
 
-    t.write("jamroot.jam", """
+    t.write(
+        "jamroot.jam",
+        """
 import testing ;
 testing.compile "valid source.cpp" ;
 testing.compile-fail "invalid source.cpp" ;
-""")
+""",
+    )
 
     t.run_build_system(status=0)
     t.expect_addition("bin/invalid source.test/$toolset/debug*/invalid source.obj")
@@ -520,14 +590,9 @@ testing.compile-fail "invalid source.cpp" ;
     t.expect_addition("bin/valid source.test/$toolset/debug*/valid source.obj")
     t.expect_addition("bin/valid source.test/$toolset/debug*/valid source.test")
 
-    t.expect_content("bin/valid source.test/$toolset/debug*/valid source.test", \
-        "passed" )
-    t.expect_content( \
-        "bin/invalid source.test/$toolset/debug*/invalid source.test", \
-        "passed" )
-    t.expect_content( \
-        "bin/invalid source.test/$toolset/debug*/invalid source.obj", \
-        "failed as expected" )
+    t.expect_content("bin/valid source.test/$toolset/debug*/valid source.test", "passed")
+    t.expect_content("bin/invalid source.test/$toolset/debug*/invalid source.test", "passed")
+    t.expect_content("bin/invalid source.test/$toolset/debug*/invalid source.obj", "failed as expected")
 
     t.cleanup()
 

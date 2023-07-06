@@ -24,13 +24,13 @@ docdir = os.path.abspath(os.path.join(srcdir, "..", "doc"))
 
 def edit(file, *replacements):
     print("  '%s'..." % file)
-    f = open(file, 'r')
+    f = open(file, "r")
     text = f.read()
     f.close()
-    for (source, target) in replacements:
+    for source, target in replacements:
         text, n = re.compile(source, re.MULTILINE).subn(target, text)
         assert n > 0
-    f = open(file, 'w')
+    f = open(file, "w")
     f.write(text)
     f.close()
 
@@ -39,30 +39,32 @@ def make_edits(ver):
     ver03 = (list(ver) + [0] * 3)[0:3]
     ver02 = ver03[0:2]
 
-    join = lambda v, s : s.join(str(x) for x in v)
-    dotJoin = lambda v : join(v, ".")
+    join = lambda v, s: s.join(str(x) for x in v)
+    dotJoin = lambda v: join(v, ".")
 
     print("Setting version to %s" % str(ver03))
 
-    edit(os.path.join(srcdir, "boost-jam.spec"),
-        ('^(Version:) .*$', '\\1 %s' % dotJoin(ver03)))
+    edit(os.path.join(srcdir, "boost-jam.spec"), ("^(Version:) .*$", "\\1 %s" % dotJoin(ver03)))
 
-    edit(os.path.join(srcdir, "build.jam"),
-        ('^(_VERSION_ =).* ;$', '\\1 %s ;' % join(ver03, " ")))
+    edit(os.path.join(srcdir, "build.jam"), ("^(_VERSION_ =).* ;$", "\\1 %s ;" % join(ver03, " ")))
 
-    edit(os.path.join(docdir, "bjam.qbk"),
-        ('(\[version).*(\])', '\\1: %s\\2' % dotJoin(ver03)),
-        ('(\[def :version:).*(\])', '\\1 %s\\2' % dotJoin(ver03)))
+    edit(
+        os.path.join(docdir, "bjam.qbk"),
+        ("(\[version).*(\])", "\\1: %s\\2" % dotJoin(ver03)),
+        ("(\[def :version:).*(\])", "\\1 %s\\2" % dotJoin(ver03)),
+    )
 
-    edit(os.path.join(srcdir, "patchlevel.h"),
-        ('^(#define VERSION_MAJOR) .*$', '\\1 %s' % ver03[0]),
-        ('^(#define VERSION_MINOR) .*$', '\\1 %s' % ver03[1]),
-        ('^(#define VERSION_PATCH) .*$', '\\1 %s' % ver03[2]),
-        ('^(#define VERSION_MAJOR_SYM) .*$', '\\1 "%02d"' % ver03[0]),
-        ('^(#define VERSION_MINOR_SYM) .*$', '\\1 "%02d"' % ver03[1]),
-        ('^(#define VERSION_PATCH_SYM) .*$', '\\1 "%02d"' % ver03[2]),
-        ('^(#define VERSION) .*$', '\\1 "%s"' % dotJoin(ver)),
-        ('^(#define JAMVERSYM) .*$', '\\1 "JAMVERSION=%s"' % dotJoin(ver02)))
+    edit(
+        os.path.join(srcdir, "patchlevel.h"),
+        ("^(#define VERSION_MAJOR) .*$", "\\1 %s" % ver03[0]),
+        ("^(#define VERSION_MINOR) .*$", "\\1 %s" % ver03[1]),
+        ("^(#define VERSION_PATCH) .*$", "\\1 %s" % ver03[2]),
+        ("^(#define VERSION_MAJOR_SYM) .*$", '\\1 "%02d"' % ver03[0]),
+        ("^(#define VERSION_MINOR_SYM) .*$", '\\1 "%02d"' % ver03[1]),
+        ("^(#define VERSION_PATCH_SYM) .*$", '\\1 "%02d"' % ver03[2]),
+        ("^(#define VERSION) .*$", '\\1 "%s"' % dotJoin(ver)),
+        ("^(#define JAMVERSYM) .*$", '\\1 "JAMVERSION=%s"' % dotJoin(ver02)),
+    )
 
 
 def main():
@@ -94,5 +96,5 @@ def main():
     make_edits(version)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

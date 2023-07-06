@@ -12,36 +12,51 @@ import BoostBuild
 t = BoostBuild.Tester(use_test_config=False)
 
 # Declare *non-propagated* feature foo.
-t.write("jamroot.jam", """
+t.write(
+    "jamroot.jam",
+    """
 import feature : feature ;
 feature foo : on off ;
-""")
+""",
+)
 
 # Note that '<foo>on' will not be propagated to 'd/l'.
-t.write("jamfile.jam", """
+t.write(
+    "jamfile.jam",
+    """
 exe hello : hello.cpp d//l ;
-""")
+""",
+)
 
-t.write("hello.cpp", """
+t.write(
+    "hello.cpp",
+    """
 #ifdef _WIN32
 __declspec(dllimport)
 #endif
 void foo();
 int main() { foo(); }
-""")
+""",
+)
 
-t.write("d/jamfile.jam", """
+t.write(
+    "d/jamfile.jam",
+    """
 lib l : l.cpp : <foo>on:<define>FOO ;
-""")
+""",
+)
 
-t.write("d/l.cpp", """
+t.write(
+    "d/l.cpp",
+    """
 #ifdef _WIN32
 __declspec(dllexport)
 #endif
 #ifdef FOO
 void foo() {}
 #endif
-""")
+""",
+)
 
 t.run_build_system()
 

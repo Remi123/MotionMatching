@@ -10,12 +10,16 @@
 
 from TestToolset import test_toolset
 
-test_toolset("darwin", "4.2.1", [
-    ["target-os=darwin"],
-    ["target-os=darwin", "release", "strip=on"],
-    ["target-os=darwin", "threading=multi"],
-    ["target-os=darwin", "link=static"],
-    ["target-os=darwin", "link=static", "runtime-link=static"],
-# Address-model handling is quite broken
-#    ["target-os=darwin", "architecture=x86", "address-model=32"]
-])
+test_toolset(
+    "darwin",
+    "4.2.1",
+    [
+        ["target-os=darwin"],
+        ["target-os=darwin", "release", "strip=on"],
+        ["target-os=darwin", "threading=multi"],
+        ["target-os=darwin", "link=static"],
+        ["target-os=darwin", "link=static", "runtime-link=static"],
+        # Address-model handling is quite broken
+        #    ["target-os=darwin", "architecture=x86", "address-model=32"]
+    ],
+)

@@ -11,21 +11,33 @@ import BoostBuild
 
 t = BoostBuild.Tester()
 
-t.write("a.cpp", """
+t.write(
+    "a.cpp",
+    """
 #include <a.h>
 int main() { foo(); }
-""")
+""",
+)
 
-t.write("jamroot.jam", """
+t.write(
+    "jamroot.jam",
+    """
 exe a : a.cpp : <include>d2 <include>d1 ;
-""")
+""",
+)
 
-t.write("d1/a.h", """
-""")
+t.write(
+    "d1/a.h",
+    """
+""",
+)
 
-t.write("d2/a.h", """
+t.write(
+    "d2/a.h",
+    """
 inline void foo() {}
-""")
+""",
+)
 
 t.run_build_system()
 t.expect_addition("bin/$toolset/debug*/a.exe")

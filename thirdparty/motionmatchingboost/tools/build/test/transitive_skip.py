@@ -14,7 +14,9 @@ t = BoostBuild.Tester()
 
 t.write("a.cpp", "")
 
-t.write("jamroot.jam", """
+t.write(
+    "jamroot.jam",
+    """
 alias dep : : <build>no ;
 make a : dep : maker ;
 
@@ -23,7 +25,8 @@ actions maker
     this-command-is-unlikely-to-succeed ;
 }
 
-""")
+""",
+)
 
 t.run_build_system()
 

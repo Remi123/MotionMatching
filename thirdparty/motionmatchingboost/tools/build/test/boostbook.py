@@ -13,11 +13,16 @@ t.set_tree("boostbook")
 
 # For some reason, the messages are sent to stderr.
 t.run_build_system()
-t.fail_test(t.stdout().find("""Writing boost/A.html for refentry(boost.A)
+t.fail_test(
+    t.stdout().find(
+        """Writing boost/A.html for refentry(boost.A)
 Writing library/reference.html for section(library.reference)
 Writing index.html for chapter(library)
 Writing docs_HTML.manifest
-""") == -1)
+"""
+    )
+    == -1
+)
 t.expect_addition(["html/boost/A.html", "html/index.html"])
 
 t.cleanup()

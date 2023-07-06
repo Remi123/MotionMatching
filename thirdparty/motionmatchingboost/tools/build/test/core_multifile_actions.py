@@ -22,7 +22,9 @@ import BoostBuild
 
 t = BoostBuild.Tester(["-d1"], pass_toolset=0)
 
-t.write("file.jam", """
+t.write(
+    "file.jam",
+    """
 actions update
 {
     echo updating $(<)
@@ -30,10 +32,13 @@ actions update
 
 update x1 x2 ;
 update x2 x3 ;
-""")
+""",
+)
 
 # Updating x1 should force x2 to update as well.
-t.run_build_system(["-ffile.jam", "x1"], stdout="""\
+t.run_build_system(
+    ["-ffile.jam", "x1"],
+    stdout="""\
 ...found 3 targets...
 ...updating 3 targets...
 update x1
@@ -41,18 +46,24 @@ updating x1 x2
 update x2
 updating x2 x3
 ...updated 3 targets...
-""")
+""",
+)
 
 # If x1 is up-to-date, we don't need to update x2,
 # even though x2 is missing.
 t.write("x1", "")
-t.run_build_system(["-ffile.jam", "x1"], stdout="""\
+t.run_build_system(
+    ["-ffile.jam", "x1"],
+    stdout="""\
 ...found 1 target...
-""")
+""",
+)
 
 # Building x3 should update x1 and x2, even though
 # x1 would be considered up-to-date, taken alone.
-t.run_build_system(["-ffile.jam", "x3"], stdout="""\
+t.run_build_system(
+    ["-ffile.jam", "x3"],
+    stdout="""\
 ...found 3 targets...
 ...updating 2 targets...
 update x1
@@ -60,11 +71,14 @@ updating x1 x2
 update x2
 updating x2 x3
 ...updated 3 targets...
-""")
+""",
+)
 
 # Updating x2 should succeed, but x3 should be skipped
 t.rm("x1")
-t.write("file.jam", """\
+t.write(
+    "file.jam",
+    """\
 actions update
 {
     echo updating $(<)
@@ -80,9 +94,13 @@ fail x1 ;
 update x1 x3 ;
 update x2 ;
 update x3 ;
-""")
+""",
+)
 
-t.run_build_system(["-ffile.jam", "x3"], status=1, stdout="""\
+t.run_build_system(
+    ["-ffile.jam", "x3"],
+    status=1,
+    stdout="""\
 ...found 3 targets...
 ...updating 3 targets...
 update x1
@@ -98,13 +116,16 @@ update x2
 updating x2
 ...failed updating 2 targets...
 ...updated 1 target...
-""")
+""",
+)
 
 # Make sure that dependencies of targets that are
 # updated as a result of a multifile action are
 # processed correctly.
 t.rm("x1")
-t.write("file.jam", """\
+t.write(
+    "file.jam",
+    """\
 actions update
 {
     echo updating $(<)
@@ -114,8 +135,11 @@ update x1 ;
 update x2 ;
 DEPENDS x2 : x1 ;
 update x2 x3 ;
-""")
-t.run_build_system(["-ffile.jam", "x3"], stdout="""\
+""",
+)
+t.run_build_system(
+    ["-ffile.jam", "x3"],
+    stdout="""\
 ...found 3 targets...
 ...updating 3 targets...
 update x1
@@ -125,14 +149,17 @@ updating x2
 update x2
 updating x2 x3
 ...updated 3 targets...
-""")
+""",
+)
 
 # JAM_SEMAPHORE rules:
 #
 # - if two updating actions have targets that share a semaphore,
 #   these actions cannot be run in parallel.
 #
-t.write("file.jam", """\
+t.write(
+    "file.jam",
+    """\
 actions update
 {
     echo updating $(<)
@@ -141,35 +168,47 @@ actions update
 targets = x1 x2 ;
 JAM_SEMAPHORE on $(targets) = <s>update_sem ;
 update x1 x2 ;
-""")
-t.run_build_system(["-ffile.jam", "x1"], stdout="""\
+""",
+)
+t.run_build_system(
+    ["-ffile.jam", "x1"],
+    stdout="""\
 ...found 2 targets...
 ...updating 2 targets...
 update x1
 updating x1 x2
 ...updated 2 targets...
-""")
+""",
+)
 
 # A target can appear multiple times in an action
-t.write("file.jam", """\
+t.write(
+    "file.jam",
+    """\
 actions update
 {
     echo updating $(<)
 }
 
 update x1 x1 ;
-""")
-t.run_build_system(["-ffile.jam", "x1"], stdout="""\
+""",
+)
+t.run_build_system(
+    ["-ffile.jam", "x1"],
+    stdout="""\
 ...found 1 target...
 ...updating 1 target...
 update x1
 updating x1 x1
 ...updated 1 target...
-""")
+""",
+)
 
 # Together actions should check that all the targets are the same
 # before combining.
-t.write("file.jam", """\
+t.write(
+    "file.jam",
+    """\
 actions together update
 {
     echo updating $(<) : $(>)
@@ -182,8 +221,11 @@ update x3 : s3 ;
 update x3 x4 : s4 ;
 update x4 x3 : s5 ;
 DEPENDS all : x1 x2 x3 x4 ;
-""")
-t.run_build_system(["-ffile.jam"], stdout="""\
+""",
+)
+t.run_build_system(
+    ["-ffile.jam"],
+    stdout="""\
 ...found 5 targets...
 ...updating 4 targets...
 update x1
@@ -195,8 +237,8 @@ updating x3 x4 : s4
 update x4
 updating x4 x3 : s5
 ...updated 4 targets...
-""")
-
+""",
+)
 
 
 t.cleanup()

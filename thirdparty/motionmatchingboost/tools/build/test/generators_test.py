@@ -24,8 +24,9 @@ def test_basic():
     t.write("z.cpp", "")
     t.write("lib/c.cpp", "int bar() { return 0; }\n")
     t.write("lib/jamfile.jam", "my-lib auxilliary : c.cpp ;")
-    t.write("jamroot.jam",
-r"""import appender ;
+    t.write(
+        "jamroot.jam",
+        r"""import appender ;
 
 import "class" : new ;
 import generators ;
@@ -212,17 +213,22 @@ my-obj obj_1 : z.cpp ;
 my-obj obj_2 : z.cpp ;
 
 nm-exe e : e.cpp ;
-""")
+""",
+    )
 
     t.run_build_system()
-    t.expect_addition("bin/" * BoostBuild.List("a.my_exe "
-        "a.my_obj b.my_obj c.tui_h c.cpp c.my_obj d_parser.whl d_lexer.dlp "
-        "d_parser.cpp d_lexer.cpp d_lexer.my_obj d_parser.lr0 d_parser.h "
-        "d_parser.my_obj d_parser_symbols.h x.c x.my_obj y.x1 y.x2 y.cpp "
-        "y.my_obj e.marked_cpp e.positions e.target_cpp e.my_obj e.my_exe "
-        "f.my_exe obj_1.my_obj obj_2.my_obj"))
-    t.expect_addition("lib/bin/" * BoostBuild.List("c.my_obj "
-        "auxilliary.my_lib"))
+    t.expect_addition(
+        "bin/"
+        * BoostBuild.List(
+            "a.my_exe "
+            "a.my_obj b.my_obj c.tui_h c.cpp c.my_obj d_parser.whl d_lexer.dlp "
+            "d_parser.cpp d_lexer.cpp d_lexer.my_obj d_parser.lr0 d_parser.h "
+            "d_parser.my_obj d_parser_symbols.h x.c x.my_obj y.x1 y.x2 y.cpp "
+            "y.my_obj e.marked_cpp e.positions e.target_cpp e.my_obj e.my_exe "
+            "f.my_exe obj_1.my_obj obj_2.my_obj"
+        )
+    )
+    t.expect_addition("lib/bin/" * BoostBuild.List("c.my_obj " "auxilliary.my_lib"))
     t.expect_nothing_more()
 
     folder = "bin"
@@ -233,12 +239,10 @@ nm-exe e : e.cpp ;
     lines = t.stdout().splitlines()
     source_lines = [x for x in lines if re.match("^     Sources: '", x)]
     if not __match_count_is(source_lines, "'z.cpp'", 2):
-        BoostBuild.annotation("failure", "z.cpp must be compiled exactly "
-            "twice.")
+        BoostBuild.annotation("failure", "z.cpp must be compiled exactly " "twice.")
         t.fail_test(1)
     if not __match_count_is(source_lines, "'a.cpp'", 1):
-        BoostBuild.annotation("failure", "a.cpp must be compiled exactly "
-            "once.")
+        BoostBuild.annotation("failure", "a.cpp must be compiled exactly " "once.")
         t.fail_test(1)
     t.cleanup()
 
@@ -291,7 +295,8 @@ ddd _xxx : _xxx._a ;
 
     def test_one(t, rename1, rename2, rename3, status):
         def f(rename):
-            if rename: return "(%_x)"
+            if rename:
+                return "(%_x)"
             return ""
 
         jamfile = jamfile_template % (f(rename1), f(rename2), f(rename3))
@@ -305,12 +310,14 @@ ddd _xxx : _xxx._a ;
         t.run_build_system(status=status)
 
         if status:
-            t.expect_output_lines("*.bbX-to-ccc: source targets have "
-                "different names: cannot determine target name")
+            t.expect_output_lines("*.bbX-to-ccc: source targets have " "different names: cannot determine target name")
         else:
+
             def suffix(rename):
-                if rename: return "_x"
+                if rename:
+                    return "_x"
                 return ""
+
             name = "bin/_xxx"
             e = t.expect_addition
             e("%s%s._b1" % (name, suffix(rename1)))
@@ -321,13 +328,13 @@ ddd _xxx : _xxx._a ;
         t.expect_nothing_more()
 
     test_one(t, False, False, False, status=0)
-    test_one(t, True , False, False, status=1)
-    test_one(t, False, True , False, status=1)
-    test_one(t, False, False, True , status=1)
-    test_one(t, True , True , False, status=1)
-    test_one(t, True , False, True , status=1)
-    test_one(t, False, True , True , status=1)
-    test_one(t, True , True , True , status=0)
+    test_one(t, True, False, False, status=1)
+    test_one(t, False, True, False, status=1)
+    test_one(t, False, False, True, status=1)
+    test_one(t, True, True, False, status=1)
+    test_one(t, True, False, True, status=1)
+    test_one(t, False, True, True, status=1)
+    test_one(t, True, True, True, status=0)
     t.cleanup()
 
 
@@ -342,8 +349,9 @@ def __match_count_is(lines, pattern, expected):
 
 
 def __write_appender(t, name):
-    t.write(name,
-r"""# Copyright 2012 Jurko Gospodnetic
+    t.write(
+        name,
+        r"""# Copyright 2012 Jurko Gospodnetic
 # Distributed under the Boost Software License, Version 1.0.
 # (See accompanying file LICENSE.txt or copy at
 # https://www.bfgroup.xyz/b2/LICENSE.txt)
@@ -426,7 +434,8 @@ actions append
     $(ECHO_CMD)=================================================$(X)
     $(ECHO_CMD)-------------------------------------------------$(X)>> "$(>[2])"
 }
-""")
+""",
+    )
 
 
 test_basic()

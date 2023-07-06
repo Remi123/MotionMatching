@@ -10,17 +10,25 @@ import BoostBuild
 
 t = BoostBuild.Tester(use_test_config=False)
 
-t.write("jamroot.jam", """
+t.write(
+    "jamroot.jam",
+    """
 project ;
 exe hello : hello.cpp a.c ;
-""")
+""",
+)
 
-t.write("hello.cpp", """
+t.write(
+    "hello.cpp",
+    """
 extern "C" int foo();
 int main() { return foo(); }
-""")
+""",
+)
 
-t.write("a.c", """
+t.write(
+    "a.c",
+    """
 // This will not compile unless in C mode.
 int foo()
 {
@@ -28,7 +36,8 @@ int foo()
     new = (new+1)*7;
     return new;
 }
-""")
+""",
+)
 
 t.run_build_system()
 t.expect_addition("bin/$toolset/debug*/hello.exe")

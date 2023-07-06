@@ -10,7 +10,7 @@ import BoostBuild
 
 t = BoostBuild.Tester(["debug", "release"], use_test_config=False)
 
-t.set_tree('prebuilt')
+t.set_tree("prebuilt")
 
 t.expand_toolset("ext/jamroot.jam")
 t.expand_toolset("jamroot.jam")

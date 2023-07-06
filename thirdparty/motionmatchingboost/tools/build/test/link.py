@@ -9,6 +9,7 @@
 
 import BoostBuild
 
+
 def ignore_config(t):
     """These files are created by the configuration logic in link.jam
     They may or may not exist, depending on the system."""
@@ -17,13 +18,17 @@ def ignore_config(t):
     t.ignore("bin/test-symlink")
     t.ignore("bin/test-symlink-source")
 
+
 def test_basic():
     """Test creation of a single link"""
     t = BoostBuild.Tester()
-    t.write("jamroot.jam", """\
+    t.write(
+        "jamroot.jam",
+        """\
     import link ;
     link-directory dir1-link : src/dir1/include : <location>. ;
-    """)
+    """,
+    )
 
     t.write("src/dir1/include/file1.h", "file1")
 
@@ -35,14 +40,18 @@ def test_basic():
     t.expect_nothing_more()
     t.cleanup()
 
+
 def test_merge_two():
     """Test merging two directories"""
     t = BoostBuild.Tester()
-    t.write("jamroot.jam", """\
+    t.write(
+        "jamroot.jam",
+        """\
     import link ;
     link-directory dir1-link : src/dir1/include : <location>. ;
     link-directory dir2-link : src/dir2/include : <location>. ;
-    """)
+    """,
+    )
 
     t.write("src/dir1/include/file1.h", "file1")
     t.write("src/dir2/include/file2.h", "file2")
@@ -57,14 +66,18 @@ def test_merge_two():
     t.expect_nothing_more()
     t.cleanup()
 
+
 def test_merge_existing(group1, group2):
     """Test adding a link when a different symlink already exists"""
     t = BoostBuild.Tester()
-    t.write("jamroot.jam", """\
+    t.write(
+        "jamroot.jam",
+        """\
     import link ;
     link-directory dir1-link : src/dir1/include : <location>. ;
     link-directory dir2-link : src/dir2/include : <location>. ;
-    """)
+    """,
+    )
 
     t.write("src/dir1/include/file1.h", "file1")
     t.write("src/dir2/include/file2.h", "file2")
@@ -108,21 +121,26 @@ def test_merge_existing(group1, group2):
 
     t.cleanup()
 
+
 def test_merge_existing_all():
     test_merge_existing(["dir1-link"], ["dir2-link"])
     test_merge_existing(["dir2-link"], ["dir1-link"])
     test_merge_existing(["dir1-link"], ["dir1-link", "dir2-link"])
     test_merge_existing(["dir2-link"], ["dir1-link", "dir2-link"])
 
+
 def test_merge_recursive():
     "Test merging several directories including common prefixes"
     t = BoostBuild.Tester()
-    t.write("jamroot.jam", """\
+    t.write(
+        "jamroot.jam",
+        """\
     import link ;
     link-directory dir1-link : src/dir1/include : <location>. ;
     link-directory dir2-link : src/dir2/include : <location>. ;
     link-directory dir3-link : src/dir3/include : <location>. ;
-    """)
+    """,
+    )
 
     t.write("src/dir1/include/file1.h", "file1")
     t.write("src/dir2/include/file2.h", "file2")
@@ -144,17 +162,21 @@ def test_merge_recursive():
 
     t.cleanup()
 
+
 def test_merge_recursive_existing(group1, group2):
     "Test merging several directories including common prefixes."
     t = BoostBuild.Tester()
-    t.write("jamroot.jam", """\
+    t.write(
+        "jamroot.jam",
+        """\
     import link ;
     link-directory dir1-link : src/dir1/include : <location>. ;
     link-directory dir2-link : src/dir2/include : <location>. ;
     link-directory dir3-link : src/dir3/include : <location>. ;
     link-directory dir4-link : src/dir4/include : <location>. ;
     link-directory dir5-link : src/dir5/include : <location>. ;
-    """)
+    """,
+    )
 
     t.write("src/dir1/include/file1.h", "file1")
     t.write("src/dir2/include/nested/file2.h", "file2")
@@ -182,6 +204,7 @@ def test_merge_recursive_existing(group1, group2):
 
     t.cleanup()
 
+
 def test_merge_recursive_existing_all():
     # These should create a link
     test_merge_recursive_existing(["dir2-link"], ["dir2-link", "dir1-link"])
@@ -193,10 +216,13 @@ def test_merge_recursive_existing_all():
     test_merge_recursive_existing(["dir4-link"], ["dir4-link", "dir5-link"])
     test_merge_recursive_existing(["dir4-link"], ["dir5-link", "dir4-link"])
 
+
 def test_include_scan():
     """Make sure that the #include scanner finds the headers"""
     t = BoostBuild.Tester()
-    t.write("jamroot.jam", """\
+    t.write(
+        "jamroot.jam",
+        """\
     import link ;
     link-directory dir1-link : src/dir1/include : <location>. ;
     link-directory dir2-link : src/dir2/include : <location>. ;
@@ -204,14 +230,18 @@ def test_include_scan():
         <include>include
         <implicit-dependency>dir1-link
         <implicit-dependency>dir2-link ;
-    """)
+    """,
+    )
 
     t.write("src/dir1/include/file1.h", "#include <file2.h>\n")
     t.write("src/dir2/include/file2.h", "int f();\n")
-    t.write("test.cpp", """\
+    t.write(
+        "test.cpp",
+        """\
     #include <file1.h>
     int main() { f(); }
-    """);
+    """,
+    )
 
     t.run_build_system(["test"])
 
@@ -222,12 +252,15 @@ def test_include_scan():
 
     t.cleanup()
 
+
 def test_include_scan_merge_existing():
     """Make sure that files are replaced if needed when merging in
     a new directory"""
     t = BoostBuild.Tester()
 
-    t.write("jamroot.jam", """\
+    t.write(
+        "jamroot.jam",
+        """\
     import link ;
     link-directory dir1-link : src/dir1/include : <location>. ;
     link-directory dir2-link : src/dir2/include : <location>. ;
@@ -235,14 +268,18 @@ def test_include_scan_merge_existing():
         <include>include
         <implicit-dependency>dir1-link
         <implicit-dependency>dir2-link ;
-    """)
+    """,
+    )
 
     t.write("src/dir1/include/file1.h", "int f();")
     t.write("src/dir2/include/file2.h", "#include <file1.h>")
-    t.write("test.cpp", """\
+    t.write(
+        "test.cpp",
+        """\
     #include <file2.h>
     int main() { f(); }
-    """)
+    """,
+    )
 
     t.run_build_system(["dir2-link"])
 
@@ -254,12 +291,15 @@ def test_include_scan_merge_existing():
 
     t.cleanup()
 
+
 def test_update_file_link(params1, params2):
     """Tests the behavior of updates when changing the link mode.
     The link needs to be updated iff the original was a copy."""
     t = BoostBuild.Tester()
 
-    t.write("jamroot.jam", """\
+    t.write(
+        "jamroot.jam",
+        """\
     import link ;
     import project ;
     import property-set ;
@@ -290,7 +330,8 @@ def test_update_file_link(params1, params2):
     link-directory dir1-link : src/dir1/include : <location>. ;
     link-directory dir2-link : src/dir2/include : <location>. ;
     alias check-linking : : <conditional>@can-link ;
-    """)
+    """,
+    )
     t.write("src/dir1/include/file1.h", "file1")
     t.write("src/dir2/include/file2.h", "file2")
 
@@ -305,11 +346,13 @@ def test_update_file_link(params1, params2):
     t.touch("src/dir1/include/file1.h")
 
     t.run_build_system(params2)
-    if not using_links: t.expect_touch("include/file1.h")
+    if not using_links:
+        t.expect_touch("include/file1.h")
     ignore_config(t)
     t.expect_nothing_more()
 
     t.cleanup()
+
 
 def test_update_file_link_all():
     """Test all nine possible combinations of two runs."""
@@ -318,26 +361,34 @@ def test_update_file_link_all():
         for arg2 in possible_args:
             test_update_file_link(arg1, arg2)
 
+
 def test_error_duplicate():
     """Test that linking a single file from
     multiple sources causes a hard error."""
     t = BoostBuild.Tester()
 
-    t.write("jamroot.jam", """\
+    t.write(
+        "jamroot.jam",
+        """\
     import link ;
     link-directory dir1-link : src/dir1/include : <location>. ;
     link-directory dir2-link : src/dir2/include : <location>. ;
-    """)
+    """,
+    )
 
     t.write("src/dir1/include/file1.h", "file1")
     t.write("src/dir2/include/file1.h", "file2")
 
     t.run_build_system(status=1)
     t.expect_output_lines(
-        ["error: Cannot create link include/file1.h to src/dir2/include/file1.h.",
-         "error: Link previously defined to another file, src/dir1/include/file1.h."])
+        [
+            "error: Cannot create link include/file1.h to src/dir2/include/file1.h.",
+            "error: Link previously defined to another file, src/dir1/include/file1.h.",
+        ]
+    )
 
     t.cleanup()
+
 
 test_basic()
 test_merge_two()

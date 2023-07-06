@@ -66,9 +66,10 @@ import tempfile
 import traceback
 
 
-tempfile.template = 'testcmd.'
+tempfile.template = "testcmd."
 
 _Cleanup = []
+
 
 def _clean():
     global _Cleanup
@@ -78,6 +79,7 @@ def _clean():
     for test in list:
         test.cleanup()
 
+
 sys.exitfunc = _clean
 
 
@@ -86,7 +88,7 @@ def caller(tblist, skip):
     arr = []
     for file, line, name, text in tblist:
         if file[-10:] == "TestCmd.py":
-                break
+            break
         arr = [(file, line, name, text)] + arr
     atfrom = "at"
     for file, line, name, text in arr[skip:]:
@@ -124,8 +126,16 @@ def fail_test(self=None, condition=True, function=None, skip=0):
 
     at = caller(traceback.extract_stack(), skip)
 
-    sys.stderr.write("FAILED test" + of + desc + sep + at + """
-in directory: """ + os.getcwd() )
+    sys.stderr.write(
+        "FAILED test"
+        + of
+        + desc
+        + sep
+        + at
+        + """
+in directory: """
+        + os.getcwd()
+    )
     sys.exit(1)
 
 
@@ -172,13 +182,17 @@ def pass_test(self=None, condition=True, function=None):
     sys.stderr.write("PASSED\n")
     sys.exit(0)
 
+
 class MatchError(object):
     def __init__(self, message):
         self.message = message
+
     def __nonzero__(self):
         return False
+
     def __bool__(self):
         return False
+
 
 def match_exact(lines=None, matches=None):
     """
@@ -194,14 +208,11 @@ def match_exact(lines=None, matches=None):
         return
     for i in range(len(lines)):
         if lines[i] != matches[i]:
-            return MatchError("Mismatch at line %d\n- %s\n+ %s\n" %
-                (i+1, matches[i], lines[i]))
+            return MatchError("Mismatch at line %d\n- %s\n+ %s\n" % (i + 1, matches[i], lines[i]))
     if len(lines) < len(matches):
-        return MatchError("Missing lines at line %d\n- %s" %
-            (len(lines), "\n- ".join(matches[len(lines):])))
+        return MatchError("Missing lines at line %d\n- %s" % (len(lines), "\n- ".join(matches[len(lines) :])))
     if len(lines) > len(matches):
-        return MatchError("Extra lines at line %d\n+ %s" %
-            (len(matches), "\n+ ".join(lines[len(matches):])))
+        return MatchError("Extra lines at line %d\n+ %s" % (len(matches), "\n+ ".join(lines[len(matches) :])))
     return 1
 
 
@@ -218,21 +229,18 @@ def match_re(lines=None, res=None):
         res = res.split("\n")
     for i in range(min(len(lines), len(res))):
         if not re.compile("^" + res[i] + "$").search(lines[i]):
-            return MatchError("Mismatch at line %d\n- %s\n+ %s\n" %
-                (i+1, res[i], lines[i]))
+            return MatchError("Mismatch at line %d\n- %s\n+ %s\n" % (i + 1, res[i], lines[i]))
     if len(lines) < len(res):
-        return MatchError("Missing lines at line %d\n- %s" %
-            (len(lines), "\n- ".join(res[len(lines):])))
+        return MatchError("Missing lines at line %d\n- %s" % (len(lines), "\n- ".join(res[len(lines) :])))
     if len(lines) > len(res):
-        return MatchError("Extra lines at line %d\n+ %s" %
-            (len(res), "\n+ ".join(lines[len(res):])))
+        return MatchError("Extra lines at line %d\n+ %s" % (len(res), "\n+ ".join(lines[len(res) :])))
     return 1
 
 
 class TestCmd:
-    def __init__(self, description=None, program=None, workdir=None,
-        subdir=None, verbose=False, match=None, inpath=None):
-
+    def __init__(
+        self, description=None, program=None, workdir=None, subdir=None, verbose=False, match=None, inpath=None
+    ):
         self._cwd = os.getcwd()
         self.description_set(description)
         self.program_set(program, inpath)
@@ -242,26 +250,26 @@ class TestCmd:
         else:
             self.match_func = match
         self._dirlist = []
-        self._preserve = {'pass_test': 0, 'fail_test': 0, 'no_result': 0}
-        env = os.environ.get('PRESERVE')
+        self._preserve = {"pass_test": 0, "fail_test": 0, "no_result": 0}
+        env = os.environ.get("PRESERVE")
         if env:
-            self._preserve['pass_test'] = env
-            self._preserve['fail_test'] = env
-            self._preserve['no_result'] = env
+            self._preserve["pass_test"] = env
+            self._preserve["fail_test"] = env
+            self._preserve["no_result"] = env
         else:
-            env = os.environ.get('PRESERVE_PASS')
+            env = os.environ.get("PRESERVE_PASS")
             if env is not None:
-                self._preserve['pass_test'] = env
-            env = os.environ.get('PRESERVE_FAIL')
+                self._preserve["pass_test"] = env
+            env = os.environ.get("PRESERVE_FAIL")
             if env is not None:
-                self._preserve['fail_test'] = env
-            env = os.environ.get('PRESERVE_PASS')
+                self._preserve["fail_test"] = env
+            env = os.environ.get("PRESERVE_PASS")
             if env is not None:
-                self._preserve['PRESERVE_NO_RESULT'] = env
+                self._preserve["PRESERVE_NO_RESULT"] = env
         self._stdout = []
         self._stderr = []
         self.status = None
-        self.condition = 'no_result'
+        self.condition = "no_result"
         self.workdir_set(workdir)
         self.subdir(subdir)
 
@@ -319,11 +327,8 @@ class TestCmd:
         """Cause the test to fail."""
         if not condition:
             return
-        self.condition = 'fail_test'
-        fail_test(self = self,
-                  condition = condition,
-                  function = function,
-                  skip = skip)
+        self.condition = "fail_test"
+        fail_test(self=self, condition=condition, function=function, skip=skip)
 
     def match(self, lines, matches):
         """Compare actual and expected file contents."""
@@ -341,17 +346,14 @@ class TestCmd:
         """Report that the test could not be run."""
         if not condition:
             return
-        self.condition = 'no_result'
-        no_result(self = self,
-                  condition = condition,
-                  function = function,
-                  skip = skip)
+        self.condition = "no_result"
+        no_result(self=self, condition=condition, function=function, skip=skip)
 
     def pass_test(self, condition=True, function=None):
         """Cause the test to pass."""
         if not condition:
             return
-        self.condition = 'pass_test'
+        self.condition = "pass_test"
         pass_test(self, condition, function)
 
     def preserve(self, *conditions):
@@ -363,7 +365,7 @@ class TestCmd:
 
         """
         if conditions == ():
-            conditions = ('pass_test', 'fail_test', 'no_result')
+            conditions = ("pass_test", "fail_test", "no_result")
         for cond in conditions:
             self._preserve[cond] = 1
 
@@ -373,7 +375,7 @@ class TestCmd:
             program[0] = os.path.join(self._cwd, program[0])
         self.program = program
 
-    def read(self, file, mode='rb'):
+    def read(self, file, mode="rb"):
         """
           Reads and returns the contents of the specified file name. The file
         name may be a list, in which case the elements are concatenated with
@@ -387,12 +389,11 @@ class TestCmd:
             file = os.path.join(*file)
         if not os.path.isabs(file):
             file = os.path.join(self.workdir, file)
-        if mode[0] != 'r':
+        if mode[0] != "r":
             raise ValueError("mode must begin with 'r'")
         return open(file, mode).read()
 
-    def run(self, program=None, arguments=None, chdir=None, stdin=None,
-        universal_newlines=True):
+    def run(self, program=None, arguments=None, chdir=None, stdin=None, universal_newlines=True):
         """
           Runs a test of the program or script for the test environment.
         Standard output and error output are saved for future retrieval via the
@@ -422,9 +423,14 @@ class TestCmd:
             cmd += arguments.split(" ")
         if self.verbose:
             sys.stderr.write("run(" + " ".join(cmd) + ")\n")
-        p = subprocess.Popen(cmd, stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=chdir,
-            universal_newlines=universal_newlines)
+        p = subprocess.Popen(
+            cmd,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            cwd=chdir,
+            universal_newlines=universal_newlines,
+        )
 
         if stdin:
             if type(stdin) is list:
@@ -456,7 +462,7 @@ class TestCmd:
             run = len(self._stderr) + run
         run -= 1
         if run < 0:
-            return ''
+            return ""
         return self._stderr[run]
 
     def stdout(self, run=None):
@@ -473,7 +479,7 @@ class TestCmd:
             run = len(self._stdout) + run
         run -= 1
         if run < 0:
-            return ''
+            return ""
         return self._stdout[run]
 
     def subdir(self, *subdirs):
@@ -532,7 +538,7 @@ class TestCmd:
             self.workdir = path
         else:
             if path != None:
-                if path == '':
+                if path == "":
                     path = tempfile.mktemp()
                 if path != None:
                     os.mkdir(path)
@@ -569,6 +575,7 @@ class TestCmd:
         (write == None).
 
         """
+
         def _walk_chmod(arg, dirname, names):
             st = os.stat(dirname)
             os.chmod(dirname, arg(st[stat.ST_MODE]))
@@ -577,8 +584,8 @@ class TestCmd:
                 st = os.stat(fullname)
                 os.chmod(fullname, arg(st[stat.ST_MODE]))
 
-        _mode_writable = lambda mode: stat.S_IMODE(mode|0o200)
-        _mode_non_writable = lambda mode: stat.S_IMODE(mode&~0o200)
+        _mode_writable = lambda mode: stat.S_IMODE(mode | 0o200)
+        _mode_non_writable = lambda mode: stat.S_IMODE(mode & ~0o200)
 
         if write:
             f = _mode_writable
@@ -590,7 +597,7 @@ class TestCmd:
         except:
             pass  # Ignore any problems changing modes.
 
-    def write(self, file, content, mode='wb'):
+    def write(self, file, content, mode="wb"):
         """
           Writes the specified content text (second argument) to the specified
         file name (first argument). The file name may be a list, in which case
@@ -604,6 +611,6 @@ class TestCmd:
             file = os.path.join(*tuple(file))
         if not os.path.isabs(file):
             file = os.path.join(self.workdir, file)
-        if mode[0] != 'w':
+        if mode[0] != "w":
             raise ValueError("mode must begin with 'w'")
         open(file, mode).write(content)

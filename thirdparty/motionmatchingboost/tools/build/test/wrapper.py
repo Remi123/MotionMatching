@@ -12,15 +12,23 @@ import BoostBuild
 
 t = BoostBuild.Tester(use_test_config=False)
 
-t.write("jamfile.jam", """
+t.write(
+    "jamfile.jam",
+    """
 my-test : test.cpp ;
-""")
+""",
+)
 
-t.write("test.cpp", """
+t.write(
+    "test.cpp",
+    """
 int main() {}
-""")
+""",
+)
 
-t.write("jamroot.jam", """
+t.write(
+    "jamroot.jam",
+    """
 using testing ;
 
 rule my-test ( name ? : sources + )
@@ -30,7 +38,8 @@ rule my-test ( name ? : sources + )
 }
 
 IMPORT $(__name__) : my-test : : my-test ;
-""")
+""",
+)
 
 t.run_build_system()
 t.expect_addition("bin/$toolset/debug*/test.passed")

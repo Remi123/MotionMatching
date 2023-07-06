@@ -14,7 +14,9 @@ import BoostBuild
 
 t = BoostBuild.Tester()
 
-t.write("Jamroot.jam", """\
+t.write(
+    "Jamroot.jam",
+    """\
 import type : type ;
 ECHO [ type source.c ] ;
 ECHO [ type source.cc ] ;
@@ -26,9 +28,11 @@ ECHO [ type boost_system.lib ] ;
 ECHO [ type boost_system.so ] ;
 ECHO [ type boost_system.dll ] ;
 EXIT [ type boost_system.so.1.66.0 ] : 0 ;
-""")
+""",
+)
 
-t.run_build_system(stdout="""\
+t.run_build_system(
+    stdout="""\
 C
 CPP
 CPP
@@ -39,6 +43,7 @@ STATIC_LIB
 SHARED_LIB
 SHARED_LIB
 SHARED_LIB
-""")
+"""
+)
 
 t.cleanup()

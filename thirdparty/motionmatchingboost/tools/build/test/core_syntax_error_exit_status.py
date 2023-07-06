@@ -13,10 +13,13 @@ import BoostBuild
 t = BoostBuild.Tester()
 
 # Create the needed files.
-t.write("jamroot.jam", """
+t.write(
+    "jamroot.jam",
+    """
 exe hello : hello.cpp
 
-""")
+""",
+)
 
 t.run_build_system(status=1)
 

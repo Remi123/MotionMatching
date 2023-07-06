@@ -11,28 +11,40 @@ import BoostBuild
 
 t = BoostBuild.Tester(use_test_config=False)
 
-t.write("Jamroot.jam", """
+t.write(
+    "Jamroot.jam",
+    """
 obj test-cpp : test.cpp : <force-include>one.h <force-include>two.h ;
 obj test-c : test.c : <force-include>one.h <force-include>two.h ;
-""")
+""",
+)
 
 for name in ("test.cpp", "test.c"):
-    t.write(name, """
+    t.write(
+        name,
+        """
 #ifndef ONE
 #error Cannot compile without ONE
 #endif
 #ifndef TWO
 #error Cannot compile without TWO
 #endif
-""")
+""",
+    )
 
-t.write("one.h", """
+t.write(
+    "one.h",
+    """
 #define ONE
-""")
+""",
+)
 
-t.write("two.h", """
+t.write(
+    "two.h",
+    """
 #define TWO
-""")
+""",
+)
 
 t.run_build_system()
 t.expect_addition("bin/$toolset/debug*/test-cpp.obj")

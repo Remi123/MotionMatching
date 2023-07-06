@@ -19,14 +19,19 @@ t = BoostBuild.Tester(use_test_config=False)
 # and compare the list of found values with out expectations.
 
 t.write("jamroot.jam", "using dll_paths ;")
-t.write("jamfile.jam", """\
+t.write(
+    "jamfile.jam",
+    """\
 exe main : main.cpp b//b ;
 explicit main ;
 path-list mp : main ;
-""")
+""",
+)
 
 t.write("main.cpp", "int main() {}\n")
-t.write("dll_paths.jam", """\
+t.write(
+    "dll_paths.jam",
+    """\
 import "class" : new ;
 import feature ;
 import generators ;
@@ -72,9 +77,12 @@ rule list ( target : sources * : properties * )
     print.output $(target) ;
     print.text $(paths) ;
 }
-""")
+""",
+)
 
-t.write("dll_paths.py", """\
+t.write(
+    "dll_paths.py",
+    """\
 import bjam
 
 import b2.build.type as type
@@ -113,25 +121,32 @@ def function(target, sources, ps):
 
 get_manager().engine().register_action("dll_paths.list", command,
     function=function)
-""")
+""",
+)
 
 t.write("a/jamfile.jam", "lib a : a.cpp ;")
-t.write("a/a.cpp", """\
+t.write(
+    "a/a.cpp",
+    """\
 void
 #if defined(_WIN32)
 __declspec(dllexport)
 #endif
 foo() {}
-""")
+""",
+)
 
 t.write("b/jamfile.jam", "lib b : b.cpp ../a//a ;")
-t.write("b/b.cpp", """\
+t.write(
+    "b/b.cpp",
+    """\
 void
 #if defined(_WIN32)
 __declspec(dllexport)
 #endif
 bar() {}
-""")
+""",
+)
 
 t.run_build_system(["hardcode-dll-paths=true"])
 
@@ -148,12 +163,16 @@ t.rm("bin/$toolset/debug*/mp.pathlist")
 # Now run the same checks with pre-built libraries
 adll = t.glob_file("a/bin/$toolset/debug*/a.dll")
 bdll = t.glob_file("b/bin/$toolset/debug*/b.dll")
-t.write("b/jamfile.jam", """
+t.write(
+    "b/jamfile.jam",
+    """
 local bdll = %s ;
 # Make sure that it is found even with multiple source-locations
 project : source-location c $(bdll:D) ;
 lib b : ../a//a : <file>$(bdll:D=) ;
-""" % bdll.replace("\\", "\\\\"))
+"""
+    % bdll.replace("\\", "\\\\"),
+)
 t.run_build_system(["hardcode-dll-paths=true"])
 t.expect_addition("bin/$toolset/debug*/mp.pathlist")
 

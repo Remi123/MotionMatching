@@ -15,12 +15,14 @@ import sys
 
 renames = {"debug": "variant=debug", "release": "variant=release"}
 
+
 def set_default_target_os(os):
     global removed
     global default_target_os
     default_target_os = os
     removed = set()
     removed.add("target-os=" + default_target_os)
+
 
 def adjust_property(property):
     global renames
@@ -29,20 +31,25 @@ def adjust_property(property):
     else:
         return property
 
+
 def adjust_properties(properties):
     global removed
     return [adjust_property(p) for p in properties if p not in removed]
 
+
 def has_property(name, properties):
     return name in [re.sub("=.*", "", p) for p in properties]
+
 
 def get_property(name, properties):
     for m in [re.match("(.*)=(.*)", p) for p in properties]:
         if m and m.group(1) == name:
             return m.group(2)
 
+
 def get_target_os(properties):
     return get_property("target-os", properties) or default_target_os
+
 
 def expand_properties(properties, toolset):
     result = properties[:]
@@ -69,6 +76,7 @@ def expand_properties(properties, toolset):
         result += ["windows-api=desktop"]
     return result
 
+
 def compute_path(properties, target_type):
     path = ""
     if "variant=release" in properties:
@@ -87,18 +95,19 @@ def compute_path(properties, target_type):
         path += "/link-static"
     if "rtti=off" in properties:
         path += "/rtti-off"
-    if "runtime-link=static" in properties: # and target_type in ["exe"]:
+    if "runtime-link=static" in properties:  # and target_type in ["exe"]:
         path += "/runtime-link-static"
     if "strip=on" in properties and target_type in ["dll", "exe", "obj2"]:
         path += "/strip-on"
     if get_target_os(properties) != default_target_os:
         path += "/target-os-" + get_target_os(properties)
     if "threading=multi" in properties:
-      if "runtime-link=static" not in properties: # TODO: I don't think this it's intended to work this way though
-        path += "/threading-multi"
+        if "runtime-link=static" not in properties:  # TODO: I don't think this it's intended to work this way though
+            path += "/threading-multi"
     if not "windows-api=desktop" in properties:
         path += "/windows-api-" + get_property("windows-api", properties)
     return path
+
 
 def test_toolset(toolset, version, property_sets):
     t = BoostBuild.Tester()
@@ -113,8 +122,10 @@ def test_toolset(toolset, version, property_sets):
         t.set_toolset(toolset + "-" + version, get_target_os(properties))
         properties = adjust_properties(properties)
         expanded_properties = expand_properties(properties, toolset)
+
         def path(t):
             return toolset.split("-")[0] + "-*" + version + compute_path(expanded_properties, t)
+
         os.environ["B2_PROPERTIES"] = " ".join(expanded_properties)
         t.run_build_system(["--user-config=", "-sPYTHON_CMD=%s" % sys.executable] + properties)
         t.expect_addition("bin/%s/lib.obj" % (path("obj")))

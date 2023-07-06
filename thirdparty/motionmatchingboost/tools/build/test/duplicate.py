@@ -16,21 +16,33 @@ import BoostBuild
 
 t = BoostBuild.Tester()
 
-t.write("a.cpp", """
-""")
+t.write(
+    "a.cpp",
+    """
+""",
+)
 
-t.write("jamroot.jam", """
+t.write(
+    "jamroot.jam",
+    """
 build-project a ;
 build-project b ;
-""")
+""",
+)
 
-t.write("a/jamfile.jam", """
+t.write(
+    "a/jamfile.jam",
+    """
 stage bin : ../a.cpp : <location>../dist ;
-""")
+""",
+)
 
-t.write("b/jamfile.jam", """
+t.write(
+    "b/jamfile.jam",
+    """
 stage bin : ../a.cpp : <location>../dist ;
-""")
+""",
+)
 
 t.run_build_system()
 t.expect_addition("dist/a.cpp")

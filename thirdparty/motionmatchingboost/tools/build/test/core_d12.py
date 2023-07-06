@@ -11,13 +11,16 @@ import BoostBuild
 
 t = BoostBuild.Tester(["-ffile.jam"], pass_toolset=0)
 
-t.write("file.jam", """\
+t.write(
+    "file.jam",
+    """\
 actions a { }
 actions quietly b { }
 ALWAYS all ;
 a all ;
 b all ;
-""")
+""",
+)
 
 t.run_build_system(["-d0"], stdout="")
 

@@ -17,6 +17,7 @@ import os
 import os.path
 import re
 import shutil
+
 try:
     from StringIO import StringIO
 except:
@@ -38,7 +39,7 @@ except:
 
 
 def isstr(data):
-    return isinstance(data, (type(''), type(u'')))
+    return isinstance(data, (type(""), type("")))
 
 
 class TestEnvironmentError(Exception):
@@ -73,6 +74,7 @@ def clear_annotations():
 
 
 defer_annotations = 0
+
 
 def set_defer_annotations(n):
     global defer_annotations
@@ -115,20 +117,20 @@ elif hasattr(os, "uname"):
 
 
 def expand_toolset(toolset, target_os=default_os):
-    match = re.match(r'^(clang|intel)(-[\d\.]+|)$', toolset)
+    match = re.match(r"^(clang|intel)(-[\d\.]+|)$", toolset)
     if match:
         if match.group(1) == "intel" and target_os == "windows":
-            return match.expand(r'\1-win\2')
+            return match.expand(r"\1-win\2")
         elif target_os == "darwin":
-            return match.expand(r'\1-darwin\2')
+            return match.expand(r"\1-darwin\2")
         else:
-            return match.expand(r'\1-linux\2')
+            return match.expand(r"\1-linux\2")
 
     return toolset
 
 
 def prepare_prefixes_and_suffixes(toolset, target_os=default_os):
-    ind = toolset.find('-')
+    ind = toolset.find("-")
     if ind == -1:
         rtoolset = toolset
     else:
@@ -250,22 +252,30 @@ class Tester(TestCmd.TestCmd):
                                     system output like the --verbose command
                                     line option does.
     """
-    def __init__(self, arguments=None, executable=None,
-        match=TestCmd.match_exact, boost_build_path=None,
-        translate_suffixes=True, pass_toolset=True, use_test_config=True,
-        ignore_toolset_requirements=False, workdir="", pass_d0=False,
-        **keywords):
 
+    def __init__(
+        self,
+        arguments=None,
+        executable=None,
+        match=TestCmd.match_exact,
+        boost_build_path=None,
+        translate_suffixes=True,
+        pass_toolset=True,
+        use_test_config=True,
+        ignore_toolset_requirements=False,
+        workdir="",
+        pass_d0=False,
+        **keywords
+    ):
         if not executable:
-            executable = os.getenv('B2')
+            executable = os.getenv("B2")
         if not executable:
-            executable = 'b2'
+            executable = "b2"
 
         assert arguments.__class__ is not str
         self.original_workdir = os.path.dirname(__file__)
         if workdir and not os.path.isabs(workdir):
-            raise ("Parameter workdir <%s> must point to an absolute "
-                "directory: " % workdir)
+            raise ("Parameter workdir <%s> must point to an absolute " "directory: " % workdir)
 
         self.last_build_timestamp = 0
         self.translate_suffixes = translate_suffixes
@@ -286,8 +296,10 @@ class Tester(TestCmd.TestCmd):
             # Find where jam_src is located. Try for the debug version if it is
             # lying around.
             srcdir = os.path.join(os.path.dirname(__file__), "..", "src")
-            dirs = [os.path.join(srcdir, "engine", jam_build_dir + ".debug"),
-                    os.path.join(srcdir, "engine", jam_build_dir)]
+            dirs = [
+                os.path.join(srcdir, "engine", jam_build_dir + ".debug"),
+                os.path.join(srcdir, "engine", jam_build_dir),
+            ]
             for d in dirs:
                 if os.path.exists(d):
                     jam_build_dir = d
@@ -316,8 +328,9 @@ class Tester(TestCmd.TestCmd):
         if arguments:
             program_list += arguments
 
-        TestCmd.TestCmd.__init__(self, program=program_list, match=match,
-            workdir=workdir, inpath=use_default_bjam, **keywords)
+        TestCmd.TestCmd.__init__(
+            self, program=program_list, match=match, workdir=workdir, inpath=use_default_bjam, **keywords
+        )
 
         os.chdir(self.workdir)
 
@@ -337,7 +350,6 @@ class Tester(TestCmd.TestCmd):
         self.pass_toolset = True
         prepare_prefixes_and_suffixes(toolset, target_os)
 
-
     #
     # Methods that change the working directory's content.
     #
@@ -352,10 +364,12 @@ class Tester(TestCmd.TestCmd):
         shutil.copytree(tree_location, self.workdir)
 
         os.chdir(d)
+
         def make_writable(unused, dir, entries):
             for e in entries:
                 name = os.path.join(dir, e)
                 os.chmod(name, os.stat(name).st_mode | 0o222)
+
         for root, _, files in os.walk("."):
             make_writable(None, root, files)
 
@@ -415,10 +429,10 @@ class Tester(TestCmd.TestCmd):
         os.chdir(self.original_workdir)
         for name in names:
             n = glob.glob(self.native_file_name(name))
-            if n: n = n[0]
+            if n:
+                n = n[0]
             if not n:
-                n = self.glob_file(name.replace("$toolset", self.expanded_toolset + "*")
-                    )
+                n = self.glob_file(name.replace("$toolset", self.expanded_toolset + "*"))
             if n:
                 if os.path.isdir(n):
                     shutil.rmtree(n, ignore_errors=False)
@@ -442,16 +456,24 @@ class Tester(TestCmd.TestCmd):
         annotation("STDOUT", self.stdout())
         annotation("STDERR", self.stderr())
 
-    def run_build_system(self, extra_args=None, subdir="", stdout=None,
-        stderr="", status=0, match=None, pass_toolset=None,
-        use_test_config=None, ignore_toolset_requirements=None,
-        expected_duration=None, **kw):
-
+    def run_build_system(
+        self,
+        extra_args=None,
+        subdir="",
+        stdout=None,
+        stderr="",
+        status=0,
+        match=None,
+        pass_toolset=None,
+        use_test_config=None,
+        ignore_toolset_requirements=None,
+        expected_duration=None,
+        **kw
+    ):
         assert extra_args.__class__ is not str
 
         if os.path.isabs(subdir):
-            raise ValueError(
-                "You must pass a relative directory to subdir <%s>." % subdir)
+            raise ValueError("You must pass a relative directory to subdir <%s>." % subdir)
 
         self.previous_tree, dummy = tree.build_tree(self.workdir)
         self.wait_for_time_change_since_last_build()
@@ -480,8 +502,7 @@ class Tester(TestCmd.TestCmd):
             if pass_toolset:
                 kw["program"].append("toolset=" + self.toolset)
             if use_test_config:
-                kw["program"].append('--test-config="%s"' % os.path.join(
-                    self.original_workdir, "test-config.jam"))
+                kw["program"].append('--test-config="%s"' % os.path.join(self.original_workdir, "test-config.jam"))
             if ignore_toolset_requirements:
                 kw["program"].append("--ignore-toolset-requirements")
             if "--python" in sys.argv:
@@ -518,8 +539,7 @@ class Tester(TestCmd.TestCmd):
             if status != 0:
                 expect = " (expected %d)" % status
 
-            annotation("failure", '"%s" returned %d%s' % (kw["program"],
-                self.status, expect))
+            annotation("failure", '"%s" returned %d%s' % (kw["program"], self.status, expect))
 
             annotation("reason", "unexpected status returned by bjam")
             self.fail_test(1)
@@ -551,9 +571,10 @@ class Tester(TestCmd.TestCmd):
         if expected_duration is not None:
             actual_duration = build_time_finish - build_time_start
             if actual_duration > expected_duration:
-                print("Test run lasted %f seconds while it was expected to "
-                    "finish in under %f seconds." % (actual_duration,
-                    expected_duration))
+                print(
+                    "Test run lasted %f seconds while it was expected to "
+                    "finish in under %f seconds." % (actual_duration, expected_duration)
+                )
                 self.fail_test(1, dump_stdio=False)
 
         self.__ignore_junk()
@@ -562,9 +583,7 @@ class Tester(TestCmd.TestCmd):
         name = self.adjust_name(name)
         result = None
         if hasattr(self, "difference"):
-            for f in (self.difference.added_files +
-                self.difference.modified_files +
-                self.difference.touched_files):
+            for f in self.difference.added_files + self.difference.modified_files + self.difference.touched_files:
                 if fnmatch.fnmatch(f, name):
                     result = self.__native_file_name(f)
                     break
@@ -605,16 +624,14 @@ class Tester(TestCmd.TestCmd):
             return result + "\n"
         return result
 
-    def fail_test(self, condition, dump_difference=True, dump_stdio=True,
-        dump_stack=True):
+    def fail_test(self, condition, dump_difference=True, dump_stdio=True, dump_stack=True):
         if not condition:
             return
 
         if dump_difference and hasattr(self, "difference"):
             f = StringIO()
             self.difference.pprint(f)
-            annotation("changes caused by the last build command",
-                f.getvalue())
+            annotation("changes caused by the last build command", f.getvalue())
 
         if dump_stdio:
             self.dump_stdio()
@@ -651,8 +668,7 @@ class Tester(TestCmd.TestCmd):
                 self.fail_test(1)
 
     def ignore_addition(self, wildcard):
-        self.__ignore_elements(self.unexpected_difference.added_files,
-            wildcard)
+        self.__ignore_elements(self.unexpected_difference.added_files, wildcard)
 
     def expect_removal(self, names):
         for name in self.adjust_names(names):
@@ -663,21 +679,18 @@ class Tester(TestCmd.TestCmd):
                 self.fail_test(1)
 
     def ignore_removal(self, wildcard):
-        self.__ignore_elements(self.unexpected_difference.removed_files,
-            wildcard)
+        self.__ignore_elements(self.unexpected_difference.removed_files, wildcard)
 
     def expect_modification(self, names):
         for name in self.adjust_names(names):
             try:
                 glob_remove(self.unexpected_difference.modified_files, name)
             except:
-                annotation("failure", "File %s not modified as expected" %
-                    name)
+                annotation("failure", "File %s not modified as expected" % name)
                 self.fail_test(1)
 
     def ignore_modification(self, wildcard):
-        self.__ignore_elements(self.unexpected_difference.modified_files,
-            wildcard)
+        self.__ignore_elements(self.unexpected_difference.modified_files, wildcard)
 
     def expect_touch(self, names):
         d = self.unexpected_difference
@@ -702,8 +715,7 @@ class Tester(TestCmd.TestCmd):
                 self.fail_test(1)
 
     def ignore_touch(self, wildcard):
-        self.__ignore_elements(self.unexpected_difference.touched_files,
-            wildcard)
+        self.__ignore_elements(self.unexpected_difference.touched_files, wildcard)
 
     def ignore(self, wildcard):
         self.ignore_addition(wildcard)
@@ -714,31 +726,27 @@ class Tester(TestCmd.TestCmd):
     def expect_nothing(self, names):
         for name in self.adjust_names(names):
             if name in self.difference.added_files:
-                annotation("failure",
-                    "File %s added, but no action was expected" % name)
+                annotation("failure", "File %s added, but no action was expected" % name)
                 self.fail_test(1)
             if name in self.difference.removed_files:
-                annotation("failure",
-                    "File %s removed, but no action was expected" % name)
+                annotation("failure", "File %s removed, but no action was expected" % name)
                 self.fail_test(1)
                 pass
             if name in self.difference.modified_files:
-                annotation("failure",
-                    "File %s modified, but no action was expected" % name)
+                annotation("failure", "File %s modified, but no action was expected" % name)
                 self.fail_test(1)
             if name in self.difference.touched_files:
-                annotation("failure",
-                    "File %s touched, but no action was expected" % name)
+                annotation("failure", "File %s touched, but no action was expected" % name)
                 self.fail_test(1)
 
     def __ignore_junk(self):
         # Not totally sure about this change, but I do not see a good
         # alternative.
         if windows:
-            self.ignore("*.ilk")       # MSVC incremental linking files.
-            self.ignore("*.pdb")       # MSVC program database files.
-            self.ignore("*.rsp")       # Response files.
-            self.ignore("*.tds")       # Borland debug symbols.
+            self.ignore("*.ilk")  # MSVC incremental linking files.
+            self.ignore("*.pdb")  # MSVC program database files.
+            self.ignore("*.rsp")  # Response files.
+            self.ignore("*.tds")  # Borland debug symbols.
             self.ignore("*.manifest")  # MSVC DLL manifests.
             self.ignore("bin/standalone/msvc/*/msvc-setup.bat")
 
@@ -779,20 +787,16 @@ class Tester(TestCmd.TestCmd):
         if exact:
             matched = fnmatch.fnmatch(actual, content)
         else:
+
             def sorted_(z):
                 z.sort(key=lambda x: x.lower().replace("\\", "/"))
                 return z
+
             actual_ = list(map(lambda x: sorted_(x.split()), actual.splitlines()))
             content_ = list(map(lambda x: sorted_(x.split()), content.splitlines()))
             if len(actual_) == len(content_):
-                matched = map(
-                    lambda x, y: map(lambda n, p: fnmatch.fnmatch(n, p), x, y),
-                    actual_, content_)
-                matched = reduce(
-                    lambda x, y: x and reduce(
-                        lambda a, b: a and b,
-                        y, True),
-                    matched, True)
+                matched = map(lambda x, y: map(lambda n, p: fnmatch.fnmatch(n, p), x, y), actual_, content_)
+                matched = reduce(lambda x, y: x and reduce(lambda a, b: a and b, y, True), matched, True)
 
         if not matched:
             print("Expected:\n")
@@ -817,15 +821,13 @@ class Tester(TestCmd.TestCmd):
             # exact Python/OS platform version, os.system() call may gobble up
             # the external process's return code and return 0 itself.
             if os.system('diff -u "%s" "%s"' % (e, a)) not in [0, 1]:
-                print('Unable to compute difference: diff -u "%s" "%s"' % (e, a
-                    ))
+                print('Unable to compute difference: diff -u "%s" "%s"' % (e, a))
             os.unlink(e)
             os.unlink(a)
         elif type(result) is TestCmd.MatchError:
             print(result.message)
         else:
-            print("Set environmental variable 'DO_DIFF' to examine the "
-                "difference.")
+            print("Set environmental variable 'DO_DIFF' to examine the " "difference.")
 
     # Internal methods.
     def adjust_lib_name(self, name):
@@ -901,9 +903,9 @@ class Tester(TestCmd.TestCmd):
         if self.last_build_timestamp:
             timestamp_file = "timestamp-3df2f2317e15e4a9"
             open(timestamp_file, "wb").close()
-            self.__wait_for_time_change_impl(timestamp_file,
-                self.last_build_timestamp,
-                self.__python_timestamp_resolution(timestamp_file, 0), 0)
+            self.__wait_for_time_change_impl(
+                timestamp_file, self.last_build_timestamp, self.__python_timestamp_resolution(timestamp_file, 0), 0
+            )
             os.unlink(timestamp_file)
 
     def __build_timestamp_resolution(self):
@@ -920,20 +922,25 @@ class Tester(TestCmd.TestCmd):
                 f.write("EXIT $(JAM_TIMESTAMP_RESOLUTION) : 0 ;")
             finally:
                 f.close()
-            p = subprocess.Popen([self.program[0], "-d0", "-f%s" % jam_script],
-                stdout=subprocess.PIPE, cwd=dir, universal_newlines=True)
+            p = subprocess.Popen(
+                [self.program[0], "-d0", "-f%s" % jam_script], stdout=subprocess.PIPE, cwd=dir, universal_newlines=True
+            )
             out, err = p.communicate()
         finally:
             shutil.rmtree(dir, ignore_errors=False)
 
         if p.returncode != 0:
-            raise TestEnvironmentError("Unexpected return code (%s) when "
+            raise TestEnvironmentError(
+                "Unexpected return code (%s) when "
                 "detecting Boost Jam's minimum supported path modification "
-                "timestamp resolution version information." % p.returncode)
+                "timestamp resolution version information." % p.returncode
+            )
         if err:
-            raise TestEnvironmentError("Unexpected error output (%s) when "
+            raise TestEnvironmentError(
+                "Unexpected error output (%s) when "
                 "detecting Boost Jam's minimum supported path modification "
-                "timestamp resolution version information." % err)
+                "timestamp resolution version information." % err
+            )
 
         r = re.match("([0-9]{2}):([0-9]{2}):([0-9]{2}\\.[0-9]{9})$", out)
         if not r:
@@ -945,9 +952,10 @@ class Tester(TestCmd.TestCmd):
             # possibly covering up other problems.
             return 1
         if r.group(1) != "00" or r.group(2) != "00":  # hours, minutes
-            raise TestEnvironmentError("Boost Jam with too coarse minimum "
-                "supported path modification timestamp resolution (%s:%s:%s)."
-                % (r.group(1), r.group(2), r.group(3)))
+            raise TestEnvironmentError(
+                "Boost Jam with too coarse minimum "
+                "supported path modification timestamp resolution (%s:%s:%s)." % (r.group(1), r.group(2), r.group(3))
+            )
         return float(r.group(3))  # seconds.nanoseconds
 
     def __ensure_newer_than_last_build(self, path):
@@ -986,6 +994,7 @@ class Tester(TestCmd.TestCmd):
           A newline at the end of any multi-line lines string is interpreted as
         an expected extra trailig empty line.
         """
+
         # str.splitlines() trims at most one trailing newline while we want the
         # trailing newline to indicate that there should be an extra empty line
         # at the end.
@@ -1074,8 +1083,7 @@ class Tester(TestCmd.TestCmd):
         # deprecated this configuration and 3.4 removed support for it after
         # which floating point timestamps are always supported.
         ver = sys.version_info[0:2]
-        python_nanosecond_support = ver >= (3, 4) or (ver >= (2, 3) and
-            os.stat_float_times())
+        python_nanosecond_support = ver >= (3, 4) or (ver >= (2, 3) and os.stat_float_times())
 
         # Minimal expected floating point difference used to account for
         # possible imprecise floating point number representations. We want
@@ -1086,6 +1094,7 @@ class Tester(TestCmd.TestCmd):
         eta = 0.00005
 
         stats_orig = os.stat(path)
+
         def test_time(diff):
             """Returns whether a timestamp difference is detectable."""
             os.utime(path, (stats_orig.st_atime, stats_orig.st_mtime + diff))
@@ -1119,8 +1128,9 @@ class Tester(TestCmd.TestCmd):
             # number representation errors.
             next = step * index
             if next > 10:
-                raise TestEnvironmentError("File systems with too coarse "
-                    "modification timestamp resolutions not supported.")
+                raise TestEnvironmentError(
+                    "File systems with too coarse " "modification timestamp resolutions not supported."
+                )
             if test_time(next):
                 return next
             index += 1
@@ -1148,8 +1158,9 @@ class Tester(TestCmd.TestCmd):
         assert build_resolution >= 0
 
         # Check whether the current timestamp is already new enough.
-        if stats_orig.st_mtime > start_time and (not build_resolution or
-            stats_orig.st_mtime >= start_time + build_resolution):
+        if stats_orig.st_mtime > start_time and (
+            not build_resolution or stats_orig.st_mtime >= start_time + build_resolution
+        ):
             return
 
         resolution = self.__python_timestamp_resolution(path, build_resolution)
@@ -1186,8 +1197,7 @@ class Tester(TestCmd.TestCmd):
             os.utime(path, None)
             c = os.stat(path).st_mtime
             if resolution:
-                if c > start_time and (not build_resolution or c >= start_time
-                    + build_resolution):
+                if c > start_time and (not build_resolution or c >= start_time + build_resolution):
                     break
                 if c <= start_time - resolution:
                     # Move close to the desired timestamp in one sleep, but not
@@ -1195,16 +1205,20 @@ class Tester(TestCmd.TestCmd):
                     # us to wait too long.
                     if start_time - c > 5:
                         if last_build_time:
-                            error_message = ("Last build time recorded as "
+                            error_message = (
+                                "Last build time recorded as "
                                 "being a future event, causing a too long "
                                 "wait period. Something must have played "
-                                "around with the system clock.")
+                                "around with the system clock."
+                            )
                         else:
-                            error_message = ("Original path modification "
+                            error_message = (
+                                "Original path modification "
                                 "timestamp set to far into the future or "
                                 "something must have played around with the "
                                 "system clock, causing a too long wait "
-                                "period.\nPath: '%s'" % path)
+                                "period.\nPath: '%s'" % path
+                            )
                         raise TestEnvironmentError(message)
                     _sleep(start_time - c)
                 else:
@@ -1273,8 +1287,7 @@ def _contains_lines(data, lines):
         if expected_line_count > data_line_count - index:
             return False
         expected_line_count -= len(expected)
-        index = _match_line_sequence(data, index, data_line_count -
-            expected_line_count, expected)
+        index = _match_line_sequence(data, index, data_line_count - expected_line_count, expected)
         if index < 0:
             return False
     return True
@@ -1296,9 +1309,11 @@ def _match_line_sequence(data, start, end, lines):
 
 def _sleep(delay):
     if delay > 5:
-        raise TestEnvironmentError("Test environment error: sleep period of "
+        raise TestEnvironmentError(
+            "Test environment error: sleep period of "
             "more than 5 seconds requested. Most likely caused by a file with "
-            "its modification timestamp set to sometime in the future.")
+            "its modification timestamp set to sometime in the future."
+        )
     time.sleep(delay)
 
 

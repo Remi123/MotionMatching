@@ -11,7 +11,9 @@ t = BoostBuild.Tester(pass_toolset=0)
 
 t.write("a.cpp", "\n")
 
-t.write("yfc1.jam", """\
+t.write(
+    "yfc1.jam",
+    """\
 import feature ;
 import generators ;
 
@@ -23,11 +25,12 @@ generators.register-standard yfc1.link : OBJ : EXE : <toolset>yfc1 ;
 
 actions compile { yfc1-compile }
 actions link { yfc1-link }
-""")
+""",
+)
 
 t.write(
-    'yfc1.py',
-"""
+    "yfc1.py",
+    """
 from b2.build import feature, generators
 from b2.manager import get_manager
 
@@ -52,10 +55,12 @@ ENGINE.register_action(
 def init(*args):
     pass
 
-"""
+""",
 )
 
-t.write("yfc2.jam", """\
+t.write(
+    "yfc2.jam",
+    """\
 import feature ;
 import toolset ;
 
@@ -64,11 +69,12 @@ toolset.inherit yfc2 : yfc1 ;
 rule init ( ) { }
 
 actions link { yfc2-link }
-""")
+""",
+)
 
 t.write(
-    'yfc2.py',
-"""
+    "yfc2.py",
+    """
 from b2.build import feature, toolset
 from b2.manager import get_manager
 
@@ -82,7 +88,7 @@ ENGINE.register_action('yfc2.link', 'yfc2-link')
 
 def init(*args):
     pass
-"""
+""",
 )
 
 t.write("jamfile.jam", "exe a : a.cpp ;")

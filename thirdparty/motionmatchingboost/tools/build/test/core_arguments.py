@@ -15,7 +15,8 @@ def simple_args(start, finish):
 
 def test(t, type, input, output, status=0):
     code = ["include echo_args.jam ; echo_%s" % type]
-    if input: code.append(input)
+    if input:
+        code.append(input)
     code.append(";")
     t.write("file.jam", " ".join(code))
     t.run_build_system(["-ffile.jam"], status=status)
@@ -32,7 +33,9 @@ def test_varargs(t, *args, **kwargs):
 
 t = BoostBuild.Tester(pass_toolset=0)
 
-t.write("echo_args.jam", """\
+t.write(
+    "echo_args.jam",
+    """\
 NOCARE all ;
 
 rule echo_args ( a b ? c ? : d + : e * )
@@ -52,7 +55,8 @@ rule echo_varargs ( a b ? c ? : d + : e * : * )
         ": "$(20[1]) $(20[2-]) ": "$(21[1]) $(21[2-]) ": "$(22[1]) $(22[2-])
         ": "$(23[1]) $(23[2-]) ": "$(24[1]) $(24[2-]) ": "$(25[1]) $(25[2-]) ;
 }
-""")
+""",
+)
 
 test_args(t, "", "* missing argument a", status=1)
 test_args(t, "1 2 : 3 : 4 : 5", "* extra argument 5", status=1)
@@ -77,29 +81,31 @@ test_args(t, "1 : 2 : 3 4 5", "a= 1 b= c= : d= 2 : e= 3 4 5")
 # Check varargs
 test_varargs(t, "1 : 2 : 3 4 5", "a= 1 b= c= : d= 2 : e= 3 4 5")
 test_varargs(t, "1 : 2 : 3 4 5 : 6", "a= 1 b= c= : d= 2 : e= 3 4 5 : rest= 6")
-test_varargs(t, "1 : 2 : 3 4 5 : 6 7",
-    "a= 1 b= c= : d= 2 : e= 3 4 5 : rest= 6 7")
-test_varargs(t, "1 : 2 : 3 4 5 : 6 7 : 8",
-    "a= 1 b= c= : d= 2 : e= 3 4 5 : rest= 6 7 : 8")
-test_varargs(t, "1 : 2 : 3 4 5 : 6 7 : 8 : 9",
-    "a= 1 b= c= : d= 2 : e= 3 4 5 : rest= 6 7 : 8 : 9")
-test_varargs(t, "1 : 2 : 3 4 5 : 6 7 : 8 : 9 : 10 : 11 : 12 : 13 : 14 : 15 : "
-    "16 : 17 : 18 : 19a 19b", "a= 1 b= c= : d= 2 : e= 3 4 5 : rest= 6 7 : 8 : "
-    "9 : 10 : 11 : 12 : 13 : 14 : 15 : 16 : 17 : 18 : 19a 19b")
-test_varargs(t, "1 : 2 : 3 4 5 : 6 7 : 8 : 9 : 10 : 11 : 12 : 13 : 14 : 15 : "
-    "16 : 17 : 18 : 19a 19b 19c : 20", "a= 1 b= c= : d= 2 : e= 3 4 5 : rest= "
+test_varargs(t, "1 : 2 : 3 4 5 : 6 7", "a= 1 b= c= : d= 2 : e= 3 4 5 : rest= 6 7")
+test_varargs(t, "1 : 2 : 3 4 5 : 6 7 : 8", "a= 1 b= c= : d= 2 : e= 3 4 5 : rest= 6 7 : 8")
+test_varargs(t, "1 : 2 : 3 4 5 : 6 7 : 8 : 9", "a= 1 b= c= : d= 2 : e= 3 4 5 : rest= 6 7 : 8 : 9")
+test_varargs(
+    t,
+    "1 : 2 : 3 4 5 : 6 7 : 8 : 9 : 10 : 11 : 12 : 13 : 14 : 15 : " "16 : 17 : 18 : 19a 19b",
+    "a= 1 b= c= : d= 2 : e= 3 4 5 : rest= 6 7 : 8 : " "9 : 10 : 11 : 12 : 13 : 14 : 15 : 16 : 17 : 18 : 19a 19b",
+)
+test_varargs(
+    t,
+    "1 : 2 : 3 4 5 : 6 7 : 8 : 9 : 10 : 11 : 12 : 13 : 14 : 15 : " "16 : 17 : 18 : 19a 19b 19c : 20",
+    "a= 1 b= c= : d= 2 : e= 3 4 5 : rest= "
     "6 7 : 8 : 9 : 10 : 11 : 12 : 13 : 14 : 15 : 16 : 17 : 18 : 19a 19b 19c : "
-    "20")
+    "20",
+)
 
 # Check varargs upper limit
 expected = "a= 1 b= c= : d= 2 : e= 3 : rest= " + simple_args(4, 19)
 test_varargs(t, simple_args(1, 19), expected)
 test_varargs(t, simple_args(1, 19) + " 19b 19c 19d", expected + " 19b 19c 19d")
-'''FIXME: 19 (=LOL_MAX) args is the limit
+"""FIXME: 19 (=LOL_MAX) args is the limit
 test_varargs(t, simple_args(1, 19) + " 19b 19c 19d : 20", expected + " 19b "
     "19c 19d")
 test_varargs(t, simple_args(1, 20), expected)
 test_varargs(t, simple_args(1, 50), expected)
-'''
+"""
 
 t.cleanup()

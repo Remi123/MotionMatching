@@ -20,6 +20,7 @@ import sys
 #
 ###############################################################################
 
+
 def collectDebugInfo():
     t = _init()
 
@@ -43,7 +44,7 @@ def collectDebugInfo():
     except:
         _info_exc()
 
-    #_collectDebugInfo_environ()
+    # _collectDebugInfo_environ()
 
     # Report prepared annotations.
     t.fail_test(1, dump_difference=False, dump_stdio=False, dump_stack=False)
@@ -59,13 +60,10 @@ varSeparator = "###$^%~~~"
 
 
 def _collect(results, prefix, name, t):
-    results.append("%s - %s - os.getenv(): %r" % (prefix, name, os.getenv(
-        name)))
-    results.append("%s - %s - os.environ.get(): %r" % (prefix, name,
-        os.environ.get(name)))
+    results.append("%s - %s - os.getenv(): %r" % (prefix, name, os.getenv(name)))
+    results.append("%s - %s - os.environ.get(): %r" % (prefix, name, os.environ.get(name)))
     external_values = _getExternalValues(t, name)
-    results.append("%s - %s - external: %r" % (prefix, name,
-        external_values[name]))
+    results.append("%s - %s - external: %r" % (prefix, name, external_values[name]))
 
 
 def _collectDebugInfo_environ(t):
@@ -74,36 +72,44 @@ def _collectDebugInfo_environ(t):
 
     tag = "XXX in os.environ"
     try:
+
         def f(name):
             return "%s: %s" % (name, name in os.environ)
+
         _infoX(f(x) for x in dummyVars)
     except:
         _info_exc()
 
     tag = "os.environ[XXX]"
     try:
+
         def f(name):
             try:
                 result = os.environ[name]
             except:
                 result = _str_exc()
             return "%s: %r" % (name, result)
+
         _infoX(f(x) for x in dummyVars)
     except:
         _info_exc()
 
     tag = "os.environ.get(XXX)"
     try:
+
         def f(name):
             return "%s: %r" % (name, os.environ.get(name))
+
         _infoX(f(x) for x in dummyVars)
     except:
         _info_exc()
 
     tag = "os.getenv(XXX)"
     try:
+
         def f(name):
             return "%s: %r" % (name, os.getenv(name))
+
         _infoX(f(x) for x in dummyVars)
     except:
         _info_exc()
@@ -226,8 +232,7 @@ def _getExternalValues(t, *args):
     t.run_build_system(["---var-name=%s" % x for x in args])
     result = dict()
     for x in args:
-        m = re.search(r"^\*\*\*ENV\*\*\* %s: '(.*)' \*\*\*$" % x, t.stdout(),
-            re.MULTILINE)
+        m = re.search(r"^\*\*\*ENV\*\*\* %s: '(.*)' \*\*\*$" % x, t.stdout(), re.MULTILINE)
         if m:
             result[x] = m.group(1)
         else:
@@ -240,13 +245,12 @@ def _getJamVersionInfo(t):
 
     # JAM version variables.
     t.run_build_system(["---version"])
-    for m in re.finditer(r"^\*\*\*VAR\*\*\* ([^:]*): (.*)\*\*\*$", t.stdout(),
-        re.MULTILINE):
+    for m in re.finditer(r"^\*\*\*VAR\*\*\* ([^:]*): (.*)\*\*\*$", t.stdout(), re.MULTILINE):
         name = m.group(1)
         value = m.group(2)
         if not value:
             value = []
-        elif value[-1] == ' ':
+        elif value[-1] == " ":
             value = value[:-1].split(varSeparator)
         else:
             value = "!!!INVALID!!! - '%s'" % value
@@ -269,25 +273,34 @@ def _getJamVersionInfo(t):
 def _init():
     toolsetName = "__myDummyToolset__"
 
-    t = BoostBuild.Tester(["toolset=%s" % toolsetName], pass_toolset=False,
-        use_test_config=False)
+    t = BoostBuild.Tester(["toolset=%s" % toolsetName], pass_toolset=False, use_test_config=False)
 
     #   Prepare a dummy toolset so we do not get errors in case the default one
     # is not found.
-    t.write(toolsetName + ".jam", """\
+    t.write(
+        toolsetName + ".jam",
+        """\
 import feature ;
 feature.extend toolset : %s ;
 rule init ( ) { }
-""" % toolsetName )
+"""
+        % toolsetName,
+    )
 
     # Python version of the same dummy toolset.
-    t.write(toolsetName + ".py", """\
+    t.write(
+        toolsetName + ".py",
+        """\
 from b2.build import feature
 feature.extend('toolset', ['%s'])
 def init(): pass
-""" % toolsetName )
+"""
+        % toolsetName,
+    )
 
-    t.write("jamroot.jam", """\
+    t.write(
+        "jamroot.jam",
+        """\
 import os ;
 .argv = [ modules.peek : ARGV ] ;
 local names = [ MATCH ^---var-name=(.*) : $(.argv) ] ;
@@ -304,7 +317,9 @@ if ---version in $(.argv)
         ECHO ***VAR*** $(x): "$(v:J=%s)" *** ;
     }
 }
-""" % varSeparator)
+"""
+        % varSeparator,
+    )
 
     return t
 

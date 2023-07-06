@@ -19,14 +19,19 @@ import BoostBuild
 
 t = BoostBuild.Tester(["-d1"], pass_toolset=0)
 
-t.write("sleep.bat", """\
+t.write(
+    "sleep.bat",
+    """\
 ::@timeout /T %1 /NOBREAK >nul
 @ping 127.0.0.1 -n 2 -w 1000 >nul
 @ping 127.0.0.1 -n %1 -w 1000 >nul
 @exit /B 0
-""")
+""",
+)
 
-t.write("file.jam", """\
+t.write(
+    "file.jam",
+    """\
 if $(NT)
 {
     SLEEP = @call sleep.bat ;
@@ -60,9 +65,12 @@ actions .use.2
 .use.2 u2.user : g2.generated ;
 
 DEPENDS all : u1.user u2.user ;
-""")
+""",
+)
 
-t.run_build_system(["-ffile.jam", "-j2"], stdout="""\
+t.run_build_system(
+    ["-ffile.jam", "-j2"],
+    stdout="""\
 ...found 5 targets...
 ...updating 4 targets...
 .gen. g1.generated
@@ -73,6 +81,7 @@ t.run_build_system(["-ffile.jam", "-j2"], stdout="""\
 .use.2 u2.user
 004
 ...updated 4 targets...
-""")
+""",
+)
 
 t.cleanup()

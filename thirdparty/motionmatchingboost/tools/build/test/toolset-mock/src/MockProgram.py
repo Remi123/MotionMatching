@@ -13,11 +13,13 @@ import os
 import re
 import fnmatch
 
+
 # Represents a sequence of arguments that must appear
 # in a fixed order.
 class ordered:
     def __init__(self, *args):
         self.args = args
+
     def match(self, command_line, pos, outputs):
         for p in self.args:
             res = try_match(command_line, pos, p, outputs)
@@ -26,11 +28,13 @@ class ordered:
             pos = res
         return pos
 
+
 # Represents a sequence of arguments that can appear
 # in any order.
 class unordered:
     def __init__(self, *args):
         self.args = list(args)
+
     def match(self, command_line, pos, outputs):
         unmatched = self.args[:]
         while len(unmatched) > 0:
@@ -40,15 +44,17 @@ class unordered:
             pos = res
         return pos
 
+
 # Represents a single input file.
 # If id is set, then the file must have been created
 # by a prior use of output_file.
 # If source is set, then the file must be that source file.
 class input_file:
     def __init__(self, id=None, source=None):
-        assert((id is None) ^ (source is None))
+        assert (id is None) ^ (source is None)
         self.id = id
         self.source = source
+
     def check(self, path):
         if path.startswith("-"):
             return
@@ -67,10 +73,12 @@ class input_file:
                 return True
             else:
                 return
-        assert(False)
+        assert False
+
     def match(self, command_line, pos, outputs):
         if self.check(command_line[pos]):
             return pos + 1
+
 
 # Matches an output file.
 # If the full pattern is matched, The
@@ -78,15 +86,18 @@ class input_file:
 class output_file:
     def __init__(self, id):
         self.id = id
+
     def match(self, command_line, pos, outputs):
         if command_line[pos].startswith("-"):
             return
         outputs.append((command_line[pos], self.id))
         return pos + 1
 
+
 class arg_file:
     def __init__(self, id):
         self.id = id
+
     def match(self, command_line, pos, outputs):
         if command_line[pos].startswith("-"):
             return
@@ -95,10 +106,12 @@ class arg_file:
         else:
             return
 
+
 # Matches the directory containing an input_file
 class target_path(object):
     def __init__(self, id):
         self.tester = input_file(id=id)
+
     def match(self, command_line, pos, outputs):
         arg = command_line[pos]
         if arg.startswith("-"):
@@ -110,6 +123,7 @@ class target_path(object):
         except:
             return
 
+
 # Matches a single argument, which is composed of a prefix and a path
 # for example arguments of the form -ofilename.
 class arg(object):
@@ -117,15 +131,18 @@ class arg(object):
         # The prefix should be a string, a should be target_path or input_file.
         self.prefix = prefix
         self.a = a
+
     def match(self, command_line, pos, outputs):
         s = command_line[pos]
-        if s.startswith(self.prefix) and try_match([s[len(self.prefix):]], 0, self.a, outputs) == 1:
+        if s.startswith(self.prefix) and try_match([s[len(self.prefix) :]], 0, self.a, outputs) == 1:
             return pos + 1
+
 
 #
 class opt(object):
     def __init__(self, *args):
         self.args = args
+
     def match(self, command_line, pos, outputs):
         for p in self.args:
             res = try_match_one(command_line, pos, p, outputs)
@@ -133,10 +150,12 @@ class opt(object):
                 pos = res
         return pos
 
+
 # Given a file id, returns a string that will be
 # written to the file to allow it to be recognized.
 def make_file_contents(id):
     return id
+
 
 # Matches a single pattern from a list.
 # If it succeeds, the matching pattern
@@ -151,6 +170,7 @@ def try_match_one(command_line, pos, patterns, outputs):
             patterns.remove(p)
             return res
 
+
 # returns the end of the match if any
 def try_match(command_line, pos, pattern, outputs):
     if pos == len(command_line):
@@ -161,8 +181,10 @@ def try_match(command_line, pos, pattern, outputs):
     else:
         return pattern.match(command_line, pos, outputs)
 
+
 known_patterns = []
 program_name = None
+
 
 # Registers a command
 # The arguments should be a sequence of:
@@ -177,7 +199,8 @@ def command(*args, **kwargs):
     if program_name is None:
         program_name = args[0]
     else:
-        assert(program_name == args[0])
+        assert program_name == args[0]
+
 
 # Use this to filter the recognized commands, based on the properties
 # passed to b2.
@@ -187,16 +210,19 @@ def allow_properties(*args):
     except KeyError:
         return True
 
+
 # Use this in the stdout argument of command to print the command
 # for running another script.
 def script(name):
-    return os.path.join(os.path.dirname(__file__), "bin", re.sub('\.py$', '', name))
+    return os.path.join(os.path.dirname(__file__), "bin", re.sub("\.py$", "", name))
+
 
 def match(command_line):
-    for (p, stdout) in known_patterns:
+    for p, stdout in known_patterns:
         outputs = []
         if try_match(command_line, 0, p, outputs) == len(command_line):
             return (stdout, outputs)
+
 
 # Every mock program should call this after setting up all the commands.
 def main():
@@ -206,13 +232,14 @@ def main():
         (stdout, outputs) = result
         if stdout is not None:
             print(stdout)
-        for (file,id) in outputs:
+        for file, id in outputs:
             with open(file, "w") as f:
                 f.write(make_file_contents(id))
         exit(0)
     else:
-        print("ERROR on command: %s"%(" ".join(command_line)))
+        print("ERROR on command: %s" % (" ".join(command_line)))
         exit(1)
+
 
 # file should be the name of a file in the same directory
 # as this.  Must be called after verify_setup
@@ -222,6 +249,7 @@ def verify_file(filename):
         known_files.add(filename)
         srcdir = os.path.dirname(__file__)
         execfile(os.path.join(srcdir, filename), {})
+
 
 def verify_setup():
     """Override the behavior of most module components
@@ -237,33 +265,43 @@ def verify_setup():
     global output_ids
     global input_ids
     global known_files
+
     def allow_properties(*args):
         return True
+
     def main():
         pass
+
     def output_file(id):
         global output_ids
         global verify_error
         if id in output_ids:
             verify_error("duplicate output_file: %s" % id)
         output_ids.add(id)
+
     def input_file(id=None, source=None):
         if id is not None:
             input_ids.add(id)
+
     def target_path(id):
         input_ids.add(id)
+
     def script(filename):
         verify_file(filename)
+
     def command(*args, **kwargs):
         pass
+
     verify_errors = []
     output_ids = set()
     input_ids = set()
     known_files = set()
 
+
 def verify_error(message):
     global verify_errors
     verify_errors += [message]
+
 
 def verify_finalize():
     for id in input_ids:
@@ -276,10 +314,11 @@ def verify_finalize():
     else:
         return 0
 
+
 def verify():
     srcdir = os.path.dirname(__file__)
-    if srcdir == '':
-        srcdir = '.'
+    if srcdir == "":
+        srcdir = "."
     verify_setup()
     for f in os.listdir(srcdir):
         if re.match(r"(gcc|clang|darwin|intel)-.*\.py", f):

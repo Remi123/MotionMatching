@@ -9,6 +9,7 @@
 
 import BoostBuild
 
+
 def test_invalid(params, expected_error_line):
     t = BoostBuild.Tester(pass_toolset=0)
     t.write("file.jam", "SPLIT_BY_CHARACTERS %s ;" % params)
@@ -16,9 +17,12 @@ def test_invalid(params, expected_error_line):
     t.expect_output_lines("[*] %s" % expected_error_line)
     t.cleanup()
 
+
 def test_valid():
     t = BoostBuild.Tester(pass_toolset=0)
-    t.write("jamroot.jam", """\
+    t.write(
+        "jamroot.jam",
+        """\
 import assert ;
 
 assert.result FooBarBaz : SPLIT_BY_CHARACTERS FooBarBaz : "" ;
@@ -44,9 +48,11 @@ assert.result : SPLIT_BY_CHARACTERS "" : r ;
 assert.result : SPLIT_BY_CHARACTERS "" : rr ;
 assert.result : SPLIT_BY_CHARACTERS "" : rrr ;
 assert.result : SPLIT_BY_CHARACTERS "" : oa ;
-""")
+""",
+    )
     t.run_build_system()
     t.cleanup()
+
 
 test_invalid("", "missing argument string")
 test_invalid("Foo", "missing argument delimiters")

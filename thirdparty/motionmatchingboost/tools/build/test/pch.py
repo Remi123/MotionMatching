@@ -12,7 +12,9 @@ from time import sleep
 
 t = BoostBuild.Tester()
 
-t.write("jamroot.jam", """
+t.write(
+    "jamroot.jam",
+    """
 import pch ;
 project : requirements <warnings-as-errors>on ;
 cpp-pch pch : pch.hpp ;
@@ -21,7 +23,8 @@ cpp-pch pch-msvc-source : pch.hpp : <toolset>msvc:<source>pch.cpp ;
 exe hello : hello.cpp pch ;
 exe hello-afx : hello-afx.cpp pch-afx : <define>HELLO ;
 exe hello-msvc-source : hello-msvc-source.cpp pch-msvc-source ;
-""")
+""",
+)
 
 pch_content = """\
 #undef HELLO
@@ -33,13 +36,19 @@ public:
 """
 t.write("pch.hpp", pch_content)
 
-t.write("pch.cpp", """#include <pch.hpp>
-""")
+t.write(
+    "pch.cpp",
+    """#include <pch.hpp>
+""",
+)
 
 toolset = BoostBuild.get_toolset()
 for name in ("hello.cpp", "hello-afx.cpp", "hello-msvc-source.cpp"):
-    t.write(name, """int main() { TestClass c(1, 2); }
-""")
+    t.write(
+        name,
+        """int main() { TestClass c(1, 2); }
+""",
+    )
 
 t.run_build_system()
 t.expect_addition("bin/$toolset/debug*/hello.exe")
@@ -54,7 +63,7 @@ t.expect_addition("bin/$toolset/debug*/hello-msvc-source.exe")
 
 t.rename("pch.hpp", "pch.hpp.orig")
 s = "THIS WILL NOT COMPILE. "
-t.write("pch.hpp", s + (len(pch_content) - len(s)) * 'x')
+t.write("pch.hpp", s + (len(pch_content) - len(s)) * "x")
 t.copy_timestamp("pch.hpp.orig", "pch.hpp")
 
 t.rm("bin/$toolset/debug*/hello.obj")

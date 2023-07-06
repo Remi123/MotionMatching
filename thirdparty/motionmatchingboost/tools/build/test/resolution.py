@@ -13,12 +13,15 @@ import BoostBuild
 t = BoostBuild.Tester(use_test_config=False)
 
 # Create the needed files
-t.write("jamroot.jam", """\
+t.write(
+    "jamroot.jam",
+    """\
 exe hello : hello.cpp ;
 # This should use the 'hello' target, even if there is a 'hello' file in the
 # current dir.
 install s : hello : <location>. ;
-""")
+""",
+)
 
 t.write("hello.cpp", "int main() {}\n")
 

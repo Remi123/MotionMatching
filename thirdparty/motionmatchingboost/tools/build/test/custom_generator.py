@@ -14,11 +14,16 @@ import BoostBuild
 
 t = BoostBuild.Tester()
 
-t.write("jamroot.jam", """
+t.write(
+    "jamroot.jam",
+    """
 import rcc ;
-""")
+""",
+)
 
-t.write("rcc.jam", """
+t.write(
+    "rcc.jam",
+    """
 import type ;
 import generators ;
 import print ;
@@ -34,9 +39,12 @@ rule resource-compile ( targets * : sources * : properties * )
 }
 
 generators.register-standard rcc.resource-compile : RCC : OBJ ;
-""")
+""",
+)
 
-t.write("rcc.py", """
+t.write(
+    "rcc.py",
+    """
 import b2.build.type as type
 import b2.build.generators as generators
 
@@ -51,14 +59,21 @@ generators.register_standard("rcc.resource-compile", ["RCC"], ["OBJ"])
 get_manager().engine().register_action(
     "rcc.resource-compile",
     '@($(STDOUT):E=rc-object) > "$(<)"')
-""")
+""",
+)
 
-t.write("jamfile.jam", """
+t.write(
+    "jamfile.jam",
+    """
 obj r : r.rcc ;
-""")
+""",
+)
 
-t.write("r.rcc", """
-""")
+t.write(
+    "r.rcc",
+    """
+""",
+)
 
 t.run_build_system()
 t.expect_content("bin/r.obj", "rc-object")

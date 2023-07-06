@@ -11,24 +11,33 @@ import BoostBuild
 t = BoostBuild.Tester(use_test_config=False)
 
 # Create the needed files.
-t.write("jamroot.jam", """
+t.write(
+    "jamroot.jam",
+    """
 using testing ;
 lib helper : helper.cpp ;
 unit-test test : test.cpp : <library>helper ;
-""")
+""",
+)
 
-t.write("test.cpp", """
+t.write(
+    "test.cpp",
+    """
 void helper();
 int main() { helper(); }
-""")
+""",
+)
 
-t.write("helper.cpp", """
+t.write(
+    "helper.cpp",
+    """
 void
 #if defined(_WIN32)
 __declspec(dllexport)
 #endif
 helper() {}
-""")
+""",
+)
 
 t.run_build_system(["link=static"])
 t.expect_addition("bin/$toolset/debug/link-static*/test.passed")

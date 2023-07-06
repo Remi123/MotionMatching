@@ -6,10 +6,13 @@
 
 import BoostBuild
 
+
 def test_basic():
     t = BoostBuild.Tester(pass_toolset=0)
 
-    t.write("file.jam", """\
+    t.write(
+        "file.jam",
+        """\
     actions fail
     {
         invalid-dd0eeb5899734622
@@ -19,7 +22,8 @@ def test_basic():
     fail t1 ;
 
     UPDATE t1 ;
-    """)
+    """,
+    )
 
     t.run_build_system(["-ffile.jam"])
     t.expect_output_lines("...failed*", False)
@@ -27,10 +31,13 @@ def test_basic():
 
     t.cleanup()
 
+
 def test_error():
     t = BoostBuild.Tester(pass_toolset=0)
 
-    t.write("file.jam", """\
+    t.write(
+        "file.jam",
+        """\
     actions pass
     {
         echo okay >$(<)
@@ -40,7 +47,8 @@ def test_error():
     pass t1 ;
 
     UPDATE t1 ;
-    """)
+    """,
+    )
 
     t.run_build_system(["-ffile.jam"], status=1)
     t.expect_output_lines("...failed pass t1...")
@@ -48,12 +56,15 @@ def test_error():
 
     t.cleanup()
 
+
 def test_multiple_actions():
     """FAIL_EXPECTED targets are considered to pass if the first
     updating action fails.  Further actions will be skipped."""
     t = BoostBuild.Tester(pass_toolset=0)
 
-    t.write("file.jam", """\
+    t.write(
+        "file.jam",
+        """\
     actions fail
     {
         invalid-dd0eeb5899734622
@@ -69,7 +80,8 @@ def test_multiple_actions():
     pass t1 ;
 
     UPDATE t1 ;
-    """)
+    """,
+    )
 
     t.run_build_system(["-ffile.jam", "-d1"])
     t.expect_output_lines("...failed*", False)
@@ -78,12 +90,15 @@ def test_multiple_actions():
 
     t.cleanup()
 
+
 def test_quitquick():
     """Tests that FAIL_EXPECTED targets do not cause early exit
     on failure."""
     t = BoostBuild.Tester(pass_toolset=0)
 
-    t.write("file.jam", """\
+    t.write(
+        "file.jam",
+        """\
     actions fail
     {
         invalid-dd0eeb5899734622
@@ -100,7 +115,8 @@ def test_quitquick():
     pass t2 ;
 
     UPDATE t1 t2 ;
-    """)
+    """,
+    )
 
     t.run_build_system(["-ffile.jam", "-q", "-d1"])
     t.expect_output_lines("pass t2")
@@ -109,11 +125,14 @@ def test_quitquick():
 
     t.cleanup()
 
+
 def test_quitquick_error():
     """FAIL_EXPECTED targets should cause early exit if they unexpectedly pass."""
     t = BoostBuild.Tester(pass_toolset=0)
 
-    t.write("file.jam", """\
+    t.write(
+        "file.jam",
+        """\
     actions pass
     {
         echo okay >$(<)
@@ -124,13 +143,15 @@ def test_quitquick_error():
     pass t2 ;
 
     UPDATE t1 t2 ;
-    """)
+    """,
+    )
 
     t.run_build_system(["-ffile.jam", "-q", "-d1"], status=1)
     t.expect_output_lines("pass t2", False)
     t.expect_nothing_more()
 
     t.cleanup()
+
 
 test_basic()
 test_error()

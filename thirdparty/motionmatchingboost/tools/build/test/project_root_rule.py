@@ -14,17 +14,26 @@ import BoostBuild
 t = BoostBuild.Tester(use_test_config=False)
 
 
-t.write("jamroot.jam", """
+t.write(
+    "jamroot.jam",
+    """
 project : requirements <link>static ;
 rule my-lib ( name ) { lib $(name) : [ glob *.cpp ] ; }
-""")
+""",
+)
 
-t.write("sub/a.cpp", """
-""")
+t.write(
+    "sub/a.cpp",
+    """
+""",
+)
 
-t.write("sub/jamfile.jam", """
+t.write(
+    "sub/jamfile.jam",
+    """
 my-lib foo ;
-""")
+""",
+)
 
 
 t.run_build_system(subdir="sub")

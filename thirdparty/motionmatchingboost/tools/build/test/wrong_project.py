@@ -15,23 +15,32 @@ t = BoostBuild.Tester(use_test_config=False)
 
 t.write("a.cpp", "int main() {}\n")
 
-t.write("jamroot.jam", """\
+t.write(
+    "jamroot.jam",
+    """\
 using some_tool ;
 exe a : a.cpp ;
-""")
+""",
+)
 
-t.write("some_tool.jam", """\
+t.write(
+    "some_tool.jam",
+    """\
 import project ;
 project.initialize $(__name__) ;
 rule init ( ) { }
-""")
+""",
+)
 
-t.write("some_tool.py", """\
+t.write(
+    "some_tool.py",
+    """\
 from b2.manager import get_manager
 get_manager().projects().initialize(__name__)
 def init():
     pass
-""")
+""",
+)
 
 t.run_build_system()
 t.expect_addition("bin/$toolset/debug*/a.exe")

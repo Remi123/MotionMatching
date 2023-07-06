@@ -10,10 +10,15 @@
 
 from TestToolset import test_toolset
 
-test_toolset("intel-darwin", "10.2", [
-    ["target-os=darwin"],
-    ["target-os=darwin", "release", "strip=on"],
-    ["target-os=darwin", "threading=multi"],
-    ["target-os=darwin", "link=static"],
-    ["target-os=darwin", "link=static", "runtime-link=static"],
-    ["target-os=darwin", "architecture=x86", "address-model=32"]])
+test_toolset(
+    "intel-darwin",
+    "10.2",
+    [
+        ["target-os=darwin"],
+        ["target-os=darwin", "release", "strip=on"],
+        ["target-os=darwin", "threading=multi"],
+        ["target-os=darwin", "link=static"],
+        ["target-os=darwin", "link=static", "runtime-link=static"],
+        ["target-os=darwin", "architecture=x86", "address-model=32"],
+    ],
+)

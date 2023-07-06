@@ -17,36 +17,54 @@ import BoostBuild
 
 t = BoostBuild.Tester(use_test_config=False)
 
-t.write("jamroot.jam", """
+t.write(
+    "jamroot.jam",
+    """
 project : requirements <library>lib//x ;
 exe a : a.cpp foo ;
 obj foo : foo.cpp : <variant>release ;
-""")
+""",
+)
 
-t.write("a.cpp", """
+t.write(
+    "a.cpp",
+    """
 void aux();
 int main() { aux(); }
-""")
+""",
+)
 
-t.write("foo.cpp", """
+t.write(
+    "foo.cpp",
+    """
 void gee();
 void aux() { gee(); }
-""")
+""",
+)
 
-t.write("lib/x.cpp", """
+t.write(
+    "lib/x.cpp",
+    """
 void
 #if defined(_WIN32)
 __declspec(dllexport)
 #endif
 gee() {}
-""")
+""",
+)
 
-t.write("lib/jamfile.jam", """
+t.write(
+    "lib/jamfile.jam",
+    """
 lib x : x.cpp ;
-""")
+""",
+)
 
-t.write("lib/jamroot.jam", """
-""")
+t.write(
+    "lib/jamroot.jam",
+    """
+""",
+)
 
 
 t.run_build_system()

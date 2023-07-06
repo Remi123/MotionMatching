@@ -11,7 +11,9 @@ import os
 
 t = BoostBuild.Tester(use_test_config=False)
 
-t.write("has space/jamroot.jam", """\
+t.write(
+    "has space/jamroot.jam",
+    """\
 import testing ;
 unit-test test : test.cpp ;
 actions write-file
@@ -19,7 +21,8 @@ actions write-file
     @(STDOUT:E=okay) >"$(<)"
 }
 make test.txt : : @write-file ;
-""")
+""",
+)
 t.write("has space/test.cpp", "int main() {}\n")
 
 tmpdir = t.workpath("has space")
@@ -31,8 +34,10 @@ try:
     oldtmpdir = os.environ["TMPDIR"]
 except:
     oldtmpdir = None
-os.environ["TMP"] = tmpdir; # Windows
-os.environ["TMPDIR"] = tmpdir; # *nix
+os.environ["TMP"] = tmpdir
+# Windows
+os.environ["TMPDIR"] = tmpdir
+# *nix
 
 try:
     t.run_build_system(["has space"])

@@ -12,6 +12,7 @@ import os
 import stat
 import string
 
+
 def usage():
     print("usage: load_dir.py directory")
 
@@ -30,7 +31,9 @@ def create_file(arg, dirname, fnames):
     for n in fnames:
         path = os.path.join(dirname, n)
         if not os.path.isdir(path):
-            print("t.write(\"%s\", \"\"\"" % (remove_first_component(path),),)
+            print(
+                't.write("%s", """' % (remove_first_component(path),),
+            )
             f = open(path, "r")
             for l in f:
                 print(l)
@@ -80,5 +83,5 @@ def main():
         print(footer)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

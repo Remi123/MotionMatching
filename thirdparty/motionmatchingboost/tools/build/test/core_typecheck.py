@@ -10,7 +10,9 @@ import BoostBuild
 
 t = BoostBuild.Tester(["-ffile.jam"], pass_toolset=0)
 
-t.write("file.jam", """
+t.write(
+    "file.jam",
+    """
 module .typecheck
 {
     rule "[path]" ( x )
@@ -31,10 +33,14 @@ do $(ARGUMENT) ;
 
 actions dummy { }
 dummy all ;
-""")
+""",
+)
 
 t.run_build_system(["-sARGUMENT=::a/b/c"])
-t.run_build_system(["-sARGUMENT=a/b/c"], status=1, stdout="""\
+t.run_build_system(
+    ["-sARGUMENT=a/b/c"],
+    status=1,
+    stdout="""\
 Error: a/b/c is not a path
 file.jam:18: in module scope
 *** argument error
@@ -42,6 +48,7 @@ file.jam:18: in module scope
 * called with: ( a/b/c )
 * true a
 file.jam:16:see definition of rule 'do' being called
-""")
+""",
+)
 
 t.cleanup()

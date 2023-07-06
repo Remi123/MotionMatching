@@ -12,7 +12,9 @@ import BoostBuild
 
 t = BoostBuild.Tester(use_test_config=False)
 
-t.write("jamroot.jam", """
+t.write(
+    "jamroot.jam",
+    """
 make a.h : : gen-header ;
 explicit a.h ;
 
@@ -33,12 +35,16 @@ else
         echo "int i;" > $(<)
     }
 }
-""")
+""",
+)
 
-t.write("hello.cpp", """
+t.write(
+    "hello.cpp",
+    """
 #include "a.h"
 int main() { return i; }
-""")
+""",
+)
 
 
 t.run_build_system()
@@ -47,7 +53,9 @@ t.expect_addition("bin/$toolset/debug*/hello.exe")
 
 t.rm("bin")
 
-t.write("jamroot.jam", """
+t.write(
+    "jamroot.jam",
+    """
 make dir/a.h : : gen-header ;
 explicit dir/a.h ;
 
@@ -68,12 +76,16 @@ else
         echo "int i;" > $(<)
     }
 }
-""")
+""",
+)
 
-t.write("hello.cpp", """
+t.write(
+    "hello.cpp",
+    """
 #include "dir/a.h"
 int main() { return i; }
-""")
+""",
+)
 t.run_build_system()
 
 t.expect_addition("bin/$toolset/debug*/hello.exe")

@@ -22,6 +22,7 @@ import re
 #
 ###############################################################################
 
+
 def test_user_configuration():
     """
       Test Boost Build user configuration handling. Both relative and absolute
@@ -29,46 +30,54 @@ def test_user_configuration():
 
     """
 
-    implicitConfigLoadMessage =  \
-        "notice: Loading user-config configuration file: *"
-    explicitConfigLoadMessage =  \
-        "notice: Loading explicitly specified user configuration file:"
-    disabledConfigLoadMessage =  \
-        "notice: User configuration file loading explicitly disabled."
+    implicitConfigLoadMessage = "notice: Loading user-config configuration file: *"
+    explicitConfigLoadMessage = "notice: Loading explicitly specified user configuration file:"
+    disabledConfigLoadMessage = "notice: User configuration file loading explicitly disabled."
     testMessage = "_!_!_!_!_!_!_!_!_ %s _!_!_!_!_!_!_!_!_"
     toolsetName = "__myDummyToolset__"
     subdirName = "ASubDirectory"
-    configFileNames = ["ups_lala_1.jam", "ups_lala_2.jam",
-        os.path.join(subdirName, "ups_lala_3.jam")]
+    configFileNames = ["ups_lala_1.jam", "ups_lala_2.jam", os.path.join(subdirName, "ups_lala_3.jam")]
 
-    t = BoostBuild.Tester(["toolset=%s" % toolsetName,
-        "--debug-configuration"], pass_toolset=False, use_test_config=False)
+    t = BoostBuild.Tester(
+        ["toolset=%s" % toolsetName, "--debug-configuration"], pass_toolset=False, use_test_config=False
+    )
 
     for configFileName in configFileNames:
-        message = "ECHO \"%s\" ;" % testMessage % configFileName
+        message = 'ECHO "%s" ;' % testMessage % configFileName
         # We need to double any backslashes in the message or Jam will
         # interpret them as escape characters.
         t.write(configFileName, message.replace("\\", "\\\\"))
 
     # Prepare a dummy toolset so we do not get errors in case the default one
     # is not found.
-    t.write(toolsetName + ".jam", """\
+    t.write(
+        toolsetName + ".jam",
+        """\
 import feature ;
 feature.extend toolset : %s ;
 rule init ( ) { }
-""" % toolsetName)
+"""
+        % toolsetName,
+    )
 
     # Python version of the same dummy toolset.
-    t.write(toolsetName + ".py", """\
+    t.write(
+        toolsetName + ".py",
+        """\
 from b2.build import feature
 feature.extend('toolset', ['%s'])
 def init(): pass
-""" % toolsetName)
+"""
+        % toolsetName,
+    )
 
-    t.write("jamroot.jam", """\
+    t.write(
+        "jamroot.jam",
+        """\
 local test-index = [ MATCH ---test-id---=(.*) : [ modules.peek : ARGV ] ] ;
 ECHO test-index: $(test-index:E=(unknown)) ;
-""")
+""",
+    )
 
     class LocalTester:
         def __init__(self, tester):
@@ -76,14 +85,12 @@ ECHO test-index: $(test-index:E=(unknown)) ;
             self.__test_ids = []
 
         def __assertionFailure(self, message):
-            BoostBuild.annotation("failure", "Internal test assertion failure "
-                "- %s" % message)
+            BoostBuild.annotation("failure", "Internal test assertion failure " "- %s" % message)
             self.__tester.fail_test(1)
 
         def __call__(self, test_id, env, extra_args=None, *args, **kwargs):
             if env == "" and not canSetEmptyEnvironmentVariable:
-                self.__assertionFailure("Can not set empty environment "
-                    "variables on this platform.")
+                self.__assertionFailure("Can not set empty environment " "variables on this platform.")
             self.__registerTestId(str(test_id))
             if extra_args is None:
                 extra_args = []
@@ -98,8 +105,7 @@ ECHO test-index: $(test-index:E=(unknown)) ;
 
         def __registerTestId(self, test_id):
             if test_id in self.__test_ids:
-                self.__assertionFailure("Multiple test cases encountered "
-                    "using the same test id '%s'." % test_id)
+                self.__assertionFailure("Multiple test cases encountered " "using the same test id '%s'." % test_id)
             self.__test_ids.append(test_id)
 
     test = LocalTester(t)
@@ -234,6 +240,7 @@ ECHO test-index: $(test-index:E=(unknown)) ;
 #
 ###############################################################################
 
+
 def _canSetEmptyEnvironmentVariable():
     """
       Unfortunately different OSs (and possibly Python implementations as well)
@@ -281,25 +288,34 @@ def _env_set(name, value):
 def _getExternalEnv(name):
     toolsetName = "__myDummyToolset__"
 
-    t = BoostBuild.Tester(["toolset=%s" % toolsetName], pass_toolset=False,
-        use_test_config=False)
+    t = BoostBuild.Tester(["toolset=%s" % toolsetName], pass_toolset=False, use_test_config=False)
     try:
         #   Prepare a dummy toolset so we do not get errors in case the default
         # one is not found.
-        t.write(toolsetName + ".jam", """\
+        t.write(
+            toolsetName + ".jam",
+            """\
 import feature ;
 feature.extend toolset : %s ;
 rule init ( ) { }
-""" % toolsetName)
+"""
+            % toolsetName,
+        )
 
         # Python version of the same dummy toolset.
-        t.write(toolsetName + ".py", """\
+        t.write(
+            toolsetName + ".py",
+            """\
 from b2.build import feature
 feature.extend('toolset', ['%s'])
 def init(): pass
-""" % toolsetName)
+"""
+            % toolsetName,
+        )
 
-        t.write("jamroot.jam", """\
+        t.write(
+            "jamroot.jam",
+            """\
 import os ;
 local names = [ MATCH ^---var-name---=(.*) : [ modules.peek : ARGV ] ] ;
 for x in $(names)
@@ -307,7 +323,8 @@ for x in $(names)
     value = [ os.environ $(x) ] ;
     ECHO "###" $(x): '$(value)' "###" ;
 }
-""")
+""",
+        )
 
         t.run_build_system(["---var-name---=%s" % name])
         m = re.search("^### %s: '(.*)' ###$" % name, t.stdout(), re.MULTILINE)
@@ -319,52 +336,59 @@ for x in $(names)
 
 def test_site_config():
     # Ignore user-config, just in case it depends on the user's site-config.jam
-    t = BoostBuild.Tester(["--user-config="], use_test_config=False,
-                          pass_toolset=0)
+    t = BoostBuild.Tester(["--user-config="], use_test_config=False, pass_toolset=0)
     # We can immediately exit after we finish loading the config files
     t.write("Jamroot", "EXIT Done : 0 ;")
     t.write("my-site-config.jam", "ECHO Loaded my-site-config ;")
 
-    t.run_build_system(["--site-config=my-site-config.jam"],
-                       stdout="Loaded my-site-config\nDone\n")
+    t.run_build_system(["--site-config=my-site-config.jam"], stdout="Loaded my-site-config\nDone\n")
 
     t.run_build_system(["--ignore-site-config", "--debug-configuration"])
-    t.expect_output_lines("""\
+    t.expect_output_lines(
+        """\
 notice: Site configuration files will be ignored due to the
-notice: --ignore-site-config command-line option.""")
+notice: --ignore-site-config command-line option."""
+    )
 
     t.run_build_system(["--site-config=", "--debug-configuration"])
-    t.expect_output_lines("""\
-notice: Site configuration file loading explicitly disabled.""")
+    t.expect_output_lines(
+        """\
+notice: Site configuration file loading explicitly disabled."""
+    )
 
     t.cleanup()
+
 
 def test_global_config():
     t = BoostBuild.Tester(use_test_config=False, pass_toolset=0)
     t.write("my-config.jam", "ECHO Loading my-config ;")
     t.write("Jamroot", "EXIT Done : 0 ;")
     t.write("project-config.jam", "ECHO bad ;")
-    t.run_build_system(["--config=my-config.jam", "--debug-configuration"],
-                       match=TestCmd.match_re, stdout=
-r"""notice: loading B2 from .*
+    t.run_build_system(
+        ["--config=my-config.jam", "--debug-configuration"],
+        match=TestCmd.match_re,
+        stdout=r"""notice: loading B2 from .*
 notice: Searching '.*' for all-config configuration file 'my-config\.jam'\.
 notice: Loading all-config configuration file 'my-config\.jam' from '.*'\.
 Loading my-config
 notice: Regular configuration files will be ignored due
 notice: to the global configuration being loaded\.
 Done
-""")
-    t.run_build_system(["--config=", "--debug-configuration"],
-                       match=TestCmd.match_re, stdout=
-r"""notice: loading B2 from .*
+""",
+    )
+    t.run_build_system(
+        ["--config=", "--debug-configuration"],
+        match=TestCmd.match_re,
+        stdout=r"""notice: loading B2 from .*
 notice: Configuration file loading explicitly disabled.
 Done
-""")
+""",
+    )
     t.cleanup()
 
+
 def test_project_config():
-    t = BoostBuild.Tester(["--user-config=", "--site-config="],
-                          use_test_config=False, pass_toolset=False)
+    t = BoostBuild.Tester(["--user-config=", "--site-config="], use_test_config=False, pass_toolset=False)
     t.write("Jamroot", "EXIT Done : 0 ;")
     t.write("project-config.jam", "ECHO Loading Root ;")
     t.write("my-project-config.jam", "ECHO Loading explicit ;")
@@ -375,10 +399,10 @@ def test_project_config():
     t.run_build_system(subdir="sub", stdout="Loading subdir\nDone\n")
     t.rm("sub/project-config.jam")
     t.run_build_system(subdir="sub", stdout="Loading Root\nDone\n")
-    t.run_build_system(["--project-config=my-project-config.jam"],
-                       stdout="Loading explicit\nDone\n")
+    t.run_build_system(["--project-config=my-project-config.jam"], stdout="Loading explicit\nDone\n")
 
     t.cleanup()
+
 
 ###############################################################################
 #

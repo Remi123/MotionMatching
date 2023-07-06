@@ -16,10 +16,13 @@ t = BoostBuild.Tester(use_test_config=False)
 # Create the needed files.
 t.write("p1/jamroot.jam", "exe hello : hello.cpp ;")
 t.write("p1/hello.cpp", "int main() {}\n")
-t.write("p2/jamroot.jam", """\
+t.write(
+    "p2/jamroot.jam",
+    """\
 exe hello2 : hello.cpp ;
 exe hello3 : hello.cpp ;
-""")
+""",
+)
 t.write("p2/hello.cpp", "int main() {}\n")
 
 t.run_build_system(["p1", "p2//hello3"])

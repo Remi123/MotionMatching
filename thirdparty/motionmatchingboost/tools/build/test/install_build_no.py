@@ -14,11 +14,14 @@ t = BoostBuild.Tester()
 
 t.write("a.cpp", "int main() {}\n")
 
-t.write("jamroot.jam", """
+t.write(
+    "jamroot.jam",
+    """
 make x : : maker : <build>no ;
 exe a : a.cpp ;
 install install : x a ;
-""")
+""",
+)
 
 t.run_build_system()
 t.expect_addition("install/a.exe")

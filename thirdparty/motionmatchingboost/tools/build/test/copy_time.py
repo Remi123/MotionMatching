@@ -13,7 +13,9 @@ import BoostBuild
 
 tester = BoostBuild.Tester(use_test_config=False)
 
-tester.write("test1.cpp", """\
+tester.write(
+    "test1.cpp",
+    """\
 template<bool, int M, class Next>
 struct time_waster {
     typedef typename time_waster<true, M-1, time_waster>::type type1;
@@ -26,9 +28,12 @@ struct time_waster<B, 0, Next> {
 };
 typedef time_waster<true, 10, void>::type type;
 int f() { return 0; }
-""")
+""",
+)
 
-tester.write("test2.cpp", """\
+tester.write(
+    "test2.cpp",
+    """\
 template<bool, int M, class Next>
 struct time_waster {
     typedef typename time_waster<true, M-1, time_waster>::type type1;
@@ -41,13 +46,17 @@ struct time_waster<B, 0, Next> {
 };
 typedef time_waster<true, 10, void>::type type;
 int g() { return 0; }
-""")
+""",
+)
 
-tester.write("jamroot.jam", """\
+tester.write(
+    "jamroot.jam",
+    """\
 obj test2 : test2.cpp ;
 obj test1 : test1.cpp : <dependency>test2 ;
 install test2i : test2 : <dependency>test1 ;
-""")
+""",
+)
 
 tester.run_build_system()
 tester.expect_addition("bin/$toolset/debug*/test2.obj")
@@ -58,8 +67,7 @@ tester.expect_nothing_more()
 test2src = tester.read("test2i/test2.obj", binary=True)
 test2dest = tester.read("bin/$toolset/debug*/test2.obj", binary=True)
 if test2src != test2dest:
-    BoostBuild.annotation("failure", "The object file was not copied "
-        "correctly")
+    BoostBuild.annotation("failure", "The object file was not copied " "correctly")
     tester.fail_test(1)
 
 tester.run_build_system(["-d1"])

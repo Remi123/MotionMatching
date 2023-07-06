@@ -10,18 +10,24 @@ import BoostBuild
 
 t = BoostBuild.Tester(use_test_config=False)
 
-t.write("jamroot.jam", """\
+t.write(
+    "jamroot.jam",
+    """\
 variant debug-AA : debug : <define>AA ;
 alias all : hello ;
 exe hello : hello.cpp ;
 explicit hello ;
-""")
+""",
+)
 
-t.write("hello.cpp", """\
+t.write(
+    "hello.cpp",
+    """\
 #ifdef AA
 int main() {}
 #endif
-""")
+""",
+)
 
 t.run_build_system(["debug-AA"])
 

@@ -16,12 +16,15 @@ def test_basic():
     t.write("jamroot.jam", "")
     t.write("d1/a.cpp", "int main() {}\n")
     t.write("d1/jamfile.jam", "exe a : [ glob *.cpp ] ../d2/d//l ;")
-    t.write("d2/d/l.cpp", """\
+    t.write(
+        "d2/d/l.cpp",
+        """\
 #if defined(_WIN32)
 __declspec(dllexport)
 void force_import_lib_creation() {}
 #endif
-""")
+""",
+    )
     t.write("d2/d/jamfile.jam", "lib l : [ glob *.cpp ] ;")
     t.write("d3/d/jamfile.jam", "exe a : [ glob ../*.cpp ] ;")
     t.write("d3/a.cpp", "int main() {}\n")
@@ -50,16 +53,22 @@ def test_source_location():
     t.write("jamroot.jam", "")
     t.write("d1/a.cpp", "very bad non-compilable file\n")
     t.write("d1/src/a.cpp", "int main() {}\n")
-    t.write("d1/jamfile.jam", """\
+    t.write(
+        "d1/jamfile.jam",
+        """\
 project : source-location src ;
 exe a : [ glob *.cpp ] ../d2/d//l ;
-""")
-    t.write("d2/d/l.cpp", """\
+""",
+    )
+    t.write(
+        "d2/d/l.cpp",
+        """\
 #if defined(_WIN32)
 __declspec(dllexport)
 void force_import_lib_creation() {}
 #endif
-""")
+""",
+    )
     t.write("d2/d/jamfile.jam", "lib l : [ glob *.cpp ] ;")
 
     t.run_build_system(subdir="d1")
@@ -70,8 +79,8 @@ void force_import_lib_creation() {}
 
 def test_wildcards_and_exclusion_patterns():
     """
-        Test that wildcards can include directories. Also test exclusion
-     patterns.
+       Test that wildcards can include directories. Also test exclusion
+    patterns.
 
     """
     t = BoostBuild.Tester(use_test_config=False)
@@ -80,16 +89,22 @@ def test_wildcards_and_exclusion_patterns():
     t.write("d1/src/foo/a.cpp", "void bar(); int main() { bar(); }\n")
     t.write("d1/src/bar/b.cpp", "void bar() {}\n")
     t.write("d1/src/bar/bad.cpp", "very bad non-compilable file\n")
-    t.write("d1/jamfile.jam", """\
+    t.write(
+        "d1/jamfile.jam",
+        """\
 project : source-location src ;
 exe a : [ glob foo/*.cpp bar/*.cpp : bar/bad* ] ../d2/d//l ;
-""")
-    t.write("d2/d/l.cpp", """\
+""",
+    )
+    t.write(
+        "d2/d/l.cpp",
+        """\
 #if defined(_WIN32)
 __declspec(dllexport)
 void force_import_lib_creation() {}
 #endif
-""")
+""",
+    )
     t.write("d2/d/jamfile.jam", "lib l : [ glob *.cpp ] ;")
 
     t.run_build_system(subdir="d1")
@@ -107,16 +122,22 @@ def test_glob_tree():
     t.write("d1/src/foo/a.cpp", "void bar(); int main() { bar(); }\n")
     t.write("d1/src/bar/b.cpp", "void bar() {}\n")
     t.write("d1/src/bar/bad.cpp", "very bad non-compilable file\n")
-    t.write("d1/jamfile.jam", """\
+    t.write(
+        "d1/jamfile.jam",
+        """\
 project : source-location src ;
 exe a : [ glob-tree *.cpp : bad* ] ../d2/d//l ;
-""")
-    t.write("d2/d/l.cpp", """\
+""",
+    )
+    t.write(
+        "d2/d/l.cpp",
+        """\
 #if defined(_WIN32)
 __declspec(dllexport)
 void force_import_lib_creation() {}
 #endif
-""")
+""",
+    )
     t.write("d2/d/jamfile.jam", "lib l : [ glob *.cpp ] ;")
 
     t.run_build_system(subdir="d1")
@@ -135,16 +156,22 @@ def test_directory_names_in_glob_tree():
     t.write("d1/src/foo/a.cpp", "void bar(); int main() { bar(); }\n")
     t.write("d1/src/bar/b.cpp", "void bar() {}\n")
     t.write("d1/src/bar/bad.cpp", "very bad non-compilable file\n")
-    t.write("d1/jamfile.jam", """\
+    t.write(
+        "d1/jamfile.jam",
+        """\
 project : source-location src ;
 exe a : [ glob-tree foo/*.cpp bar/*.cpp : bad* ] ../d2/d//l ;
-""")
-    t.write("d2/d/l.cpp", """\
+""",
+    )
+    t.write(
+        "d2/d/l.cpp",
+        """\
 #if defined(_WIN32)
 __declspec(dllexport)
 void force_import_lib_creation() {}
 #endif
-""")
+""",
+    )
     t.write("d2/d/jamfile.jam", "lib l : [ glob *.cpp ] ;")
 
     t.run_build_system(subdir="d1", status=1)
@@ -165,17 +192,23 @@ def test_glob_with_absolute_names():
     # Note that to get the current dir, we use bjam's PWD, not Python's
     # os.getcwd(), because the former will always return a long path while the
     # latter might return a short path, which would confuse path.glob.
-    t.write("d1/jamfile.jam", """\
+    t.write(
+        "d1/jamfile.jam",
+        """\
 project : source-location src ;
 local pwd = [ PWD ] ;  # Always absolute.
 exe a : [ glob $(pwd)/src/foo/*.cpp $(pwd)/src/bar/*.cpp ] ../d2/d//l ;
-""")
-    t.write("d2/d/l.cpp", """\
+""",
+    )
+    t.write(
+        "d2/d/l.cpp",
+        """\
 #if defined(_WIN32)
 __declspec(dllexport)
 void force_import_lib_creation() {}
 #endif
-""")
+""",
+    )
     t.write("d2/d/jamfile.jam", "lib l : [ glob *.cpp ] ;")
 
     t.run_build_system(subdir="d1")

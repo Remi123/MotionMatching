@@ -10,7 +10,9 @@ import BoostBuild
 
 t = BoostBuild.Tester(pass_toolset=0, ignore_toolset_requirements=False)
 
-t.write('jamroot.jam', '''
+t.write(
+    "jamroot.jam",
+    """
 import toolset ;
 import errors ;
 
@@ -37,7 +39,8 @@ rule check-requirements ( target : sources * : properties * )
   }
 }
 make test : : @check-requirements ;
-''')
+""",
+)
 
 t.run_build_system()
 

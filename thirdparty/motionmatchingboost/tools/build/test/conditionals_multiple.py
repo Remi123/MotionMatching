@@ -18,25 +18,35 @@ import BoostBuild
 #
 ###############################################################################
 
+
 def test_multiple_conditions():
     """Basic tests for properties conditioned on multiple other properties."""
 
-    t = BoostBuild.Tester(["--user-config=", "--ignore-site-config",
-        "toolset=testToolset"], pass_toolset=False, use_test_config=False)
+    t = BoostBuild.Tester(
+        ["--user-config=", "--ignore-site-config", "toolset=testToolset"], pass_toolset=False, use_test_config=False
+    )
 
-    t.write("testToolset.jam", """\
+    t.write(
+        "testToolset.jam",
+        """\
 import feature ;
 feature.extend toolset : testToolset ;
 rule init ( ) { }
-""")
+""",
+    )
 
-    t.write("testToolset.py", """\
+    t.write(
+        "testToolset.py",
+        """\
 from b2.build import feature
 feature.extend('toolset', ["testToolset"])
 def init ( ): pass
-""")
+""",
+    )
 
-    t.write("jamroot.jam", """\
+    t.write(
+        "jamroot.jam",
+        """\
 import feature ;
 import notfile ;
 import toolset ;
@@ -68,47 +78,48 @@ notfile testTarget1 : @buildRule : :
     <aaa>1,<bbb>0,<ccc>1:<description>a1-b0-c1
     <aaa>1,<bbb>1,<ccc>0:<description>a1-b1-c0
     <aaa>1,<bbb>1,<ccc>1:<description>a1-b1-c1 ;
-""")
+""",
+    )
 
     t.run_build_system(["aaa=1", "bbb=1", "ccc=1"])
-    t.expect_output_lines("description: /d/"              )
-    t.expect_output_lines("description: /a0/"      , False)
-    t.expect_output_lines("description: /a1/"             )
-    t.expect_output_lines("description: /a0-b0/"   , False)
-    t.expect_output_lines("description: /a0-b1/"   , False)
-    t.expect_output_lines("description: /a1-b0/"   , False)
-    t.expect_output_lines("description: /a1-b1/"          )
+    t.expect_output_lines("description: /d/")
+    t.expect_output_lines("description: /a0/", False)
+    t.expect_output_lines("description: /a1/")
+    t.expect_output_lines("description: /a0-b0/", False)
+    t.expect_output_lines("description: /a0-b1/", False)
+    t.expect_output_lines("description: /a1-b0/", False)
+    t.expect_output_lines("description: /a1-b1/")
     t.expect_output_lines("description: /a0-b0-c0/", False)
     t.expect_output_lines("description: /a0-b0-c1/", False)
     t.expect_output_lines("description: /a0-b1-c1/", False)
     t.expect_output_lines("description: /a1-b0-c1/", False)
     t.expect_output_lines("description: /a1-b1-c0/", False)
-    t.expect_output_lines("description: /a1-b1-c1/"       )
+    t.expect_output_lines("description: /a1-b1-c1/")
 
     t.run_build_system(["aaa=0", "bbb=0", "ccc=1"])
-    t.expect_output_lines("description: /d/"              )
-    t.expect_output_lines("description: /a0/"             )
-    t.expect_output_lines("description: /a1/"      , False)
-    t.expect_output_lines("description: /a0-b0/"          )
-    t.expect_output_lines("description: /a0-b1/"   , False)
-    t.expect_output_lines("description: /a1-b0/"   , False)
-    t.expect_output_lines("description: /a1-b1/"   , False)
+    t.expect_output_lines("description: /d/")
+    t.expect_output_lines("description: /a0/")
+    t.expect_output_lines("description: /a1/", False)
+    t.expect_output_lines("description: /a0-b0/")
+    t.expect_output_lines("description: /a0-b1/", False)
+    t.expect_output_lines("description: /a1-b0/", False)
+    t.expect_output_lines("description: /a1-b1/", False)
     t.expect_output_lines("description: /a0-b0-c0/", False)
-    t.expect_output_lines("description: /a0-b0-c1/"       )
+    t.expect_output_lines("description: /a0-b0-c1/")
     t.expect_output_lines("description: /a0-b1-c1/", False)
     t.expect_output_lines("description: /a1-b0-c1/", False)
     t.expect_output_lines("description: /a1-b1-c0/", False)
     t.expect_output_lines("description: /a1-b1-c1/", False)
 
     t.run_build_system(["aaa=0", "bbb=0", "ccc=0"])
-    t.expect_output_lines("description: /d/"              )
-    t.expect_output_lines("description: /a0/"             )
-    t.expect_output_lines("description: /a1/"      , False)
-    t.expect_output_lines("description: /a0-b0/"          )
-    t.expect_output_lines("description: /a0-b1/"   , False)
-    t.expect_output_lines("description: /a1-b0/"   , False)
-    t.expect_output_lines("description: /a1-b1/"   , False)
-    t.expect_output_lines("description: /a0-b0-c0/"       )
+    t.expect_output_lines("description: /d/")
+    t.expect_output_lines("description: /a0/")
+    t.expect_output_lines("description: /a1/", False)
+    t.expect_output_lines("description: /a0-b0/")
+    t.expect_output_lines("description: /a0-b1/", False)
+    t.expect_output_lines("description: /a1-b0/", False)
+    t.expect_output_lines("description: /a1-b1/", False)
+    t.expect_output_lines("description: /a0-b0-c0/")
     t.expect_output_lines("description: /a0-b0-c1/", False)
     t.expect_output_lines("description: /a0-b1-c1/", False)
     t.expect_output_lines("description: /a1-b0-c1/", False)
@@ -125,32 +136,42 @@ notfile testTarget1 : @buildRule : :
 #
 ###############################################################################
 
+
 def test_multiple_conditions_with_toolset_version():
     """
       Regression tests for properties conditioned on the toolset version
     subfeature and some additional properties.
 
     """
-    toolset = "testToolset" ;
+    toolset = "testToolset"
 
-    t = BoostBuild.Tester(["--user-config=", "--ignore-site-config"],
-        pass_toolset=False, use_test_config=False)
+    t = BoostBuild.Tester(["--user-config=", "--ignore-site-config"], pass_toolset=False, use_test_config=False)
 
-    t.write(toolset + ".jam", """\
+    t.write(
+        toolset + ".jam",
+        """\
 import feature ;
 feature.extend toolset : %(toolset)s ;
 feature.subfeature toolset %(toolset)s : version : 0 1 ;
 rule init ( version ? ) { }
-""" % {"toolset": toolset})
+"""
+        % {"toolset": toolset},
+    )
 
-    t.write("testToolset.py", """\
+    t.write(
+        "testToolset.py",
+        """\
 from b2.build import feature
 feature.extend('toolset', ["%(toolset)s"])
 feature.subfeature('toolset', "%(toolset)s", "version", ['0','1'])
 def init (version=''): pass
-""" % {"toolset": toolset})
+"""
+        % {"toolset": toolset},
+    )
 
-    t.write("jamroot.jam", """\
+    t.write(
+        "jamroot.jam",
+        """\
 import feature ;
 import notfile ;
 import toolset ;
@@ -220,31 +241,32 @@ notfile testTarget1 : @buildRule : :
     <bbb>1,<aaa>0,<toolset>testToolset-1:<description>b1-a0-t1
     <bbb>1,<aaa>1,<toolset>testToolset-0:<description>b1-a1-t0
     <bbb>1,<aaa>1,<toolset>testToolset-1:<description>b1-a1-t1 ;
-""")
+""",
+    )
 
     t.run_build_system(["aaa=1", "bbb=1", "ccc=1", "toolset=%s-0" % toolset])
-    t.expect_output_lines("description: /t-a0/"    , False)
-    t.expect_output_lines("description: /t-a1/"           )
-    t.expect_output_lines("description: /t0-a0/"   , False)
-    t.expect_output_lines("description: /t0-a1/"          )
-    t.expect_output_lines("description: /t1-a0/"   , False)
-    t.expect_output_lines("description: /t1-a1/"   , False)
-    t.expect_output_lines("description: /t-a0-b0/" , False)
-    t.expect_output_lines("description: /t-a0-b1/" , False)
-    t.expect_output_lines("description: /t-a1-b0/" , False)
-    t.expect_output_lines("description: /t-a1-b1/"        )
-    t.expect_output_lines("description: /a0-t-b0/" , False)
-    t.expect_output_lines("description: /a0-t-b1/" , False)
-    t.expect_output_lines("description: /a1-t-b0/" , False)
-    t.expect_output_lines("description: /a1-t-b1/"        )
-    t.expect_output_lines("description: /a0-b0-t/" , False)
-    t.expect_output_lines("description: /a0-b1-t/" , False)
-    t.expect_output_lines("description: /a1-b0-t/" , False)
-    t.expect_output_lines("description: /a1-b1-t/"        )
+    t.expect_output_lines("description: /t-a0/", False)
+    t.expect_output_lines("description: /t-a1/")
+    t.expect_output_lines("description: /t0-a0/", False)
+    t.expect_output_lines("description: /t0-a1/")
+    t.expect_output_lines("description: /t1-a0/", False)
+    t.expect_output_lines("description: /t1-a1/", False)
+    t.expect_output_lines("description: /t-a0-b0/", False)
+    t.expect_output_lines("description: /t-a0-b1/", False)
+    t.expect_output_lines("description: /t-a1-b0/", False)
+    t.expect_output_lines("description: /t-a1-b1/")
+    t.expect_output_lines("description: /a0-t-b0/", False)
+    t.expect_output_lines("description: /a0-t-b1/", False)
+    t.expect_output_lines("description: /a1-t-b0/", False)
+    t.expect_output_lines("description: /a1-t-b1/")
+    t.expect_output_lines("description: /a0-b0-t/", False)
+    t.expect_output_lines("description: /a0-b1-t/", False)
+    t.expect_output_lines("description: /a1-b0-t/", False)
+    t.expect_output_lines("description: /a1-b1-t/")
     t.expect_output_lines("description: /t0-a0-b0/", False)
     t.expect_output_lines("description: /t0-a0-b1/", False)
     t.expect_output_lines("description: /t0-a1-b0/", False)
-    t.expect_output_lines("description: /t0-a1-b1/"       )
+    t.expect_output_lines("description: /t0-a1-b1/")
     t.expect_output_lines("description: /t1-a0-b0/", False)
     t.expect_output_lines("description: /t1-a0-b1/", False)
     t.expect_output_lines("description: /t1-a1-b0/", False)
@@ -252,33 +274,33 @@ notfile testTarget1 : @buildRule : :
     t.expect_output_lines("description: /a0-t1-b0/", False)
     t.expect_output_lines("description: /a0-t1-b1/", False)
     t.expect_output_lines("description: /a1-t0-b0/", False)
-    t.expect_output_lines("description: /a1-t0-b1/"       )
+    t.expect_output_lines("description: /a1-t0-b1/")
     t.expect_output_lines("description: /b0-a1-t0/", False)
     t.expect_output_lines("description: /b0-a0-t1/", False)
     t.expect_output_lines("description: /b0-a1-t1/", False)
     t.expect_output_lines("description: /b1-a0-t1/", False)
-    t.expect_output_lines("description: /b1-a1-t0/"       )
+    t.expect_output_lines("description: /b1-a1-t0/")
     t.expect_output_lines("description: /b1-a1-t1/", False)
 
     t.run_build_system(["aaa=1", "bbb=1", "ccc=1", "toolset=%s-1" % toolset])
-    t.expect_output_lines("description: /t-a0/"    , False)
-    t.expect_output_lines("description: /t-a1/"           )
-    t.expect_output_lines("description: /t0-a0/"   , False)
-    t.expect_output_lines("description: /t0-a1/"   , False)
-    t.expect_output_lines("description: /t1-a0/"   , False)
-    t.expect_output_lines("description: /t1-a1/"          )
-    t.expect_output_lines("description: /t-a0-b0/" , False)
-    t.expect_output_lines("description: /t-a0-b1/" , False)
-    t.expect_output_lines("description: /t-a1-b0/" , False)
-    t.expect_output_lines("description: /t-a1-b1/"        )
-    t.expect_output_lines("description: /a0-t-b0/" , False)
-    t.expect_output_lines("description: /a0-t-b1/" , False)
-    t.expect_output_lines("description: /a1-t-b0/" , False)
-    t.expect_output_lines("description: /a1-t-b1/"        )
-    t.expect_output_lines("description: /a0-b0-t/" , False)
-    t.expect_output_lines("description: /a0-b1-t/" , False)
-    t.expect_output_lines("description: /a1-b0-t/" , False)
-    t.expect_output_lines("description: /a1-b1-t/"        )
+    t.expect_output_lines("description: /t-a0/", False)
+    t.expect_output_lines("description: /t-a1/")
+    t.expect_output_lines("description: /t0-a0/", False)
+    t.expect_output_lines("description: /t0-a1/", False)
+    t.expect_output_lines("description: /t1-a0/", False)
+    t.expect_output_lines("description: /t1-a1/")
+    t.expect_output_lines("description: /t-a0-b0/", False)
+    t.expect_output_lines("description: /t-a0-b1/", False)
+    t.expect_output_lines("description: /t-a1-b0/", False)
+    t.expect_output_lines("description: /t-a1-b1/")
+    t.expect_output_lines("description: /a0-t-b0/", False)
+    t.expect_output_lines("description: /a0-t-b1/", False)
+    t.expect_output_lines("description: /a1-t-b0/", False)
+    t.expect_output_lines("description: /a1-t-b1/")
+    t.expect_output_lines("description: /a0-b0-t/", False)
+    t.expect_output_lines("description: /a0-b1-t/", False)
+    t.expect_output_lines("description: /a1-b0-t/", False)
+    t.expect_output_lines("description: /a1-b1-t/")
     t.expect_output_lines("description: /t0-a0-b0/", False)
     t.expect_output_lines("description: /t0-a0-b1/", False)
     t.expect_output_lines("description: /t0-a1-b0/", False)
@@ -286,7 +308,7 @@ notfile testTarget1 : @buildRule : :
     t.expect_output_lines("description: /t1-a0-b0/", False)
     t.expect_output_lines("description: /t1-a0-b1/", False)
     t.expect_output_lines("description: /t1-a1-b0/", False)
-    t.expect_output_lines("description: /t1-a1-b1/"       )
+    t.expect_output_lines("description: /t1-a1-b1/")
     t.expect_output_lines("description: /a0-t1-b0/", False)
     t.expect_output_lines("description: /a0-t1-b1/", False)
     t.expect_output_lines("description: /a1-t0-b0/", False)
@@ -296,7 +318,7 @@ notfile testTarget1 : @buildRule : :
     t.expect_output_lines("description: /b0-a1-t1/", False)
     t.expect_output_lines("description: /b1-a0-t1/", False)
     t.expect_output_lines("description: /b1-a1-t0/", False)
-    t.expect_output_lines("description: /b1-a1-t1/"       )
+    t.expect_output_lines("description: /b1-a1-t1/")
 
     t.cleanup()
 

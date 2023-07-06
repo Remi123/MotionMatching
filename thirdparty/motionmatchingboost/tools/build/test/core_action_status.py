@@ -9,7 +9,9 @@ import BoostBuild
 
 t = BoostBuild.Tester(pass_toolset=0)
 
-t.write("file.jam", """\
+t.write(
+    "file.jam",
+    """\
 actions quietly .a. { $(ACTION) }
 
 rule .a.
@@ -20,7 +22,8 @@ rule .a.
 NOTFILE subtest ;
 .a. subtest_a : subtest ;
 DEPENDS all : subtest_a ;
-""")
+""",
+)
 
 t.run_build_system(["-ffile.jam", "-sACTION=invalid"], status=1)
 

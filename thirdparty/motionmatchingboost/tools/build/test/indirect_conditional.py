@@ -7,10 +7,13 @@
 
 import BoostBuild
 
+
 def test_basic():
     t = BoostBuild.Tester(use_test_config=False)
 
-    t.write("jamroot.jam", """\
+    t.write(
+        "jamroot.jam",
+        """\
 exe a1 : a1.cpp : <conditional>@a1-rule ;
 rule a1-rule ( properties * )
 {
@@ -47,7 +50,8 @@ rule a3-rule-2 ( properties * )
         return <optimization>speed ;
     }
 }
-""")
+""",
+    )
 
     t.write("a1.cpp", "#ifdef OK\nint main() {}\n#endif\n")
     t.write("a2.cpp", "#ifdef OK\nint main() {}\n#endif\n")
@@ -61,11 +65,14 @@ rule a3-rule-2 ( properties * )
 
     t.cleanup()
 
+
 def test_inherit():
     """Tests that paths etc. are handled correctly when an indirect
     conditional is inherited by a subproject."""
     t = BoostBuild.Tester(use_test_config=False)
-    t.write("Jamroot.jam", """
+    t.write(
+        "Jamroot.jam",
+        """
 import feature ;
 import indirect ;
 exe d1 : d1.cpp ;
@@ -88,12 +95,16 @@ rule my-generate ( project name : property-set : sources * )
   return [ indirect.call
     $(r) $(project) $(name) : $(property-set) : $(sources) ] ;
 }
-""")
+""",
+    )
     t.write("d1.cpp", "int main(){}\n")
-    t.write("subdir/Jamfile", """
+    t.write(
+        "subdir/Jamfile",
+        """
 generate srcs : main.cpp : <generating-rule>@my-generate ;
 exe main : srcs ;
-""")
+""",
+    )
     t.write("include/a.h", "")
     t.write("subdir/main.cpp", "#include <a.h>\nint main() {}\n")
     t.run_build_system()
@@ -106,6 +117,7 @@ exe main : srcs ;
     t.expect_nothing_more()
     t.cleanup()
 
+
 def test_glob_in_indirect_conditional():
     """
       Regression test: project-rules.glob rule run from inside an indirect
@@ -116,31 +128,42 @@ def test_glob_in_indirect_conditional():
     """
     t = BoostBuild.Tester(use_test_config=False)
 
-    t.write("jamroot.jam", """\
+    t.write(
+        "jamroot.jam",
+        """\
 use-project /library-example/foo : util/foo ;
 build-project app ;
-""")
-    t.write("app/app.cpp", "int main() {}\n");
+""",
+    )
+    t.write("app/app.cpp", "int main() {}\n")
     t.write("app/jamfile.jam", "exe app : app.cpp /library-example/foo//bar ;")
-    t.write("util/foo/bar.cpp", """\
+    t.write(
+        "util/foo/bar.cpp",
+        """\
 #ifdef _WIN32
 __declspec(dllexport)
 #endif
 void foo() {}
-""")
-    t.write("util/foo/jamfile.jam", """\
+""",
+    )
+    t.write(
+        "util/foo/jamfile.jam",
+        """\
 rule print-my-sources ( properties * )
 {
     ECHO My sources: ;
     ECHO [ glob *.cpp ] ;
 }
 lib bar : bar.cpp : <conditional>@print-my-sources ;
-""")
+""",
+    )
 
     t.run_build_system(status=1)
     t.expect_output_lines(["My sources:", "bar.cpp"], False)
-    t.expect_output_lines("error: Reference to the project currently being "
-        "loaded requested when there was no project module being loaded.")
+    t.expect_output_lines(
+        "error: Reference to the project currently being "
+        "loaded requested when there was no project module being loaded."
+    )
 
     t.cleanup()
 

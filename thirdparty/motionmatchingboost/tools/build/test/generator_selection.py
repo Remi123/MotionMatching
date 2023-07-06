@@ -23,6 +23,7 @@ import BoostBuild
 #
 ###############################################################################
 
+
 def test_generator_added_after_already_building_a_target_of_its_target_type():
     """
       Regression test for a Boost Build bug causing it to not use a generator
@@ -33,7 +34,9 @@ def test_generator_added_after_already_building_a_target_of_its_target_type():
 
     t.write("dummy.cpp", "void f() {}\n")
 
-    t.write("jamroot.jam", """\
+    t.write(
+        "jamroot.jam",
+        """\
 import common ;
 import generators ;
 import type ;
@@ -44,11 +47,14 @@ generators.register-standard common.copy : CPP : MY_OBJ ;
 # generator not to be recognized as viable.
 my-obj dummy : dummy.cpp ;
 alias the-other-obj : Other//other-obj ;
-""")
+""",
+    )
 
     t.write("Other/source.extension", "A dummy source file.")
 
-    t.write("Other/mygen.jam", """\
+    t.write(
+        "Other/mygen.jam",
+        """\
 import common ;
 import generators ;
 import type ;
@@ -57,9 +63,12 @@ generators.register-standard $(__name__).generate-a-cpp-file : MY_TYPE : CPP ;
 rule generate-a-cpp-file { ECHO Generating a CPP file... ; }
 CREATE-FILE = [ common.file-creation-command ] ;
 actions generate-a-cpp-file { $(CREATE-FILE) "$(<)" }
-""")
+""",
+    )
 
-    t.write("Other/mygen.py", """\
+    t.write(
+        "Other/mygen.py",
+        """\
 from __future__ import print_function
 import b2.build.generators as generators
 import b2.build.type as type
@@ -79,12 +88,16 @@ def f(*args):
 
 get_manager().engine().register_action("mygen.generate-a-cpp-file", action,
     function=f)
-""")
+""",
+    )
 
-    t.write("Other/jamfile.jam", """\
+    t.write(
+        "Other/jamfile.jam",
+        """\
 import mygen ;
 my-obj other-obj : source.extension ;
-""")
+""",
+    )
 
     t.run_build_system()
     t.expect_output_lines("Generating a CPP file...")
@@ -103,6 +116,7 @@ my-obj other-obj : source.extension ;
 #
 ###############################################################################
 
+
 def test_using_a_derived_source_type_created_after_generator_already_used():
     """
       Regression test for a Boost Build bug causing it to not use a generator
@@ -114,7 +128,9 @@ def test_using_a_derived_source_type_created_after_generator_already_used():
 
     t.write("dummy.xxx", "Hello. My name is Peter Pan.\n")
 
-    t.write("jamroot.jam", """\
+    t.write(
+        "jamroot.jam",
+        """\
 import common ;
 import generators ;
 import type ;
@@ -126,18 +142,22 @@ generators.register-standard common.copy : XXX : YYY ;
 # to be recognized as a viable source type for building YYY targets.
 yyy dummy : dummy.xxx ;
 alias the-test-output : Other//other ;
-""")
+""",
+    )
 
     t.write("Other/source.xxx2", "Hello. My name is Tinkerbell.\n")
 
-    t.write("Other/jamfile.jam", """\
+    t.write(
+        "Other/jamfile.jam",
+        """\
 import type ;
 type.register XXX2 : xxx2 : XXX ;
 # We are careful not to do anything between defining our new XXX2 target type
 # and using the XXX --> YYY generator that could potentially cover the Boost
 # Build bug by clearing its internal viable source target type state.
 yyy other : source.xxx2 ;
-""")
+""",
+    )
 
     t.run_build_system()
     t.expect_addition("bin/dummy.yyy")

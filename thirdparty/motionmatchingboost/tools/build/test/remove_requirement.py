@@ -10,7 +10,9 @@ import BoostBuild
 t = BoostBuild.Tester(use_test_config=False)
 
 
-t.write("jamroot.jam", """
+t.write(
+    "jamroot.jam",
+    """
 project : requirements <threading>multi <variant>debug:<link>static ;
 # Force link to be relevant
 project : requirements <link>shared:<define>TEST_DLL ;
@@ -19,41 +21,66 @@ build-project sub ;
 build-project sub2 ;
 build-project sub3 ;
 build-project sub4 ;
-""")
+""",
+)
 
-t.write("sub/jamfile.jam", """
+t.write(
+    "sub/jamfile.jam",
+    """
 exe hello : hello.cpp : -<threading>multi ;
-""")
+""",
+)
 
-t.write("sub/hello.cpp", """
+t.write(
+    "sub/hello.cpp",
+    """
 int main() {}
-""")
+""",
+)
 
-t.write("sub2/jamfile.jam", """
+t.write(
+    "sub2/jamfile.jam",
+    """
 project : requirements -<threading>multi ;
 exe hello : hello.cpp ;
-""")
+""",
+)
 
-t.write("sub2/hello.cpp", """
+t.write(
+    "sub2/hello.cpp",
+    """
 int main() {}
-""")
+""",
+)
 
-t.write("sub3/hello.cpp", """
+t.write(
+    "sub3/hello.cpp",
+    """
 int main() {}
-""")
+""",
+)
 
-t.write("sub3/jamfile.jam", """
+t.write(
+    "sub3/jamfile.jam",
+    """
 exe hello : hello.cpp : "-<variant>debug:<link>static" ;
-""")
+""",
+)
 
-t.write("sub4/hello.cpp", """
+t.write(
+    "sub4/hello.cpp",
+    """
 int main() {}
-""")
+""",
+)
 
-t.write("sub4/jamfile.jam", """
+t.write(
+    "sub4/jamfile.jam",
+    """
 project : requirements "-<variant>debug:<link>static" ;
 exe hello : hello.cpp ;
-""")
+""",
+)
 
 t.run_build_system()
 
@@ -65,23 +92,35 @@ t.expect_addition("sub4/bin/$toolset/debug*/threading-multi*/hello.exe")
 t.rm(".")
 
 # Now test that path requirements can be removed as well.
-t.write("jamroot.jam", """
+t.write(
+    "jamroot.jam",
+    """
 build-project sub ;
-""")
+""",
+)
 
-t.write("sub/jamfile.jam", """
+t.write(
+    "sub/jamfile.jam",
+    """
 project : requirements <include>broken ;
 exe hello : hello.cpp : -<include>broken ;
-""")
+""",
+)
 
-t.write("sub/hello.cpp", """
+t.write(
+    "sub/hello.cpp",
+    """
 #include "math.h"
 int main() {}
-""")
+""",
+)
 
-t.write("sub/broken/math.h", """
+t.write(
+    "sub/broken/math.h",
+    """
 Broken
-""")
+""",
+)
 
 
 t.run_build_system()

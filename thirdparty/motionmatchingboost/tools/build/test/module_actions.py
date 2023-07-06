@@ -15,7 +15,9 @@ import re
 
 t = BoostBuild.Tester(["-d+1", "-f", "bare.jam"], pass_toolset=0)
 
-t.write("bare.jam", """\
+t.write(
+    "bare.jam",
+    """\
 # Top-level rule causing a target to be built by invoking the specified action.
 rule make ( target : sources * : act )
 {
@@ -67,7 +69,8 @@ X2 on t2 = X2-t2 ;
 X3 on t3 = X3-t3 ;
 
 DEPENDS all : t1 t2 t3 ;
-""")
+""",
+)
 
 expected_lines = [
     "...found 4 targets...",
@@ -91,11 +94,12 @@ expected_lines = [
     "act t3",
     "act t3: X1-global X2-global X3-t3 ",
     "...updated 3 targets...",
-    ""]
+    "",
+]
 
 # Accommodate for the fact that on Unixes, a call to 'echo 1   2     3  '
 # produces '1 2 3' (note the spacing).
-if os.name != 'nt':
+if os.name != "nt":
     expected_lines = [re.sub("  +", " ", x.rstrip()) for x in expected_lines]
 
 t.run_build_system()

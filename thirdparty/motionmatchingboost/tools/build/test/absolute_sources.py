@@ -11,11 +11,14 @@ import BoostBuild
 t = BoostBuild.Tester(use_test_config=False)
 
 t.write("jamroot.jam", "path-constant TOP : . ;")
-t.write("jamfile.jam", """\
+t.write(
+    "jamfile.jam",
+    """\
 local pwd = [ PWD ] ;
 ECHO $(pwd) XXXXX ;
 exe hello : $(pwd)/hello.cpp $(TOP)/empty.cpp ;
-""")
+""",
+)
 t.write("hello.cpp", "int main() {}\n")
 t.write("empty.cpp", "\n")
 
@@ -29,15 +32,20 @@ t.rm(".")
 t.write("a.cpp", "int main() {}\n")
 t.write("jamfile.jam", "exe a : /standalone//a ;")
 t.write("jamroot.jam", "import standalone ;")
-t.write("standalone.jam", """\
+t.write(
+    "standalone.jam",
+    """\
 import project ;
 project.initialize $(__name__) ;
 project standalone ;
 local pwd = [ PWD ] ;
 alias a : $(pwd)/a.cpp ;
-""")
+""",
+)
 
-t.write("standalone.py", """
+t.write(
+    "standalone.py",
+    """
 from b2.manager import get_manager
 
 # FIXME: this is ugly as death
@@ -50,7 +58,8 @@ project(['standalone'])
 
 pwd = os.getcwd()
 alias('a', [os.path.join(pwd, 'a.cpp')])
-""")
+""",
+)
 
 t.run_build_system()
 t.expect_addition("bin/$toolset/debug*/a.exe")
@@ -62,10 +71,13 @@ t.write("d1/jamroot.jam", "")
 t.write("d1/jamfile.jam", "exe a : a.cpp ;")
 t.write("d1/a.cpp", "int main() {}\n")
 t.write("d2/jamroot.jam", "")
-t.write("d2/jamfile.jam", """\
+t.write(
+    "d2/jamfile.jam",
+    """\
 local pwd = [ PWD ] ;
 alias x : $(pwd)/../d1//a ;
-""")
+""",
+)
 
 t.run_build_system(subdir="d2")
 t.expect_addition("d1/bin/$toolset/debug*/a.exe")

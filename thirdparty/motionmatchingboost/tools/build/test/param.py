@@ -9,7 +9,9 @@ import BoostBuild
 
 t = BoostBuild.Tester(pass_toolset=0)
 
-t.write("Jamroot.jam", """\
+t.write(
+    "Jamroot.jam",
+    """\
 import param ;
 import assert ;
 import errors : try catch ;
@@ -54,7 +56,8 @@ try ;
 }
 catch "Positional arguments must appear first." ;
 EXIT : 0 ;
-""")
+""",
+)
 
 t.run_build_system()
 

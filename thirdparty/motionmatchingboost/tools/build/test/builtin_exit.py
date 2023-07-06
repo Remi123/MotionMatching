@@ -8,6 +8,7 @@
 
 import BoostBuild
 
+
 def test_exit(name):
     t = BoostBuild.Tester(["-ffile.jam"], pass_toolset=0)
 
@@ -36,6 +37,7 @@ def test_exit(name):
     t.rm(".")
 
     t.cleanup()
+
 
 test_exit("EXIT")
 test_exit("Exit")

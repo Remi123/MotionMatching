@@ -34,12 +34,15 @@ import re
 #
 ###############################################################################
 
+
 def basic_jam_action_test():
     """Tests basic Jam action timing support."""
 
     t = BoostBuild.Tester(pass_toolset=0)
 
-    t.write("file.jam", """\
+    t.write(
+        "file.jam",
+        """\
 rule time
 {
     DEPENDS $(<) : $(>) ;
@@ -72,7 +75,8 @@ actions make
 
 time foo : bar ;
 make bar : baz ;
-""")
+""",
+    )
 
     t.write("baz", "nothing")
 
@@ -85,8 +89,11 @@ bar +user: [0-9\.]+ +system: +[0-9\.]+ +clock: +[0-9\.]+ *
 \.\.\.updated 2 targets\.\.\.$
 """
 
-    t.run_build_system(["-ffile.jam", "-d+1"], stdout=expected_output,
-        match=lambda actual, expected: re.search(expected, actual, re.DOTALL))
+    t.run_build_system(
+        ["-ffile.jam", "-d+1"],
+        stdout=expected_output,
+        match=lambda actual, expected: re.search(expected, actual, re.DOTALL),
+    )
     t.expect_addition("foo")
     t.expect_addition("bar")
     t.expect_nothing_more()
@@ -101,6 +108,7 @@ bar +user: [0-9\.]+ +system: +[0-9\.]+ +clock: +[0-9\.]+ *
 #
 ###############################################################################
 
+
 def boost_build_testing_support_timing_rule():
     """
       Tests the target build timing rule provided by the Boost Build testing
@@ -111,23 +119,23 @@ def boost_build_testing_support_timing_rule():
 
     t.write("aaa.cpp", "int main() {}\n")
 
-    t.write("jamroot.jam", """\
+    t.write(
+        "jamroot.jam",
+        """\
 import testing ;
 exe my-exe : aaa.cpp ;
 time my-time : my-exe ;
-""")
+""",
+    )
 
     t.run_build_system()
     t.expect_addition("bin/$toolset/debug*/aaa.obj")
     t.expect_addition("bin/$toolset/debug*/my-exe.exe")
     t.expect_addition("bin/$toolset/debug*/my-time.time")
 
-    t.expect_content_lines("bin/$toolset/debug*/my-time.time",
-        "user: *[0-9] seconds")
-    t.expect_content_lines("bin/$toolset/debug*/my-time.time",
-        "system: *[0-9] seconds")
-    t.expect_content_lines("bin/$toolset/debug*/my-time.time",
-        "clock: *[0-9] seconds")
+    t.expect_content_lines("bin/$toolset/debug*/my-time.time", "user: *[0-9] seconds")
+    t.expect_content_lines("bin/$toolset/debug*/my-time.time", "system: *[0-9] seconds")
+    t.expect_content_lines("bin/$toolset/debug*/my-time.time", "clock: *[0-9] seconds")
 
     t.cleanup()
 
@@ -139,6 +147,7 @@ time my-time : my-exe ;
 #
 ###############################################################################
 
+
 def boost_build_testing_support_timing_rule_with_spaces_in_names():
     """
       Tests the target build timing rule provided by the Boost Build testing
@@ -149,11 +158,14 @@ def boost_build_testing_support_timing_rule_with_spaces_in_names():
 
     t.write("aaa bbb.cpp", "int main() {}\n")
 
-    t.write("jamroot.jam", """\
+    t.write(
+        "jamroot.jam",
+        """\
 import testing ;
 exe "my exe" : "aaa bbb.cpp" ;
 time "my time" : "my exe" ;
-""")
+""",
+    )
 
     t.run_build_system()
     t.expect_addition("bin/$toolset/debug*/aaa bbb.obj")

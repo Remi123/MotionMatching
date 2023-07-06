@@ -11,7 +11,9 @@ import BoostBuild
 
 t = BoostBuild.Tester()
 
-t.write("Jamroot.jam", """
+t.write(
+    "Jamroot.jam",
+    """
 import build-system ;
 build-system.add-pre-build-hook pre-build ;
 build-system.add-post-build-hook post-build ;
@@ -27,13 +29,16 @@ rule post-build ( okay ? )
 }
 
 message show : building main targets ;
-""")
+""",
+)
 
-t.run_build_system(stdout="""\
+t.run_build_system(
+    stdout="""\
 building main targets
 in pre-build hook
 ...found 1 target...
 in post-build hook ok
-""")
+"""
+)
 
 t.cleanup()

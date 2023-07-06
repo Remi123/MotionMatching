@@ -13,7 +13,9 @@ import sys
 
 def test_assigning_project_ids():
     t = BoostBuild.Tester(pass_toolset=False)
-    t.write("jamroot.jam", """\
+    t.write(
+        "jamroot.jam",
+        """\
 import assert ;
 import modules ;
 import notfile ;
@@ -55,11 +57,15 @@ rule assert-a-rule ( target : : properties * )
 {
     assert-project-id /baz : $(a-module) ;
 }
-""")
-    t.write("a/jamfile.jam", """\
+""",
+    )
+    t.write(
+        "a/jamfile.jam",
+        """\
 # Initial project id for this module is empty.
 assert-project-id ;
-""")
+""",
+    )
     t.run_build_system()
     t.cleanup()
 
@@ -67,7 +73,9 @@ assert-project-id ;
 def test_using_project_ids_in_target_references():
     t = BoostBuild.Tester()
     __write_appender(t, "appender.jam")
-    t.write("jamroot.jam", """\
+    t.write(
+        "jamroot.jam",
+        """\
 import type ;
 type.register AAA : _a ;
 type.register BBB : _b ;
@@ -87,15 +95,19 @@ bbb b6 : /project-a2//target ;
 bbb b7 : /project-a3//target ;
 
 use-project id3 : a ;
-""")
+""",
+    )
     t.write("a/source._a", "")
-    t.write("a/jamfile.jam", """\
+    t.write(
+        "a/jamfile.jam",
+        """\
 project project-a1 ;
 project /project-a2 ;
 import alias ;
 alias target : source._a ;
 project /project-a3 ;
-""")
+""",
+    )
 
     t.run_build_system()
     t.expect_addition("bin/b%d._b" % x for x in range(1, 8))
@@ -110,7 +122,8 @@ def test_repeated_ids_for_different_projects():
     t.write("a/jamfile.jam", "")
     t.write("jamroot.jam", "project foo ; use-project foo : a ;")
     t.run_build_system(status=1)
-    t.expect_output_lines("""\
+    t.expect_output_lines(
+        """\
 error: Attempt to redeclare already registered project id '/foo'.
 error: Original project:
 error:     Name: Jamfile<*>
@@ -121,11 +134,13 @@ error:     Location: .
 error: New project:
 error:     Module: Jamfile<*>
 error:     File: a*jamfile.jam
-error:     Location: a""")
+error:     Location: a"""
+    )
 
     t.write("jamroot.jam", "use-project foo : a ; project foo ;")
     t.run_build_system(status=1)
-    t.expect_output_lines("""\
+    t.expect_output_lines(
+        """\
 error: Attempt to redeclare already registered project id '/foo'.
 error: Original project:
 error:     Name: Jamfile<*>
@@ -136,16 +151,21 @@ error:     Location: .
 error: New project:
 error:     Module: Jamfile<*>
 error:     File: a*jamfile.jam
-error:     Location: a""")
+error:     Location: a"""
+    )
 
-    t.write("jamroot.jam", """\
+    t.write(
+        "jamroot.jam",
+        """\
 import modules ;
 import project ;
 modules.call-in [ project.load a ] : project foo ;
 project foo ;
-""")
+""",
+    )
     t.run_build_system(status=1)
-    t.expect_output_lines("""\
+    t.expect_output_lines(
+        """\
 error: at jamroot.jam:4
 error: Attempt to redeclare already registered project id '/foo'.
 error: Original project:
@@ -157,7 +177,8 @@ error:     Location: a
 error: New project:
 error:     Module: Jamfile<*>
 error:     File: jamroot.jam
-error:     Location: .""")
+error:     Location: ."""
+    )
 
     t.cleanup()
 
@@ -174,30 +195,38 @@ def test_repeated_ids_for_same_project():
     t.write("jamroot.jam", "project foo ; use-project foo : ./. ;")
     t.run_build_system()
 
-    t.write("jamroot.jam", """\
+    t.write(
+        "jamroot.jam",
+        """\
 project foo ;
 use-project foo : . ;
 use-project foo : ./aaa/.. ;
 use-project foo : ./. ;
-""")
+""",
+    )
     t.run_build_system()
 
     # On Windows we have a case-insensitive file system and we can use
     # backslashes as path separators.
     # FIXME: Make a similar test pass on Cygwin.
-    if sys.platform in ['win32']:
+    if sys.platform in ["win32"]:
         t.write("a/fOo bAr/b/jamfile.jam", "")
-        t.write("jamroot.jam", r"""
+        t.write(
+            "jamroot.jam",
+            r"""
 use-project bar : "a/foo bar/b" ;
 use-project bar : "a/foO Bar/b" ;
 use-project bar : "a/foo BAR/b/" ;
 use-project bar : "a\\.\\FOO bar\\b\\" ;
-""")
+""",
+        )
         t.run_build_system()
         t.rm("a")
 
     t.write("bar/jamfile.jam", "")
-    t.write("jamroot.jam", """\
+    t.write(
+        "jamroot.jam",
+        """\
 use-project bar : bar ;
 use-project bar : bar/ ;
 use-project bar : bar// ;
@@ -217,16 +246,19 @@ use-project bar : bar/./././xxx/.. ;
 use-project bar : bar/xxx////.. ;
 use-project bar : bar/xxx/.. ;
 use-project bar : bar///////xxx/.. ;
-""")
+""",
+    )
     t.run_build_system()
     t.rm("bar")
 
     # On Windows we have a case-insensitive file system and we can use
     # backslashes as path separators.
     # FIXME: Make a similar test pass on Cygwin.
-    if sys.platform in ['win32']:
+    if sys.platform in ["win32"]:
         t.write("baR/jamfile.jam", "")
-        t.write("jamroot.jam", r"""
+        t.write(
+            "jamroot.jam",
+            r"""
 use-project bar : bar ;
 use-project bar : BAR ;
 use-project bar : bAr ;
@@ -248,7 +280,8 @@ use-project bar : BaR///\\\\\\//xxx/.. ;
 use-project bar : Bar\\xxx/.. ;
 use-project bar : BAR/xXx/.. ;
 use-project bar : BAR/xXx\\\\/\\/\\//\\.. ;
-""")
+""",
+        )
         t.run_build_system()
         t.rm("baR")
 
@@ -261,7 +294,9 @@ def test_unresolved_project_references():
     __write_appender(t, "appender.jam")
     t.write("a/source._a", "")
     t.write("a/jamfile.jam", "import alias ; alias target : source._a ;")
-    t.write("jamroot.jam", """\
+    t.write(
+        "jamroot.jam",
+        """\
 import type ;
 type.register AAA : _a ;
 type.register BBB : _b ;
@@ -277,51 +312,61 @@ bbb b-invalid : invalid//target ;
 bbb b-root-invalid : /invalid//target ;
 bbb b-missing-root : foo//target ;
 bbb b-invalid-target : /foo//invalid ;
-""")
+""",
+    )
 
     t.run_build_system(["b1", "b2"])
     t.expect_addition("bin/b%d._b" % x for x in range(1, 3))
     t.expect_nothing_more()
 
     t.run_build_system(["b-invalid"], status=1)
-    t.expect_output_lines("""\
+    t.expect_output_lines(
+        """\
 error: Unable to find file or target named
 error:     'invalid//target'
 error: referred to from project at
 error:     '.'
-error: could not resolve project reference 'invalid'""")
+error: could not resolve project reference 'invalid'"""
+    )
 
     t.run_build_system(["b-root-invalid"], status=1)
-    t.expect_output_lines("""\
+    t.expect_output_lines(
+        """\
 error: Unable to find file or target named
 error:     '/invalid//target'
 error: referred to from project at
 error:     '.'
-error: could not resolve project reference '/invalid'""")
+error: could not resolve project reference '/invalid'"""
+    )
 
     t.run_build_system(["b-missing-root"], status=1)
-    t.expect_output_lines("""\
+    t.expect_output_lines(
+        """\
 error: Unable to find file or target named
 error:     'foo//target'
 error: referred to from project at
 error:     '.'
 error: could not resolve project reference 'foo' - possibly missing a """
-    "leading slash ('/') character.")
+        "leading slash ('/') character."
+    )
 
     t.run_build_system(["b-invalid-target"], status=1)
-    t.expect_output_lines("""\
+    t.expect_output_lines(
+        """\
 error: Unable to find file or target named
 error:     '/foo//invalid'
 error: referred to from project at
-error:     '.'""")
+error:     '.'"""
+    )
     t.expect_output_lines("*could not resolve project reference*", False)
 
     t.cleanup()
 
 
 def __write_appender(t, name):
-    t.write(name,
-r"""# Copyright 2012 Jurko Gospodnetic
+    t.write(
+        name,
+        r"""# Copyright 2012 Jurko Gospodnetic
 # Distributed under the Boost Software License, Version 1.0.
 # (See accompanying file LICENSE.txt or copy at
 # https://www.bfgroup.xyz/b2/LICENSE.txt)
@@ -404,7 +449,8 @@ actions append
     $(ECHO_CMD)=================================================$(X)
     $(ECHO_CMD)-------------------------------------------------$(X)>> "$(>[2])"
 }
-""")
+""",
+    )
 
 
 test_assigning_project_ids()

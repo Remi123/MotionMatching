@@ -26,6 +26,6 @@ t.write("jamroot.jam", "")
 t.write("jamfile.jam", "use-project /subdir : subdir ;")
 t.write("subdir/jamfile.jam", "project subdir ;")
 
-t.run_build_system(subdir="subdir");
+t.run_build_system(subdir="subdir")
 
 t.cleanup()

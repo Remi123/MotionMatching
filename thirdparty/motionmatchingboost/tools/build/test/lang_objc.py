@@ -9,21 +9,30 @@ import BoostBuild
 
 t = BoostBuild.Tester()
 
-t.write("jamroot.jam", """
+t.write(
+    "jamroot.jam",
+    """
 obj a : hello.m ;
 obj b : hello.mm ;
-""")
+""",
+)
 
-t.write("hello.m", '''\
+t.write(
+    "hello.m",
+    """\
 @interface Foo
 @end
-''')
-t.write("hello.mm", '''\
+""",
+)
+t.write(
+    "hello.mm",
+    """\
 @interface Foo
 @end
 
 class Bar {};
-''')
+""",
+)
 
 t.run_build_system()
 t.expect_addition("bin/$toolset/debug*/a.obj")

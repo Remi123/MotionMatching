@@ -9,14 +9,19 @@ import BoostBuild
 
 t = BoostBuild.Tester(["-d1"], pass_toolset=0)
 
-t.write("sleep.bat", """\
+t.write(
+    "sleep.bat",
+    """\
 ::@timeout /T %1 /NOBREAK >nul
 @ping 127.0.0.1 -n 2 -w 1000 >nul
 @ping 127.0.0.1 -n %1 -w 1000 >nul
 @exit /B 0
-""")
+""",
+)
 
-t.write("file.jam", """\
+t.write(
+    "file.jam",
+    """\
 if $(NT)
 {
     actions sleeper
@@ -60,9 +65,12 @@ sleeper 3.b : choke ;
 sleeper 4.b : choke ;
 DEPENDS bottom : 1.b 2.b 3.b 4.b ;
 DEPENDS all : bottom ;
-""")
+""",
+)
 
-t.run_build_system(["-ffile.jam", "-j4"], stdout="""\
+t.run_build_system(
+    ["-ffile.jam", "-j4"],
+    stdout="""\
 ...found 12 targets...
 ...updating 8 targets...
 sleeper 1.a
@@ -98,6 +106,7 @@ sleeper 4.b
 [.b] 1
 [.b] 2
 ...updated 8 targets...
-""")
+""",
+)
 
 t.cleanup()

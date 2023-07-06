@@ -20,7 +20,9 @@ import BoostBuild
 
 t = BoostBuild.Tester(use_test_config=False)
 
-t.write("foo.jam", r"""
+t.write(
+    "foo.jam",
+    r"""
 import common ;
 import generators ;
 import modules ;
@@ -67,11 +69,12 @@ actions foo
     $(.sleep)
     $(.touch) "$(<[2])"
 }
-""")
+""",
+)
 
 t.write(
-    'foo.py',
-"""
+    "foo.py",
+    """
 import os
 
 from b2.build import type as type_, generators
@@ -113,14 +116,17 @@ ENGINE.register_action(
     {touch} "$(<[2])"
     '''.format(touch=common.file_creation_command(), sleep=sleep_cmd(2))
 )
-"""
+""",
 )
 
 t.write("x.foo", "")
-t.write("jamroot.jam", """\
+t.write(
+    "jamroot.jam",
+    """\
 import foo ;
 lib x : x.foo : <link>static ;
-""")
+""",
+)
 
 
 # Get everything built once.

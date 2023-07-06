@@ -15,7 +15,9 @@ t = BoostBuild.Tester(use_test_config=False)
 
 t.write("a.cpp", "int main() {}\n")
 t.write("jamroot.jam", "import standalone ;")
-t.write("standalone.jam", """\
+t.write(
+    "standalone.jam",
+    """\
 import alias ;
 import project ;
 
@@ -26,9 +28,12 @@ local pwd = [ PWD ] ;
 
 alias x : $(pwd)/../a.cpp ;
 alias runtime : x ;
-""")
+""",
+)
 
-t.write("standalone.py", """\
+t.write(
+    "standalone.py",
+    """\
 from b2.manager import get_manager
 
 # FIXME: this is ugly as death
@@ -42,7 +47,8 @@ project(['standalone'])
 pwd = os.getcwd()
 alias('x', [os.path.join(pwd, '../a.cpp')])
 alias('runtime', ['x'])
-""")
+""",
+)
 
 
 t.write("sub/jamfile.jam", "stage bin : /standalone//runtime ;")

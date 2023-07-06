@@ -16,13 +16,13 @@ t.write(
     """
     import feature ;
     feature.feature my-feature : : free ;
-    """
+    """,
 )
 t.write(
     "subdir/subsubdir/build.jam",
     """
     exe hello : hello.c ;
-    """
+    """,
 )
 t.write(
     "subdir/subsubdir/hello.c",
@@ -32,10 +32,10 @@ t.write(
     int main(int argc, char **argv){
         printf("%s\n", "Hello, World!");
     }
-    """
+    """,
 )
 
 # run from the root directory
-t.run_build_system(['subdir/subsubdir', 'my-feature="some value"'])
+t.run_build_system(["subdir/subsubdir", 'my-feature="some value"'])
 
 t.cleanup()

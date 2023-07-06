@@ -13,7 +13,9 @@ import string
 
 t = BoostBuild.Tester(pass_toolset=0)
 
-t.write("core-dependency-helpers", """
+t.write(
+    "core-dependency-helpers",
+    """
 rule hdrrule
 {
    INCLUDES $(1) : $(2) ;
@@ -22,7 +24,8 @@ actions copy
 {
    cp $(>) $(<) || copy $(>) $(<)
 }
-""")
+""",
+)
 
 code = """include core-dependency-helpers ;
 DEPENDS all : a ;
@@ -44,14 +47,14 @@ HDRSCAN on b foo.h bar.h = \"#include <(.*)>\" ;
 t.run_build_system(["-f-"], status=1, stdin=code)
 t.fail_test(t.stdout().find("...skipped a for lack of foo.h...") == -1)
 
-t.rm('b')
+t.rm("b")
 
 # Now test that if target 'c' also depends on 'b', then it will not be built, as
 # well.
 t.run_build_system(["-f-"], status=1, stdin=code + " copy c : b ; DEPENDS c : b ; DEPENDS all : c ; ")
 t.fail_test(t.stdout().find("...skipped c for lack of foo.h...") == -1)
 
-t.rm('b')
+t.rm("b")
 
 # Now add a rule for creating foo.h.
 code += """
@@ -66,12 +69,15 @@ t.run_build_system(["-f-"], stdin=code)
 # Run two times, adding explicit dependency from all to foo.h at the beginning
 # and at the end, to make sure that foo.h is generated before 'a' in all cases.
 
+
 def mk_correct_order_func(s1, s2):
     def correct_order(s):
         n1 = s.find(s1)
         n2 = s.find(s2)
-        return ( n1 != -1 ) and ( n2 != -1 ) and ( n1 < n2 )
+        return (n1 != -1) and (n2 != -1) and (n1 < n2)
+
     return correct_order
+
 
 correct_order = mk_correct_order_func("create-foo", "copy a")
 
@@ -111,7 +117,7 @@ t.fail_test(not correct_order(t.stdout()))
 
 t.write("a", "")
 
-code="""
+code = """
 DEPENDS all : main d ;
 
 actions copy

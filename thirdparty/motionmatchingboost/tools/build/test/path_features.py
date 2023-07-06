@@ -8,24 +8,31 @@
 
 import BoostBuild
 
+
 def test_basic():
     t = BoostBuild.Tester(use_test_config=False)
 
     t.write("jamroot.jam", "lib a : a.cpp : <include>. ;")
-    t.write("a.cpp", """\
+    t.write(
+        "a.cpp",
+        """\
 #include <a.h>
 void
 # ifdef _WIN32
 __declspec(dllexport)
 # endif
 foo() {}
-""")
+""",
+    )
     t.write("a.h", "//empty file\n")
     t.write("d/jamfile.jam", "exe b : b.cpp ..//a ;")
-    t.write("d/b.cpp", """\
+    t.write(
+        "d/b.cpp",
+        """\
 void foo();
 int main() { foo(); }
-""")
+""",
+    )
     t.run_build_system(subdir="d")
 
     # Path features with condition.
@@ -33,16 +40,21 @@ int main() { foo(); }
     t.rm("bin")
     t.run_build_system(subdir="d")
 
-
     # Path features with condition in usage requirements.
-    t.write("jamroot.jam", """\
+    t.write(
+        "jamroot.jam",
+        """\
 lib a : a.cpp : <include>. : : <variant>debug:<include>. ;
-""")
-    t.write("d/b.cpp", """\
+""",
+    )
+    t.write(
+        "d/b.cpp",
+        """\
 #include <a.h>
 void foo();
 int main() { foo(); }
-""")
+""",
+    )
     t.rm("d/bin")
     t.run_build_system(subdir="d")
 
@@ -58,16 +70,22 @@ def test_absolute_paths():
     t = BoostBuild.Tester(use_test_config=False)
 
     t.write("jamroot.jam", "build-project x ;")
-    t.write("x/jamfile.jam", """\
+    t.write(
+        "x/jamfile.jam",
+        """\
 local pwd = [ PWD ] ;
 project : requirements <include>$(pwd)/x/include ;
 exe m : m.cpp : <include>$(pwd)/x/include2 ;
-""")
-    t.write("x/m.cpp", """\
+""",
+    )
+    t.write(
+        "x/m.cpp",
+        """\
 #include <h1.hpp>
 #include <h2.hpp>
 int main() {}
-""")
+""",
+    )
     t.write("x/include/h1.hpp", "\n")
     t.write("x/include2/h2.hpp", "\n")
 
@@ -84,10 +102,13 @@ def test_ordered_paths():
 
     t.write("jamroot.jam", "build-project sub ;")
     t.write("sub/jamfile.jam", "exe a : a.cpp : <include>../h1&&../h2 ;")
-    t.write("sub/a.cpp", """\
+    t.write(
+        "sub/a.cpp",
+        """\
 #include <header.h>
 int main() { return OK; }
-""")
+""",
+    )
     t.write("h2/header.h", "int const OK = 0;\n")
     t.run_build_system()
     t.expect_addition("sub/bin/$toolset/debug*/a.exe")
@@ -100,7 +121,9 @@ def test_paths_set_by_indirect_conditionals():
 
     header = "child_dir/folder_to_include/some_header.h"
 
-    t.write("jamroot.jam", """
+    t.write(
+        "jamroot.jam",
+        """
 build-project child_dir ;
 rule attach-include-parent ( properties * )
 {
@@ -109,8 +132,11 @@ rule attach-include-parent ( properties * )
 # requirements inherited from a parent project will bind paths
 # relative to the project that actually names the rule.
 project : requirements <conditional>@attach-include-parent ;
-""")
-    t.write("child_dir/jamfile.jam", """\
+""",
+    )
+    t.write(
+        "child_dir/jamfile.jam",
+        """\
 import remote/remote ;
 
 # If we set the <include>folder_to_include property directly, it will work
@@ -121,18 +147,25 @@ rule attach-include-local ( properties * )
 {
     return <include>folder_to_include ;
 }
-""")
-    t.write("child_dir/remote/remote.jam", """\
+""",
+    )
+    t.write(
+        "child_dir/remote/remote.jam",
+        """\
 rule attach-include-remote ( properties * )
 {
     return <include>folder_to_include ;
 }
-""")
-    t.write("child_dir/x.cpp", """\
+""",
+    )
+    t.write(
+        "child_dir/x.cpp",
+        """\
 #include <some_header.h>
 #include <header2.h>
 int main() {}
-""")
+""",
+    )
     t.write(header, "int some_func();\n")
     t.write("another_folder/header2.h", "int f2();\n")
     t.write("child_dir/folder_to_include/jamfile.jam", "")

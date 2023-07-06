@@ -12,7 +12,9 @@ t = BoostBuild.Tester()
 
 t.write("a.cpp", "")
 
-t.write("jamroot.jam", """
+t.write(
+    "jamroot.jam",
+    """
 import feature ;
 import common ;
 
@@ -38,7 +40,8 @@ actions maker
 }
 
 make a : a.cpp : maker : <variant>debug:<conditional>@add-feature ;
-""")
+""",
+)
 
 t.run_build_system()
 

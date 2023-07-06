@@ -101,7 +101,7 @@ class TreeDifference:
 
     def ignore_directories(self):
         """Removes directories from our lists of found differences."""
-        not_dir = lambda x : x[-1] != "/"
+        not_dir = lambda x: x[-1] != "/"
         self.added_files = list(filter(not_dir, self.added_files))
         self.removed_files = list(filter(not_dir, self.removed_files))
         self.modified_files = list(filter(not_dir, self.modified_files))
@@ -114,8 +114,7 @@ class TreeDifference:
         file.write("Touched files : %s\n" % self.touched_files)
 
     def empty(self):
-        return not (self.added_files or self.removed_files or
-            self.modified_files or self.touched_files)
+        return not (self.added_files or self.removed_files or self.modified_files or self.touched_files)
 
 
 def build_tree(path):
@@ -201,7 +200,7 @@ def _traverse_tree(t, parent_path):
 
 def _get_text(path):
     """Return a string with the textual contents of a file at PATH."""
-    fp = open(path, 'rb')
+    fp = open(path, "rb")
     try:
         return fp.read()
     finally:

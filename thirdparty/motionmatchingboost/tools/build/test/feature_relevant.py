@@ -11,7 +11,9 @@ import BoostBuild
 
 t = BoostBuild.Tester(use_test_config=False)
 
-t.write("xxx.jam", """
+t.write(
+    "xxx.jam",
+    """
 import type ;
 import feature : feature ;
 import toolset : flags ;
@@ -26,9 +28,12 @@ actions run
 {
     echo okay > $(<)
 }
-""")
+""",
+)
 
-t.write("zzz.jam", """
+t.write(
+    "zzz.jam",
+    """
 import xxx ;
 import type ;
 import feature : feature ;
@@ -42,9 +47,12 @@ actions run
 {
     echo okay > $(<)
 }
-""")
+""",
+)
 
-t.write("aaa.jam", """
+t.write(
+    "aaa.jam",
+    """
 import zzz ;
 import type ;
 import feature : feature ;
@@ -58,9 +66,12 @@ actions run
 {
     echo okay > $(<)
 }
-""")
+""",
+)
 
-t.write("Jamroot.jam", """
+t.write(
+    "Jamroot.jam",
+    """
 import xxx ;
 import zzz ;
 import aaa ;
@@ -130,7 +141,8 @@ alias out : : <f3>n ;
 alias out : : <g3>n ;
 # Features that are relevant for out are also relevant for check-propagate
 aaa check-propagate : out ;
-""")
+""",
+)
 
 t.write("in.yyy", "")
 

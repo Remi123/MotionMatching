@@ -18,20 +18,26 @@ import BoostBuild
 
 t = BoostBuild.Tester()
 
-t.write("jamroot.jam", """\
+t.write(
+    "jamroot.jam",
+    """\
 lib foo : foo.cpp ;
 exe hello : hello.cpp ;
 exe hello2 : hello.cpp : <library>foo ;
-""")
+""",
+)
 
 t.write("hello.cpp", "int main() {}\n")
 
-t.write("foo.cpp", """\
+t.write(
+    "foo.cpp",
+    """\
 #ifdef _WIN32
 __declspec(dllexport)
 #endif
 void foo() {}
-""")
+""",
+)
 
 t.run_build_system(["--no-error-backtrace"], status=0)
 

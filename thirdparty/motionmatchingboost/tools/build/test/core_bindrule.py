@@ -12,7 +12,9 @@ t = BoostBuild.Tester(["-d1"], pass_toolset=0)
 
 t.write("subdir1/file-to-bind", "# This file intentionally left blank")
 
-t.write("file.jam", """\
+t.write(
+    "file.jam",
+    """\
 rule do-nothing ( target : source )
 {
     DEPENDS $(target) : $(source) ;
@@ -34,12 +36,17 @@ rule bind-rule ( target : path )
 }
 
 DEPENDS all : fake-target ;
-""")
+""",
+)
 
-t.run_build_system(["-ffile.jam"], stdout="""\
+t.run_build_system(
+    ["-ffile.jam"],
+    stdout="""\
 found: all at all
 found: file-to-bind at subdir1%sfile-to-bind
 ...found 3 targets...
-""" % os.sep)
+"""
+    % os.sep,
+)
 
 t.cleanup()

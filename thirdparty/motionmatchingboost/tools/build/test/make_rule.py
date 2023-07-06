@@ -12,7 +12,9 @@ import string
 
 t = BoostBuild.Tester(pass_toolset=1)
 
-t.write("jamroot.jam", """\
+t.write(
+    "jamroot.jam",
+    """\
 import feature ;
 feature.feature test_feature : : free ;
 
@@ -25,7 +27,8 @@ actions creator
 }
 
 make foo.bar : : creator : <test_feature>12345678 ;
-""")
+""",
+)
 
 t.run_build_system()
 t.expect_addition("bin/foo.bar")
@@ -35,15 +38,21 @@ t.fail_test(t.read("bin/foo.bar").find("12345678") == -1)
 # Regression test. Make sure that if a main target is requested two times, and
 # build requests differ only in incidental properties, the main target is
 # created only once. The bug was discovered by Kirill Lapshin.
-t.write("jamroot.jam", """\
+t.write(
+    "jamroot.jam",
+    """\
 exe a : dir//hello1.cpp ;
 exe b : dir//hello1.cpp/<hardcode-dll-paths>true ;
-""")
+""",
+)
 
-t.write("dir/jamfile.jam", """\
+t.write(
+    "dir/jamfile.jam",
+    """\
 import common ;
 make hello1.cpp : hello.cpp : common.copy ;
-""")
+""",
+)
 
 t.write("dir/hello.cpp", "int main() {}\n")
 

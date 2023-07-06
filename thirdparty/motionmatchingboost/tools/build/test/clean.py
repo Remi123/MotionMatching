@@ -11,40 +11,55 @@ t = BoostBuild.Tester(use_test_config=False)
 
 t.write("a.cpp", "int main() {}\n")
 t.write("jamroot.jam", "exe a : a.cpp sub1//sub1 sub2//sub2 sub3//sub3 ;")
-t.write("sub1/jamfile.jam", """\
+t.write(
+    "sub1/jamfile.jam",
+    """\
 lib sub1 : sub1.cpp sub1_2 ../sub2//sub2 ;
 lib sub1_2 : sub1_2.cpp ;
-""")
+""",
+)
 
-t.write("sub1/sub1.cpp", """\
+t.write(
+    "sub1/sub1.cpp",
+    """\
 #ifdef _WIN32
 __declspec(dllexport)
 #endif
 void sub1() {}
-""")
+""",
+)
 
-t.write("sub1/sub1_2.cpp", """\
+t.write(
+    "sub1/sub1_2.cpp",
+    """\
 #ifdef _WIN32
 __declspec(dllexport)
 #endif
 void sub1() {}
-""")
+""",
+)
 
 t.write("sub2/jamfile.jam", "lib sub2 : sub2.cpp ;")
-t.write("sub2/sub2.cpp", """\
+t.write(
+    "sub2/sub2.cpp",
+    """\
 #ifdef _WIN32
 __declspec(dllexport)
 #endif
 void sub2() {}
-""")
+""",
+)
 
 t.write("sub3/jamroot.jam", "lib sub3 : sub3.cpp ;")
-t.write("sub3/sub3.cpp", """\
+t.write(
+    "sub3/sub3.cpp",
+    """\
 #ifdef _WIN32
 __declspec(dllexport)
 #endif
 void sub3() {}
-""")
+""",
+)
 
 # 'clean' should not remove files under separate jamroot.jam.
 t.run_build_system()
@@ -93,10 +108,13 @@ t.expect_nothing("sub3/bin/$toolset/debug*/sub3.obj")
 
 # Regression test: sources of the 'cast' rule were mistakenly deleted.
 t.rm(".")
-t.write("jamroot.jam", """\
+t.write(
+    "jamroot.jam",
+    """\
 import cast ;
 cast a cpp : a.h ;
-""")
+""",
+)
 t.write("a.h", "")
 t.run_build_system(["--clean"])
 t.expect_nothing("a.h")

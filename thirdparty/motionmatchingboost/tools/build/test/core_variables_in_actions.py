@@ -18,7 +18,9 @@
 import BoostBuild
 
 t = BoostBuild.Tester(pass_toolset=0)
-t.write("file.jam", """\
+t.write(
+    "file.jam",
+    """\
 rule dummy ( i )
 {
     local a = 1 2 3 ;
@@ -32,7 +34,8 @@ actions dummy
 }
 
 dummy all ;
-""")
+""",
+)
 t.run_build_system(["-ffile.jam", "-d1"])
 t.expect_output_lines("From rule: 1 seconds 2 seconds 3 seconds")
 t.expect_output_lines('*From action: 1" 2" 3" seconds"*')

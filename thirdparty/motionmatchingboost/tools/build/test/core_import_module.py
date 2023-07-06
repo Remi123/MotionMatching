@@ -9,7 +9,9 @@ import BoostBuild
 
 t = BoostBuild.Tester(pass_toolset=0)
 
-t.write("code", """\
+t.write(
+    "code",
+    """\
 module a
 {
     rule r1 ( )
@@ -68,15 +70,19 @@ IMPORT_MODULE c : ;
 c.test ;
 
 EXIT : 0 ;
-""")
+""",
+)
 
-t.run_build_system(["-fcode"], stdout="""\
+t.run_build_system(
+    ["-fcode"],
+    stdout="""\
 R1
 R2
 L1
 A.L1
 CTEST
 
-""")
+""",
+)
 
 t.cleanup()

@@ -17,26 +17,38 @@ tester = BoostBuild.Tester(use_test_config=False)
 #
 ################################################################################
 
-tester.write("jamroot.jam", """
+tester.write(
+    "jamroot.jam",
+    """
 lib test : test.cpp ;
 project : requirements <library>test ;
 build-project a ;
-""")
+""",
+)
 
-tester.write("test.cpp", """
+tester.write(
+    "test.cpp",
+    """
 #ifdef _WIN32
     __declspec(dllexport)
 #endif
 void foo() {}
-""")
+""",
+)
 
-tester.write("a/test1.cpp", """
+tester.write(
+    "a/test1.cpp",
+    """
 int main() {}
-""")
+""",
+)
 
-tester.write("a/jamfile.jam", """
+tester.write(
+    "a/jamfile.jam",
+    """
 exe test1 : test1.cpp ;
-""")
+""",
+)
 
 tester.run_build_system()
 
@@ -68,11 +80,14 @@ tester.rm("a/bin")
 #
 ################################################################################
 
-tester.write("jamroot.jam", """
+tester.write(
+    "jamroot.jam",
+    """
 lib test : test.cpp ;
 project test_project : requirements <library>test ;
 build-project a ;
-""")
+""",
+)
 
 tester.run_build_system()
 
@@ -89,11 +104,14 @@ tester.rm("a/bin")
 #
 ################################################################################
 
-tester.write("jamroot.jam", """
+tester.write(
+    "jamroot.jam",
+    """
 lib test : test.cpp ;
 project : id test_project : requirements <library>test ;
 build-project a ;
-""")
+""",
+)
 
 tester.run_build_system()
 
@@ -110,11 +128,14 @@ tester.rm("a/bin")
 #
 ################################################################################
 
-tester.write("jamroot.jam", """
+tester.write(
+    "jamroot.jam",
+    """
 lib test : test.cpp ;
 project test_project1 : id test_project : requirements <library>test ;
 build-project a ;
-""")
+""",
+)
 
 tester.run_build_system()
 
@@ -131,14 +152,17 @@ tester.rm("a/bin")
 #
 ################################################################################
 
-tester.write("jamroot.jam", """
+tester.write(
+    "jamroot.jam",
+    """
 import path ;
 path-constant here : . ;
 current-location = [ path.native [ path.root [ path.make $(here) ] [ path.pwd ]
     ] ] ;
 project test : requirements <source>$(current-location)/a/test1.cpp ;
 exe test : test.cpp ;
-""")
+""",
+)
 
 tester.run_build_system()
 tester.expect_addition("bin/$toolset/debug*/test.exe")
@@ -153,13 +177,16 @@ tester.rm("a/bin")
 #
 ################################################################################
 
-tester.write("jamroot.jam", """
+tester.write(
+    "jamroot.jam",
+    """
 import path ;
 path-constant here : . ;
 current-location = [ path.root [ path.make $(here) ] [ path.pwd ] ] ;
 project test : requirements <source>$(current-location)/a/test1.cpp ;
 exe test : test.cpp ;
-""")
+""",
+)
 
 tester.run_build_system()
 tester.expect_addition("bin/$toolset/debug*/test.exe")
@@ -177,27 +204,42 @@ tester.rm("a/bin")
 
 # Use jamroot.jam rather than jamfile.jam to avoid inheriting the <source> from
 # the parent as that would would make test3 a source of itself.
-tester.write("b/jamroot.jam", """
+tester.write(
+    "b/jamroot.jam",
+    """
 obj test3 : test3.cpp ;
-""")
+""",
+)
 
-tester.write("b/test3.cpp", """
+tester.write(
+    "b/test3.cpp",
+    """
 void bar() {}
-""")
+""",
+)
 
-tester.write("jamroot.jam", """
+tester.write(
+    "jamroot.jam",
+    """
 project test : requirements <source>b//test3 ;
 build-project a ;
-""")
+""",
+)
 
-tester.write("a/jamfile.jam", """
+tester.write(
+    "a/jamfile.jam",
+    """
 exe test : test1.cpp ;
-""")
+""",
+)
 
-tester.write("a/test1.cpp", """
+tester.write(
+    "a/test1.cpp",
+    """
 void bar();
 int main() { bar(); }
-""")
+""",
+)
 
 tester.run_build_system()
 tester.expect_addition("b/bin/$toolset/debug*/test3.obj")
@@ -215,21 +257,33 @@ tester.rm("test.cpp")
 #
 ################################################################################
 
-tester.write("build/jamroot.jam", """
+tester.write(
+    "build/jamroot.jam",
+    """
 project : requirements <source>test.cpp : source-location ../src ;
-""")
+""",
+)
 
-tester.write("src/test.cpp", """
+tester.write(
+    "src/test.cpp",
+    """
 int main() {}
-""")
+""",
+)
 
-tester.write("build/a/jamfile.jam", """
+tester.write(
+    "build/a/jamfile.jam",
+    """
 project : source-location ../../a_src ;
 exe test : test1.cpp ;
-""")
+""",
+)
 
-tester.write("a_src/test1.cpp", """
-""")
+tester.write(
+    "a_src/test1.cpp",
+    """
+""",
+)
 
 tester.run_build_system(subdir="build/a")
 tester.expect_addition("build/a/bin/$toolset/debug*/test.exe")

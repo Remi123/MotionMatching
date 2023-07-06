@@ -8,27 +8,40 @@
 
 import BoostBuild
 
+
 def test_default_order():
     tester = BoostBuild.Tester(use_test_config=False)
-    tester.write("jamroot.jam", """
+    tester.write(
+        "jamroot.jam",
+        """
 
     import order ;
     import "class" : new ;
 
     obj test : test.cpp : <include>b <include>a ;
-    """)
+    """,
+    )
 
-    tester.write("test.cpp", """
+    tester.write(
+        "test.cpp",
+        """
     #include <test.hpp>
     int main() { f(); }
-    """)
+    """,
+    )
 
-    tester.write("a/test.hpp", """
+    tester.write(
+        "a/test.hpp",
+        """
     void f();
-    """)
+    """,
+    )
 
-    tester.write("b/test.hpp", """
-    """)
+    tester.write(
+        "b/test.hpp",
+        """
+    """,
+    )
 
     tester.run_build_system()
 
@@ -46,27 +59,40 @@ def test_default_order():
 
     tester.cleanup()
 
+
 def test_default_order_mixed():
     tester = BoostBuild.Tester(use_test_config=False)
-    tester.write("jamroot.jam", """
+    tester.write(
+        "jamroot.jam",
+        """
 
     import order ;
     import "class" : new ;
 
     obj test : test.cpp : <include>b <include>a <include>c&&d ;
-    """)
+    """,
+    )
 
-    tester.write("test.cpp", """
+    tester.write(
+        "test.cpp",
+        """
     #include <test.hpp>
     int main() { f(); }
-    """)
+    """,
+    )
 
-    tester.write("a/test.hpp", """
+    tester.write(
+        "a/test.hpp",
+        """
     void f();
-    """)
+    """,
+    )
 
-    tester.write("b/test.hpp", """
-    """)
+    tester.write(
+        "b/test.hpp",
+        """
+    """,
+    )
 
     tester.run_build_system()
 
@@ -84,23 +110,36 @@ def test_default_order_mixed():
 
     tester.cleanup()
 
+
 def test_basic():
     tester = BoostBuild.Tester(use_test_config=False)
-    tester.write("jamroot.jam", """
+    tester.write(
+        "jamroot.jam",
+        """
     obj test : test.cpp : <include>a&&b ;
-    """)
+    """,
+    )
 
-    tester.write("test.cpp", """
+    tester.write(
+        "test.cpp",
+        """
     #include <test1.hpp>
     #include <test2.hpp>
     int main() {}
-    """)
+    """,
+    )
 
-    tester.write("a/test1.hpp", """
-    """)
+    tester.write(
+        "a/test1.hpp",
+        """
+    """,
+    )
 
-    tester.write("b/test2.hpp", """
-    """)
+    tester.write(
+        "b/test2.hpp",
+        """
+    """,
+    )
 
     tester.run_build_system()
 
@@ -117,20 +156,33 @@ def test_basic():
 
     tester.cleanup()
 
+
 def test_order1():
     t = BoostBuild.Tester(use_test_config=False)
-    t.write("jamroot.jam", """
+    t.write(
+        "jamroot.jam",
+        """
     obj test : test.cpp : <include>a&&b ;
-    """)
-    t.write("test.cpp", """
+    """,
+    )
+    t.write(
+        "test.cpp",
+        """
     #include <test.h>
     int main() {}
-    """)
-    t.write("a/test.h", """
-    """)
-    t.write("b/test.h", """
+    """,
+    )
+    t.write(
+        "a/test.h",
+        """
+    """,
+    )
+    t.write(
+        "b/test.h",
+        """
     #error should find a/test.h
-    """)
+    """,
+    )
     t.run_build_system()
 
     t.touch("a/test.h")
@@ -143,21 +195,34 @@ def test_order1():
     t.expect_nothing_more()
 
     t.cleanup()
+
 
 def test_order2():
     t = BoostBuild.Tester(use_test_config=False)
-    t.write("jamroot.jam", """
+    t.write(
+        "jamroot.jam",
+        """
     obj test : test.cpp : <include>b&&a ;
-    """)
-    t.write("test.cpp", """
+    """,
+    )
+    t.write(
+        "test.cpp",
+        """
     #include <test.h>
     int main() {}
-    """)
-    t.write("a/test.h", """
+    """,
+    )
+    t.write(
+        "a/test.h",
+        """
     #error should find b/test.h
-    """)
-    t.write("b/test.h", """
-    """)
+    """,
+    )
+    t.write(
+        "b/test.h",
+        """
+    """,
+    )
     t.run_build_system()
 
     t.touch("a/test.h")
@@ -171,9 +236,12 @@ def test_order2():
 
     t.cleanup()
 
+
 def test_order_graph():
     t = BoostBuild.Tester(use_test_config=False)
-    t.write("jamroot.jam", """
+    t.write(
+        "jamroot.jam",
+        """
     obj test : test.cpp :
         <include>b&&a
         <include>c&&b
@@ -182,14 +250,18 @@ def test_order_graph():
         <include>b
         <include>e&&b&&d
       ;
-    """)
-    t.write("test.cpp", """
+    """,
+    )
+    t.write(
+        "test.cpp",
+        """
     #include <test1.h>
     #include <test2.h>
     #include <test3.h>
     #include <test4.h>
     int main() {}
-    """)
+    """,
+    )
     t.write("b/test1.h", "")
     t.write("a/test1.h", "#error should find b/test1.h\n")
 
@@ -242,6 +314,7 @@ def test_order_graph():
     t.expect_nothing_more()
 
     t.cleanup()
+
 
 test_default_order()
 test_default_order_mixed()

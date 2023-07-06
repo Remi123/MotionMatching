@@ -27,9 +27,13 @@ def test_error_missing_argument(eof):
 
     """
     t = BoostBuild.Tester(pass_toolset=False)
-    t.write("file.jam", """\
+    t.write(
+        "file.jam",
+        """\
 rule f ( param ) { }
-f ;%s""" % __trailing_newline(eof))
+f ;%s"""
+        % __trailing_newline(eof),
+    )
     t.run_build_system(["-ffile.jam"], status=1)
     t.expect_output_lines("file.jam:2: in module scope")
     t.expect_output_lines("file.jam:1:see definition of rule 'f' being called")
@@ -46,9 +50,12 @@ def test_error_syntax(eof):
 
 def test_traceback():
     t = BoostBuild.Tester(pass_toolset=False)
-    t.write("file.jam", """\
+    t.write(
+        "file.jam",
+        """\
 NOTFILE all ;
-ECHO [ BACKTRACE ] ;""")
+ECHO [ BACKTRACE ] ;""",
+    )
     t.run_build_system(["-ffile.jam"])
     t.expect_output_lines("file.jam 2  module scope")
     t.cleanup()

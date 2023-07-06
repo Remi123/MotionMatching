@@ -11,7 +11,9 @@ t = BoostBuild.Tester(arguments=["--config="], pass_toolset=0)
 
 t.write("source.input", "")
 
-t.write("test-properties.jam", """
+t.write(
+    "test-properties.jam",
+    """
 import feature : feature ;
 import generators ;
 import toolset ;
@@ -51,9 +53,12 @@ actions check
 {
     echo okay > $(<)
 }
-""")
+""",
+)
 
-t.write("jamfile.jam", """
+t.write(
+    "jamfile.jam",
+    """
 import test-properties ;
 # See if default value of composite feature 'cf' will be expanded to
 # <define>CF_IS_OFF.
@@ -99,9 +104,12 @@ check i : source.input : <expected-define>SF_1 ;
 check j-impl : source.input : <expected-define>CF_1 ;
 explicit j-impl ;
 alias j : j-impl/<cf>on-1 ;
-""")
+""",
+)
 
-t.write("jamroot.jam", """
+t.write(
+    "jamroot.jam",
+    """
 import feature ;
 feature.feature cf : off on always : composite incidental ;
 feature.compose <cf>off : <define>CF_IS_OFF ;
@@ -122,19 +130,24 @@ feature.compose <cx2-on:sub>1 : <define>CX_2 ;
 feature.feature sf : a : incidental ;
 feature.subfeature sf a : sub : 1 : composite incidental ;
 feature.compose <sf-a:sub>1 : <define>SF_1 ;
-""")
+""",
+)
 
 t.expand_toolset("jamfile.jam")
 
 t.run_build_system()
-t.expect_addition(["bin/debug/a.check",
-                   "bin/debug/b.check",
-                   "bin/null/release/c.check",
-                   "bin/debug/d.check",
-                   "bin/debug/e.check",
-                   "bin/debug/f.check",
-                   "bin/debug/g.check",
-                   "bin/debug/h.check",
-                   "bin/debug/i.check"])
+t.expect_addition(
+    [
+        "bin/debug/a.check",
+        "bin/debug/b.check",
+        "bin/null/release/c.check",
+        "bin/debug/d.check",
+        "bin/debug/e.check",
+        "bin/debug/f.check",
+        "bin/debug/g.check",
+        "bin/debug/h.check",
+        "bin/debug/i.check",
+    ]
+)
 
 t.cleanup()

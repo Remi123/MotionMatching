@@ -11,7 +11,9 @@ import BoostBuild
 
 t = BoostBuild.Tester(["-d1"], pass_toolset=False)
 
-t.write("file.jam", """\
+t.write(
+    "file.jam",
+    """\
 prefix = "echo \\"" ;
 suffix = "\\"" ;
 if $(NT)
@@ -27,7 +29,8 @@ actions go
 ECHO "{{{" $(XXX) "}}}" ;
 ALWAYS all ;
 go all ;
-""")
+""",
+)
 
 t.run_build_system(["-ffile.jam", "-sXXX=1"], stderr="")
 t.expect_output_lines("{{{ 1 }}}")

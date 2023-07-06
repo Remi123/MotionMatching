@@ -11,7 +11,9 @@ import BoostBuild
 
 t = BoostBuild.Tester(pass_toolset=0)
 
-t.write("file.jam", """\
+t.write(
+    "file.jam",
+    """\
 rule test1 ( args * )
 {
     EXIT $(args) : 0 ;
@@ -27,10 +29,14 @@ multiline
 comment
 |#
 e "#f" ;
-""")
+""",
+)
 
-t.run_build_system(["-ffile.jam"], stdout="""\
+t.run_build_system(
+    ["-ffile.jam"],
+    stdout="""\
 a b c d e #f
-""")
+""",
+)
 
 t.cleanup()

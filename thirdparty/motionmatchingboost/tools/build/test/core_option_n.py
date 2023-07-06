@@ -9,7 +9,9 @@ import BoostBuild
 
 t = BoostBuild.Tester(pass_toolset=0)
 
-t.write("file.jam", """\
+t.write(
+    "file.jam",
+    """\
 actions .a.
 {
 echo [$(<:B)] 0
@@ -27,9 +29,12 @@ NOTFILE subtest ;
 .a. subtest_b : subtest ;
 FAIL_EXPECTED subtest_b ;
 DEPENDS all : subtest_a subtest_b ;
-""")
+""",
+)
 
-t.run_build_system(["-ffile.jam", "-n"], stdout="""\
+t.run_build_system(
+    ["-ffile.jam", "-n"],
+    stdout="""\
 ...found 4 targets...
 ...updating 2 targets...
 .a. subtest_a
@@ -45,7 +50,8 @@ echo [subtest_b] 1
 echo [subtest_b] 2
 
 ...updated 2 targets...
-""")
+""",
+)
 t.expect_nothing_more()
 
 t.cleanup()

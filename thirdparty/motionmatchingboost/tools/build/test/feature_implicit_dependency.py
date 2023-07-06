@@ -14,7 +14,9 @@ t = BoostBuild.Tester(pass_toolset=False)
 
 t.write("input.sss", "")
 
-t.write("Jamroot.jam", """
+t.write(
+    "Jamroot.jam",
+    """
 import type ;
 import common ;
 import generators ;
@@ -105,7 +107,8 @@ generators.register [ new bbb-generator $(__name__).make-ddd : SSS : DDD ] ;
 ccc output-c : input.sss : <implicit-dependency>input ;
 # This should have <bbbpath>bin/b-loc
 ddd output-d : input.sss : <implicit-dependency>input ;
-""")
+""",
+)
 
 t.run_build_system()
 t.expect_output_lines(["aaa path: bin/a-loc", "bbb path: bin/b-loc"])
