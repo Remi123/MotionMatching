@@ -159,7 +159,7 @@ jobs:
                   name: ${{ matrix.platform }}
                   if-no-files-found: error
                   path: |
-                    ${{ github.workspace }}\${{ env.LIBRARY_PATH }}\${{ matrix.platform }}\
+                    ${{ github.workspace }}\${{ env.LIBRARY_PATH }}
                     !**\*.lib
                     !**\*.exp
 
@@ -168,6 +168,6 @@ jobs:
                 uses: actions/upload-artifact@v3
                 with:
                     name: ${{ matrix.platform }}
-                    path: ${{ github.workspace }}/${{ env.LIBRARY_PATH }}/${{ matrix.platform }}
+                    path: ${{ github.workspace }}/${{ env.LIBRARY_PATH }}
                     if-no-files-found: error
 
