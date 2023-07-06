@@ -34,9 +34,6 @@
 #include "src/motion_features.h"
 #include "src/motion_player.h"
 
-#ifdef TOOLS_ENABLED
-#endif
-
 void initialize_motion_matching_module(ModuleInitializationLevel p_level) {
 	if (p_level == MODULE_INITIALIZATION_LEVEL_SCENE) {
 		ClassDB::register_class<MotionFeature>();
@@ -46,12 +43,6 @@ void initialize_motion_matching_module(ModuleInitializationLevel p_level) {
 
 		ClassDB::register_class<MotionPlayer>();
 		ClassDB::register_class<CritDampSpring>();
-	}
-#ifdef TOOLS_ENABLED
-	if (p_level == MODULE_INITIALIZATION_LEVEL_EDITOR) {
-	}
-#endif
-	if (p_level == MODULE_INITIALIZATION_LEVEL_SERVERS) {
 	}
 }
 
