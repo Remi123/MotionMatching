@@ -67,13 +67,16 @@ struct MotionPlayer : public Node {
 
     // Properties and variables
 
+    // The array. Will be sent to the KDtree.
     GETSET(PackedFloat32Array,MotionData);
 
-    
+    // Useful for passing data at runtime.
     GETSET(Dictionary,blackboard)
 
+    // The track names inside the animations that define the categories, usually a value track to a int.
     GETSET(TypedArray<String>,category_track_names)
 
+    // Get the skeleton TODO : Might be able to use PROPERTY_HINT_NODE_PATH_TO_EDITED_NODE
     Skeleton3D* skeleton;
     NodePath skeleton_path;
     void set_skeleton(NodePath path){
@@ -81,25 +84,36 @@ struct MotionPlayer : public Node {
         skeleton = get_node<Skeleton3D>(path);
         }
     NodePath get_skeleton(){return skeleton_path;}
+    GETSET(NodePath,main_node)
 
+    // Animation Library. Each one will be analysed
     GETSET(Ref<AnimationLibrary>,animation_library);
 
+    // Array of the motion features.
     GETSET(Array,motion_features);
 
-    GETSET(NodePath,main_node)
+    // Dimensional Stats.
     GETSET(PackedFloat32Array,weights)
     GETSET(PackedFloat32Array,means)
     GETSET(PackedFloat32Array,variances)
-    GETSET(Array,densities)
+    GETSET(Array,densities) 
+
+    // The KdTree.
     Kdtree::KdTree *  kdt = nullptr;
 
+    // Database. A pose is just the index of a row in the kdtree.
+    // Usage : db_anim_*[result.index] = 
+    GETSET(PackedInt32Array,    db_anim_index);     // Index of the animation name in the animation library
+    GETSET(PackedFloat32Array,  db_anim_timestamp); // timestamp of the pose in the animation
+    GETSET(PackedInt32Array,    db_anim_category);  // Category of the pose in the animation
 
-    GETSET(PackedInt32Array,    db_anim_index);
-    GETSET(PackedFloat32Array,  db_anim_timestamp);
-    GETSET(PackedInt32Array,    db_anim_category);
-
+    // Simple helper. Might be removed from this class
     GETSET(int,category_value);
 
+    // How the kdtree calculate the distance.
+    // 0 (L0) : Maximum of each difference in all dimensions.
+    // 1 (L1) : Manhattan distance (default)
+    // 2 (L2) : Distance squared.
     int distance_type = 1; int get_distance_type(){return distance_type;} 
     void set_distance_type(int value){
         distance_type = value;
@@ -142,7 +156,6 @@ struct MotionPlayer : public Node {
         
 
         // Now we bake all the data
-        // kdt->bake_nodes(data,nb_dimensions);
         if(kdt != nullptr)
             delete kdt;
         kdt = new Kdtree::KdTree(&nodes,distance_type);
@@ -165,6 +178,7 @@ struct MotionPlayer : public Node {
         }
     }
 
+    // Useful while baking data and in editor.
     void set_skeleton_to_pose(Ref<Animation> animation,double time)
     {
         auto the_char = get_node<CharacterBody3D>(main_node);
@@ -188,6 +202,18 @@ struct MotionPlayer : public Node {
         }
     }
 
+    // Reset the skeleton poses.
+    void reset_skeleton_poses(){
+        skeleton = get_node<Skeleton3D>(skeleton_path);
+        UtilityFunctions::print((skeleton == nullptr)?"Skeleton error, path not found":"Skeleton set");
+        
+        UtilityFunctions::print("Resetting the skeleton");
+        skeleton->reset_bone_poses();
+        UtilityFunctions::print("Skeleton reset");
+    }
+
+    // Bake the data into the KdTree.
+    // Goes through all the animations and construct the kdtree with each features at the interval.
     virtual void baking_data() {
         using namespace godot;
         using u = godot::UtilityFunctions;
@@ -372,13 +398,16 @@ struct MotionPlayer : public Node {
         skeleton->reset_bone_poses();
     }
 
+    // A predicate for searching animation categories.
+    // included_category_bitfield : The animations must at least contains those categories
+    // excluded_category_bitfield : Exclude every animations with any of those categories
     struct Category_Pred : Kdtree::KdNodePredicate
     {
         const std::bitset<64> m_desired_category;
         const std::bitset<64> m_exclude_category;
-        Category_Pred(int64_t _v, int64_t _u = 0):
-            m_desired_category{static_cast<uint64_t>(_v)}
-            ,m_exclude_category{static_cast<uint64_t>(_u)}
+        Category_Pred(int64_t included_category_bitfield, int64_t excluded_category_bitfield = 0):
+            m_desired_category{static_cast<uint64_t>(included_category_bitfield)}
+            ,m_exclude_category{static_cast<uint64_t>(excluded_category_bitfield)}
         {}
 
         virtual bool operator()(const Kdtree::KdNode& node) const {
@@ -390,6 +419,9 @@ struct MotionPlayer : public Node {
         }
     };
 
+    // Calculate the weights using the features get_weights() functions.
+    // Take into consideration the number of dimensions.
+    // The calculation might be reconsidered, but it's the best I found.
     void recalculate_weights()
     {
         weights.clear();
@@ -434,8 +466,9 @@ struct MotionPlayer : public Node {
         }
     }
 
-
-    TypedArray<Dictionary> query_pose(int64_t category = std::numeric_limits<int64_t>::max(), int64_t exclude = 0)
+    // query the kdtree.
+    // Can include or exclude categories.
+    TypedArray<Dictionary> query_pose(int64_t included_category = std::numeric_limits<int64_t>::max(), int64_t exclude = 0)
     {
         PackedFloat32Array query{};
         for (size_t features_index = 0; features_index < motion_features.size(); ++features_index)
@@ -459,11 +492,11 @@ struct MotionPlayer : public Node {
 
             auto query_data = Kdtree::CoordPoint(query.ptr(),std::next(query.ptr(),kdt->dimension));
             auto clock_start = std::chrono::system_clock::now();
-            if(category == std::numeric_limits<int64_t>::max())
+            if(included_category == std::numeric_limits<int64_t>::max())
                 kdt->k_nearest_neighbors(query_data,1,&re);
             else
             {
-                auto pred = Category_Pred(category,exclude);
+                auto pred = Category_Pred(included_category,exclude);
                 kdt->k_nearest_neighbors(query_data,1,&re,&pred);
             }
 
@@ -503,15 +536,9 @@ struct MotionPlayer : public Node {
 
     }
 
-    void reset_skeleton_poses(){
-        skeleton = get_node<Skeleton3D>(skeleton_path);
-        UtilityFunctions::print((skeleton == nullptr)?"Skeleton error, path not found":"Skeleton set");
-        
-        UtilityFunctions::print("Resetting the skeleton");
-        skeleton->reset_bone_poses();
-        UtilityFunctions::print("Skeleton reset");
-    }
 
+    // Bypass the feature query, and ask directly which poses is the most similar.
+    // The query must be of the correct dimension.
     Array check_query_results(PackedFloat32Array query,size_t nb_result = 1)
     {
         if(kdt == nullptr)
@@ -565,6 +592,7 @@ struct MotionPlayer : public Node {
 
 
     protected:
+    // Binding.
     static void _bind_methods() {
         // Private section
         {
