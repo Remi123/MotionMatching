@@ -92,7 +92,7 @@ void PredictionMotionFeature::_bind_methods() {
 #endif
 }
 
-PackedFloat32Array PredictionMotionFeature::broadphase_query_pose(Dictionary blackboard, float delta) {
+PackedFloat32Array PredictionMotionFeature::broadphase_query_pose(Dictionary blackboard, float p_delta) {
 	PackedFloat32Array result{};
 	Array blackboard_array;
 	blackboard_array.resize(3);
@@ -308,7 +308,7 @@ float BonePositionVelocityMotionFeature::narrowphase_evaluate_cost(PackedFloat32
 	return cost;
 }
 
-PackedFloat32Array BonePositionVelocityMotionFeature::broadphase_query_pose(Dictionary blackboard, float delta) {
+PackedFloat32Array BonePositionVelocityMotionFeature::broadphase_query_pose(Dictionary blackboard, float p_delta) {
 	PackedVector3Array current_positions{}, current_velocities{};
 	last_known_result.resize(bones_id.size() * 2 * 3);
 	current_positions.resize(bones_id.size());
@@ -318,7 +318,7 @@ PackedFloat32Array BonePositionVelocityMotionFeature::broadphase_query_pose(Dict
 
 	for (int32_t index = 0; index < bones_id.size(); ++index) {
 		Vector3 pos = skeleton->get_bone_global_pose(bones_id[index]).origin;
-		Vector3 vel = (pos - last_known_positions[index]) / delta;
+		Vector3 vel = (pos - last_known_positions[index]) / p_delta;
 		current_positions.write[index] = pos;
 		current_velocities.write[index] = vel;
 	}
