@@ -1,15 +1,14 @@
 #pragma once
 
-#include <godot_cpp/variant/dictionary.hpp>
-#include <godot_cpp/core/class_db.hpp>
-#include <godot_cpp/variant/variant.hpp>
-#include <godot_cpp/classes/resource.hpp>
-#include <godot_cpp/classes/ref.hpp>
-#include <godot_cpp/classes/ref_counted.hpp>
-#include <godot_cpp/classes/project_settings.hpp>
-#include <godot_cpp/core/method_bind.hpp>
+#include "core/variant/dictionary.h"
+#include "core/object/class_db.h"
+#include "core/variant/variant.h"
+#include "core/io/resource.h"
+#include "core/object/ref_counted.h"
+#include "core/config/project_settings.h"
+#include "core/object/method_bind.h"
+
 #include <cmath>
-#include <math.h>
 
 using namespace godot;
 
@@ -259,7 +258,7 @@ struct CritDampSpring : public RefCounted
             Vector3 j0 = (quaternion * q_goal.inverse()).get_euler();
             Vector3 j1 = angular_velocity + j0 * y;
             float eydt = fast_negexp(y * dt);
-            answer["quaternion"] = (Quaternion(eydt * (j0 + j1 * dt)) * q_goal).normalized();
+            answer["quaternion"] = (Quaternion::from_euler(eydt * (j0 + j1 * dt)) * q_goal).normalized();
             answer["angular_velocity"] = eydt * (angular_velocity - j1 * y * dt);
             answer["delta"] = dt;
         }

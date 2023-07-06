@@ -52,24 +52,6 @@ jobs:
             #     if: ${{ matrix.platform != 'windows' }}
             #     run: python -m pip install scons
 
-            -   name: Download and install Boost
-                id: install-boost
-                uses: MarkusJx/install-boost@v2.4.4
-                with:
-                    boost_version: 1.81.0
-                    # The toolset used to compile boost, e.g. "msvc"
-                    toolset: ${{ matrix.toolset }} # optional, default is 
-                    # The platform version boost was compiled on, e.g. "18.04"
-                    platform_version: ${{ matrix.platform_version }} # optional, default is 
-                    # Whether the boost libraries are linked statically or dynamically
-                    #link: # optional, default is 
-                    # The architecture the binaries were built for
-                    arch: x86 # optional, default is x86
-                    # The dirctory to install boost into
-                    #boost_install_dir: boost_1_81_0 # optional, default is 
-                    # Wheter to use actions/cache to improve build times
-                    cache: true # optional, default is true
-            
             -   name: Submodule Hash Windows
                 if: ${{ matrix.platform == 'windows' }}
                 run: echo "SUBMODULE_HASH=$( git rev-parse HEAD:godot-cpp )" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
@@ -104,10 +86,6 @@ jobs:
                 run:  scons -j8 
                         platform=${{ matrix.platform }} 
                         target=${{ matrix.target }} 
-                        arch=${{ matrix.arch }} 
-                        Boost_INCLUDE_DIR=${{steps.install-boost.outputs.BOOST_ROOT}}/include/
-                        Boost_LIBRARY_DIRS=${{steps.install-boost.outputs.BOOST_ROOT}}/lib
-                env:
-                    BOOST_ROOT: ${{ steps.install-boost.outputs.BOOST_ROOT }}
+                        arch=${{ matrix.arch }}
 
 

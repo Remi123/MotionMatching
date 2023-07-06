@@ -39,3 +39,5 @@
 .DS_Store
 
 *.os
+
+__pycache__/

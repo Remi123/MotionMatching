@@ -1,0 +1,10 @@
+#!/usr/bin/env python
+
+Import("env")
+
+env_motion_matching = env.Clone()
+env_motion_matching.add_source_files(env.modules_sources, "*.cpp")
+env_motion_matching.add_source_files(env.modules_sources, "src/*.cpp")
+
+if env.editor_build:
+    env_motion_matching.add_source_files(env.modules_sources, "editor/*.cpp")
