@@ -1,6 +1,6 @@
 
-#ifndef MOTION_FEATURES_HPP
-#define MOTION_FEATURES_HPP
+#ifndef MOTION_FEATURES_H
+#define MOTION_FEATURES_H
 
 #include "core/io/resource.h"
 #include "core/math/math_defs.h"
@@ -260,4 +260,4 @@ protected:
 #undef STRING_PREFIX
 #undef BINDER
 
-#endif
+#endif // MOTION_FEATURES_H

@@ -1,6 +1,6 @@
 
-#ifndef MOTION_MATCHING_HPP
-#define MOTION_MATCHING_HPP
+#ifndef MOTION_PLAYER_H
+#define MOTION_PLAYER_H
 
 #include "core/string/node_path.h"
 #include "core/string/print_string.h"
@@ -166,4 +166,4 @@ protected:
 #undef BINDER_PROPERTY
 #undef BINDER_PROPERTY_PARAMS
 
-#endif
+#endif // MOTION_PLAYER_H
