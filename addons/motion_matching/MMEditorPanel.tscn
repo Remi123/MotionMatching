@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3 uid="uid://cgx5x8caibsnl"]
 
-[ext_resource type="Script" path="res://addons/MM/MMEditorPanel.gd" id="1_wva2m"]
+[ext_resource type="Script" path="res://addons/motion_matching/MMEditorPanel.gd" id="1_wva2m"]
 
 [node name="MMEditorPanel" type="Control"]
 layout_mode = 3

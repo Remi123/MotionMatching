@@ -3,7 +3,7 @@ extends EditorPlugin
 
 var bottompanel
 
-const MMEditorGizmoPlugin = preload("res://addons/MotionMatching/MMEditorGizmoPlugin.gd")
+const MMEditorGizmoPlugin = preload("res://addons/motion_matching/MMEditorGizmoPlugin.gd")
 
 var gizmo_plugin := MMEditorGizmoPlugin.new()
 
@@ -11,7 +11,7 @@ var gizmo_plugin := MMEditorGizmoPlugin.new()
 
 func _enter_tree() -> void:
 	add_node_3d_gizmo_plugin(gizmo_plugin)
-	bottompanel = preload("res://addons/MotionMatching/MMEditorPanel.tscn").instantiate()
+	bottompanel = preload("res://addons/motion_matching/MMEditorPanel.tscn").instantiate()
 	bottompanel.gizmo = gizmo_plugin
 	# Initialization of the plugin goes here.
 
