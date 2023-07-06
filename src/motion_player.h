@@ -40,7 +40,9 @@
 #include "core/object/method_bind.h"
 #include "core/templates/hash_map.h"
 #include "core/templates/vector.h"
+#ifdef TOOLS_ENABLED
 #include "editor/editor_plugin.h"
+#endif
 
 #include "scene/gui/box_container.h"
 
