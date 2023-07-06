@@ -94,7 +94,7 @@ TypedArray<Dictionary> MotionPlayer::query_pose(int64_t included_category, int64
 		TypedArray<Dictionary> results = {};
 
 		String debug = "[";
-		for (int32_t i = 0; i < re.size(); ++i) {
+		for (size_t i = 0; i < re.size(); ++i) {
 			Dictionary subresult{};
 			List<StringName> names;
 			animation_library->get_animation_list(&names);

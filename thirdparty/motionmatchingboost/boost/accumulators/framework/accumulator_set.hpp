@@ -61,7 +61,7 @@ namespace detail
         }
 
     private:
-        accumulator_visitor &operator =(accumulator_visitor const &);
+        accumulator_visitor &operator =(accumulator_visitor const &) = default;
         Args const &args;
     };
 
