@@ -156,11 +156,7 @@ protected:
         ClassDB::bind_method( D_METHOD("set_weight","value"), &RootVelocityMotionFeature::set_weight, DEFVAL(1.0f)); 
         ClassDB::bind_method( D_METHOD("get_weight"), &RootVelocityMotionFeature::get_weight); 
         godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT,"weight"), "set_weight", "get_weight");
-
-        // ClassDB::bind_method( D_METHOD("set_body","value"), &RootVelocityMotionFeature::set_body);
-        // ClassDB::bind_method( D_METHOD("get_body"), &RootVelocityMotionFeature::get_body);
-        // ADD_PROPERTY(PropertyInfo(Variant::NODE_PATH,"Character",godot::PROPERTY_HINT_NODE_PATH_VALID_TYPES,"CharacterBody3D"),"set_body","get_body");
-
+        
         ClassDB::bind_method( D_METHOD("set_root_bone_name","value"), &RootVelocityMotionFeature::set_root_bone_name,DEFVAL("%GeneralSkeleton:Root"));
         ClassDB::bind_method( D_METHOD("get_root_bone_name"), &RootVelocityMotionFeature::get_root_bone_name);
         ADD_PROPERTY(PropertyInfo(Variant::STRING,"Root Bone"),"set_root_bone_name","get_root_bone_name");
