@@ -106,15 +106,15 @@ PackedFloat32Array PredictionMotionFeature::broadphase_query_pose(Dictionary bla
 	PackedVector3Array history = PackedVector3Array(blackboard["history"]);
 	PackedVector3Array prediction = PackedVector3Array(blackboard["prediction"]);
 	PackedFloat32Array direction = PackedFloat32Array(blackboard["pred_dir"]);
-	for (auto elem : history) {
+	for (Vector3 elem : history) {
 		result.append(elem.x);
 		result.append(elem.z);
 	}
-	for (auto elem : prediction) {
+	for (Vector3 elem : prediction) {
 		result.append(elem.x);
 		result.append(elem.z);
 	}
-	for (auto elem : direction) {
+	for (float elem : direction) {
 		result.append(elem);
 	}
 	return result;
@@ -192,7 +192,7 @@ void PredictionMotionFeature::setup_for_animation(Ref<Animation> animation) {
 }
 
 void PredictionMotionFeature::setup_nodes(Variant character) {
-	auto n = Object::cast_to<CharacterBody3D>(character);
+	CharacterBody3D *n = Object::cast_to<CharacterBody3D>(character);
 	skeleton = cast_to<Skeleton3D>(n->get_node(NodePath("Armature/GeneralSkeleton")));
 }
 
@@ -241,15 +241,14 @@ void BonePositionVelocityMotionFeature::debug_pose_gizmo(Ref<EditorNode3DGizmo> 
 	{
 		constexpr int s = 3;
 		for (int32_t index = 0; index < bone_names.size(); ++index) {
-			//i*size*2+size+2
 			Vector3 pos = Vector3(data[index * s * 2 + 0], data[index * s * 2 + 1], data[index * s * 2 + 2]);
 			Vector3 vel = Vector3(data[index * s * 2 + s + 0], data[index * s * 2 + s + 1], data[index * s * 2 + s + 2]);
 			pos = tr.xform(pos);
 			vel = tr.xform(vel);
-			auto white = gizmo->get_plugin()->get_material("white", gizmo);
-			auto blue = gizmo->get_plugin()->get_material("blue", gizmo);
+			Ref<StandardMaterial3D> white = gizmo->get_plugin()->get_material("white", gizmo);
+			Ref<StandardMaterial3D> blue = gizmo->get_plugin()->get_material("blue", gizmo);
 			gizmo->add_lines(PackedVector3Array{ pos, pos + vel }, blue);
-			auto box = Ref<BoxMesh>();
+			Ref<BoxMesh> box = Ref<BoxMesh>();
 			box.instantiate();
 			box->set_size(Vector3(0.05f, 0.05f, 0.05f));
 			Transform3D tr = Transform3D(Basis(), pos);
@@ -347,23 +346,23 @@ PackedFloat32Array BonePositionVelocityMotionFeature::bake_animation_pose(Ref<An
 	PackedFloat32Array result{};
 	set_skeleton_to_animation_timestamp(animation, time - 0.1);
 	for (int32_t index = 0; index < bones_id.size(); ++index) {
-		const auto bone_id = bones_id[index];
+		const int bone_id = bones_id[index];
 		prev_pos.push_back(skeleton->get_bone_global_pose(bone_id).get_origin() * skeleton->get_motion_scale());
 	}
 	set_skeleton_to_animation_timestamp(animation, time);
 	for (int32_t index = 0; index < bones_id.size(); ++index) {
-		const auto bone_id = bones_id[index];
+		const int bone_id = bones_id[index];
 		curr_pos.push_back(skeleton->get_bone_global_pose(bone_id).get_origin() * skeleton->get_motion_scale());
 	}
 	const int32_t root_id = 0;
 	const Transform3D root = skeleton->get_bone_global_pose(root_id) * skeleton->get_motion_scale();
 
 	for (int32_t index = 0; index < bones_id.size(); ++index) {
-		const auto pos = root.basis.xform_inv(curr_pos[index] - root.get_origin());
+		const Vector3 pos = root.basis.xform_inv(curr_pos[index] - root.get_origin());
 		result.push_back(pos.x);
 		result.push_back(pos.y);
 		result.push_back(pos.z);
-		const auto vel = root.basis.xform_inv(curr_pos[index] - prev_pos[index]) / 0.1;
+		const Vector3 vel = root.basis.xform_inv(curr_pos[index] - prev_pos[index]) / 0.1;
 		result.push_back(vel.x);
 		result.push_back(vel.y);
 		result.push_back(vel.z);
@@ -379,9 +378,8 @@ void BonePositionVelocityMotionFeature::set_skeleton_to_animation_timestamp(Ref<
 		if (!bone_tracks.has(bone_id)) {
 			continue;
 		}
-		const auto pos = bone_tracks[bone_id][0];
-		const auto quat = bone_tracks[bone_id][1];
-		// const auto scale = bone_tracks[bone_id][2];
+		const int pos = bone_tracks[bone_id][0];
+		const int quat = bone_tracks[bone_id][1];
 		if (pos >= 0) {
 			const Vector3 position = anim->position_track_interpolate(pos, time);
 			skeleton->set_bone_pose_position(bone_id, position);
@@ -391,10 +389,6 @@ void BonePositionVelocityMotionFeature::set_skeleton_to_animation_timestamp(Ref<
 			const Quaternion rotation = anim->rotation_track_interpolate(quat, time);
 			skeleton->set_bone_pose_rotation(bone_id, rotation);
 		}
-
-		// const Vector3 scaling = anim->scale_track_interpolate(scale,time);
-
-		// skeleton->set_bone_pose_scale(bone_id,scaling);
 	}
 }
 
@@ -408,8 +402,8 @@ void BonePositionVelocityMotionFeature::setup_for_animation(Ref<Animation> anima
 			bones_id.push_back(id);
 		}
 	}
-	for (auto bone_id = 0; bone_id < skeleton->get_bone_count(); ++bone_id) {
-		const auto bone_name = "%GeneralSkeleton:" + skeleton->get_bone_name(bone_id);
+	for (int bone_id = 0; bone_id < skeleton->get_bone_count(); ++bone_id) {
+		const String bone_name = "%GeneralSkeleton:" + skeleton->get_bone_name(bone_id);
 		PackedInt32Array tracks{};
 		tracks.push_back(animation->find_track(NodePath(bone_name), Animation::TrackType::TYPE_POSITION_3D));
 		tracks.push_back(animation->find_track(NodePath(bone_name), Animation::TrackType::TYPE_ROTATION_3D));
@@ -447,7 +441,7 @@ int BonePositionVelocityMotionFeature::get_dimension() {
 
 void BonePositionVelocityMotionFeature::set_to_skeleton(NodePath path) {
 	if (is_local_to_scene() && get_local_scene() != nullptr) {
-		auto mp = get_local_scene()->get_node_or_null(NodePath("MotionPlayer"));
+		Node *mp = get_local_scene()->get_node_or_null(NodePath("MotionPlayer"));
 		skeleton = cast_to<Skeleton3D>(mp->get_node(path));
 		to_skeleton = get_local_scene()->get_path_to(skeleton);
 	}

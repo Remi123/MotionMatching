@@ -78,25 +78,12 @@ struct KDTree : public Resource {
 			// u::prints(std::distance(points.ptrw(),begin),point.size());
 		}
 		print_line(points);
-
-		// if (kd != nullptr)
-		//   delete kd;
 		print_line("Nb poses", (int64_t)nodes.size());
-		// auto clock_start = std::chrono::system_clock::now();
-		// try{
-		// throw new std::exception("Hello");
 		kd = new Kdtree::KdTree(&nodes, 2);
 		print_line("Searching");
 		KdNodeVector re{};
 		kd->k_nearest_neighbors(std::vector<float>(points.ptr(), std::next(points.ptr(), dimensions)), 1, &re);
 		print_line(vformat("Found result %d", (int64_t)re.size()));
-		// }catch(std::exception e)
-		// {
-		// u::prints(e.what());
-		// }
-		// auto clock_end = std::chrono::system_clock::now();
-		// float duration = float(std::chrono::duration_cast <std::chrono::microseconds> (clock_end - clock_start).count());
-		// u::prints("Baking done in ", duration);
 	}
 
 	void set_weight(int difference_type, PackedFloat32Array weight) {
@@ -115,15 +102,15 @@ struct KDTree : public Resource {
 		end = std::next(end, point.size());
 		std::vector<float> p(begin, end);
 		KdNodeVector result{};
-		auto clock_start = std::chrono::system_clock::now();
+		std::chrono::time_point clock_start = std::chrono::system_clock::now();
 		kd->k_nearest_neighbors(p, k, &result);
-		auto clock_now = std::chrono::system_clock::now();
+		std::chrono::time_point clock_now = std::chrono::system_clock::now();
 		float currentTime = float(std::chrono::duration_cast<std::chrono::microseconds>(clock_now - clock_start).count());
 
 		print_line("Searching Data tooks ", currentTime, " ms");
 
 		PackedInt32Array indexes{};
-		for (auto node : result) {
+		for (Kdtree::KdNode node : result) {
 			indexes.append(node.index);
 		}
 		return indexes;
@@ -137,7 +124,7 @@ struct KDTree : public Resource {
 		KdNodeVector result{};
 		kd->range_nearest_neighbors(p, k, &result);
 		PackedInt32Array indexes{};
-		for (auto node : result) {
+		for (Kdtree::KdNode node : result) {
 			indexes.append(node.index);
 		}
 		return indexes;

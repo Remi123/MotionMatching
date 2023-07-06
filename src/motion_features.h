@@ -154,8 +154,8 @@ public:
 	}
 
 	virtual PackedFloat32Array bake_animation_pose(Ref<Animation> animation, float time) override {
-		auto pos = animation->position_track_interpolate(root_track_pos, time);
-		auto prev_pos = animation->position_track_interpolate(root_track_pos, time - 0.1);
+		Vector3 pos = animation->position_track_interpolate(root_track_pos, time);
+		Vector3 prev_pos = animation->position_track_interpolate(root_track_pos, time - 0.1);
 		Quaternion rotation = animation->rotation_track_interpolate(root_track_quat, time).normalized();
 
 		Vector3 vel = rotation.xform_inv(pos - prev_pos) / 0.1;
@@ -168,7 +168,7 @@ public:
 	}
 
 	virtual PackedFloat32Array broadphase_query_pose(Dictionary blackboard, float p_delta) override {
-		auto vel = body->get_quaternion().xform_inv(body->get_velocity());
+		Vector3 vel = body->get_quaternion().xform_inv(body->get_velocity());
 		PackedFloat32Array result{};
 		result.push_back(vel.x);
 		result.push_back(vel.y);
@@ -187,7 +187,7 @@ protected:
 	virtual void debug_pose_gizmo(Ref<EditorNode3DGizmo> gizmo, const PackedFloat32Array data, Transform3D tr = Transform3D{}) override {
 		if (data.size() == get_dimension()) {
 			Vector3 vel = tr.xform(Vector3(data[0], data[1], data[2]));
-			auto mat = gizmo->get_plugin()->get_material("white", gizmo);
+			Ref<StandardMaterial3D> mat = gizmo->get_plugin()->get_material("white", gizmo);
 			PackedVector3Array lines{ tr.origin, tr.origin + vel };
 			gizmo->add_lines(lines, mat);
 		}

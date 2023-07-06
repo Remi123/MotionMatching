@@ -52,7 +52,7 @@ void MotionPlayer::recalculate_weights() {
 	print_line(vformat("Sum stats %d", int64_t(sum(dim_stats))));
 	for (int32_t features_index = 0, offset = 0; features_index < motion_features.size(); ++features_index) {
 		MotionFeature *f = Object::cast_to<MotionFeature>(motion_features[features_index]);
-		for (auto i = offset; i < offset + f->get_dimension(); ++i) {
+		for (int32_t i = offset; i < offset + f->get_dimension(); ++i) {
 			weights.write[i] = abs(weights[i]) / sum(weight_stats) / f->get_dimension();
 			total(weights[i]);
 		}
@@ -70,7 +70,7 @@ TypedArray<Dictionary> MotionPlayer::query_pose(int64_t included_category, int64
 	PackedFloat32Array query{};
 	for (int32_t features_index = 0; features_index < motion_features.size(); ++features_index) {
 		MotionFeature *f = Object::cast_to<MotionFeature>(motion_features[features_index]);
-		auto f_query = f->broadphase_query_pose(blackboard, 0.016);
+		PackedFloat32Array f_query = f->broadphase_query_pose(blackboard, 0.016);
 		if (f_query.size() == f->get_dimension()) {
 			query.append_array(f_query);
 		}
@@ -84,11 +84,11 @@ TypedArray<Dictionary> MotionPlayer::query_pose(int64_t included_category, int64
 	} else {
 		Kdtree::KdNodeVector re{};
 
-		auto query_data = Kdtree::CoordPoint(query.ptr(), std::next(query.ptr(), kdt->dimension));
+		Kdtree::CoordPoint query_data = Kdtree::CoordPoint(query.ptr(), std::next(query.ptr(), kdt->dimension));
 		if (included_category == std::numeric_limits<int64_t>::max()) {
 			kdt->k_nearest_neighbors(query_data, 1, &re);
 		} else {
-			auto pred = Category_Pred(included_category, exclude);
+			Category_Pred pred = Category_Pred(included_category, exclude);
 			kdt->k_nearest_neighbors(query_data, 1, &re, &pred);
 		}
 		TypedArray<Dictionary> results = {};
@@ -168,9 +168,9 @@ Array MotionPlayer::check_query_results(PackedFloat32Array query, int64_t nb_res
 				i.index >= db_anim_category.size()) {
 			continue;
 		}
-		const auto anim_name = names[db_anim_index[i.index]];
-		const auto anim_time = db_anim_timestamp[i.index];
-		const auto anim_cat = db_anim_category[i.index];
+		const StringName anim_name = names[db_anim_index[i.index]];
+		const float anim_time = db_anim_timestamp[i.index];
+		const int anim_cat = db_anim_category[i.index];
 		Array anim_array;
 		anim_array.resize(3);
 		anim_array[0] = anim_name;
@@ -392,7 +392,7 @@ void MotionPlayer::baking_data() {
 		means.write[i] = mean(data_stats[i]);
 		variances.write[i] = variance(data_stats[i]);
 		Array arr{};
-		for (const auto &d : density(data_stats[i])) {
+		for (const std::pair<float, float> &d : density(data_stats[i])) {
 			Array density_array;
 			density_array.resize(2);
 			density_array[0] = d.first;
@@ -444,7 +444,7 @@ void MotionPlayer::reset_skeleton_poses() {
 void MotionPlayer::set_skeleton_to_pose(Ref<Animation> animation, double time) {
 	CharacterBody3D *the_char = cast_to<CharacterBody3D>(get_node(main_node));
 	Skeleton3D *skeleton = cast_to<Skeleton3D>(the_char->get_node(NodePath("Armature/GeneralSkeleton")));
-	for (auto bone_id = 0; bone_id < skeleton->get_bone_count(); ++bone_id) {
+	for (int bone_id = 0; bone_id < skeleton->get_bone_count(); ++bone_id) {
 		const String bone_name = "%GeneralSkeleton:" + skeleton->get_bone_name(bone_id);
 		const int pos_track = animation->find_track(NodePath(bone_name), Animation::TrackType::TYPE_POSITION_3D);
 		const int rot_track = animation->find_track(NodePath(bone_name), Animation::TrackType::TYPE_ROTATION_3D);
