@@ -15,20 +15,25 @@ import BoostBuild
 t = BoostBuild.Tester()
 
 # Create the needed files.
-t.write("jamroot.jam", """
+t.write(
+    "jamroot.jam",
+    """
 exe hello : hello.cpp ;
-""")
+""",
+)
 
-t.write("hello.cpp", """
+t.write(
+    "hello.cpp",
+    """
 int main() {}
-""")
+""",
+)
 
 # Run the build.
 t.run_build_system()
 
 # First, create a list of three pathnames.
-file_list = BoostBuild.List("bin/$toolset/debug*/") * \
-    BoostBuild.List("hello.exe hello.obj")
+file_list = BoostBuild.List("bin/$toolset/debug*/") * BoostBuild.List("hello.exe hello.obj")
 # Second, assert that those files were added as result of the last build system
 # invocation.
 t.expect_addition(file_list)
