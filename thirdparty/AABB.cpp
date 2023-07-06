@@ -27,6 +27,7 @@
 */
 
 #include "AABB.h"
+#include <limits>
 
 namespace aabb
 {
@@ -42,30 +43,35 @@ namespace aabb
         upperBound.resize(dimension);
     }
 
-    AABB::AABB(const std::vector<float>& lowerBound_, const std::vector<float>& upperBound_) :
-        lowerBound(lowerBound_), upperBound(upperBound_)
-    {
-        // Validate the dimensionality of the bounds vectors.
-        if (lowerBound.size() != upperBound.size())
-        {
-            throw std::invalid_argument("[ERROR]: Dimensionality mismatch!");
-        }
+	AABB::AABB(const std::vector<float> &lowerBound_, const std::vector<float> &upperBound_) :
+			lowerBound(lowerBound_), upperBound(upperBound_) {
+		// Validate the dimensionality of the bounds vectors.
+		if (lowerBound.size() != upperBound.size()) {
+			std::cerr << "[ERROR]: Dimensionality mismatch!" << std::endl;
 
-        // Validate that the upper bounds exceed the lower bounds.
-        for (unsigned int i=0;i<lowerBound.size();i++)
-        {
-            // Validate the bound.
-            if (lowerBound[i] > upperBound[i])
-            {
-                throw std::invalid_argument("[ERROR]: AABB lower bound is greater than the upper bound!");
-            }
-        }
+			// Instead of throwing an exception, resize the smaller vector with MAX or MIN float values
+			if (lowerBound.size() < upperBound.size()) {
+				lowerBound.resize(upperBound.size(), std::numeric_limits<float>::min());
+			} else {
+				upperBound.resize(lowerBound.size(), std::numeric_limits<float>::max());
+			}
+		}
 
-        surfaceArea = computeSurfaceArea();
-        centre = computeCentre();
-    }
+		// Validate that the upper bounds exceed the lower bounds.
+		for (unsigned int i = 0; i < lowerBound.size(); i++) {
+			// If the lower bound is greater than the upper bound,
+			// set them both to the maximum float value.
+			if (lowerBound[i] > upperBound[i]) {
+				std::cerr << "[ERROR]: AABB lower bound is greater than the upper bound!" << std::endl;
+				upperBound[i] = std::numeric_limits<float>::max();
+			}
+		}
 
-    float AABB::computeSurfaceArea() const
+		surfaceArea = computeSurfaceArea();
+		centre = computeCentre();
+	}
+
+	float AABB::computeSurfaceArea() const
     {
         // Sum of "area" of all the sides.
         float sum = 0;
