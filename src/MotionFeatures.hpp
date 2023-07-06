@@ -1,4 +1,6 @@
-#pragma once
+
+#ifndef MOTION_FEATURES_HPP
+#define MOTION_FEATURES_HPP
 
 #include "core/io/resource.h"
 #include "core/math/math_defs.h"
@@ -668,3 +670,5 @@ protected:
 #undef STR
 #undef STRING_PREFIX
 #undef BINDER
+
+#endif

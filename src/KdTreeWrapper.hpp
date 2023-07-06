@@ -1,4 +1,5 @@
-#pragma once
+#ifndef KDTREE_WRAPPER_HPP
+#define KDTREE_WRAPPER_HPP
 
 #include <godot_cpp/variant/utility_functions.hpp>
 
@@ -15,7 +16,7 @@
 
 #include "kdtree.hpp"
 
-struct KDTree : public godot::Resource
+struct KDTree : public Resource
 {
   GDCLASS(KDTree,Resource)
 
@@ -143,3 +144,5 @@ struct KDTree : public godot::Resource
 
   }
 };
+
+#endif KDTREE_WRAPPER_HPP

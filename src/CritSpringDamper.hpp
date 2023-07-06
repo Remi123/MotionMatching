@@ -1,4 +1,5 @@
-#pragma once
+#ifndef CRIT_SPRING_DAMPER_H
+#define CRIT_SPRING_DAMPER_H
 
 #include "core/variant/dictionary.h"
 #include "core/object/class_db.h"
@@ -9,8 +10,6 @@
 #include "core/object/method_bind.h"
 
 #include <cmath>
-
-using namespace godot;
 
 struct CritDampSpring : public RefCounted
 {
@@ -312,6 +311,4 @@ protected:
 
 };
 
-
-
-
+#endif

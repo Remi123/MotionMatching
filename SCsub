@@ -1,8 +1,11 @@
 #!/usr/bin/env python
 
+import os
+
 Import("env")
 
 env_motion_matching = env.Clone()
+env_motion_matching.Prepend(CPPPATH=["#modules/motion_matching/thirdparty/motionmatchingboost"])
 env_motion_matching.add_source_files(env.modules_sources, "*.cpp")
 env_motion_matching.add_source_files(env.modules_sources, "src/*.cpp")
 

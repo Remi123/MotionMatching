@@ -1,4 +1,6 @@
-#pragma once
+
+#ifndef MOTION_MATCHING_HPP
+#define MOTION_MATCHING_HPP
 
 #include "core/string/node_path.h"
 #include "core/string/print_string.h"
@@ -27,8 +29,16 @@
 
 #include "../thirdparty/kdtree.hpp"
 #include "MotionFeatures.hpp"
+#include <sys/_types/_int64_t.h>
 
-using namespace godot;
+#include <boost/accumulators/accumulators.hpp>
+#include <boost/accumulators/statistics/count.hpp>
+#include <boost/accumulators/statistics/max.hpp>
+#include <boost/accumulators/statistics/median.hpp>
+#include <boost/accumulators/statistics/min.hpp>
+#include <boost/accumulators/statistics/skewness.hpp>
+#include <boost/accumulators/statistics/stats.hpp>
+#include <boost/accumulators/statistics/variance.hpp>
 
 // Macro setup. Mostly there to simplify writing all those
 #define GETSET(type, variable, ...)            \
@@ -37,15 +47,6 @@ using namespace godot;
 	void set_##variable(type value) { variable = value; }
 #define STR(x) #x
 #define STRING_PREFIX(prefix, s) STR(prefix##s)
-#define BINDER(type, variable, ...)                                                                             \
-	ClassDB::bind_method(D_METHOD(STRING_PREFIX(set_, variable), "value"), &type::set_##variable, __VA_ARGS__); \
-	ClassDB::bind_method(D_METHOD(STRING_PREFIX(get_, variable)), &type::get_##variable);
-#define BINDER_PROPERTY(type, variant_type, variable, ...) \
-	BINDER(type, variable, __VA_ARGS__)                    \
-	ADD_PROPERTY(PropertyInfo(variant_type, #variable), STRING_PREFIX(set_, variable), STRING_PREFIX(get_, variable));
-#define BINDER_PROPERTY_PARAMS(type, variant_type, variable, ...) \
-	BINDER(type, variable)                                        \
-	ADD_PROPERTY(PropertyInfo(variant_type, #variable, __VA_ARGS__), STRING_PREFIX(set_, variable), STRING_PREFIX(get_, variable));
 
 struct MotionPlayer : public Node {
 	GDCLASS(MotionPlayer, Node)
@@ -142,8 +143,9 @@ struct MotionPlayer : public Node {
 				}
 
 				// Now we bake all the data
-				if (kdt != nullptr)
+				if (kdt != nullptr) {
 					delete kdt;
+				}
 				kdt = new Kdtree::KdTree(&nodes, distance_type);
 
 				auto begin = weights.ptr(), end = weights.ptr(); // We use the ptr as iterator.
@@ -152,7 +154,7 @@ struct MotionPlayer : public Node {
 				const std::vector<float> tmp_weight(begin, end);
 
 				kdt->set_distance(distance_type, &tmp_weight);
-				print_line("Nb poses", nodes.size());
+				print_line(vformat("Nb poses %d", int(nodes.size())));
 				print_line("MotionPlayer Ready");
 			} break;
 			case Node::NOTIFICATION_PHYSICS_PROCESS: {
@@ -227,8 +229,10 @@ struct MotionPlayer : public Node {
 
 		List<StringName> anim_names;
 		animation_library->get_animation_list(&anim_names);
-		print_line(vformat("%s", anim_names));
 
+		for (List<StringName>::Element *E = anim_names.front(); E; E = E->next()) {
+			print_line(vformat("%s", E->get()));
+		}
 		means.clear();
 		means.resize(nb_dimensions);
 		means.fill(0.0f);
@@ -245,6 +249,8 @@ struct MotionPlayer : public Node {
 		db_anim_category.clear();
 		db_anim_index.clear();
 		db_anim_timestamp.clear();
+
+		using namespace motionmatchingboost::accumulators;
 
 		using acc_stats = stats<tag::density, tag::max, tag::min, tag::median, tag::skewness, tag::variance>;
 		const accumulator_set<float, acc_stats> default_acc(tag::density::num_bins = 10, tag::density::cache_size = 15);
@@ -312,8 +318,8 @@ struct MotionPlayer : public Node {
 		}
 
 		for (auto i = 0; i < nb_dimensions; ++i) {
-			means[i] = mean(data_stats[i]);
-			variances[i] = variance(data_stats[i]);
+			means.write[i] = mean(data_stats[i]);
+			variances.write[i] = variance(data_stats[i]);
 			Array arr{};
 			for (const auto &d : density(data_stats[i])) {
 				Array density_array;
@@ -351,7 +357,7 @@ struct MotionPlayer : public Node {
 			nodes.push_back(Kdtree::KdNode(point, (void *)&db_anim_category[i], i));
 		}
 
-		print_line(vformat("Nb poses %d", nodes.size()));
+		print_line(vformat("Nb poses %d", int64_t(nodes.size())));
 
 		skeleton->reset_bone_poses();
 	}
@@ -373,12 +379,12 @@ struct MotionPlayer : public Node {
 			return include && exclude;
 		}
 	};
-
 	// Calculate the weights using the features get_weights() functions.
 	// Take into consideration the number of dimensions.
 	// The calculation might be reconsidered, but it's the best I found.
 	void recalculate_weights() {
 		weights.clear();
+		using namespace motionmatchingboost::accumulators;
 		accumulator_set<double, stats<tag::min, tag::max, tag::sum, tag::count>> weight_stats, dim_stats, total;
 		for (auto features_index = 0; features_index < motion_features.size(); ++features_index) {
 			MotionFeature *f = Object::cast_to<MotionFeature>(motion_features[features_index]);
@@ -390,24 +396,24 @@ struct MotionPlayer : public Node {
 		for (auto i = 0; i < weights.size(); ++i) {
 			weight_stats(weights[i]);
 		}
-		print_line(vformat("Sum weight: %s Count: %s", sum(weight_stats), count(weight_stats)));
+		print_line(vformat("Sum weight: %d Count: %d", int64_t(sum(weight_stats)), int64_t(count(weight_stats))));
 		for (auto features_index = 0; features_index < motion_features.size(); ++features_index) {
 			MotionFeature *f = Object::cast_to<MotionFeature>(motion_features[features_index]);
 			dim_stats(f->get_dimension());
 		}
-		print_line(vformat("Sum stats %s", sum(dim_stats)));
+		print_line(vformat("Sum stats %d", int64_t(sum(dim_stats))));
 		for (auto features_index = 0, offset = 0; features_index < motion_features.size(); ++features_index) {
 			MotionFeature *f = Object::cast_to<MotionFeature>(motion_features[features_index]);
 			for (auto i = offset; i < offset + f->get_dimension(); ++i) {
-				weights[i] = abs(weights[i]) / sum(weight_stats) / f->get_dimension();
+				weights.write[i] = abs(weights[i]) / sum(weight_stats) / f->get_dimension();
 				total(weights[i]);
 			}
 			offset += f->get_dimension();
 		}
 		print_line(vformat("Sum %s", sum(weight_stats)));
-		if (MIN(total) < 1.0f && MIN(total) > 0.0f) {
+		if (min(total) < 1.0f && min(total) > 0.0f) {
 			for (auto i = 0; i < weights.size(); ++i) {
-				weights[i] *= 1 / MIN(total);
+				weights.write[i] *= 1 / min(total);
 			}
 		}
 	}
@@ -479,11 +485,11 @@ struct MotionPlayer : public Node {
 
 	// Bypass the feature query, and ask directly which poses is the most similar.
 	// The query must be of the correct dimension.
-	Array check_query_results(PackedFloat32Array query, size_t nb_result = 1) {
+	Array check_query_results(PackedFloat32Array query, int64_t nb_result = 1) {
 		if (kdt == nullptr) {
 			auto nb_dimensions = query.size();
 			Kdtree::KdNodeVector nodes{};
-			for (size_t i = 0; i < MotionData.size() / nb_dimensions; ++i) {
+			for (int64_t i = 0; i < MotionData.size() / nb_dimensions; ++i) {
 				auto begin = MotionData.ptr(), end = MotionData.ptr(); // We use the ptr as iterator.
 				begin = std::next(begin, nb_dimensions * i);
 				end = std::next(begin, nb_dimensions);
@@ -540,20 +546,36 @@ struct MotionPlayer : public Node {
 protected:
 	// Binding.
 	static void _bind_methods() {
-		// Private section
 		{
-			BINDER_PROPERTY_PARAMS(MotionPlayer, Variant::INT, category_value, PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_CLASS_IS_BITFIELD | PROPERTY_USAGE_DEFAULT);
+			ClassDB::bind_method(D_METHOD("set_category_value", "value"), &MotionPlayer::set_category_value);
+			ClassDB::bind_method(D_METHOD("get_category_value"), &MotionPlayer::get_category_value);
+			ADD_PROPERTY(PropertyInfo(Variant::INT, "category_value", PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_CLASS_IS_BITFIELD | PROPERTY_USAGE_DEFAULT), "set_category_value", "get_category_value");
 
-			// Stats
-			BINDER_PROPERTY_PARAMS(MotionPlayer, Variant::PACKED_FLOAT32_ARRAY, means, PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_STORAGE);
-			BINDER_PROPERTY_PARAMS(MotionPlayer, Variant::PACKED_FLOAT32_ARRAY, variances, PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_STORAGE);
-			BINDER_PROPERTY_PARAMS(MotionPlayer, Variant::ARRAY, densities, PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_STORAGE);
+			ClassDB::bind_method(D_METHOD("set_means", "means"), &MotionPlayer::set_means);
+			ClassDB::bind_method(D_METHOD("get_means"), &MotionPlayer::get_means);
+			ADD_PROPERTY(PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "means", PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_STORAGE), "set_means", "get_means");
+
+			ClassDB::bind_method(D_METHOD("set_variances", "variances"), &MotionPlayer::set_variances);
+			ClassDB::bind_method(D_METHOD("get_variances"), &MotionPlayer::get_variances);
+			ADD_PROPERTY(PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "variances", PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_STORAGE), "set_variances", "get_variances");
+
+			ClassDB::bind_method(D_METHOD("set_densities", "densities"), &MotionPlayer::set_densities);
+			ClassDB::bind_method(D_METHOD("get_densities"), &MotionPlayer::get_densities);
+			ADD_PROPERTY(PropertyInfo(Variant::ARRAY, "densities", PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_STORAGE), "set_densities", "get_densities");
 
 			// For retrieving the anim name and timestamp and category
 
-			BINDER_PROPERTY_PARAMS(MotionPlayer, Variant::PACKED_INT32_ARRAY, db_anim_index, PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_STORAGE);
-			BINDER_PROPERTY_PARAMS(MotionPlayer, Variant::PACKED_FLOAT32_ARRAY, db_anim_timestamp, PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_STORAGE);
-			BINDER_PROPERTY_PARAMS(MotionPlayer, Variant::PACKED_INT32_ARRAY, db_anim_category, PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_STORAGE);
+			ClassDB::bind_method(D_METHOD("set_db_anim_index", "db_anim_index"), &MotionPlayer::set_db_anim_index);
+			ClassDB::bind_method(D_METHOD("get_db_anim_index"), &MotionPlayer::get_db_anim_index);
+			ADD_PROPERTY(PropertyInfo(Variant::PACKED_INT32_ARRAY, "db_anim_index", PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_STORAGE), "set_db_anim_index", "get_db_anim_index");
+
+			ClassDB::bind_method(D_METHOD("set_db_anim_timestamp", "db_anim_timestamp"), &MotionPlayer::set_db_anim_timestamp);
+			ClassDB::bind_method(D_METHOD("get_db_anim_timestamp"), &MotionPlayer::get_db_anim_timestamp);
+			ADD_PROPERTY(PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "db_anim_timestamp", PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_STORAGE), "set_db_anim_timestamp", "get_db_anim_timestamp");
+
+			ClassDB::bind_method(D_METHOD("set_db_anim_category", "db_anim_category"), &MotionPlayer::set_db_anim_category);
+			ClassDB::bind_method(D_METHOD("get_db_anim_category"), &MotionPlayer::get_db_anim_category);
+			ADD_PROPERTY(PropertyInfo(Variant::PACKED_INT32_ARRAY, "db_anim_category", PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_STORAGE), "set_db_anim_category", "get_db_anim_category");
 		}
 
 		ClassDB::add_property_group(get_class_static(), "Nodes & Resources Sources", "");
@@ -565,23 +587,39 @@ protected:
 			ClassDB::bind_method(D_METHOD("get_skeleton"), &MotionPlayer::get_skeleton);
 			ADD_PROPERTY(PropertyInfo(Variant::NODE_PATH, "skeleton_node_path"), "set_skeleton_path", "get_skeleton");
 
-			BINDER_PROPERTY_PARAMS(MotionPlayer, Variant::OBJECT, animation_library, PROPERTY_HINT_RESOURCE_TYPE, "AnimationLibrary");
-			BINDER_PROPERTY_PARAMS(MotionPlayer, Variant::PACKED_STRING_ARRAY, category_track_names, PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_DEFAULT);
+			ClassDB::bind_method(D_METHOD("set_animation_library", "animation_library"), &MotionPlayer::set_animation_library);
+			ClassDB::bind_method(D_METHOD("get_animation_library"), &MotionPlayer::get_animation_library);
+			ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "animation_library", PROPERTY_HINT_RESOURCE_TYPE, "AnimationLibrary"), "set_animation_library", "get_animation_library");
+
+			ClassDB::bind_method(D_METHOD("set_category_track_names", "category_track_names"), &MotionPlayer::set_category_track_names);
+			ClassDB::bind_method(D_METHOD("get_category_track_names"), &MotionPlayer::get_category_track_names);
+			ADD_PROPERTY(PropertyInfo(Variant::PACKED_STRING_ARRAY, "category_track_names", PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_DEFAULT), "set_category_track_names", "get_category_track_names");
 		}
 
 		ClassDB::add_property_group(get_class_static(), "Data & KdTree params", "");
 		{
-			BINDER_PROPERTY(MotionPlayer, Variant::PACKED_FLOAT32_ARRAY, MotionData); // Actual data saved. Very important but just a bunch of floats
-			BINDER_PROPERTY_PARAMS(MotionPlayer, Variant::INT, distance_type, PROPERTY_HINT_ENUM, "Manhattan:1,EuclidianSquared:2,Maximum:0");
+			ClassDB::bind_method(D_METHOD("set_MotionData", "MotionData"), &MotionPlayer::set_MotionData);
+			ClassDB::bind_method(D_METHOD("get_MotionData"), &MotionPlayer::get_MotionData);
+			ADD_PROPERTY(PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "MotionData"), "set_MotionData", "get_MotionData");
 
-			BINDER_PROPERTY(MotionPlayer, Variant::PACKED_FLOAT32_ARRAY, weights);
+			ClassDB::bind_method(D_METHOD("set_distance_type", "distance_type"), &MotionPlayer::set_distance_type);
+			ClassDB::bind_method(D_METHOD("get_distance_type"), &MotionPlayer::get_distance_type);
+			ADD_PROPERTY(PropertyInfo(Variant::INT, "distance_type", PROPERTY_HINT_ENUM, "Manhattan:1,EuclidianSquared:2,Maximum:0"), "set_distance_type", "get_distance_type");
+
+			ClassDB::bind_method(D_METHOD("set_weights", "weights"), &MotionPlayer::set_weights);
+			ClassDB::bind_method(D_METHOD("get_weights"), &MotionPlayer::get_weights);
+			ADD_PROPERTY(PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "weights"), "set_weights", "get_weights");
 		}
 
 		ClassDB::add_property_group(get_class_static(), "Features", "");
 		{
-			BINDER_PROPERTY_PARAMS(MotionPlayer, Variant::ARRAY, motion_features, godot::PROPERTY_HINT_TYPE_STRING, "24/17:MotionFeature", PROPERTY_USAGE_SCRIPT_VARIABLE | PROPERTY_USAGE_DEFAULT);
+			ClassDB::bind_method(D_METHOD("set_motion_features", "motion_features"), &MotionPlayer::set_motion_features);
+			ClassDB::bind_method(D_METHOD("get_motion_features"), &MotionPlayer::get_motion_features);
+			ADD_PROPERTY(PropertyInfo(Variant::ARRAY, "motion_features", PROPERTY_HINT_TYPE_STRING, "24/17:MotionFeature", PROPERTY_USAGE_SCRIPT_VARIABLE | PROPERTY_USAGE_DEFAULT), "set_motion_features", "get_motion_features");
 
-			BINDER_PROPERTY(MotionPlayer, Variant::DICTIONARY, blackboard);
+			ClassDB::bind_method(D_METHOD("set_blackboard", "blackboard"), &MotionPlayer::set_blackboard);
+			ClassDB::bind_method(D_METHOD("get_blackboard"), &MotionPlayer::get_blackboard);
+			ADD_PROPERTY(PropertyInfo(Variant::DICTIONARY, "blackboard"), "set_blackboard", "get_blackboard");
 		}
 
 		ClassDB::add_property_group(get_class_static(), "", "");
@@ -604,3 +642,5 @@ protected:
 #undef BINDER
 #undef BINDER_PROPERTY
 #undef BINDER_PROPERTY_PARAMS
+
+#endif
