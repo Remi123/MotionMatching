@@ -41,7 +41,6 @@
 #include <chrono>
 
 #include "../thirdparty/kdtree.hpp"
-#include <sys/_types/_int64_t.h>
 
 struct KDTree : public Resource {
 	GDCLASS(KDTree, Resource)

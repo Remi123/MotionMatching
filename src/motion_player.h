@@ -58,7 +58,6 @@
 
 #include "../thirdparty/kdtree.hpp"
 #include "motion_features.h"
-#include <sys/_types/_int64_t.h>
 
 #include <boost/accumulators/accumulators.hpp>
 #include <boost/accumulators/statistics/count.hpp>
