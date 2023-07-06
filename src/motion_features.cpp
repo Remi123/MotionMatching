@@ -29,27 +29,27 @@
 /**************************************************************************/
 
 #include "motion_features.h"
+#include "scene/resources/material.h"
 
 #ifdef TOOLS_ENABLED
 void PredictionMotionFeature::debug_pose_gizmo(Ref<EditorNode3DGizmo> gizmo, const PackedFloat32Array data, Transform3D tr) {
 	constexpr int s = 3;
-	auto white = gizmo->get_plugin()->get_material("white", gizmo);
-	auto green = gizmo->get_plugin()->get_material("green", gizmo);
-	auto orange = gizmo->get_plugin()->get_material("orange", gizmo);
-	for (size_t i = 0; i < past_time_dt.size(); ++i) {
-		const size_t offset = i * 2;
+	Ref<StandardMaterial3D> white = gizmo->get_plugin()->get_material("white", gizmo);
+	Ref<StandardMaterial3D> green = gizmo->get_plugin()->get_material("green", gizmo);
+	Ref<StandardMaterial3D> orange = gizmo->get_plugin()->get_material("orange", gizmo);
+	for (int64_t i = 0; i < past_time_dt.size(); ++i) {
+		const int64_t offset = i * 2;
 		Vector3 pos = Vector3(data[offset + 0], 0, data[offset + 1]);
 		pos = tr.xform(pos);
 		gizmo->add_lines(PackedVector3Array{ pos, pos + Vector3(0, 1, 0) }, green);
 	}
-	const size_t pos_offset = past_time_dt.size();
-	const size_t traj_offset = past_time_dt.size() * 2 + future_time_dt.size() * 2;
-	for (size_t i = 0; i < future_time_dt.size(); ++i) {
-		const size_t offset = (pos_offset + i) * 2;
+	const int64_t pos_offset = past_time_dt.size();
+	const int64_t traj_offset = past_time_dt.size() * 2 + future_time_dt.size() * 2;
+	for (int64_t i = 0; i < future_time_dt.size(); ++i) {
+		const int64_t offset = (pos_offset + i) * 2;
 		Vector3 pos = Vector3(data[offset + 0], 0, data[offset + 1]);
 		Vector3 traj = tr.xform(Vector3(0, 0, 1)).rotated(Vector3(0, 1, 0), data[traj_offset + i]);
 		pos = tr.xform(pos);
-		// traj = tr.xform(traj);
 		gizmo->add_lines(PackedVector3Array{ pos, pos + traj }, orange);
 	}
 }
