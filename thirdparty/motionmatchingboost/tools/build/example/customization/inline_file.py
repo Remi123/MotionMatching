@@ -30,7 +30,7 @@ def quote_file(file):
     return result
 
 if len(sys.argv) < 3:
-    print "Usage: inline_file.py output_c_file file_to_include"
+    print("Usage: inline_file.py output_c_file file_to_include")
 else:
     output_c_file = sys.argv[1]
     out_file = open(output_c_file, "w");
