@@ -1,37 +1,32 @@
 #ifndef AABB_TREE_HPP
 #define AABB_TREE_HPP
 
-#include "AABB.h"
+#include "../thirdparty/AABB.h"
 
-#include <godot_cpp/variant/utility_functions.hpp>
-
-#include <godot_cpp/classes/global_constants.hpp>
-#include <godot_cpp/classes/node.hpp>
-#include <godot_cpp/classes/resource.hpp>
-#include <godot_cpp/templates/vector.hpp>
-#include <godot_cpp/variant/node_path.hpp>
-
-#include <godot_cpp/core/class_db.hpp>
-#include <godot_cpp/core/method_bind.hpp>
+#include "core/io/resource.h"
+#include "core/object/class_db.h"
+#include "core/string/node_path.h"
+#include "core/templates/vector.h"
+#include "scene/main/node.h"
 
 struct AABBTree : public Resource {
 	GDCLASS(AABBTree, Resource)
 	aabb::Tree bvh{};
 
-	void setup_tree(int dim, float fattening, size_t nb_particles, bool touching_is_overlap) {
+	void setup_tree(int dim, float fattening, int64_t nb_particles, bool touching_is_overlap) {
 		bvh.removeAll();
 		delete &bvh;
 		bvh = aabb::Tree(dim, fattening, nb_particles, touching_is_overlap);
 	}
 
-	void insert_particle_at_position(size_t index, PackedFloat32Array position, float radius) {
+	void insert_particle_at_position(int64_t index, PackedFloat32Array position, float radius) {
 		auto begin = position.ptrw(), end = position.ptrw(); // We use the ptr as iterator.
 		end = std::next(end, position.size());
 		std::vector<float> pos(begin, end);
-		bvh.insertParticle(index, std::move(pos), radius);
+		bvh.insertParticle(index, pos, radius);
 	}
 
-	void insert_particle(size_t index, PackedFloat32Array lowerbound, PackedFloat32Array upperbound) {
+	void insert_particle(int64_t index, PackedFloat32Array lowerbound, PackedFloat32Array upperbound) {
 		auto begin = lowerbound.ptrw(), end = lowerbound.ptrw(); // We use the ptr as iterator.
 		end = std::next(end, lowerbound.size());
 		std::vector<float> lb(begin, end);
@@ -41,24 +36,24 @@ struct AABBTree : public Resource {
 		end = std::next(end, upperbound.size());
 		std::vector<float> ub(begin, end);
 
-		bvh.insertParticle(index, std::move(lb), std::move(ub));
+		bvh.insertParticle(index, lb, ub);
 	}
 
-	void remove_particle(size_t index) {
+	void remove_particle(int64_t index) {
 		bvh.removeParticle(index);
 	}
 	void remove_all() {
 		bvh.removeAll();
 	}
 
-	void update_particle_at_position(size_t index, PackedFloat32Array position, float radius, bool always_reinsert) {
+	void update_particle_at_position(int64_t index, PackedFloat32Array position, float radius, bool always_reinsert) {
 		auto begin = position.ptrw(), end = position.ptrw(); // We use the ptr as iterator.
 		end = std::next(end, position.size());
 		std::vector<float> pos(begin, end);
 
-		bvh.updateParticle(index, std::move(pos), radius, always_reinsert);
+		bvh.updateParticle(index, pos, radius, always_reinsert);
 	}
-	void update_particle(size_t index, PackedFloat32Array lowerbound, PackedFloat32Array upperbound, bool always_reinsert) {
+	void update_particle(int64_t index, PackedFloat32Array lowerbound, PackedFloat32Array upperbound, bool always_reinsert) {
 		auto begin = lowerbound.ptrw(), end = lowerbound.ptrw(); // We use the ptr as iterator.
 		end = std::next(end, lowerbound.size());
 		std::vector<float> lb(begin, end);
@@ -68,10 +63,10 @@ struct AABBTree : public Resource {
 		end = std::next(end, upperbound.size());
 		std::vector<float> ub(begin, end);
 
-		bvh.updateParticle(index, std::move(lb), std::move(ub), always_reinsert);
+		bvh.updateParticle(index, lb, ub, always_reinsert);
 	}
 
-	godot::PackedInt64Array query_index(unsigned int i) {
+	PackedInt64Array query_index(unsigned int i) {
 		auto result = bvh.query(i);
 		PackedInt64Array r;
 		for (auto f : result)
@@ -79,7 +74,7 @@ struct AABBTree : public Resource {
 		return r;
 	}
 
-	godot::PackedInt64Array query_bounds(PackedFloat32Array lowerbound, PackedFloat32Array upperbound) {
+	PackedInt64Array query_bounds(PackedFloat32Array lowerbound, PackedFloat32Array upperbound) {
 		auto begin = lowerbound.ptrw(), end = lowerbound.ptrw(); // We use the ptr as iterator.
 		end = std::next(end, lowerbound.size());
 		std::vector<float> lb(begin, end);

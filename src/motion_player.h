@@ -28,7 +28,7 @@
 #include <vector>
 
 #include "../thirdparty/kdtree.hpp"
-#include "MotionFeatures.hpp"
+#include "motion_features.h"
 #include <sys/_types/_int64_t.h>
 
 #include <boost/accumulators/accumulators.hpp>
@@ -113,6 +113,7 @@ struct MotionPlayer : public Node {
 		if (kdt != nullptr && 0 <= distance_type && distance_type <= 2)
 			kdt->set_distance(distance_type);
 	}
+protected:
 	void _notification(int p_what) {
 		switch (p_what) {
 			case Node::NOTIFICATION_READY: {
@@ -165,6 +166,7 @@ struct MotionPlayer : public Node {
 			} break;
 		}
 	}
+public:
 	// Useful while baking data and in editor.
 	void set_skeleton_to_pose(Ref<Animation> animation, double time) {
 		auto the_char = cast_to<CharacterBody3D>(get_node(main_node));

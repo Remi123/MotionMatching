@@ -30,9 +30,9 @@
 
 #include "register_types.h"
 
-#include "src/CritSpringDamper.hpp"
-#include "src/MotionFeatures.hpp"
-#include "src/MotionPlayer.hpp"
+#include "src/crit_spring_damper.h"
+#include "src/motion_features.h"
+#include "src/motion_player.h"
 
 #ifdef TOOLS_ENABLED
 #endif

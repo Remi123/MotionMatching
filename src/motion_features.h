@@ -22,7 +22,7 @@
 #include "scene/resources/material.h"
 #include "scene/resources/primitive_meshes.h"
 
-#include "CritSpringDamper.hpp"
+#include "crit_spring_damper.h"
 
 #define MAKE_RESOURCE_TYPE_HINT(m_type) vformat("%s/%s:%s", Variant::OBJECT, PROPERTY_HINT_RESOURCE_TYPE, m_type)
 #define GETSET(type, variable, ...)            \
