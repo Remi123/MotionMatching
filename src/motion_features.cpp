@@ -236,23 +236,23 @@ PredictionMotionFeature::PredictionMotionFeature() {
 }
 
 #ifdef TOOLS_ENABLED
-void BonePositionVelocityMotionFeature::debug_pose_gizmo(Ref<EditorNode3DGizmo> gizmo, const PackedFloat32Array data, Transform3D tr) {
+void BonePositionVelocityMotionFeature::debug_pose_gizmo(Ref<EditorNode3DGizmo> p_gizmo, const PackedFloat32Array p_data, Transform3D p_transform) {
 	// if (data.size() == get_dimension())
 	{
 		constexpr int s = 3;
 		for (int32_t index = 0; index < bone_names.size(); ++index) {
-			Vector3 pos = Vector3(data[index * s * 2 + 0], data[index * s * 2 + 1], data[index * s * 2 + 2]);
-			Vector3 vel = Vector3(data[index * s * 2 + s + 0], data[index * s * 2 + s + 1], data[index * s * 2 + s + 2]);
-			pos = tr.xform(pos);
-			vel = tr.xform(vel);
-			Ref<StandardMaterial3D> white = gizmo->get_plugin()->get_material("white", gizmo);
-			Ref<StandardMaterial3D> blue = gizmo->get_plugin()->get_material("blue", gizmo);
-			gizmo->add_lines(PackedVector3Array{ pos, pos + vel }, blue);
+			Vector3 pos = Vector3(p_data[index * s * 2 + 0], p_data[index * s * 2 + 1], p_data[index * s * 2 + 2]);
+			Vector3 vel = Vector3(p_data[index * s * 2 + s + 0], p_data[index * s * 2 + s + 1], p_data[index * s * 2 + s + 2]);
+			pos = p_transform.xform(pos);
+			vel = p_transform.xform(vel);
+			Ref<StandardMaterial3D> white = p_gizmo->get_plugin()->get_material("white", p_gizmo);
+			Ref<StandardMaterial3D> blue = p_gizmo->get_plugin()->get_material("blue", p_gizmo);
+			p_gizmo->add_lines(PackedVector3Array{ pos, pos + vel }, blue);
 			Ref<BoxMesh> box = Ref<BoxMesh>();
 			box.instantiate();
 			box->set_size(Vector3(0.05f, 0.05f, 0.05f));
-			Transform3D tr = Transform3D(Basis(), pos);
-			gizmo->add_mesh(box, white, tr);
+			Transform3D new_transform = Transform3D(Basis(), pos);
+			p_gizmo->add_mesh(box, white, new_transform);
 		}
 	}
 }
