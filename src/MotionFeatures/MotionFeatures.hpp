@@ -32,16 +32,19 @@
 using namespace godot;
 using u = godot::UtilityFunctions;
 
-#define MAKE_RESOURCE_TYPE_HINT(m_type) vformat("%s/%s:%s", Variant::OBJECT, PROPERTY_HINT_RESOURCE_TYPE, m_type)
+// Macro setup. Mostly there to simplify writing all those
 #define GETSET(type,variable,...) type variable{__VA_ARGS__}; type get_##variable(){return  variable;} void set_##variable(type value){variable = value;}
 #define STR(x) #x
 #define STRING_PREFIX(prefix,s) STR(prefix##s) 
-#define BINDER(type,variable,...)         \
-        ClassDB::bind_method( D_METHOD(STRING_PREFIX(set_,variable),"value"), &type::set_##variable,__VA_ARGS__);\
-        ClassDB::bind_method( D_METHOD(STRING_PREFIX(get_,variable)), &type::get_##variable);
-#define BINDER_PROPERTY(type,variant_type,variable,...)         \
-        BINDER(type,variable,__VA_ARGS__)\
-        ADD_PROPERTY(PropertyInfo(variant_type,#variable),STRING_PREFIX(set_,variable),STRING_PREFIX(get_,variable));
+// #define BINDER(type,variable,...)\
+//         ClassDB::bind_method( D_METHOD(STRING_PREFIX(set_,variable),"value"), &type::set_##variable,__VA_ARGS__);\
+//         ClassDB::bind_method( D_METHOD(STRING_PREFIX(get_,variable)), &type::get_##variable);
+// #define BINDER_PROPERTY(type,variant_type,variable,...)\
+//         BINDER(type,variable,__VA_ARGS__)\
+//         ADD_PROPERTY(PropertyInfo(variant_type,#variable),STRING_PREFIX(set_,variable),STRING_PREFIX(get_,variable));
+// #define BINDER_PROPERTY_PARAMS(type,variant_type,variable,...)\
+//         BINDER(type,variable)\
+//         ADD_PROPERTY(PropertyInfo(variant_type,#variable,__VA_ARGS__),STRING_PREFIX(set_,variable),STRING_PREFIX(get_,variable));
 
 struct MotionFeature : public Resource{
     GDCLASS(MotionFeature,Resource)
@@ -156,7 +159,7 @@ protected:
         ClassDB::bind_method( D_METHOD("set_weight","value"), &RootVelocityMotionFeature::set_weight, DEFVAL(1.0f)); 
         ClassDB::bind_method( D_METHOD("get_weight"), &RootVelocityMotionFeature::get_weight); 
         godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT,"weight"), "set_weight", "get_weight");
-        
+
         ClassDB::bind_method( D_METHOD("set_root_bone_name","value"), &RootVelocityMotionFeature::set_root_bone_name,DEFVAL("%GeneralSkeleton:Root"));
         ClassDB::bind_method( D_METHOD("get_root_bone_name"), &RootVelocityMotionFeature::get_root_bone_name);
         ADD_PROPERTY(PropertyInfo(Variant::STRING,"Root Bone"),"set_root_bone_name","get_root_bone_name");
@@ -373,8 +376,8 @@ struct BonePositionVelocityMotionFeature : public MotionFeature {
         return cost;
     }
 
-    GETSET(float,weight_bone_pos,1.0f);
-    GETSET(float,weight_bone_vel,1.0f);
+    float weight_bone_pos{1.0f}; float get_weight_bone_pos(){return weight_bone_pos;} void set_weight_bone_pos(float value){weight_bone_pos = value;}
+    float weight_bone_vel{1.0f}; float get_weight_bone_vel(){return weight_bone_vel;} void set_weight_bone_vel(float value){weight_bone_vel = value;}
     virtual PackedFloat32Array get_weights() override{
         PackedFloat32Array result{};
         for(auto i =0; i < 3 * bone_names.size(); ++i)
@@ -391,8 +394,8 @@ struct BonePositionVelocityMotionFeature : public MotionFeature {
 
 protected:
     static void _bind_methods() {
-        BINDER_PROPERTY(BonePositionVelocityMotionFeature,Variant::FLOAT,weight_bone_pos);
-        BINDER_PROPERTY(BonePositionVelocityMotionFeature,Variant::FLOAT,weight_bone_vel);
+        ClassDB::bind_method( D_METHOD("set_weight_bone_pos","value"), &BonePositionVelocityMotionFeature::set_weight_bone_pos ); ClassDB::bind_method( D_METHOD("get_weight_bone_pos"), &BonePositionVelocityMotionFeature::get_weight_bone_pos); godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT,"weight_bone_pos"), "set_weight_bone_pos", "get_weight_bone_pos");
+        ClassDB::bind_method( D_METHOD("set_weight_bone_vel","value"), &BonePositionVelocityMotionFeature::set_weight_bone_vel ); ClassDB::bind_method( D_METHOD("get_weight_bone_vel"), &BonePositionVelocityMotionFeature::get_weight_bone_vel); godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT,"weight_bone_vel"), "set_weight_bone_vel", "get_weight_bone_vel");
         
         ClassDB::bind_method( D_METHOD("set_to_skeleton","value"), &BonePositionVelocityMotionFeature::set_to_skeleton);
         ClassDB::bind_method( D_METHOD("get_to_skeleton"), &BonePositionVelocityMotionFeature::get_to_skeleton);
@@ -402,14 +405,6 @@ protected:
         ClassDB::bind_method( D_METHOD("get_bone_names"), &BonePositionVelocityMotionFeature::get_bone_names);
         ADD_PROPERTY(PropertyInfo(Variant::PACKED_STRING_ARRAY,"Bones"),"set_bone_names","get_bone_names");
 
-
-        // ClassDB::bind_method( D_METHOD("set_body","value"), &RootVelocityMotionFeature::set_body);
-        // ClassDB::bind_method( D_METHOD("get_body"), &RootVelocityMotionFeature::get_body);
-        // ADD_PROPERTY(PropertyInfo(Variant::NODE_PATH,"Character",godot::PROPERTY_HINT_NODE_PATH_VALID_TYPES,"CharacterBody3D"),"set_body","get_body");
-
-        // ClassDB::bind_method( D_METHOD("set_root_bone_name","value"), &RootVelocityMotionFeature::set_root_bone_name,DEFVAL("%GeneralSkeleton:Root"));
-        // ClassDB::bind_method( D_METHOD("get_root_bone_name"), &RootVelocityMotionFeature::get_root_bone_name);
-        // ADD_PROPERTY(PropertyInfo(Variant::STRING,"Root Bone"),"set_root_bone_name","get_root_bone_name");
         
 
         ClassDB::bind_method( D_METHOD("get_dimension"), &BonePositionVelocityMotionFeature::get_dimension);
@@ -454,7 +449,7 @@ protected:
 struct PredictionMotionFeature : public MotionFeature{
     GDCLASS(PredictionMotionFeature,MotionFeature)
 
-    GETSET(Skeleton3D*,skeleton,nullptr);
+    Skeleton3D* skeleton{nullptr}; Skeleton3D* get_skeleton(){return skeleton;} void set_skeleton(Skeleton3D* value){skeleton = value;}
     GETSET(String,root_bone_name,"%GeneralSkeleton:Root")
 
     GETSET(NodePath,character_path);
@@ -647,15 +642,15 @@ public:
 
     protected:
     static void _bind_methods() {
-        BINDER_PROPERTY(PredictionMotionFeature,Variant::FLOAT,weight_history_pos);
-        BINDER_PROPERTY(PredictionMotionFeature,Variant::FLOAT,weight_prediction_pos);
-        BINDER_PROPERTY(PredictionMotionFeature,Variant::FLOAT,weight_prediction_angle);
+        ClassDB::bind_method( D_METHOD("set_weight_history_pos","value"), &PredictionMotionFeature::set_weight_history_pos ); ClassDB::bind_method( D_METHOD("get_weight_history_pos"), &PredictionMotionFeature::get_weight_history_pos); godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT,"weight_history_pos"), "set_weight_history_pos", "get_weight_history_pos");
+        ClassDB::bind_method( D_METHOD("set_weight_prediction_pos","value"), &PredictionMotionFeature::set_weight_prediction_pos ); ClassDB::bind_method( D_METHOD("get_weight_prediction_pos"), &PredictionMotionFeature::get_weight_prediction_pos); godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT,"weight_prediction_pos"), "set_weight_prediction_pos", "get_weight_prediction_pos");
+        ClassDB::bind_method( D_METHOD("set_weight_prediction_angle","value"), &PredictionMotionFeature::set_weight_prediction_angle ); ClassDB::bind_method( D_METHOD("get_weight_prediction_angle"), &PredictionMotionFeature::get_weight_prediction_angle); godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT,"weight_prediction_angle"), "set_weight_prediction_angle", "get_weight_prediction_angle");
 
         PackedFloat32Array m_default{};
         m_default.push_back(0.2);m_default.push_back(0.4);
-        BINDER_PROPERTY(PredictionMotionFeature,Variant::STRING,root_bone_name,DEFVAL("%GeneralSkeleton:Root"))
-        BINDER_PROPERTY(PredictionMotionFeature,Variant::PACKED_FLOAT32_ARRAY,past_time_dt,DEFVAL(m_default));
-        BINDER_PROPERTY(PredictionMotionFeature,Variant::PACKED_FLOAT32_ARRAY,future_time_dt);
+        ClassDB::bind_method( D_METHOD("set_root_bone_name","value"), &PredictionMotionFeature::set_root_bone_name,("%GeneralSkeleton:Root")); ClassDB::bind_method( D_METHOD("get_root_bone_name"), &PredictionMotionFeature::get_root_bone_name); godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::STRING,"root_bone_name"), "set_root_bone_name", "get_root_bone_name");
+        ClassDB::bind_method( D_METHOD("set_past_time_dt","value"), &PredictionMotionFeature::set_past_time_dt,(m_default)); ClassDB::bind_method( D_METHOD("get_past_time_dt"), &PredictionMotionFeature::get_past_time_dt); godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY,"past_time_dt"), "set_past_time_dt", "get_past_time_dt");
+        ClassDB::bind_method( D_METHOD("set_future_time_dt","value"), &PredictionMotionFeature::set_future_time_dt ); ClassDB::bind_method( D_METHOD("get_future_time_dt"), &PredictionMotionFeature::get_future_time_dt); godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY,"future_time_dt"), "set_future_time_dt", "get_future_time_dt");
 
         ClassDB::bind_method( D_METHOD("get_dimension"), &PredictionMotionFeature::get_dimension);
         // BIND_VIRTUAL_METHOD(MotionFeature,get_dimension);
@@ -706,4 +701,6 @@ public:
 #undef GETSET
 #undef STR
 #undef STRING_PREFIX
-#undef BINDER
+// #undef BINDER
+// #undef BINDER_PROPERTY
+// #undef BINDER_PROPERTY_PARAMS
