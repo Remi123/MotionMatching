@@ -4,11 +4,16 @@ import os
 
 Import("env")
 
+thirdparty_obj = []
+
 env_motion_matching = env.Clone()
 env_motion_matching.Prepend(CPPPATH=["#modules/motion_matching/thirdparty/motionmatchingboost"])
 env_motion_matching.add_source_files(env.modules_sources, "*.cpp")
 env_motion_matching.add_source_files(env.modules_sources, "src/*.cpp")
-env_motion_matching.add_source_files(env.modules_sources, "thirdparty/*.cpp")
+
+env_thirdparty = env_motion_matching.Clone()
+env_thirdparty.disable_warnings()
+env_thirdparty.add_source_files(env.modules_sources, "thirdparty/*.cpp")
 
 if env.editor_build:
     env_motion_matching.add_source_files(env.modules_sources, "editor/*.cpp")
