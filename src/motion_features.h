@@ -96,24 +96,7 @@ public:
 	virtual void debug_pose_gizmo(Ref<EditorNode3DGizmo> gizmo, const PackedFloat32Array data, Transform3D tr = Transform3D{}) { return; }
 #endif
 protected:
-	static void _bind_methods() {
-		ClassDB::bind_method(D_METHOD("get_dimension"), &MotionFeature::get_dimension);
-
-		ClassDB::bind_method(D_METHOD("get_weights"), &MotionFeature::get_weights);
-
-		// BIND_VIRTUAL_METHOD(MotionFeature,get_dimension);
-
-		ClassDB::bind_method(D_METHOD("setup_nodes", "character"), &MotionFeature::setup_nodes);
-
-		ClassDB::bind_method(D_METHOD("setup_for_animation", "animation"), &MotionFeature::setup_for_animation);
-		ClassDB::bind_method(D_METHOD("bake_animation_pose", "animation", "time"), &MotionFeature::bake_animation_pose);
-
-		ClassDB::bind_method(D_METHOD("broadphase_query_pose", "blackboard", "delta"), &MotionFeature::broadphase_query_pose);
-		ClassDB::bind_method(D_METHOD("narrowphase_evaluate_cost", "data_to_evaluate"), &MotionFeature::narrowphase_evaluate_cost);
-#ifdef TOOLS_ENABLED
-		ClassDB::bind_method(D_METHOD("debug_pose_gizmo", "gizmo", "data", "root_transform"), &MotionFeature::debug_pose_gizmo);
-#endif
-	}
+	static void _bind_methods();
 };
 
 #include "scene/3d/physics_body_3d.h"
@@ -143,14 +126,11 @@ public:
 	}
 
 	virtual void setup_nodes(Variant character) override {
-		// Node::get_node();
 		body = Object::cast_to<CharacterBody3D>(character);
 	}
 	virtual void setup_for_animation(Ref<Animation> animation) override {
 		root_track_pos = animation->find_track(NodePath(root_bone_name), Animation::TrackType::TYPE_POSITION_3D);
 		root_track_quat = animation->find_track(NodePath(root_bone_name), Animation::TrackType::TYPE_ROTATION_3D);
-		// root_track_scale = animation->find_track(NodePath(root_bone_name),Animation::TrackType::TYPE_SCALE_3D);
-		// u::prints("Root Tracks for",root_track_pos,root_track_quat);
 	}
 
 	virtual PackedFloat32Array bake_animation_pose(Ref<Animation> animation, float time) override {
