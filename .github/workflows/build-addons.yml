@@ -143,7 +143,7 @@ jobs:
             #     working-directory: godot-cpp
 
             -   name: Compile Addon
-                run:  scons -j8 
+                run:  scons  
                         platform=${{ matrix.platform }} 
                         target=${{ matrix.target }} 
                         arch=${{ matrix.arch }} 
@@ -156,7 +156,7 @@ jobs:
                 if: ${{ matrix.platform == 'windows' }}
                 uses: actions/upload-artifact@v3
                 with:
-                  name: ${{ matrix.platform }}
+                  name: ${{ matrix.identifier }}
                   if-no-files-found: error
                   path: |
                     ${{ github.workspace }}\${{ env.LIBRARY_PATH }}
@@ -167,7 +167,7 @@ jobs:
                 if: ${{ matrix.platform != 'windows' }}
                 uses: actions/upload-artifact@v3
                 with:
-                    name: ${{ matrix.platform }}
+                    name: ${{ matrix.identifier }}
                     path: ${{ github.workspace }}/${{ env.LIBRARY_PATH }}
                     if-no-files-found: error
 
