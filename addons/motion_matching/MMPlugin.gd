@@ -7,27 +7,17 @@ const MMEditorGizmoPlugin = preload("res://addons/motion_matching/MMEditorGizmoP
 
 var gizmo_plugin := MMEditorGizmoPlugin.new()
 
-
-
 func _enter_tree() -> void:
 	add_node_3d_gizmo_plugin(gizmo_plugin)
 	bottompanel = preload("res://addons/motion_matching/MMEditorPanel.tscn").instantiate()
 	bottompanel.gizmo = gizmo_plugin
-	# Initialization of the plugin goes here.
-
-#	_make_visible(false)
-
 	get_editor_interface().get_selection().selection_changed.connect(visibility)
-	pass
-
 
 func _exit_tree() -> void:
 	remove_node_3d_gizmo_plugin(gizmo_plugin)
 	remove_control_from_bottom_panel(bottompanel)
-	if(bottompanel != null):
+	if (bottompanel != null):
 		bottompanel.free()
-	# Clean-up of the plugin goes here.
-	pass
 
 func _has_main_screen()->bool:
 	return false
