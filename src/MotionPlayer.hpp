@@ -388,7 +388,7 @@ struct MotionPlayer : public Node {
             nodes.push_back(Kdtree::KdNode(point,&db_anim_category[i],i));
         }
 
-        u::prints("Nb poses", nodes.size());
+        u::prints("Nb poses", (int64_t)nodes.size());
 
         skeleton->reset_bone_poses();
     }
