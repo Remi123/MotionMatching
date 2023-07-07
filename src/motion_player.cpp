@@ -539,19 +539,19 @@ MotionPlayer::Stats MotionPlayer::calculate_stats(const Vector<float> &p_data) {
 	Vector<float> sorted_data = p_data;
 	sorted_data.sort();
 	stats.median = (size % 2 != 0) ? sorted_data[size / 2] : (sorted_data[(size - 1) / 2] + sorted_data[size / 2]) / 2.0;
-	double sum = 0.0;
+	float sum = 0.0;
 	for (const float &num : p_data) {
 		sum += num;
 	}
 	stats.sum = sum;
-	double mean = sum / size;
-	double sq_diff_sum = 0.0;
+	float mean = sum / size;
+	float sq_diff_sum = 0.0;
 	for (const float &d : p_data) {
 		sq_diff_sum += (d - mean) * (d - mean);
 	}
 	stats.variance = sq_diff_sum / size;
 
-	double diff_sum = 0.0;
+	float diff_sum = 0.0;
 	for (const float &d : p_data) {
 		diff_sum += pow(d - mean, 3);
 	}
