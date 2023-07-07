@@ -61,15 +61,6 @@
 #include "../thirdparty/kdtree.hpp"
 #include "motion_features.h"
 
-#include <boost/accumulators/accumulators.hpp>
-#include <boost/accumulators/statistics/count.hpp>
-#include <boost/accumulators/statistics/max.hpp>
-#include <boost/accumulators/statistics/median.hpp>
-#include <boost/accumulators/statistics/min.hpp>
-#include <boost/accumulators/statistics/skewness.hpp>
-#include <boost/accumulators/statistics/stats.hpp>
-#include <boost/accumulators/statistics/variance.hpp>
-
 // Macro setup. Mostly there to simplify writing all those
 #define GETSET(type, variable, ...)            \
 	type variable{ __VA_ARGS__ };              \
@@ -80,6 +71,66 @@
 
 struct MotionPlayer : public Node {
 	GDCLASS(MotionPlayer, Node)
+
+	struct Stats {
+		float max;
+		float min;
+		float median;
+		float variance;
+		float skewness;
+		float density;
+		float sum;
+	    int64_t count; 
+	};
+
+	Stats calculate_stats(const Vector<float>& p_data) {
+		Stats stats{};
+		
+		if (p_data.is_empty()) {
+			return stats;
+		}
+
+		float min = p_data[0];
+		float max = p_data[0];
+
+		for (int i = 1; i < p_data.size(); ++i) {
+			if (p_data[i] < min) {
+				min = p_data[i];
+			}
+			if (p_data[i] > max) {
+				max = p_data[i];
+			}
+		}
+
+		stats.min = min;
+		stats.max = max;
+
+		int size = p_data.size();
+	    stats.count = size;
+		
+		Vector<float> sorted_data = p_data;
+		sorted_data.sort();
+		stats.median = (size % 2 != 0) ? sorted_data[size / 2] : (sorted_data[(size - 1) / 2] + sorted_data[size / 2]) / 2.0;
+		double sum = 0.0;
+		for (const float &num : p_data) {
+			sum += num;
+		}
+		stats.sum = sum;
+		double mean = sum / size;
+		double sq_diff_sum = 0.0;
+		for (const float &d : p_data) {
+			sq_diff_sum += (d - mean) * (d - mean);
+		}
+		stats.variance = sq_diff_sum / size;
+
+		double diff_sum = 0.0;
+		for (const float &d : p_data) {
+			diff_sum += pow(d - mean, 3);
+		}
+		stats.skewness = diff_sum / (size * std::pow(stats.variance, 1.5));
+		stats.density = size / (stats.max - stats.min);
+		return stats;
+	}
 
 	static constexpr float interval = 0.1;
 	static constexpr float time_delta = 1.f / 30.f;
