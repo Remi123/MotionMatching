@@ -73,19 +73,19 @@ struct MotionPlayer : public Node {
 	GDCLASS(MotionPlayer, Node)
 
 	struct Stats {
-		float max;
-		float min;
-		float median;
-		float variance;
-		float skewness;
-		float density;
-		float sum;
-	    int64_t count; 
+		float max = 0.0f;
+		float min = 0.0f;
+		float median = 0.0f;
+		float variance = 0.0f;
+		float skewness = 0.0f;
+		float density = 0.0f;
+		float sum = 0.0f;
+		int64_t count = 0;
 	};
 
-	Stats calculate_stats(const Vector<float>& p_data) {
-		Stats stats{};
-		
+	Stats calculate_stats(const Vector<float> &p_data) {
+		Stats stats;
+
 		if (p_data.is_empty()) {
 			return stats;
 		}
@@ -106,8 +106,8 @@ struct MotionPlayer : public Node {
 		stats.max = max;
 
 		int size = p_data.size();
-	    stats.count = size;
-		
+		stats.count = size;
+
 		Vector<float> sorted_data = p_data;
 		sorted_data.sort();
 		stats.median = (size % 2 != 0) ? sorted_data[size / 2] : (sorted_data[(size - 1) / 2] + sorted_data[size / 2]) / 2.0;

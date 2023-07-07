@@ -31,44 +31,44 @@
 #include "motion_player.h"
 
 void MotionPlayer::recalculate_weights() {
-    weights.clear();
-    for (int32_t features_index = 0; features_index < motion_features.size(); ++features_index) {
-        MotionFeature *f = Object::cast_to<MotionFeature>(motion_features[features_index]);
+	weights.clear();
+	for (int32_t features_index = 0; features_index < motion_features.size(); ++features_index) {
+		MotionFeature *f = Object::cast_to<MotionFeature>(motion_features[features_index]);
 
 		PackedFloat32Array new_weights = f->get_weights();
 		for (int i = 0; i < new_weights.size(); ++i) {
 			weights.push_back(new_weights[i]);
 		}
-        print_line(vformat("%s %s", f->get_name(), f->get_weights()));
-    }
-    print_line(vformat("Total: %s", weights));
+		print_line(vformat("%s %s", f->get_name(), f->get_weights()));
+	}
+	print_line(vformat("Total: %s", weights));
 
-    Stats weight_stats = calculate_stats(weights);
-    print_line(vformat("Sum weight: %d Count: %d", int64_t(weight_stats.sum), int64_t(weight_stats.count)));
+	Stats weight_stats = calculate_stats(weights);
+	print_line(vformat("Sum weight: %d Count: %d", int64_t(weight_stats.sum), int64_t(weight_stats.count)));
 
-    Vector<float> dimensions;
-    for (int32_t features_index = 0; features_index < motion_features.size(); ++features_index) {
-        MotionFeature *f = Object::cast_to<MotionFeature>(motion_features[features_index]);
-        dimensions.push_back(f->get_dimension());
-    }
+	Vector<float> dimensions;
+	for (int32_t features_index = 0; features_index < motion_features.size(); ++features_index) {
+		MotionFeature *f = Object::cast_to<MotionFeature>(motion_features[features_index]);
+		dimensions.push_back(f->get_dimension());
+	}
 
-    Stats dim_stats = calculate_stats(dimensions);
-    print_line(vformat("Sum stats %d", int64_t(dim_stats.sum)));
+	Stats dim_stats = calculate_stats(dimensions);
+	print_line(vformat("Sum stats %d", int64_t(dim_stats.sum)));
 
-    for (int32_t features_index = 0, offset = 0; features_index < motion_features.size(); ++features_index) {
-        MotionFeature *f = Object::cast_to<MotionFeature>(motion_features[features_index]);
-        for (int32_t i = offset; i < offset + f->get_dimension(); ++i) {
-            weights.write[i] = abs(weights[i]) / weight_stats.sum / f->get_dimension();
-        }
-        offset += f->get_dimension();
-    }
+	for (int32_t features_index = 0, offset = 0; features_index < motion_features.size(); ++features_index) {
+		MotionFeature *f = Object::cast_to<MotionFeature>(motion_features[features_index]);
+		for (int32_t i = offset; i < offset + f->get_dimension(); ++i) {
+			weights.write[i] = abs(weights[i]) / weight_stats.sum / f->get_dimension();
+		}
+		offset += f->get_dimension();
+	}
 
-    print_line(vformat("Sum %s", weight_stats.sum));
-    if (weight_stats.min < 1.0f && weight_stats.min > 0.0f) {
-        for (int32_t i = 0; i < weights.size(); ++i) {
-            weights.write[i] *= 1 / weight_stats.min;
-        }
-    }
+	print_line(vformat("Sum %s", weight_stats.sum));
+	if (weight_stats.min < 1.0f && weight_stats.min > 0.0f) {
+		for (int32_t i = 0; i < weights.size(); ++i) {
+			weights.write[i] *= 1 / weight_stats.min;
+		}
+	}
 }
 
 TypedArray<Dictionary> MotionPlayer::query_pose(int64_t included_category, int64_t exclude) {
@@ -276,43 +276,43 @@ void MotionPlayer::_bind_methods() {
 }
 
 void MotionPlayer::baking_data() {
-    skeleton = cast_to<Skeleton3D>(get_node(skeleton_path));
+	skeleton = cast_to<Skeleton3D>(get_node(skeleton_path));
 
-    if (motion_features.size() == 0) {
-        print_line("Motions Features is empty");
-        return;
-    } else if (skeleton == nullptr) {
-        print_line("Skeleton isn't properly set");
-        return;
-    }
-    Node *character;
-    character = get_node(main_node);
+	if (motion_features.size() == 0) {
+		print_line("Motions Features is empty");
+		return;
+	} else if (skeleton == nullptr) {
+		print_line("Skeleton isn't properly set");
+		return;
+	}
+	Node *character;
+	character = get_node(main_node);
 
-    if (kdt != nullptr) {
-        delete kdt;
-    }
+	if (kdt != nullptr) {
+		delete kdt;
+	}
 
-    int nb_dimensions = 0;
-    // Setup the nodes for all features
-    for (int32_t i = 0; i < motion_features.size(); ++i) {
-        MotionFeature *f = Object::cast_to<MotionFeature>(motion_features[i]);
-        if (f == nullptr) {
-            print_line("Features no.", i, "is null");
-        } else {
-            print_line(f->get_name(), f->get_dimension());
-        }
-        f->setup_nodes(character);
-        nb_dimensions += (int)(f->get_dimension());
-    }
+	int nb_dimensions = 0;
+	// Setup the nodes for all features
+	for (int32_t i = 0; i < motion_features.size(); ++i) {
+		MotionFeature *f = Object::cast_to<MotionFeature>(motion_features[i]);
+		if (f == nullptr) {
+			print_line("Features no.", i, "is null");
+		} else {
+			print_line(f->get_name(), f->get_dimension());
+		}
+		f->setup_nodes(character);
+		nb_dimensions += (int)(f->get_dimension());
+	}
 
-    print_line(vformat("Total Dimensions %s", nb_dimensions));
+	print_line(vformat("Total Dimensions %s", nb_dimensions));
 
-    List<StringName> anim_names;
-    animation_library->get_animation_list(&anim_names);
+	List<StringName> anim_names;
+	animation_library->get_animation_list(&anim_names);
 
-    for (List<StringName>::Element *E = anim_names.front(); E; E = E->next()) {
-        print_line(vformat("%s", E->get()));
-    }
+	for (List<StringName>::Element *E = anim_names.front(); E; E = E->next()) {
+		print_line(vformat("%s", E->get()));
+	}
 	means.clear();
 	means.resize(nb_dimensions);
 	means.fill(0.0f);
@@ -324,12 +324,9 @@ void MotionPlayer::baking_data() {
 	densities.fill(PackedFloat32Array{ 0.0, 0.0 });
 
 	PackedFloat32Array data;
-    Vector<Stats> data_stats;
+	Vector<Stats> data_stats;
 	data_stats.resize(nb_dimensions);
-	data_stats.fill(Stats{});
 	MotionData.clear();
-
-
 
 	db_anim_category.clear();
 	db_anim_index.clear();
@@ -377,7 +374,7 @@ void MotionPlayer::baking_data() {
 			}
 
 			for (int32_t i = 0; i < nb_dimensions; ++i) {
-                data_stats.write[i] = calculate_stats(pose_data);
+				data_stats.write[i] = calculate_stats(pose_data);
 			}
 			data.append_array(pose_data);
 			// TODO Float to integer conversion ... needs better logic
@@ -392,9 +389,9 @@ void MotionPlayer::baking_data() {
 		print_line("Collecting animation data from %s in %s ms. PoseCount %s", animation->get_name(), duration, counter);
 	}
 
-    for (int32_t i = 0; i < nb_dimensions; ++i) {
-        data_stats.write[i] = calculate_stats(data);
-    }
+	for (int32_t i = 0; i < nb_dimensions; ++i) {
+		data_stats.write[i] = calculate_stats(data);
+	}
 
 	for (Stats &v : data_stats) {
 		if (v.variance <= std::numeric_limits<float>::epsilon()) {
@@ -403,11 +400,11 @@ void MotionPlayer::baking_data() {
 	}
 
 	// Normalization
-    for (int32_t pose = 0; pose < data.size() / nb_dimensions; ++pose) {
-        for (int offset = 0; offset < nb_dimensions; ++offset) {
-            data.write[pose * nb_dimensions + offset] = (data[pose * nb_dimensions + offset] - data_stats[offset].min) / (data_stats[offset].max - data_stats[offset].min);
-        }
-    }
+	for (int32_t pose = 0; pose < data.size() / nb_dimensions; ++pose) {
+		for (int offset = 0; offset < nb_dimensions; ++offset) {
+			data.write[pose * nb_dimensions + offset] = (data[pose * nb_dimensions + offset] - data_stats[offset].min) / (data_stats[offset].max - data_stats[offset].min);
+		}
+	}
 	MotionData = data.duplicate();
 
 	print_line("Finished all animations");
