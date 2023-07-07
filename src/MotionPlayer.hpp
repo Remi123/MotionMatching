@@ -161,7 +161,7 @@ struct MotionPlayer : public Node {
         const std::vector<float> tmp_weight(begin,end);
 
         kdt->set_distance(distance_type,&tmp_weight);
-        u::prints("Nb poses", nodes.size());
+        u::prints("Nb poses", (int64_t)nodes.size());
         u::prints("MotionPlayer Ready");
     }
 
@@ -434,7 +434,7 @@ struct MotionPlayer : public Node {
         {
             weight_stats(weights[i]);
         }
-        u::prints("Sum weight:",sum(weight_stats), "Count:",count(weight_stats));
+        u::prints("Sum weight:",(double)sum(weight_stats), "Count:",(double)count(weight_stats));
         for (auto features_index = 0; features_index < motion_features.size(); ++features_index)
         {
             MotionFeature *f = Object::cast_to<MotionFeature>(motion_features[features_index]);            
@@ -534,7 +534,7 @@ struct MotionPlayer : public Node {
 
     // Bypass the feature query, and ask directly which poses is the most similar.
     // The query must be of the correct dimension.
-    Array check_query_results(PackedFloat32Array query,size_t nb_result = 1)
+    Array check_query_results(PackedFloat32Array query,int64_t nb_result = 1)
     {
         if(kdt == nullptr)
         {

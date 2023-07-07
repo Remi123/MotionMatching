@@ -125,7 +125,7 @@ struct RootVelocityMotionFeature : public MotionFeature {
         root_track_quat = animation->find_track(NodePath(root_bone_name),Animation::TrackType::TYPE_ROTATION_3D);
     }
 
-    virtual PackedFloat32Array bake_animation_pose(Ref<Animation> animation,float time){
+    virtual PackedFloat32Array bake_animation_pose(Ref<Animation> animation,float time)override{
         auto pos = animation->position_track_interpolate(root_track_pos,time);
         auto prev_pos = animation->position_track_interpolate(root_track_pos,time - 0.1);
         Quaternion rotation = animation->rotation_track_interpolate(root_track_quat,time).normalized();
@@ -148,7 +148,7 @@ struct RootVelocityMotionFeature : public MotionFeature {
         return result;
     }
 
-    virtual float narrowphase_evaluate_cost(PackedFloat32Array to_convert){
+    virtual float narrowphase_evaluate_cost(PackedFloat32Array to_convert)override{
         Vector3 data_vel = {to_convert[0],to_convert[1],to_convert[2]};
         return (body->get_velocity() - data_vel).length_squared();
     }
@@ -296,7 +296,7 @@ struct BonePositionVelocityMotionFeature : public MotionFeature {
         }
     }
 
-    virtual PackedFloat32Array bake_animation_pose(Ref<Animation> animation,float time){
+    virtual PackedFloat32Array bake_animation_pose(Ref<Animation> animation,float time)override{
         
         PackedVector3Array prev_pos{},curr_pos{};
         PackedFloat32Array result{};
@@ -362,7 +362,7 @@ struct BonePositionVelocityMotionFeature : public MotionFeature {
         return last_known_result;
     }
 
-    virtual float narrowphase_evaluate_cost(PackedFloat32Array to_convert){
+    virtual float narrowphase_evaluate_cost(PackedFloat32Array to_convert)override{
         if (to_convert.size() != last_known_result.size())
         {
             return std::numeric_limits<float>::max();
@@ -418,7 +418,7 @@ protected:
         ClassDB::bind_method( D_METHOD("debug_pose_gizmo","gizmo","data","root_transform"), &BonePositionVelocityMotionFeature::debug_pose_gizmo);
     }
 
-    virtual void debug_pose_gizmo(Ref<EditorNode3DGizmo> gizmo, const PackedFloat32Array data,godot::Transform3D tr = godot::Transform3D{})
+    virtual void debug_pose_gizmo(Ref<EditorNode3DGizmo> gizmo, const PackedFloat32Array data,godot::Transform3D tr = godot::Transform3D{})override
     {
         // if (data.size() == get_dimension())
         {
@@ -637,7 +637,7 @@ public:
         return result;
     }
 
-    virtual float narrowphase_evaluate_cost(PackedFloat32Array to_convert){return 0.0;}
+    virtual float narrowphase_evaluate_cost(PackedFloat32Array to_convert)override{return 0.0;}
 
 
     protected:
@@ -666,7 +666,7 @@ public:
         ClassDB::bind_method( D_METHOD("debug_pose_gizmo","gizmo","data","root_transform"), &PredictionMotionFeature::debug_pose_gizmo);
     }
 
-    virtual void debug_pose_gizmo(Ref<EditorNode3DGizmo> gizmo, const PackedFloat32Array data,godot::Transform3D tr = godot::Transform3D{})
+    virtual void debug_pose_gizmo(Ref<EditorNode3DGizmo> gizmo, const PackedFloat32Array data,godot::Transform3D tr = godot::Transform3D{})override
     {
         // if (data.size() == get_dimension())
         {
