@@ -93,7 +93,7 @@ public:
 
 	virtual float narrowphase_evaluate_cost(PackedFloat32Array to_convert) { return 0.0; }
 #ifdef TOOLS_ENABLED
-	virtual void debug_pose_gizmo(Ref<EditorNode3DGizmo> gizmo, const PackedFloat32Array data, Transform3D tr = Transform3D{}) { return; }
+	virtual void debug_pose_gizmo(Ref<EditorNode3DGizmo> gizmo, const PackedFloat32Array data, Transform3D tr = Transform3D{}) override { return; }
 #endif
 protected:
 	static void _bind_methods() {
@@ -226,7 +226,7 @@ struct BonePositionVelocityMotionFeature : public MotionFeature {
 protected:
 	static void _bind_methods();
 #ifdef TOOLS_ENABLED
-	virtual void debug_pose_gizmo(Ref<EditorNode3DGizmo> gizmo, const PackedFloat32Array data, Transform3D tr = Transform3D{});
+	virtual void debug_pose_gizmo(Ref<EditorNode3DGizmo> gizmo, const PackedFloat32Array data, Transform3D tr = Transform3D{}) override;
 #endif
 };
 
