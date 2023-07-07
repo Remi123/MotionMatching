@@ -13,6 +13,8 @@ env_motion_matching.add_source_files(env.modules_sources, "src/*.cpp")
 
 env_thirdparty = env_motion_matching.Clone()
 env_thirdparty.disable_warnings()
+if not env.msvc:
+    env_thirdparty.Append(CXXFLAGS=["-Wno-error=ctor-dtor-privacy"])
 env_thirdparty.add_source_files(env.modules_sources, "thirdparty/*.cpp")
 
 if env.editor_build:
