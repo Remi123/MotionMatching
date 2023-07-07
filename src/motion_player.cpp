@@ -323,7 +323,7 @@ void MotionPlayer::baking_data() {
 	densities.resize(nb_dimensions);
 	densities.fill(PackedFloat32Array{ 0.0, 0.0 });
 
-	PackedFloat32Array data;
+	PackedFloat32Array motion_data;
 	Vector<Stats> data_stats;
 	data_stats.resize(nb_dimensions);
 	MotionData.clear();
@@ -376,7 +376,7 @@ void MotionPlayer::baking_data() {
 			for (int32_t i = 0; i < nb_dimensions; ++i) {
 				data_stats.write[i] = calculate_stats(pose_data);
 			}
-			data.append_array(pose_data);
+			motion_data.append_array(pose_data);
 			// TODO Float to integer conversion ... needs better logic
 			db_anim_index.append(anim_index);
 			db_anim_timestamp.append(time);
@@ -390,7 +390,7 @@ void MotionPlayer::baking_data() {
 	}
 
 	for (int32_t i = 0; i < nb_dimensions; ++i) {
-		data_stats.write[i] = calculate_stats(data);
+		data_stats.write[i] = calculate_stats(motion_data);
 	}
 
 	for (Stats &v : data_stats) {
@@ -400,19 +400,19 @@ void MotionPlayer::baking_data() {
 	}
 
 	// Normalization
-	for (int32_t pose = 0; pose < data.size() / nb_dimensions; ++pose) {
+	for (int32_t pose = 0; pose < motion_data.size() / nb_dimensions; ++pose) {
 		for (int offset = 0; offset < nb_dimensions; ++offset) {
-			data.write[pose * nb_dimensions + offset] = (data[pose * nb_dimensions + offset] - data_stats[offset].min) / (data_stats[offset].max - data_stats[offset].min);
+			motion_data.write[pose * nb_dimensions + offset] = (motion_data[pose * nb_dimensions + offset] - data_stats[offset].min) / (data_stats[offset].max - data_stats[offset].min);
 		}
 	}
-	MotionData = data.duplicate();
+	MotionData = motion_data.duplicate();
 
 	print_line("Finished all animations");
-	print_line(vformat("NbDim %d NbPoses: %f Size: %d", nb_dimensions, data.size() / nb_dimensions, data.size()));
+	print_line(vformat("NbDim %d NbPoses: %f Size: %d", nb_dimensions, motion_data.size() / nb_dimensions, motion_data.size()));
 
 	Kdtree::KdNodeVector nodes{};
-	for (int32_t i = 0; i < data.size() / nb_dimensions; ++i) {
-		auto begin = data.ptr(), end = data.ptr(); // We use the ptr as iterator.
+	for (int32_t i = 0; i < motion_data.size() / nb_dimensions; ++i) {
+		auto begin = motion_data.ptr(), end = motion_data.ptr(); // We use the ptr as iterator.
 		begin = std::next(begin, nb_dimensions * i);
 		end = std::next(begin, nb_dimensions);
 		std::vector<float> point(begin, end);
