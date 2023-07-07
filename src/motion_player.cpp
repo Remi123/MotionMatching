@@ -433,8 +433,7 @@ void MotionPlayer::reset_skeleton_poses() {
 }
 
 void MotionPlayer::set_skeleton_to_pose(Ref<Animation> animation, double time) {
-	CharacterBody3D *the_char = cast_to<CharacterBody3D>(get_node(main_node));
-	Skeleton3D *skeleton = cast_to<Skeleton3D>(the_char->get_node(NodePath("Armature/GeneralSkeleton")));
+	skeleton = cast_to<Skeleton3D>(get_node(get_skeleton()));
 	for (int bone_id = 0; bone_id < skeleton->get_bone_count(); ++bone_id) {
 		const String bone_name = "%GeneralSkeleton:" + skeleton->get_bone_name(bone_id);
 		const int pos_track = animation->find_track(NodePath(bone_name), Animation::TrackType::TYPE_POSITION_3D);
