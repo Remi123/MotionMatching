@@ -83,54 +83,7 @@ struct MotionPlayer : public Node {
 		int64_t count = 0;
 	};
 
-	Stats calculate_stats(const Vector<float> &p_data) {
-		Stats stats;
-
-		if (p_data.is_empty()) {
-			return stats;
-		}
-
-		float min = p_data[0];
-		float max = p_data[0];
-
-		for (int i = 1; i < p_data.size(); ++i) {
-			if (p_data[i] < min) {
-				min = p_data[i];
-			}
-			if (p_data[i] > max) {
-				max = p_data[i];
-			}
-		}
-
-		stats.min = min;
-		stats.max = max;
-
-		int size = p_data.size();
-		stats.count = size;
-
-		Vector<float> sorted_data = p_data;
-		sorted_data.sort();
-		stats.median = (size % 2 != 0) ? sorted_data[size / 2] : (sorted_data[(size - 1) / 2] + sorted_data[size / 2]) / 2.0;
-		double sum = 0.0;
-		for (const float &num : p_data) {
-			sum += num;
-		}
-		stats.sum = sum;
-		double mean = sum / size;
-		double sq_diff_sum = 0.0;
-		for (const float &d : p_data) {
-			sq_diff_sum += (d - mean) * (d - mean);
-		}
-		stats.variance = sq_diff_sum / size;
-
-		double diff_sum = 0.0;
-		for (const float &d : p_data) {
-			diff_sum += pow(d - mean, 3);
-		}
-		stats.skewness = diff_sum / (size * std::pow(stats.variance, 1.5));
-		stats.density = size / (stats.max - stats.min);
-		return stats;
-	}
+	Stats calculate_stats(const Vector<float> &p_data);
 
 	static constexpr float interval = 0.1;
 	static constexpr float time_delta = 1.f / 30.f;
