@@ -1,3 +1,5 @@
+#pragma once
+
 #include "register_types.h"
 
 #include <gdextension_interface.h>
@@ -7,8 +9,11 @@
 #include <godot_cpp/godot.hpp>
 
 #include "CritSpringDamper.hpp"
+#include <MotionPlayer.hpp>
 #include "MotionFeatures/MotionFeatures.hpp"
-#include "MotionPlayer.hpp"
+#include "MotionFeatures/RootVelocityMotionFeature.hpp"
+#include "MotionFeatures/BonePositionVelocityMotionFeature.hpp"
+#include "MotionFeatures/PredictionMotionFeature.hpp"
 #include "CircularBuffer.hpp"
 
 using namespace godot;
