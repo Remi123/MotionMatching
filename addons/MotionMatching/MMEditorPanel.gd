@@ -25,6 +25,9 @@ func update_info()->void:
 			var f :MotionFeature= r as MotionFeature
 			nb_dim += r.get_dimension()
 
+		if nb_dim == 0:
+			nb_dim = 1
+
 
 		infotext.clear()
 		var info := [	["Nb Features", _current.motion_features.size()],
@@ -68,10 +71,10 @@ func update_info()->void:
 
 		infotext.pop()
 
-		for i in range(_current.densities.size()):
-			prints("Dimension",i)
-			for data in _current.densities[i]:
-				prints(data[0],data[1])
+#		for i in range(_current.densities.size()):
+#			prints("Dimension",i)
+#			for data in _current.densities[i]:
+#				prints(data[0],data[1])
 
 
 
@@ -117,9 +120,9 @@ func update_shown_pose_data(pose_index : int)->void:
 		prints("Values interpolated",anim.value_track_interpolate(v,anim_timestep))
 
 	_current.set_skeleton_to_pose(anim,anim_timestep)
-	var skel := _current.get_node(_current.get("skeleton_node_path")) as Skeleton3D
-	var tr := skel.get_bone_global_pose(skel.find_bone("Root"))
-	tr = Transform3D()
+	var skel := _current.get("skeleton_node_path") as Skeleton3D
+	var tr := skel.get_bone_global_pose(skel.find_bone("Root")).
+#	tr = Transform3D()
 
 
 

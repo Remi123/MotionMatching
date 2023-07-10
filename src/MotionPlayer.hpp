@@ -73,20 +73,21 @@ struct MotionPlayer : public Node {
     GETSET(TypedArray<String>,category_track_names)
 
     // Get the skeleton TODO : Might be able to use PROPERTY_HINT_NODE_PATH_TO_EDITED_NODE
-    Skeleton3D* skeleton;
-    NodePath skeleton_path;
-    void set_skeleton(NodePath path){
-        skeleton_path = path;
-        skeleton = get_node<Skeleton3D>(path);
+    Skeleton3D* skeleton = nullptr;
+    // NodePath skeleton_path;
+    void set_skeleton(Object* path){
+        // skeleton_path = path;
+        skeleton = Object::cast_to<Skeleton3D>(path);
         }
-    NodePath get_skeleton(){return skeleton_path;}
+    Object* get_skeleton(){return cast_to<Object>(skeleton);}
+
     GETSET(NodePath,main_node)
 
     // Animation Library. Each one will be analysed
     GETSET(Ref<AnimationLibrary>,animation_library);
 
     // Array of the motion features.
-    GETSET(Array,motion_features);
+    GETSET(TypedArray<MotionFeature>,motion_features);
 
     // Dimensional Stats.
     GETSET(PackedFloat32Array,weights)
@@ -131,9 +132,9 @@ struct MotionPlayer : public Node {
             MotionFeature* f = Object::cast_to<MotionFeature>(motion_features[i]);
             if(f != nullptr)
             {
-                u::prints(f->get_name(), f->call(StringName("get_dimension")).operator int64_t());
+                u::prints(f->get_name(), f->call("get_dimension").operator int64_t());
                 f->setup_nodes(character);
-                nb_dimensions += (int64_t)f->call(StringName("get_dimension"));
+                nb_dimensions += (int64_t)f->call("get_dimension");
             }
 
         }
@@ -177,11 +178,10 @@ struct MotionPlayer : public Node {
     // Useful while baking data and in editor.
     void set_skeleton_to_pose(Ref<Animation> animation,double time)
     {
-        auto the_char = get_node<CharacterBody3D>(main_node);
-        auto skeleton = the_char->get_node<Skeleton3D>("Armature/GeneralSkeleton");
+        auto skeleton_bones_path = Node::get_path_to(skeleton,true).get_concatenated_names();
         for(auto bone_id = 0; bone_id < skeleton->get_bone_count(); ++bone_id)
-        {
-            const auto bone_name = "%GeneralSkeleton:" +skeleton->get_bone_name(bone_id);
+        {            
+            const auto bone_name = skeleton_bones_path + String(":") +skeleton->get_bone_name(bone_id);
             
             const auto pos_track = animation->find_track(NodePath(bone_name),Animation::TrackType::TYPE_POSITION_3D);
             const auto rot_track = animation->find_track(NodePath(bone_name),Animation::TrackType::TYPE_ROTATION_3D);
@@ -200,7 +200,11 @@ struct MotionPlayer : public Node {
 
     // Reset the skeleton poses.
     void reset_skeleton_poses(){
-        skeleton = get_node<Skeleton3D>(skeleton_path);
+        if (skeleton == nullptr)
+        {
+            u::print("Skeleton is empty");
+            return;
+        }
         UtilityFunctions::print((skeleton == nullptr)?"Skeleton error, path not found":"Skeleton set");
         
         UtilityFunctions::print("Resetting the skeleton");
@@ -214,7 +218,7 @@ struct MotionPlayer : public Node {
         using namespace godot;
         using u = godot::UtilityFunctions;
 
-        skeleton = get_node<Skeleton3D>(skeleton_path);
+        // skeleton = get_node<Skeleton3D>(skeleton_path);
 
         if (motion_features.size() == 0)
         {
@@ -304,11 +308,11 @@ struct MotionPlayer : public Node {
             auto counter = 0;
             for(auto time = 0.1f; time < length; time += 0.1f)
             {
-                int64_t tmp_category_value = (int32_t)animation->value_track_interpolate(category_tracks[0],time);
-                // for(const auto& category:category_tracks)
-                // {
-                //     tmp_category_value = tmp_category_value | (int64_t)animation->value_track_interpolate(category_tracks[0],time);
-                // }
+                int64_t tmp_category_value = 0;
+                for(const auto& category:category_tracks)
+                {
+                    tmp_category_value = tmp_category_value | (int64_t)animation->value_track_interpolate(category,time);
+                }
                 if (std::bitset<64>(tmp_category_value).test(31))
                 {
                     continue;
@@ -626,7 +630,7 @@ struct MotionPlayer : public Node {
             ADD_PROPERTY(PropertyInfo(Variant::NODE_PATH, "main_node"), "set_main_node", "get_main_node");
             ClassDB::bind_method(D_METHOD("set_skeleton_path", "skeleton path"), &MotionPlayer::set_skeleton);
             ClassDB::bind_method(D_METHOD("get_skeleton"), &MotionPlayer::get_skeleton);
-            ADD_PROPERTY(PropertyInfo(Variant::NODE_PATH, "skeleton_node_path"), "set_skeleton_path", "get_skeleton");
+            ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "skeleton_node_path",PROPERTY_HINT_NODE_TYPE,"Skeleton3D",PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_SCRIPT_VARIABLE ), "set_skeleton_path", "get_skeleton");
 
             ClassDB::bind_method(D_METHOD("set_animation_library", "value"), &MotionPlayer::set_animation_library);
             ClassDB::bind_method(D_METHOD("get_animation_library"), &MotionPlayer::get_animation_library);
