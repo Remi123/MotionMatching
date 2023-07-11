@@ -121,8 +121,8 @@ func update_shown_pose_data(pose_index : int)->void:
 
 	_current.set_skeleton_to_pose(anim,anim_timestep)
 	var skel := _current.get("skeleton_node_path") as Skeleton3D
-	var tr := skel.get_bone_global_pose(skel.find_bone("Root")).
-#	tr = Transform3D()
+	var tr := skel.get_bone_global_pose(skel.find_bone("Root"))
+	tr = Transform3D()
 
 
 
@@ -227,10 +227,10 @@ func _on_choose_animation_pressed(ID) -> void:
 		var lib :AnimationLibrary = _current.animation_library
 		choose_anim.text = choose_anim.get_popup().get_item_text(ID)
 
-		if _current.anim_index_duration_category.size() != 0:
+		if _current.db_anim_index.size() != 0:
 			var i :int= 0
-			for index in _current.anim_index_duration_category:
-				if index[0] == ID:
+			for index in _current.db_anim_index:
+				if index == ID:
 					$TabContainer/Data/HBoxContainer/MarginContainer2/HBoxContainer/SpinBox.value = i
 					update_shown_pose_data(i)
 					break

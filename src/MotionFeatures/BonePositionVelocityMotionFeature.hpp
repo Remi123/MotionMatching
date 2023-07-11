@@ -36,19 +36,19 @@ using u = godot::UtilityFunctions;
 
 // Macro setup. Mostly there to simplify writing all those
 #define GETSET(type,variable,...) type variable{__VA_ARGS__}; type get_##variable(){return  variable;} void set_##variable(type value){variable = value;}
-
+#define STR(x) #x
+#define STRING_PREFIX(prefix,s) STR(prefix##s) 
 struct BonePositionVelocityMotionFeature : public MotionFeature {
     GDCLASS(BonePositionVelocityMotionFeature,MotionFeature)
-    Skeleton3D * skeleton = nullptr;
-    NodePath to_skeleton{};
-    void set_to_skeleton(NodePath path){
-        if( is_local_to_scene() && get_local_scene() != nullptr)
-        {
-            auto mp = get_local_scene()->get_node_or_null("MotionPlayer");
-            skeleton = mp->get_node<Skeleton3D>(path);
-            to_skeleton = get_local_scene()->get_path_to(skeleton);
+
+    // Skeleton
+    Skeleton3D* skeleton = nullptr;
+    // NodePath skeleton_path;
+    void set_skeleton(Object* path){
+        // skeleton_path = path;
+        skeleton = Object::cast_to<Skeleton3D>(path);
         }
-    } NodePath get_to_skeleton(){return to_skeleton;}
+    Object* get_skeleton(){return cast_to<Object>(skeleton);}
 
 
     PackedStringArray bone_names{};
@@ -61,16 +61,10 @@ struct BonePositionVelocityMotionFeature : public MotionFeature {
 
     HashMap<uint32_t,PackedInt32Array> bone_tracks{};
 
-    godot::CharacterBody3D* the_char = nullptr;
-
     virtual int get_dimension()override{
         return bone_names.size() * 3 * 2;
     }
     virtual void setup_nodes(Variant character) override{
-
-        the_char = Object::cast_to<CharacterBody3D>(character);
-        skeleton = the_char->get_node<Skeleton3D>("Armature/GeneralSkeleton");
-
         bones_id.clear();
         if(skeleton!=nullptr)
         {
@@ -161,13 +155,13 @@ struct BonePositionVelocityMotionFeature : public MotionFeature {
             const auto bone_id = bones_id[index];
             curr_pos.push_back(skeleton->get_bone_global_pose(bone_id).get_origin() * skeleton->get_motion_scale());
         }
-        const size_t root_id = 0;
+        const size_t root_id = skeleton->find_bone(root_bone_name);
         const Transform3D root = skeleton->get_bone_global_pose(root_id) * skeleton->get_motion_scale();
 
 
         for(size_t index = 0; index < bones_id.size(); ++index)
         {
-            const auto pos = root.basis.xform_inv(curr_pos[index] - root.get_origin() );
+            const auto pos = root.xform_inv(curr_pos[index]);
             result.push_back(pos.x);result.push_back(pos.y);result.push_back(pos.z);
             const auto vel = root.basis.xform_inv(curr_pos[index] - prev_pos[index])/0.1;
             result.push_back(vel.x);result.push_back(vel.y);result.push_back(vel.z);
@@ -240,21 +234,49 @@ struct BonePositionVelocityMotionFeature : public MotionFeature {
         return result;
     }
 
+    String root_bone_name = "Root";
+    void set_root_bone_name(String value){
+        root_bone_name = value;
+    }
+    String get_root_bone_name(){return root_bone_name;}
 
 protected:
     static void _bind_methods() {
-        ClassDB::bind_method( D_METHOD("set_weight_bone_pos","value"), &BonePositionVelocityMotionFeature::set_weight_bone_pos ); ClassDB::bind_method( D_METHOD("get_weight_bone_pos"), &BonePositionVelocityMotionFeature::get_weight_bone_pos); godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT,"weight_bone_pos"), "set_weight_bone_pos", "get_weight_bone_pos");
-        ClassDB::bind_method( D_METHOD("set_weight_bone_vel","value"), &BonePositionVelocityMotionFeature::set_weight_bone_vel ); ClassDB::bind_method( D_METHOD("get_weight_bone_vel"), &BonePositionVelocityMotionFeature::get_weight_bone_vel); godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT,"weight_bone_vel"), "set_weight_bone_vel", "get_weight_bone_vel");
-        
-        ClassDB::bind_method( D_METHOD("set_to_skeleton","value"), &BonePositionVelocityMotionFeature::set_to_skeleton);
-        ClassDB::bind_method( D_METHOD("get_to_skeleton"), &BonePositionVelocityMotionFeature::get_to_skeleton);
-        ADD_PROPERTY(PropertyInfo(Variant::NODE_PATH,"Skeleton",PROPERTY_HINT_NODE_PATH_VALID_TYPES,"Skeleton3D"),"set_to_skeleton","get_to_skeleton");
+        ClassDB::add_property_group(get_class_static(), "Nodes & Resources Sources", "");
+        {
+            ClassDB::bind_method(D_METHOD("set_weight_bone_pos", "value"), &BonePositionVelocityMotionFeature::set_weight_bone_pos);
+            ClassDB::bind_method(D_METHOD("get_weight_bone_pos"), &BonePositionVelocityMotionFeature::get_weight_bone_pos);
+            godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT, "weight_bone_pos"), "set_weight_bone_pos", "get_weight_bone_pos");
+            ClassDB::bind_method(D_METHOD("set_weight_bone_vel", "value"), &BonePositionVelocityMotionFeature::set_weight_bone_vel);
+            ClassDB::bind_method(D_METHOD("get_weight_bone_vel"), &BonePositionVelocityMotionFeature::get_weight_bone_vel);
+            godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT, "weight_bone_vel"), "set_weight_bone_vel", "get_weight_bone_vel");
 
-        ClassDB::bind_method( D_METHOD("set_bone_names","value"), &BonePositionVelocityMotionFeature::set_bone_names);
-        ClassDB::bind_method( D_METHOD("get_bone_names"), &BonePositionVelocityMotionFeature::get_bone_names);
-        ADD_PROPERTY(PropertyInfo(Variant::PACKED_STRING_ARRAY,"Bones"),"set_bone_names","get_bone_names");
+            ClassDB::bind_method(D_METHOD("set_skeleton", "skeleton_path"), &BonePositionVelocityMotionFeature::set_skeleton);
+            ClassDB::bind_method(D_METHOD("get_skeleton"), &BonePositionVelocityMotionFeature::get_skeleton);
+            ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "skeleton",PROPERTY_HINT_NODE_TYPE,"Skeleton3D",PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_SCRIPT_VARIABLE ), "set_skeleton", "get_skeleton");
 
-        
+            ClassDB::bind_method(D_METHOD("set_root_bone_name", "value"), &BonePositionVelocityMotionFeature::set_root_bone_name, DEFVAL("Root"));
+            ClassDB::bind_method(D_METHOD("get_root_bone_name"), &BonePositionVelocityMotionFeature::get_root_bone_name);
+            ADD_PROPERTY(PropertyInfo(Variant::STRING, "Root Bone"), "set_root_bone_name", "get_root_bone_name");
+
+            ClassDB::bind_method(D_METHOD("set_bone_names", "value"), &BonePositionVelocityMotionFeature::set_bone_names);
+            ClassDB::bind_method(D_METHOD("get_bone_names"), &BonePositionVelocityMotionFeature::get_bone_names);
+            ADD_PROPERTY(PropertyInfo(Variant::PACKED_STRING_ARRAY, "Bones"), "set_bone_names", "get_bone_names");
+
+            ClassDB::bind_method(D_METHOD("set_debug_color_position", "value"), &BonePositionVelocityMotionFeature::set_debug_color_position);
+            ClassDB::bind_method(D_METHOD("get_debug_color_position"), &BonePositionVelocityMotionFeature::get_debug_color_position);
+            godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::COLOR, "debug_color_position"), "set_debug_color_position", "get_debug_color_position");
+
+            ClassDB::bind_method(D_METHOD("set_debug_color_velocity", "value"), &BonePositionVelocityMotionFeature::set_debug_color_velocity);
+            ClassDB::bind_method(D_METHOD("get_debug_color_velocity"), &BonePositionVelocityMotionFeature::get_debug_color_velocity);
+            godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::COLOR, "debug_color_velocity"), "set_debug_color_velocity", "get_debug_color_velocity");
+        }
+        // ClassDB::add_property_group(get_class_static(), "Queries to fill", "query");
+        // {
+
+        // }
+
+        ClassDB::add_property_group(get_class_static(), "", "");
 
         ClassDB::bind_method( D_METHOD("get_dimension"), &BonePositionVelocityMotionFeature::get_dimension);
         ClassDB::bind_method( D_METHOD("setup_nodes","character"), &BonePositionVelocityMotionFeature::setup_nodes);
@@ -267,27 +289,42 @@ protected:
         ClassDB::bind_method( D_METHOD("debug_pose_gizmo","gizmo","data","root_transform"), &BonePositionVelocityMotionFeature::debug_pose_gizmo);
     }
 
-    virtual void debug_pose_gizmo(Ref<EditorNode3DGizmo> gizmo, const PackedFloat32Array data,godot::Transform3D tr = godot::Transform3D{})override
+    GETSET(Color,debug_color_position,godot::Color(1.0f,1.0f,1.0f));
+    GETSET(Color,debug_color_velocity,godot::Color(0.0f,0.0f,0.0f));
+
+    virtual void debug_pose_gizmo(Ref<EditorNode3DGizmo> gizmo, const PackedFloat32Array data,godot::Transform3D tr = godot::Transform3D{}) override
     {
-        // if (data.size() == get_dimension())
+        const auto mat_name_pos = "pos" + get_path();
+        const auto mat_name_vel = "vel" + get_path();
+        if(gizmo->get_plugin()->get_material(mat_name_pos,gizmo) == nullptr)
         {
-            constexpr int s = 3;
-            for(size_t index = 0; index < bone_names.size(); ++index)
-            {
-                //i*size*2+size+2
-                Vector3 pos = Vector3(data[index * s * 2 + 0], data[index * s * 2 + 1], data[index * s * 2 + 2]);
-                Vector3 vel = Vector3(data[index * s * 2 + s + 0], data[index * s * 2 + s + 1], data[index * s * 2 + s + 2]);
-                pos = tr.xform(pos);
-                vel = tr.xform(vel);
-                auto white = gizmo->get_plugin()->get_material("white",gizmo);
-                auto blue = gizmo->get_plugin()->get_material("blue",gizmo);
-                gizmo->add_lines(Array::make(pos, pos + vel), blue);
-                auto box = Ref<BoxMesh>();
-                box.instantiate();
-                box->set_size(Vector3(0.05f,0.05f,0.05f));
-                Transform3D tr = Transform3D(Basis(),pos);
-                gizmo->add_mesh(box,white,tr);
-            }
+            gizmo->get_plugin()->create_material(mat_name_pos,debug_color_position);
+        }
+        if(gizmo->get_plugin()->get_material(mat_name_vel,gizmo) == nullptr)
+        {
+            gizmo->get_plugin()->create_material(mat_name_vel,debug_color_velocity);
+        }
+
+        auto position_color = gizmo->get_plugin()->get_material(mat_name_pos,gizmo);
+        auto velocity_color = gizmo->get_plugin()->get_material(mat_name_vel,gizmo);
+        position_color->set_albedo(debug_color_position);
+        velocity_color->set_albedo(debug_color_velocity);
+
+        constexpr int s = 3;
+        for(size_t index = 0; index < bone_names.size(); ++index)
+        {
+            //i*size*2+size+2
+            Vector3 pos = Vector3(data[index * s * 2 + 0], data[index * s * 2 + 1], data[index * s * 2 + 2]);
+            Vector3 vel = Vector3(data[index * s * 2 + s + 0], data[index * s * 2 + s + 1], data[index * s * 2 + s + 2]);
+            pos = tr.xform(pos);
+            vel = tr.xform(vel);
+
+            gizmo->add_lines(Array::make(pos, pos + vel), velocity_color);
+            auto box = Ref<BoxMesh>();
+            box.instantiate();
+            box->set_size(Vector3(0.05f,0.05f,0.05f));
+            Transform3D tr = Transform3D(Basis(),pos);
+            gizmo->add_mesh(box,position_color,tr);
         }
     }
 };

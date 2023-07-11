@@ -233,16 +233,27 @@ public:
 
     protected:
     static void _bind_methods() {
-        ClassDB::bind_method( D_METHOD("set_weight_history_pos","value"), &PredictionMotionFeature::set_weight_history_pos ); ClassDB::bind_method( D_METHOD("get_weight_history_pos"), &PredictionMotionFeature::get_weight_history_pos); godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT,"weight_history_pos"), "set_weight_history_pos", "get_weight_history_pos");
-        ClassDB::bind_method( D_METHOD("set_weight_prediction_pos","value"), &PredictionMotionFeature::set_weight_prediction_pos ); ClassDB::bind_method( D_METHOD("get_weight_prediction_pos"), &PredictionMotionFeature::get_weight_prediction_pos); godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT,"weight_prediction_pos"), "set_weight_prediction_pos", "get_weight_prediction_pos");
-        ClassDB::bind_method( D_METHOD("set_weight_prediction_angle","value"), &PredictionMotionFeature::set_weight_prediction_angle ); ClassDB::bind_method( D_METHOD("get_weight_prediction_angle"), &PredictionMotionFeature::get_weight_prediction_angle); godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT,"weight_prediction_angle"), "set_weight_prediction_angle", "get_weight_prediction_angle");
+        ClassDB::add_property_group(get_class_static(), "Nodes & Resources Sources", "");
+        {
+            ClassDB::bind_method( D_METHOD("set_weight_history_pos","value"), &PredictionMotionFeature::set_weight_history_pos ); ClassDB::bind_method( D_METHOD("get_weight_history_pos"), &PredictionMotionFeature::get_weight_history_pos); godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT,"weight_history_pos"), "set_weight_history_pos", "get_weight_history_pos");
+            ClassDB::bind_method( D_METHOD("set_weight_prediction_pos","value"), &PredictionMotionFeature::set_weight_prediction_pos ); ClassDB::bind_method( D_METHOD("get_weight_prediction_pos"), &PredictionMotionFeature::get_weight_prediction_pos); godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT,"weight_prediction_pos"), "set_weight_prediction_pos", "get_weight_prediction_pos");
+            ClassDB::bind_method( D_METHOD("set_weight_prediction_angle","value"), &PredictionMotionFeature::set_weight_prediction_angle ); ClassDB::bind_method( D_METHOD("get_weight_prediction_angle"), &PredictionMotionFeature::get_weight_prediction_angle); godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT,"weight_prediction_angle"), "set_weight_prediction_angle", "get_weight_prediction_angle");
 
-        PackedFloat32Array m_default{};
-        m_default.push_back(0.2);m_default.push_back(0.4);
-        ClassDB::bind_method( D_METHOD("set_root_bone_name","value"), &PredictionMotionFeature::set_root_bone_name,("%GeneralSkeleton:Root")); ClassDB::bind_method( D_METHOD("get_root_bone_name"), &PredictionMotionFeature::get_root_bone_name); godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::STRING,"root_bone_name"), "set_root_bone_name", "get_root_bone_name");
-        ClassDB::bind_method( D_METHOD("set_past_time_dt","value"), &PredictionMotionFeature::set_past_time_dt,(m_default)); ClassDB::bind_method( D_METHOD("get_past_time_dt"), &PredictionMotionFeature::get_past_time_dt); godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY,"past_time_dt"), "set_past_time_dt", "get_past_time_dt");
-        ClassDB::bind_method( D_METHOD("set_future_time_dt","value"), &PredictionMotionFeature::set_future_time_dt ); ClassDB::bind_method( D_METHOD("get_future_time_dt"), &PredictionMotionFeature::get_future_time_dt); godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY,"future_time_dt"), "set_future_time_dt", "get_future_time_dt");
+            PackedFloat32Array m_default{};
+            m_default.push_back(0.2);m_default.push_back(0.4);
+            ClassDB::bind_method( D_METHOD("set_root_bone_name","value"), &PredictionMotionFeature::set_root_bone_name,("%GeneralSkeleton:Root")); ClassDB::bind_method( D_METHOD("get_root_bone_name"), &PredictionMotionFeature::get_root_bone_name); godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::STRING,"root_bone_name"), "set_root_bone_name", "get_root_bone_name");
+            ClassDB::bind_method( D_METHOD("set_past_time_dt","value"), &PredictionMotionFeature::set_past_time_dt,(m_default)); ClassDB::bind_method( D_METHOD("get_past_time_dt"), &PredictionMotionFeature::get_past_time_dt); godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY,"past_time_dt"), "set_past_time_dt", "get_past_time_dt");
+            ClassDB::bind_method( D_METHOD("set_future_time_dt","value"), &PredictionMotionFeature::set_future_time_dt ); ClassDB::bind_method( D_METHOD("get_future_time_dt"), &PredictionMotionFeature::get_future_time_dt); godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY,"future_time_dt"), "set_future_time_dt", "get_future_time_dt");
+            
+            ClassDB::bind_method(D_METHOD("set_debug_color_history", "value"), &PredictionMotionFeature::set_debug_color_history);
+            ClassDB::bind_method(D_METHOD("get_debug_color_history"), &PredictionMotionFeature::get_debug_color_history);
+            godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::COLOR, "debug_color_history"), "set_debug_color_history", "get_debug_color_history");
 
+            ClassDB::bind_method(D_METHOD("set_debug_color_future", "value"), &PredictionMotionFeature::set_debug_color_future);
+            ClassDB::bind_method(D_METHOD("get_debug_color_future"), &PredictionMotionFeature::get_debug_color_future);
+            godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::COLOR, "debug_color_future"), "set_debug_color_future", "get_debug_color_future");
+        
+        }
         ClassDB::bind_method( D_METHOD("get_dimension"), &PredictionMotionFeature::get_dimension);
         // BIND_VIRTUAL_METHOD(MotionFeature,get_dimension);
 
@@ -256,21 +267,32 @@ public:
         
         ClassDB::bind_method( D_METHOD("debug_pose_gizmo","gizmo","data","root_transform"), &PredictionMotionFeature::debug_pose_gizmo);
     }
+    GETSET(Color,debug_color_history,godot::Color(1.0f,1.0f,1.0f));
+    GETSET(Color,debug_color_future,godot::Color(0.0f,0.0f,0.0f));
 
     virtual void debug_pose_gizmo(Ref<EditorNode3DGizmo> gizmo, const PackedFloat32Array data,godot::Transform3D tr = godot::Transform3D{})override
     {
+        const auto mat_name_history = "history" + get_path();
+        const auto mat_name_future = "future" + get_path();
+        if(gizmo->get_plugin()->get_material(mat_name_history,gizmo) == nullptr)
+        {
+            gizmo->get_plugin()->create_material(mat_name_history,debug_color_history);
+        }
+        if(gizmo->get_plugin()->get_material(mat_name_future,gizmo) == nullptr)
+        {
+            gizmo->get_plugin()->create_material(mat_name_future,debug_color_future);
+        }
         // if (data.size() == get_dimension())
         {
             constexpr int s = 3;
-            auto white = gizmo->get_plugin()->get_material("white",gizmo);
-            auto green = gizmo->get_plugin()->get_material("green",gizmo);
-            auto orange = gizmo->get_plugin()->get_material("orange",gizmo);
+            auto history = gizmo->get_plugin()->get_material(mat_name_history,gizmo);
+            auto future = gizmo->get_plugin()->get_material(mat_name_future,gizmo);
             for(size_t i = 0; i < past_time_dt.size(); ++i)
             {
                 const size_t offset = i * 2;
                 Vector3 pos = Vector3(data[offset + 0],0,data[offset + 1]); 
                 pos = tr.xform(pos);
-                gizmo->add_lines(Array::make(pos, pos + Vector3(0,1,0)), green);               
+                gizmo->add_lines(Array::make(pos, pos + Vector3(0,1,0)), history);               
             }
             const size_t pos_offset = past_time_dt.size();
             const size_t traj_offset = past_time_dt.size() * 2 + future_time_dt.size() * 2;
@@ -281,7 +303,7 @@ public:
                 Vector3 traj = tr.xform(Vector3(0,0,1)).rotated(Vector3(0,1,0),data[traj_offset + i]);
                 pos = tr.xform(pos);
                 // traj = tr.xform(traj);
-                gizmo->add_lines(Array::make(pos, pos + traj), orange);          
+                gizmo->add_lines(Array::make(pos, pos + traj), future);          
             }
 
         }

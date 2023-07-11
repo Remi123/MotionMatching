@@ -72,7 +72,7 @@ struct MotionPlayer : public Node {
     // The track names inside the animations that define the categories, usually a value track to a int.
     GETSET(TypedArray<String>,category_track_names)
 
-    // Get the skeleton TODO : Might be able to use PROPERTY_HINT_NODE_PATH_TO_EDITED_NODE
+    // Skeleton
     Skeleton3D* skeleton = nullptr;
     // NodePath skeleton_path;
     void set_skeleton(Object* path){
