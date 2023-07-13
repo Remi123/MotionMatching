@@ -13,8 +13,10 @@
 #include "MotionFeatures/MotionFeatures.hpp"
 #include "MotionFeatures/RootVelocityMotionFeature.hpp"
 #include "MotionFeatures/BonePositionVelocityMotionFeature.hpp"
-#include "MotionFeatures/PredictionMotionFeature.hpp"
+#include "MotionFeatures/TrajectoryMotionFeature.hpp"
 #include "CircularBuffer.hpp"
+
+//#include "AnimationNodeInertialization.hpp"
 
 using namespace godot;
 
@@ -25,13 +27,17 @@ void gdextension_initialize(ModuleInitializationLevel p_level)
 		//ClassDB::register_class<AABBTree>();
 		//ClassDB::register_class<KDTree>();
 
+		//ClassDB::register_class<AnimationNodeInertialization>();
+
 		ClassDB::register_class<CircularBuffer>();
 		
-		ClassDB::register_class<MotionFeature>();
+		ClassDB::register_class<MotionFeature>(true); // Abstract class
+		
 		ClassDB::register_class<RootVelocityMotionFeature>();
 		ClassDB::register_class<BonePositionVelocityMotionFeature>();
-		ClassDB::register_class<PredictionMotionFeature>();
-		
+		ClassDB::register_class<TrajectoryMotionFeature>();
+
+
 		ClassDB::register_class<MotionPlayer>();
 		ClassDB::register_class<CritDampSpring>();
 	}
@@ -41,7 +47,6 @@ void gdextension_terminate(ModuleInitializationLevel p_level)
 {
 	if (p_level == MODULE_INITIALIZATION_LEVEL_SCENE)
 	{
-		
 	}
 }
 

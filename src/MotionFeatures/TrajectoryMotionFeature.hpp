@@ -37,8 +37,11 @@ using u = godot::UtilityFunctions;
 // Macro setup. Mostly there to simplify writing all those
 #define GETSET(type,variable,...) type variable{__VA_ARGS__}; type get_##variable(){return  variable;} void set_##variable(type value){variable = value;}
 
-struct PredictionMotionFeature : public MotionFeature{
-    GDCLASS(PredictionMotionFeature,MotionFeature)
+struct TrajectoryMotionFeature : public MotionFeature{
+    GDCLASS(TrajectoryMotionFeature,MotionFeature)
+
+
+    virtual ~TrajectoryMotionFeature() = default;
 
     Skeleton3D* skeleton{nullptr}; Skeleton3D* get_skeleton(){return skeleton;} void set_skeleton(Skeleton3D* value){skeleton = value;}
     GETSET(String,root_bone_name,"%GeneralSkeleton:Root")
@@ -75,10 +78,7 @@ struct PredictionMotionFeature : public MotionFeature{
         return result;
     }
 
-    PredictionMotionFeature()
-    {
-        set_local_to_scene(true);
-    }
+
 private:
     void create_default_dt(){
         past_time_dt.clear();
@@ -233,39 +233,40 @@ public:
 
     protected:
     static void _bind_methods() {
+        return;
         ClassDB::add_property_group(get_class_static(), "Nodes & Resources Sources", "");
         {
-            ClassDB::bind_method( D_METHOD("set_weight_history_pos","value"), &PredictionMotionFeature::set_weight_history_pos ); ClassDB::bind_method( D_METHOD("get_weight_history_pos"), &PredictionMotionFeature::get_weight_history_pos); godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT,"weight_history_pos"), "set_weight_history_pos", "get_weight_history_pos");
-            ClassDB::bind_method( D_METHOD("set_weight_prediction_pos","value"), &PredictionMotionFeature::set_weight_prediction_pos ); ClassDB::bind_method( D_METHOD("get_weight_prediction_pos"), &PredictionMotionFeature::get_weight_prediction_pos); godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT,"weight_prediction_pos"), "set_weight_prediction_pos", "get_weight_prediction_pos");
-            ClassDB::bind_method( D_METHOD("set_weight_prediction_angle","value"), &PredictionMotionFeature::set_weight_prediction_angle ); ClassDB::bind_method( D_METHOD("get_weight_prediction_angle"), &PredictionMotionFeature::get_weight_prediction_angle); godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT,"weight_prediction_angle"), "set_weight_prediction_angle", "get_weight_prediction_angle");
+            ClassDB::bind_method( D_METHOD("set_weight_history_pos","value"), &TrajectoryMotionFeature::set_weight_history_pos ); ClassDB::bind_method( D_METHOD("get_weight_history_pos"), &TrajectoryMotionFeature::get_weight_history_pos); godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT,"weight_history_pos"), "set_weight_history_pos", "get_weight_history_pos");
+            ClassDB::bind_method( D_METHOD("set_weight_prediction_pos","value"), &TrajectoryMotionFeature::set_weight_prediction_pos ); ClassDB::bind_method( D_METHOD("get_weight_prediction_pos"), &TrajectoryMotionFeature::get_weight_prediction_pos); godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT,"weight_prediction_pos"), "set_weight_prediction_pos", "get_weight_prediction_pos");
+            ClassDB::bind_method( D_METHOD("set_weight_prediction_angle","value"), &TrajectoryMotionFeature::set_weight_prediction_angle ); ClassDB::bind_method( D_METHOD("get_weight_prediction_angle"), &TrajectoryMotionFeature::get_weight_prediction_angle); godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT,"weight_prediction_angle"), "set_weight_prediction_angle", "get_weight_prediction_angle");
 
             PackedFloat32Array m_default{};
             m_default.push_back(0.2);m_default.push_back(0.4);
-            ClassDB::bind_method( D_METHOD("set_root_bone_name","value"), &PredictionMotionFeature::set_root_bone_name,("%GeneralSkeleton:Root")); ClassDB::bind_method( D_METHOD("get_root_bone_name"), &PredictionMotionFeature::get_root_bone_name); godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::STRING,"root_bone_name"), "set_root_bone_name", "get_root_bone_name");
-            ClassDB::bind_method( D_METHOD("set_past_time_dt","value"), &PredictionMotionFeature::set_past_time_dt,(m_default)); ClassDB::bind_method( D_METHOD("get_past_time_dt"), &PredictionMotionFeature::get_past_time_dt); godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY,"past_time_dt"), "set_past_time_dt", "get_past_time_dt");
-            ClassDB::bind_method( D_METHOD("set_future_time_dt","value"), &PredictionMotionFeature::set_future_time_dt ); ClassDB::bind_method( D_METHOD("get_future_time_dt"), &PredictionMotionFeature::get_future_time_dt); godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY,"future_time_dt"), "set_future_time_dt", "get_future_time_dt");
+            ClassDB::bind_method( D_METHOD("set_root_bone_name","value"), &TrajectoryMotionFeature::set_root_bone_name,("%GeneralSkeleton:Root")); ClassDB::bind_method( D_METHOD("get_root_bone_name"), &TrajectoryMotionFeature::get_root_bone_name); godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::STRING,"root_bone_name"), "set_root_bone_name", "get_root_bone_name");
+            ClassDB::bind_method( D_METHOD("set_past_time_dt","value"), &TrajectoryMotionFeature::set_past_time_dt,(m_default)); ClassDB::bind_method( D_METHOD("get_past_time_dt"), &TrajectoryMotionFeature::get_past_time_dt); godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY,"past_time_dt"), "set_past_time_dt", "get_past_time_dt");
+            ClassDB::bind_method( D_METHOD("set_future_time_dt","value"), &TrajectoryMotionFeature::set_future_time_dt ); ClassDB::bind_method( D_METHOD("get_future_time_dt"), &TrajectoryMotionFeature::get_future_time_dt); godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY,"future_time_dt"), "set_future_time_dt", "get_future_time_dt");
             
-            ClassDB::bind_method(D_METHOD("set_debug_color_history", "value"), &PredictionMotionFeature::set_debug_color_history);
-            ClassDB::bind_method(D_METHOD("get_debug_color_history"), &PredictionMotionFeature::get_debug_color_history);
+            ClassDB::bind_method(D_METHOD("set_debug_color_history", "value"), &TrajectoryMotionFeature::set_debug_color_history);
+            ClassDB::bind_method(D_METHOD("get_debug_color_history"), &TrajectoryMotionFeature::get_debug_color_history);
             godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::COLOR, "debug_color_history"), "set_debug_color_history", "get_debug_color_history");
 
-            ClassDB::bind_method(D_METHOD("set_debug_color_future", "value"), &PredictionMotionFeature::set_debug_color_future);
-            ClassDB::bind_method(D_METHOD("get_debug_color_future"), &PredictionMotionFeature::get_debug_color_future);
+            ClassDB::bind_method(D_METHOD("set_debug_color_future", "value"), &TrajectoryMotionFeature::set_debug_color_future);
+            ClassDB::bind_method(D_METHOD("get_debug_color_future"), &TrajectoryMotionFeature::get_debug_color_future);
             godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::COLOR, "debug_color_future"), "set_debug_color_future", "get_debug_color_future");
         
         }
-        ClassDB::bind_method( D_METHOD("get_dimension"), &PredictionMotionFeature::get_dimension);
+        ClassDB::bind_method( D_METHOD("get_dimension"), &TrajectoryMotionFeature::get_dimension);
         // BIND_VIRTUAL_METHOD(MotionFeature,get_dimension);
 
-        ClassDB::bind_method( D_METHOD("setup_nodes","character"), &PredictionMotionFeature::setup_nodes);
+        ClassDB::bind_method( D_METHOD("setup_nodes","character"), &TrajectoryMotionFeature::setup_nodes);
         
-        ClassDB::bind_method( D_METHOD("setup_for_animation","animation"), &PredictionMotionFeature::setup_for_animation);
-        ClassDB::bind_method( D_METHOD("bake_animation_pose","animation","time"), &PredictionMotionFeature::bake_animation_pose);
+        ClassDB::bind_method( D_METHOD("setup_for_animation","animation"), &TrajectoryMotionFeature::setup_for_animation);
+        ClassDB::bind_method( D_METHOD("bake_animation_pose","animation","time"), &TrajectoryMotionFeature::bake_animation_pose);
 
-        ClassDB::bind_method( D_METHOD("broadphase_query_pose","blackboard","delta"), &PredictionMotionFeature::broadphase_query_pose);
-        ClassDB::bind_method( D_METHOD("narrowphase_evaluate_cost","data_to_evaluate"), &PredictionMotionFeature::narrowphase_evaluate_cost);
+        ClassDB::bind_method( D_METHOD("broadphase_query_pose","blackboard","delta"), &TrajectoryMotionFeature::broadphase_query_pose);
+        ClassDB::bind_method( D_METHOD("narrowphase_evaluate_cost","data_to_evaluate"), &TrajectoryMotionFeature::narrowphase_evaluate_cost);
         
-        ClassDB::bind_method( D_METHOD("debug_pose_gizmo","gizmo","data","root_transform"), &PredictionMotionFeature::debug_pose_gizmo);
+        ClassDB::bind_method( D_METHOD("debug_pose_gizmo","gizmo","data","root_transform"), &TrajectoryMotionFeature::debug_pose_gizmo);
     }
     GETSET(Color,debug_color_history,godot::Color(1.0f,1.0f,1.0f));
     GETSET(Color,debug_color_future,godot::Color(0.0f,0.0f,0.0f));
@@ -286,7 +287,9 @@ public:
         {
             constexpr int s = 3;
             auto history = gizmo->get_plugin()->get_material(mat_name_history,gizmo);
+            history->set_albedo(debug_color_history);
             auto future = gizmo->get_plugin()->get_material(mat_name_future,gizmo);
+            future->set_albedo(debug_color_future);
             for(size_t i = 0; i < past_time_dt.size(); ++i)
             {
                 const size_t offset = i * 2;

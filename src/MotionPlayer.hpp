@@ -53,6 +53,7 @@ using namespace godot;
 //         ADD_PROPERTY(PropertyInfo(variant_type,#variable,__VA_ARGS__),STRING_PREFIX(set_,variable),STRING_PREFIX(get_,variable));
 
 struct MotionPlayer : public Node {
+    using u = godot::UtilityFunctions;
     GDCLASS(MotionPlayer,Node)
 
     static constexpr float interval = 0.1;
@@ -87,7 +88,9 @@ struct MotionPlayer : public Node {
     GETSET(Ref<AnimationLibrary>,animation_library);
 
     // Array of the motion features.
-    GETSET(TypedArray<MotionFeature>,motion_features);
+    TypedArray<MotionFeature> motion_features; 
+    TypedArray<MotionFeature> get_motion_features(){return motion_features;} 
+    void set_motion_features(TypedArray<MotionFeature> value){motion_features = value;}
 
     // Dimensional Stats.
     GETSET(PackedFloat32Array,weights)
@@ -168,10 +171,13 @@ struct MotionPlayer : public Node {
     }
 
     virtual void _physics_process(double delta)override{
+        if(godot::Engine::get_singleton()->is_editor_hint())
+            return;
         for(auto i = 0; i < motion_features.size(); ++i )
         {
             MotionFeature* f = Object::cast_to<MotionFeature>(motion_features[i]);
-            f->physics_update(delta);
+            if ( f != nullptr)
+                f->physics_update(delta);
         }
     }
 
@@ -596,83 +602,84 @@ struct MotionPlayer : public Node {
         static void _bind_methods()
         {
         // Private section
-        {
-            ClassDB::bind_method(D_METHOD("set_category_value", "value"), &MotionPlayer::set_category_value);
-            ClassDB::bind_method(D_METHOD("get_category_value"), &MotionPlayer::get_category_value);
-            godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::INT, "category_value", PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_CLASS_IS_BITFIELD | PROPERTY_USAGE_DEFAULT), "set_category_value", "get_category_value");
-            // Stats
-            ClassDB::bind_method(D_METHOD("set_means", "value"), &MotionPlayer::set_means);
-            ClassDB::bind_method(D_METHOD("get_means"), &MotionPlayer::get_means);
-            godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "means", PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_STORAGE), "set_means", "get_means");
-            ClassDB::bind_method(D_METHOD("set_variances", "value"), &MotionPlayer::set_variances);
-            ClassDB::bind_method(D_METHOD("get_variances"), &MotionPlayer::get_variances);
-            godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "variances", PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_STORAGE), "set_variances", "get_variances");
-            ClassDB::bind_method(D_METHOD("set_densities", "value"), &MotionPlayer::set_densities);
-            ClassDB::bind_method(D_METHOD("get_densities"), &MotionPlayer::get_densities);
-            godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::ARRAY, "densities", PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_STORAGE), "set_densities", "get_densities");
-            // For retrieving the anim name and timestamp and category
+            {
+                ClassDB::bind_method(D_METHOD("set_category_value", "value"), &MotionPlayer::set_category_value);
+                ClassDB::bind_method(D_METHOD("get_category_value"), &MotionPlayer::get_category_value);
+                godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::INT, "category_value", PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_CLASS_IS_BITFIELD | PROPERTY_USAGE_DEFAULT), "set_category_value", "get_category_value");
+                // Stats
+                ClassDB::bind_method(D_METHOD("set_means", "value"), &MotionPlayer::set_means);
+                ClassDB::bind_method(D_METHOD("get_means"), &MotionPlayer::get_means);
+                godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "means", PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_STORAGE), "set_means", "get_means");
+                ClassDB::bind_method(D_METHOD("set_variances", "value"), &MotionPlayer::set_variances);
+                ClassDB::bind_method(D_METHOD("get_variances"), &MotionPlayer::get_variances);
+                godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "variances", PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_STORAGE), "set_variances", "get_variances");
+                ClassDB::bind_method(D_METHOD("set_densities", "value"), &MotionPlayer::set_densities);
+                ClassDB::bind_method(D_METHOD("get_densities"), &MotionPlayer::get_densities);
+                godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::ARRAY, "densities", PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_STORAGE), "set_densities", "get_densities");
+                // For retrieving the anim name and timestamp and category
 
-            ClassDB::bind_method(D_METHOD("set_db_anim_index", "value"), &MotionPlayer::set_db_anim_index);
-            ClassDB::bind_method(D_METHOD("get_db_anim_index"), &MotionPlayer::get_db_anim_index);
-            godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_INT32_ARRAY, "db_anim_index", PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_STORAGE), "set_db_anim_index", "get_db_anim_index");
-            ClassDB::bind_method(D_METHOD("set_db_anim_timestamp", "value"), &MotionPlayer::set_db_anim_timestamp);
-            ClassDB::bind_method(D_METHOD("get_db_anim_timestamp"), &MotionPlayer::get_db_anim_timestamp);
-            godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "db_anim_timestamp", PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_STORAGE), "set_db_anim_timestamp", "get_db_anim_timestamp");
-            ClassDB::bind_method(D_METHOD("set_db_anim_category", "value"), &MotionPlayer::set_db_anim_category);
-            ClassDB::bind_method(D_METHOD("get_db_anim_category"), &MotionPlayer::get_db_anim_category);
-            godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_INT32_ARRAY, "db_anim_category", PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_STORAGE), "set_db_anim_category", "get_db_anim_category");
-        }
+                ClassDB::bind_method(D_METHOD("set_db_anim_index", "value"), &MotionPlayer::set_db_anim_index);
+                ClassDB::bind_method(D_METHOD("get_db_anim_index"), &MotionPlayer::get_db_anim_index);
+                godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_INT32_ARRAY, "db_anim_index", PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_STORAGE), "set_db_anim_index", "get_db_anim_index");
+                ClassDB::bind_method(D_METHOD("set_db_anim_timestamp", "value"), &MotionPlayer::set_db_anim_timestamp);
+                ClassDB::bind_method(D_METHOD("get_db_anim_timestamp"), &MotionPlayer::get_db_anim_timestamp);
+                godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "db_anim_timestamp", PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_STORAGE), "set_db_anim_timestamp", "get_db_anim_timestamp");
+                ClassDB::bind_method(D_METHOD("set_db_anim_category", "value"), &MotionPlayer::set_db_anim_category);
+                ClassDB::bind_method(D_METHOD("get_db_anim_category"), &MotionPlayer::get_db_anim_category);
+                godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_INT32_ARRAY, "db_anim_category", PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_STORAGE), "set_db_anim_category", "get_db_anim_category");
+            }
 
-        ClassDB::add_property_group(get_class_static(), "Nodes & Resources Sources", "");
-        {
-            ClassDB::bind_method(D_METHOD("set_main_node", "path"), &MotionPlayer::set_main_node);
-            ClassDB::bind_method(D_METHOD("get_main_node"), &MotionPlayer::get_main_node);
-            ADD_PROPERTY(PropertyInfo(Variant::NODE_PATH, "main_node"), "set_main_node", "get_main_node");
-            ClassDB::bind_method(D_METHOD("set_skeleton_path", "skeleton path"), &MotionPlayer::set_skeleton);
-            ClassDB::bind_method(D_METHOD("get_skeleton"), &MotionPlayer::get_skeleton);
-            ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "skeleton_node_path",PROPERTY_HINT_NODE_TYPE,"Skeleton3D",PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_SCRIPT_VARIABLE ), "set_skeleton_path", "get_skeleton");
+            ClassDB::add_property_group(get_class_static(), "Nodes & Resources Sources", "");
+            {
+                ClassDB::bind_method(D_METHOD("set_main_node", "path"), &MotionPlayer::set_main_node);
+                ClassDB::bind_method(D_METHOD("get_main_node"), &MotionPlayer::get_main_node);
+                ADD_PROPERTY(PropertyInfo(Variant::NODE_PATH, "main_node"), "set_main_node", "get_main_node");
+                ClassDB::bind_method(D_METHOD("set_skeleton_path", "skeleton path"), &MotionPlayer::set_skeleton);
+                ClassDB::bind_method(D_METHOD("get_skeleton"), &MotionPlayer::get_skeleton);
+                ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "skeleton_node_path",PROPERTY_HINT_NODE_TYPE,"Skeleton3D",PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_SCRIPT_VARIABLE ), "set_skeleton_path", "get_skeleton");
 
-            ClassDB::bind_method(D_METHOD("set_animation_library", "value"), &MotionPlayer::set_animation_library);
-            ClassDB::bind_method(D_METHOD("get_animation_library"), &MotionPlayer::get_animation_library);
-            godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::OBJECT, "animation_library", PROPERTY_HINT_RESOURCE_TYPE, "AnimationLibrary"), "set_animation_library", "get_animation_library");
-            ClassDB::bind_method(D_METHOD("set_category_track_names", "value"), &MotionPlayer::set_category_track_names);
-            ClassDB::bind_method(D_METHOD("get_category_track_names"), &MotionPlayer::get_category_track_names);
-            godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_STRING_ARRAY, "category_track_names", PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_DEFAULT), "set_category_track_names", "get_category_track_names");
-        }
+                ClassDB::bind_method(D_METHOD("set_animation_library", "value"), &MotionPlayer::set_animation_library);
+                ClassDB::bind_method(D_METHOD("get_animation_library"), &MotionPlayer::get_animation_library);
+                godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::OBJECT, "animation_library", PROPERTY_HINT_RESOURCE_TYPE, "AnimationLibrary"), "set_animation_library", "get_animation_library");
+                ClassDB::bind_method(D_METHOD("set_category_track_names", "value"), &MotionPlayer::set_category_track_names);
+                ClassDB::bind_method(D_METHOD("get_category_track_names"), &MotionPlayer::get_category_track_names);
+                godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_STRING_ARRAY, "category_track_names", PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_DEFAULT), "set_category_track_names", "get_category_track_names");
+            }
 
-        ClassDB::add_property_group(get_class_static(), "Data & KdTree params", "");
-        {
-            ClassDB::bind_method(D_METHOD("set_MotionData", "value"), &MotionPlayer::set_MotionData);
-            ClassDB::bind_method(D_METHOD("get_MotionData"), &MotionPlayer::get_MotionData);
-            godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "MotionData"), "set_MotionData", "get_MotionData");
-            ClassDB::bind_method(D_METHOD("set_distance_type", "value"), &MotionPlayer::set_distance_type);
-            ClassDB::bind_method(D_METHOD("get_distance_type"), &MotionPlayer::get_distance_type);
-            godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::INT, "distance_type", PROPERTY_HINT_ENUM, "Manhattan:1,EuclidianSquared:2,Maximum:0"), "set_distance_type", "get_distance_type");
-            ClassDB::bind_method(D_METHOD("set_weights", "value"), &MotionPlayer::set_weights);
-            ClassDB::bind_method(D_METHOD("get_weights"), &MotionPlayer::get_weights);
-            godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "weights"), "set_weights", "get_weights");
-        }
+            ClassDB::add_property_group(get_class_static(), "Data & KdTree params", "");
+            {
+                ClassDB::bind_method(D_METHOD("set_MotionData", "value"), &MotionPlayer::set_MotionData);
+                ClassDB::bind_method(D_METHOD("get_MotionData"), &MotionPlayer::get_MotionData);
+                godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "MotionData"), "set_MotionData", "get_MotionData");
+                ClassDB::bind_method(D_METHOD("set_distance_type", "value"), &MotionPlayer::set_distance_type);
+                ClassDB::bind_method(D_METHOD("get_distance_type"), &MotionPlayer::get_distance_type);
+                godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::INT, "distance_type", PROPERTY_HINT_ENUM, "Manhattan:1,EuclidianSquared:2,Maximum:0"), "set_distance_type", "get_distance_type");
+                ClassDB::bind_method(D_METHOD("set_weights", "value"), &MotionPlayer::set_weights);
+                ClassDB::bind_method(D_METHOD("get_weights"), &MotionPlayer::get_weights);
+                godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "weights"), "set_weights", "get_weights");
+            }
 
-        ClassDB::add_property_group(get_class_static(), "Features", "");
-        {
-            ClassDB::bind_method(D_METHOD("set_motion_features", "value"), &MotionPlayer::set_motion_features);
-            ClassDB::bind_method(D_METHOD("get_motion_features"), &MotionPlayer::get_motion_features);
-            godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::ARRAY, "motion_features", godot::PROPERTY_HINT_TYPE_STRING, "24/17:MotionFeature", PROPERTY_USAGE_SCRIPT_VARIABLE | PROPERTY_USAGE_DEFAULT), "set_motion_features", "get_motion_features");
-            ClassDB::bind_method(D_METHOD("set_blackboard", "value"), &MotionPlayer::set_blackboard);
-            ClassDB::bind_method(D_METHOD("get_blackboard"), &MotionPlayer::get_blackboard);
-            godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::DICTIONARY, "blackboard"), "set_blackboard", "get_blackboard");
-        }
+            ClassDB::add_property_group(get_class_static(), "Features", "");
+            {
+                ClassDB::bind_method(D_METHOD("set_motion_features", "value"), &MotionPlayer::set_motion_features);
+                ClassDB::bind_method(D_METHOD("get_motion_features"), &MotionPlayer::get_motion_features);
+                godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::ARRAY, "MotionFeatures", godot::PROPERTY_HINT_TYPE_STRING, u::str(Variant::OBJECT)+'/'+u::str(Variant::BASIS)+":MotionFeature", PROPERTY_USAGE_DEFAULT), "set_motion_features", "get_motion_features");
+                
+                ClassDB::bind_method(D_METHOD("set_blackboard", "value"), &MotionPlayer::set_blackboard);
+                ClassDB::bind_method(D_METHOD("get_blackboard"), &MotionPlayer::get_blackboard);
+                godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::DICTIONARY, "blackboard"), "set_blackboard", "get_blackboard");
+            }
 
-        ClassDB::add_property_group(get_class_static(), "", "");
+            ClassDB::add_property_group(get_class_static(), "", "");
 
-        // Functions
-        ClassDB::bind_method(D_METHOD("reset_skeleton_poses"), &MotionPlayer::reset_skeleton_poses);
-        ClassDB::bind_method(D_METHOD("set_skeleton_to_pose", "animation", "time"), &MotionPlayer::set_skeleton_to_pose);
+            // Functions
+            ClassDB::bind_method(D_METHOD("reset_skeleton_poses"), &MotionPlayer::reset_skeleton_poses);
+            ClassDB::bind_method(D_METHOD("set_skeleton_to_pose", "animation", "time"), &MotionPlayer::set_skeleton_to_pose);
 
-        ClassDB::bind_method(D_METHOD("recalculate_weights"), &MotionPlayer::recalculate_weights);
-        ClassDB::bind_method(D_METHOD("baking_data"), &MotionPlayer::baking_data);
-        ClassDB::bind_method(D_METHOD("query_pose", "include_category", "exclude_category"), &MotionPlayer::query_pose, DEFVAL(std::numeric_limits<int64_t>::max()), DEFVAL(0));
-        ClassDB::bind_method(D_METHOD("check_query_results", "Query", "Result count"), &MotionPlayer::check_query_results);
+            ClassDB::bind_method(D_METHOD("recalculate_weights"), &MotionPlayer::recalculate_weights);
+            ClassDB::bind_method(D_METHOD("baking_data"), &MotionPlayer::baking_data);
+            ClassDB::bind_method(D_METHOD("query_pose", "include_category", "exclude_category"), &MotionPlayer::query_pose, DEFVAL(std::numeric_limits<int64_t>::max()), DEFVAL(0));
+            ClassDB::bind_method(D_METHOD("check_query_results", "Query", "Result count"), &MotionPlayer::check_query_results);
         }
 };
 

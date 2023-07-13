@@ -44,7 +44,11 @@ using u = godot::UtilityFunctions;
         ADD_PROPERTY(PropertyInfo(variant_type,#variable,__VA_ARGS__),STRING_PREFIX(set_,variable),STRING_PREFIX(get_,variable));
 
 struct RootVelocityMotionFeature : public MotionFeature {
-    GDCLASS(RootVelocityMotionFeature,MotionFeature)
+    GDCLASS(RootVelocityMotionFeature,MotionFeature);
+
+
+    virtual ~RootVelocityMotionFeature() = default;
+
     CharacterBody3D* body;
     CharacterBody3D* get_body(){return body;} void set_body(CharacterBody3D* value){body = value;}
     int root_track_pos =-1, root_track_quat = -1;//, root_track_scale = -1;
@@ -126,8 +130,6 @@ protected:
             godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::VECTOR3,"query_local_velocity",PROPERTY_HINT_NONE,"",PROPERTY_USAGE_EDITOR), "set_query_velocity", "get_query_velocity");
         }
         ClassDB::add_property_group(get_class_static(), "", "");
-        
-
 
         ClassDB::bind_method( D_METHOD("get_dimension"), &RootVelocityMotionFeature::get_dimension);
         ClassDB::bind_method( D_METHOD("setup_nodes","character"), &RootVelocityMotionFeature::setup_nodes);

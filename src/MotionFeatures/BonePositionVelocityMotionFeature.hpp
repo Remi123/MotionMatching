@@ -41,6 +41,8 @@ using u = godot::UtilityFunctions;
 struct BonePositionVelocityMotionFeature : public MotionFeature {
     GDCLASS(BonePositionVelocityMotionFeature,MotionFeature)
 
+    virtual ~BonePositionVelocityMotionFeature() = default;
+
     // Skeleton
     Skeleton3D* skeleton = nullptr;
     // NodePath skeleton_path;
@@ -253,7 +255,7 @@ protected:
 
             ClassDB::bind_method(D_METHOD("set_skeleton", "skeleton_path"), &BonePositionVelocityMotionFeature::set_skeleton);
             ClassDB::bind_method(D_METHOD("get_skeleton"), &BonePositionVelocityMotionFeature::get_skeleton);
-            ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "skeleton",PROPERTY_HINT_NODE_TYPE,"Skeleton3D",PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_SCRIPT_VARIABLE ), "set_skeleton", "get_skeleton");
+            ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "skeleton",PROPERTY_HINT_NODE_TYPE,"Skeleton3D",PROPERTY_USAGE_DEFAULT ), "set_skeleton", "get_skeleton");
 
             ClassDB::bind_method(D_METHOD("set_root_bone_name", "value"), &BonePositionVelocityMotionFeature::set_root_bone_name, DEFVAL("Root"));
             ClassDB::bind_method(D_METHOD("get_root_bone_name"), &BonePositionVelocityMotionFeature::get_root_bone_name);
