@@ -9,7 +9,7 @@
 #include <godot_cpp/godot.hpp>
 
 #include "CritSpringDamper.hpp"
-#include <MotionPlayer.hpp>
+#include <MotionMatcher.hpp>
 #include "MotionFeatures/MotionFeatures.hpp"
 #include "MotionFeatures/RootVelocityMotionFeature.hpp"
 #include "MotionFeatures/BonePositionVelocityMotionFeature.hpp"
@@ -38,7 +38,7 @@ void gdextension_initialize(ModuleInitializationLevel p_level)
 		ClassDB::register_class<TrajectoryMotionFeature>();
 
 
-		ClassDB::register_class<MotionPlayer>();
+		ClassDB::register_class<MotionMatcher>();
 		ClassDB::register_class<CritDampSpring>();
 	}
 }
