@@ -41,7 +41,7 @@ struct MotionFeature : public Resource{
     
     virtual PackedFloat32Array get_weights(){ return {};}
 
-    virtual void setup_nodes(Variant character){}
+    virtual void setup_nodes(Variant main_node, Skeleton3D* skeleton){}
 
     virtual void setup_for_animation(Ref<Animation> animation){}
     virtual PackedFloat32Array bake_animation_pose(Ref<Animation> animation,float time){return {};}
@@ -59,7 +59,7 @@ struct MotionFeature : public Resource{
 
         ClassDB::bind_method( D_METHOD("get_weights"), &MotionFeature::get_weights);
 
-        ClassDB::bind_method( D_METHOD("setup_nodes","character"), &MotionFeature::setup_nodes);
+        ClassDB::bind_method( D_METHOD("setup_nodes","main_node","skeleton"), &MotionFeature::setup_nodes);
         
         ClassDB::bind_method( D_METHOD("setup_for_animation","animation"), &MotionFeature::setup_for_animation);
         ClassDB::bind_method( D_METHOD("bake_animation_pose","animation","time"), &MotionFeature::bake_animation_pose);

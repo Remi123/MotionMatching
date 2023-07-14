@@ -49,8 +49,6 @@ struct RootVelocityMotionFeature : public MotionFeature {
 
     virtual ~RootVelocityMotionFeature() = default;
 
-    CharacterBody3D* body;
-    CharacterBody3D* get_body(){return body;} void set_body(CharacterBody3D* value){body = value;}
     int root_track_pos =-1, root_track_quat = -1;//, root_track_scale = -1;
 
     GETSET(Vector3,query_velocity);
@@ -70,8 +68,7 @@ struct RootVelocityMotionFeature : public MotionFeature {
         return Array::make(weight,weight,weight);
     }
 
-    virtual void setup_nodes(Variant character) override{
-        body = Object::cast_to<CharacterBody3D>(character);  
+    virtual void setup_nodes(Variant main_node, Skeleton3D* skeleton) override{
 
     }
     virtual void setup_for_animation(Ref<Animation> animation)override{

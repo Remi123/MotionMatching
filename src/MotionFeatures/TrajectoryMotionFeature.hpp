@@ -53,10 +53,6 @@ struct TrajectoryMotionFeature : public MotionFeature{
 
     GETSET(PackedFloat32Array,past_time_dt);
     GETSET(PackedFloat32Array,future_time_dt);
-    GETSET(int,past_count,4);
-    GETSET(float,past_delta,0.7f/past_count);
-    GETSET(int,future_count,6);
-    GETSET(float,future_delta,1.2f/future_count);
 
     GETSET(float,weight_history_pos,1.0f);
     GETSET(float,weight_prediction_pos,1.0f);
@@ -79,21 +75,6 @@ struct TrajectoryMotionFeature : public MotionFeature{
     }
 
 
-private:
-    void create_default_dt(){
-        past_time_dt.clear();
-        future_time_dt.clear();
-        float time = past_delta;
-        for (int count = 0; count < past_count; ++count, time+=past_delta)
-        {
-            past_time_dt.push_back(-time);
-        }
-        time = future_delta;
-        for (int count = 0; count < future_count; ++count, time+=future_delta)
-        {
-            future_time_dt.push_back(time);
-        }
-    }
 public:
     virtual int get_dimension() override
     {
@@ -105,9 +86,7 @@ public:
     }
 
     CharacterBody3D* body;
-    virtual void setup_nodes(Variant character) override{
-        auto n = Object::cast_to<CharacterBody3D>(character);
-        skeleton = n->get_node<Skeleton3D>("Armature/GeneralSkeleton");
+    virtual void setup_nodes(Variant main_node, Skeleton3D* skeleton) override{
     }
 
     int root_tracks[3] = {0,0,0};
@@ -134,6 +113,7 @@ public:
 
             end_ang_vel = animation->rotation_track_interpolate(root_tracks[1], animation->get_length() - delta - 0.1).inverse() * animation->rotation_track_interpolate(root_tracks[1], animation->get_length() - delta);
         }
+        u::prints("Trajectory animation setup");
     }
 
     virtual PackedFloat32Array bake_animation_pose(Ref<Animation> animation,float time)override 
@@ -233,7 +213,7 @@ public:
 
     protected:
     static void _bind_methods() {
-        return;
+
         ClassDB::add_property_group(get_class_static(), "Nodes & Resources Sources", "");
         {
             ClassDB::bind_method( D_METHOD("set_weight_history_pos","value"), &TrajectoryMotionFeature::set_weight_history_pos ); ClassDB::bind_method( D_METHOD("get_weight_history_pos"), &TrajectoryMotionFeature::get_weight_history_pos); godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT,"weight_history_pos"), "set_weight_history_pos", "get_weight_history_pos");
@@ -256,9 +236,8 @@ public:
         
         }
         ClassDB::bind_method( D_METHOD("get_dimension"), &TrajectoryMotionFeature::get_dimension);
-        // BIND_VIRTUAL_METHOD(MotionFeature,get_dimension);
 
-        ClassDB::bind_method( D_METHOD("setup_nodes","character"), &TrajectoryMotionFeature::setup_nodes);
+        ClassDB::bind_method( D_METHOD("setup_nodes","main_node","skeleton"), &TrajectoryMotionFeature::setup_nodes);
         
         ClassDB::bind_method( D_METHOD("setup_for_animation","animation"), &TrajectoryMotionFeature::setup_for_animation);
         ClassDB::bind_method( D_METHOD("bake_animation_pose","animation","time"), &TrajectoryMotionFeature::bake_animation_pose);

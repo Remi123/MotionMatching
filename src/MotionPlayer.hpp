@@ -82,7 +82,7 @@ struct MotionPlayer : public Node {
         }
     Object* get_skeleton(){return cast_to<Object>(skeleton);}
 
-    GETSET(NodePath,main_node)
+    GETSET(Variant,main_node)
 
     // Animation Library. Each one will be analysed
     GETSET(Ref<AnimationLibrary>,animation_library);
@@ -127,8 +127,6 @@ struct MotionPlayer : public Node {
         if(godot::Engine::get_singleton()->is_editor_hint())
             return;
 
-        Node* character;
-        character = get_node<Node>(main_node);
         int nb_dimensions = 0;
         for(auto i = 0; i < motion_features.size(); ++i )
         {
@@ -136,7 +134,7 @@ struct MotionPlayer : public Node {
             if(f != nullptr)
             {
                 u::prints(f->get_name(), f->call("get_dimension").operator int64_t());
-                f->setup_nodes(character);
+                f->setup_nodes(main_node,skeleton);
                 nb_dimensions += (int64_t)f->call("get_dimension");
             }
 
@@ -236,8 +234,7 @@ struct MotionPlayer : public Node {
             u::prints("Skeleton isn't properly set");
             return;
         }
-        Node* character;
-        character = get_node<Node>(main_node);
+
 
         if(kdt != nullptr)
         {
@@ -256,7 +253,7 @@ struct MotionPlayer : public Node {
             else{
                 u::prints(f->get_name(), f->get_dimension());
             }
-            f->setup_nodes(character);
+            f->setup_nodes(main_node,skeleton);
             nb_dimensions += (int)(f->get_dimension());
         }
 
@@ -663,7 +660,7 @@ struct MotionPlayer : public Node {
             {
                 ClassDB::bind_method(D_METHOD("set_motion_features", "value"), &MotionPlayer::set_motion_features);
                 ClassDB::bind_method(D_METHOD("get_motion_features"), &MotionPlayer::get_motion_features);
-                godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::ARRAY, "MotionFeatures", godot::PROPERTY_HINT_TYPE_STRING, u::str(Variant::OBJECT)+'/'+u::str(Variant::BASIS)+":MotionFeature", PROPERTY_USAGE_DEFAULT), "set_motion_features", "get_motion_features");
+                godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::ARRAY, "motion_features", godot::PROPERTY_HINT_TYPE_STRING, u::str(Variant::OBJECT)+'/'+u::str(Variant::BASIS)+":MotionFeature", PROPERTY_USAGE_DEFAULT), "set_motion_features", "get_motion_features");
                 
                 ClassDB::bind_method(D_METHOD("set_blackboard", "value"), &MotionPlayer::set_blackboard);
                 ClassDB::bind_method(D_METHOD("get_blackboard"), &MotionPlayer::get_blackboard);

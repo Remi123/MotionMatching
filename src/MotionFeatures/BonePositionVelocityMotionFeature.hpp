@@ -44,13 +44,8 @@ struct BonePositionVelocityMotionFeature : public MotionFeature {
     virtual ~BonePositionVelocityMotionFeature() = default;
 
     // Skeleton
-    Skeleton3D* skeleton = nullptr;
-    // NodePath skeleton_path;
-    void set_skeleton(Object* path){
-        // skeleton_path = path;
-        skeleton = Object::cast_to<Skeleton3D>(path);
-        }
-    Object* get_skeleton(){return cast_to<Object>(skeleton);}
+    Skeleton3D* _skeleton = nullptr;
+
 
 
     PackedStringArray bone_names{};
@@ -66,13 +61,14 @@ struct BonePositionVelocityMotionFeature : public MotionFeature {
     virtual int get_dimension()override{
         return bone_names.size() * 3 * 2;
     }
-    virtual void setup_nodes(Variant character) override{
+    virtual void setup_nodes(Variant main_node, Skeleton3D* skeleton) override{
         bones_id.clear();
         if(skeleton!=nullptr)
         {
+            _skeleton = skeleton;
             for(size_t i = 0; i < bone_names.size();++i)
             {
-                const size_t id = skeleton->find_bone(bone_names[i]);
+                const size_t id = _skeleton->find_bone(bone_names[i]);
                 if (id >= 0)
                     bones_id.push_back(id);
             }
@@ -88,18 +84,18 @@ struct BonePositionVelocityMotionFeature : public MotionFeature {
 
     }
     virtual void setup_for_animation(Ref<Animation> animation)override{
-        skeleton->reset_bone_poses();
+        _skeleton->reset_bone_poses();
         bone_tracks.clear();
         bones_id.clear();
         for(size_t i = 0; i < bone_names.size();++i)
         {
-            const size_t id = skeleton->find_bone(bone_names[i]);
+            const size_t id = _skeleton->find_bone(bone_names[i]);
             if (id >= 0)
                 bones_id.push_back(id);
         }
-        for(auto bone_id = 0; bone_id < skeleton->get_bone_count(); ++bone_id)
+        for(auto bone_id = 0; bone_id < _skeleton->get_bone_count(); ++bone_id)
         {
-            const auto bone_name = "%GeneralSkeleton:" + skeleton->get_bone_name(bone_id);
+            const auto bone_name = "%GeneralSkeleton:" + _skeleton->get_bone_name(bone_id);
             PackedInt32Array tracks{};
             tracks.push_back(animation->find_track(NodePath(bone_name),Animation::TrackType::TYPE_POSITION_3D));
             tracks.push_back(animation->find_track(NodePath(bone_name),Animation::TrackType::TYPE_ROTATION_3D));
@@ -111,11 +107,11 @@ struct BonePositionVelocityMotionFeature : public MotionFeature {
 
     void set_skeleton_to_animation_timestamp(Ref<Animation> anim, float time){
         // UtilityFunctions::print((skeleton == nullptr)?"Skeleton error, path not found":"Skeleton set");
-        if (anim == nullptr || skeleton == nullptr)
+        if (anim == nullptr || _skeleton == nullptr)
         {
             return;
         }
-        for(size_t bone_id = 0; bone_id < skeleton->get_bone_count() ; ++bone_id)
+        for(size_t bone_id = 0; bone_id < _skeleton->get_bone_count() ; ++bone_id)
         {
             if (!bone_tracks.has(bone_id)) 
                 continue;
@@ -125,19 +121,14 @@ struct BonePositionVelocityMotionFeature : public MotionFeature {
             if (pos >= 0 )
             {
                 const Vector3 position = anim->position_track_interpolate(pos,time);
-                skeleton->set_bone_pose_position(bone_id,position);
+                _skeleton->set_bone_pose_position(bone_id,position);
             }
 
             if (quat >= 0 )
             {
                 const Quaternion rotation = anim->rotation_track_interpolate(quat,time);
-                skeleton->set_bone_pose_rotation(bone_id,rotation);
+                _skeleton->set_bone_pose_rotation(bone_id,rotation);
             }
-                
-            // const Vector3 scaling = anim->scale_track_interpolate(scale,time);
-
-            
-            // skeleton->set_bone_pose_scale(bone_id,scaling);
         }
     }
 
@@ -149,16 +140,16 @@ struct BonePositionVelocityMotionFeature : public MotionFeature {
         for(size_t index = 0; index < bones_id.size(); ++index)
         {
             const auto bone_id = bones_id[index];
-            prev_pos.push_back(skeleton->get_bone_global_pose(bone_id).get_origin() * skeleton->get_motion_scale()) ;
+            prev_pos.push_back(_skeleton->get_bone_global_pose(bone_id).get_origin() * _skeleton->get_motion_scale()) ;
         }
         set_skeleton_to_animation_timestamp(animation,time);
         for(size_t index = 0; index < bones_id.size(); ++index)
         {
             const auto bone_id = bones_id[index];
-            curr_pos.push_back(skeleton->get_bone_global_pose(bone_id).get_origin() * skeleton->get_motion_scale());
+            curr_pos.push_back(_skeleton->get_bone_global_pose(bone_id).get_origin() * _skeleton->get_motion_scale());
         }
-        const size_t root_id = skeleton->find_bone(root_bone_name);
-        const Transform3D root = skeleton->get_bone_global_pose(root_id) * skeleton->get_motion_scale();
+        const size_t root_id = _skeleton->find_bone(root_bone_name);
+        const Transform3D root = _skeleton->get_bone_global_pose(root_id) * _skeleton->get_motion_scale();
 
 
         for(size_t index = 0; index < bones_id.size(); ++index)
@@ -186,7 +177,7 @@ struct BonePositionVelocityMotionFeature : public MotionFeature {
         
         for(size_t index = 0; index < bones_id.size(); ++index)
         {
-            Vector3 pos = skeleton->get_bone_global_pose(bones_id[index]).origin;            
+            Vector3 pos = _skeleton->get_bone_global_pose(bones_id[index]).origin;            
             Vector3 vel = (pos - last_known_positions[index])/delta;
             current_positions[index] = pos;
             current_velocities[index] = vel;
@@ -253,9 +244,9 @@ protected:
             ClassDB::bind_method(D_METHOD("get_weight_bone_vel"), &BonePositionVelocityMotionFeature::get_weight_bone_vel);
             godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT, "weight_bone_vel"), "set_weight_bone_vel", "get_weight_bone_vel");
 
-            ClassDB::bind_method(D_METHOD("set_skeleton", "skeleton_path"), &BonePositionVelocityMotionFeature::set_skeleton);
-            ClassDB::bind_method(D_METHOD("get_skeleton"), &BonePositionVelocityMotionFeature::get_skeleton);
-            ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "skeleton",PROPERTY_HINT_NODE_TYPE,"Skeleton3D",PROPERTY_USAGE_DEFAULT ), "set_skeleton", "get_skeleton");
+            // ClassDB::bind_method(D_METHOD("set_skeleton", "skeleton_path"), &BonePositionVelocityMotionFeature::set_skeleton);
+            // ClassDB::bind_method(D_METHOD("get_skeleton"), &BonePositionVelocityMotionFeature::get_skeleton);
+            // ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "skeleton",PROPERTY_HINT_NODE_TYPE,"Skeleton3D",PROPERTY_USAGE_DEFAULT ), "set_skeleton", "get_skeleton");
 
             ClassDB::bind_method(D_METHOD("set_root_bone_name", "value"), &BonePositionVelocityMotionFeature::set_root_bone_name, DEFVAL("Root"));
             ClassDB::bind_method(D_METHOD("get_root_bone_name"), &BonePositionVelocityMotionFeature::get_root_bone_name);

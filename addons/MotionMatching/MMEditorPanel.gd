@@ -150,7 +150,7 @@ func update_shown_pose_data(pose_index : int)->void:
 		rd.push_cell()
 		rd.set_cell_row_background_color(Color(0.212, 0.239, 0.29),Color(0.212, 0.239, 0.29)/0.7)
 		rd.set_cell_border_color(Color.LIGHT_GRAY)
-		rd.add_text(r.resource_name +' ' +str(r.get_dimension()))
+		rd.add_text("Feature " + r.resource_name +' dim ' +str(r.get_dimension()))
 		rd.pop()
 		for x in range(0,nb_dim):
 			rd.push_cell()
