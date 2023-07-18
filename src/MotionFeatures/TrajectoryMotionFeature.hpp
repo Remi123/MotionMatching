@@ -181,26 +181,26 @@ public:
         return result;
     }
 
+    GETSET(PackedVector3Array,history_pos)
+    GETSET(PackedVector3Array,future_pos)
+    GETSET(PackedFloat32Array,future_dir)
+
     virtual PackedFloat32Array broadphase_query_pose(Dictionary blackboard,float delta) override{
         PackedFloat32Array result{};
-        if(!blackboard.has_all(Array::make("history","prediction","pred_dir"))) return result;
 
-        PackedVector3Array history = PackedVector3Array(blackboard["history"]);
-        PackedVector3Array prediction = PackedVector3Array(blackboard["prediction"]);
-        PackedFloat32Array direction = PackedFloat32Array(blackboard["pred_dir"]);
         bool valid = false;
         {
-            for(auto elem: history)
+            for(auto elem: history_pos)
             {
                 result.append(elem.x);
                 result.append(elem.z);
             }
-            for(auto elem: prediction)
+            for(auto elem: future_pos)
             {
                 result.append(elem.x);
                 result.append(elem.z);
             }
-            for(auto elem: direction)
+            for(auto elem: future_dir)
             {
                 result.append(elem);
             }
@@ -235,6 +235,25 @@ public:
             godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::COLOR, "debug_color_future"), "set_debug_color_future", "get_debug_color_future");
         
         }
+        ClassDB::add_property_group(get_class_static(), "Queries to fill", "query");
+        {
+            //BINDER_PROPERTY_PARAMS(TrajectoryMotionFeature, Variant::PACKED_VECTOR3_ARRAY, history_pos);
+            ClassDB::bind_method(D_METHOD("set_history_pos", "value"), &TrajectoryMotionFeature::set_history_pos);
+            ClassDB::bind_method(D_METHOD("get_history_pos"), &TrajectoryMotionFeature::get_history_pos);
+            godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_VECTOR3_ARRAY, "history_pos"), "set_history_pos", "get_history_pos");
+
+            //BINDER_PROPERTY_PARAMS(TrajectoryMotionFeature, Variant::PACKED_VECTOR3_ARRAY, future_pos);
+            ClassDB::bind_method(D_METHOD("set_future_pos", "value"), &TrajectoryMotionFeature::set_future_pos);
+            ClassDB::bind_method(D_METHOD("get_future_pos"), &TrajectoryMotionFeature::get_future_pos);
+            godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_VECTOR3_ARRAY, "future_pos"), "set_future_pos", "get_future_pos");
+            
+            //BINDER_PROPERTY_PARAMS(TrajectoryMotionFeature, Variant::PACKED_FLOAT32_ARRAY, future_dir);
+            ClassDB::bind_method(D_METHOD("set_future_dir", "value"), &TrajectoryMotionFeature::set_future_dir);
+            ClassDB::bind_method(D_METHOD("get_future_dir"), &TrajectoryMotionFeature::get_future_dir);
+            godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "future_dir"), "set_future_dir", "get_future_dir");
+        }
+        ClassDB::add_property_group(get_class_static(), "", "");
+
         ClassDB::bind_method( D_METHOD("get_dimension"), &TrajectoryMotionFeature::get_dimension);
 
         ClassDB::bind_method( D_METHOD("setup_nodes","main_node","skeleton"), &TrajectoryMotionFeature::setup_nodes);

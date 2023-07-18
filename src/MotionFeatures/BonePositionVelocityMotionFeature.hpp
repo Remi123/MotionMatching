@@ -167,30 +167,29 @@ struct BonePositionVelocityMotionFeature : public MotionFeature {
     PackedFloat32Array last_known_result{};
     float last_time_queried = 0.0f;
 
+    GETSET(PackedVector3Array,bones_pos);
+    GETSET(PackedVector3Array,bones_vel);
+
+    virtual void physics_update(double delta) override {
+        bones_pos.resize(bones_id.size());
+        bones_vel.resize(bones_id.size());
+        for(size_t index = 0; index < bones_id.size(); ++index)
+        {
+            Vector3 pos = _skeleton->get_bone_global_pose(bones_id[index]).origin; // Bad naming : Not global pose, but model pose.
+            Vector3 vel = (pos - bones_pos[index] ) / delta;
+            bones_pos[index] = pos;
+            bones_vel[index] = vel; 
+        } 
+    }
+
     virtual PackedFloat32Array broadphase_query_pose(Dictionary blackboard,float delta) override{
         PackedVector3Array current_positions{}, current_velocities{};
         last_known_result.resize(bones_id.size()*2*3);
-        current_positions.resize(bones_id.size());
-        current_velocities.resize(bones_id.size());
-
-        float curr_time = Time::get_singleton()->get_ticks_msec();
-        
-        for(size_t index = 0; index < bones_id.size(); ++index)
-        {
-            Vector3 pos = _skeleton->get_bone_global_pose(bones_id[index]).origin;            
-            Vector3 vel = (pos - last_known_positions[index])/delta;
-            current_positions[index] = pos;
-            current_velocities[index] = vel;
-        }
-
-        last_time_queried = curr_time;
-        last_known_positions = current_positions.duplicate();
-        last_known_velocities = current_velocities.duplicate();
 
         const size_t size = 3;
         for(size_t i = 0; i < bones_id.size(); ++i)
         {
-            Vector3 pos = current_positions[i], vel = current_velocities[i]; 
+            Vector3 pos = bones_pos[i], vel = bones_vel[i]; 
 
             last_known_result[i*size*2] = pos.x;last_known_result[i*size*2+1] = pos.y;last_known_result[i*size*2+2] = pos.z;
             last_known_result[i*size*2+size] = vel.x; last_known_result[i*size*2+size+1] = vel.y; last_known_result[i*size*2+size+2] = vel.z;
@@ -270,6 +269,14 @@ protected:
         // }
 
         ClassDB::add_property_group(get_class_static(), "", "");
+        //BINDER_PROPERTY_PARAMS(BonePositionVelocityMotionFeature,Variant::PACKED_VECTOR3_ARRAY,bones_pos,PROPERTY_HINT_NONE,"",PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_READ_ONLY);
+        ClassDB::bind_method( D_METHOD("set_bones_pos" ,"value"), &BonePositionVelocityMotionFeature::set_bones_pos);
+        ClassDB::bind_method( D_METHOD("get_bones_pos" ), &BonePositionVelocityMotionFeature::get_bones_pos);
+        godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_VECTOR3_ARRAY,"bones_pos",PROPERTY_HINT_NONE,"",PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_READ_ONLY), "set_bones_pos", "get_bones_pos");
+        //BINDER_PROPERTY_PARAMS(BonePositionVelocityMotionFeature,Variant::PACKED_VECTOR3_ARRAY,bones_vel,PROPERTY_HINT_NONE,"",PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_READ_ONLY);
+        ClassDB::bind_method( D_METHOD("set_bones_vel" ,"value"), &BonePositionVelocityMotionFeature::set_bones_vel);
+        ClassDB::bind_method( D_METHOD("get_bones_vel" ), &BonePositionVelocityMotionFeature::get_bones_vel);
+        godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_VECTOR3_ARRAY,"bones_vel",PROPERTY_HINT_NONE,"",PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_READ_ONLY), "set_bones_vel", "get_bones_vel");
 
         ClassDB::bind_method( D_METHOD("get_dimension"), &BonePositionVelocityMotionFeature::get_dimension);
         ClassDB::bind_method( D_METHOD("setup_nodes","character"), &BonePositionVelocityMotionFeature::setup_nodes);
