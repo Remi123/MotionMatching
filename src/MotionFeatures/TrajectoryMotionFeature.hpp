@@ -113,7 +113,6 @@ public:
 
             end_ang_vel = animation->rotation_track_interpolate(root_tracks[1], animation->get_length() - delta - 0.1).inverse() * animation->rotation_track_interpolate(root_tracks[1], animation->get_length() - delta);
         }
-        u::prints("Trajectory animation setup");
     }
 
     virtual PackedFloat32Array bake_animation_pose(Ref<Animation> animation,float time)override 
@@ -208,18 +207,15 @@ public:
         return result;
     }
 
-    virtual float narrowphase_evaluate_cost(PackedFloat32Array to_convert)override{return 0.0;}
-
-
     protected:
     static void _bind_methods() {
 
+        ClassDB::bind_method( D_METHOD("set_weight_history_pos","value"), &TrajectoryMotionFeature::set_weight_history_pos ); ClassDB::bind_method( D_METHOD("get_weight_history_pos"), &TrajectoryMotionFeature::get_weight_history_pos); godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT,"weight_history_pos"), "set_weight_history_pos", "get_weight_history_pos");
+        ClassDB::bind_method( D_METHOD("set_weight_prediction_pos","value"), &TrajectoryMotionFeature::set_weight_prediction_pos ); ClassDB::bind_method( D_METHOD("get_weight_prediction_pos"), &TrajectoryMotionFeature::get_weight_prediction_pos); godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT,"weight_prediction_pos"), "set_weight_prediction_pos", "get_weight_prediction_pos");
+        ClassDB::bind_method( D_METHOD("set_weight_prediction_angle","value"), &TrajectoryMotionFeature::set_weight_prediction_angle ); ClassDB::bind_method( D_METHOD("get_weight_prediction_angle"), &TrajectoryMotionFeature::get_weight_prediction_angle); godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT,"weight_prediction_angle"), "set_weight_prediction_angle", "get_weight_prediction_angle");
+
         ClassDB::add_property_group(get_class_static(), "Nodes & Resources Sources", "");
         {
-            ClassDB::bind_method( D_METHOD("set_weight_history_pos","value"), &TrajectoryMotionFeature::set_weight_history_pos ); ClassDB::bind_method( D_METHOD("get_weight_history_pos"), &TrajectoryMotionFeature::get_weight_history_pos); godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT,"weight_history_pos"), "set_weight_history_pos", "get_weight_history_pos");
-            ClassDB::bind_method( D_METHOD("set_weight_prediction_pos","value"), &TrajectoryMotionFeature::set_weight_prediction_pos ); ClassDB::bind_method( D_METHOD("get_weight_prediction_pos"), &TrajectoryMotionFeature::get_weight_prediction_pos); godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT,"weight_prediction_pos"), "set_weight_prediction_pos", "get_weight_prediction_pos");
-            ClassDB::bind_method( D_METHOD("set_weight_prediction_angle","value"), &TrajectoryMotionFeature::set_weight_prediction_angle ); ClassDB::bind_method( D_METHOD("get_weight_prediction_angle"), &TrajectoryMotionFeature::get_weight_prediction_angle); godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT,"weight_prediction_angle"), "set_weight_prediction_angle", "get_weight_prediction_angle");
-
             PackedFloat32Array m_default{};
             m_default.push_back(0.2);m_default.push_back(0.4);
             ClassDB::bind_method( D_METHOD("set_root_bone_name","value"), &TrajectoryMotionFeature::set_root_bone_name,("%GeneralSkeleton:Root")); ClassDB::bind_method( D_METHOD("get_root_bone_name"), &TrajectoryMotionFeature::get_root_bone_name); godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::STRING,"root_bone_name"), "set_root_bone_name", "get_root_bone_name");
@@ -254,6 +250,7 @@ public:
         }
         ClassDB::add_property_group(get_class_static(), "", "");
 
+        ClassDB::bind_method( D_METHOD("get_weights"), &TrajectoryMotionFeature::get_weights);
         ClassDB::bind_method( D_METHOD("get_dimension"), &TrajectoryMotionFeature::get_dimension);
 
         ClassDB::bind_method( D_METHOD("setup_nodes","main_node","skeleton"), &TrajectoryMotionFeature::setup_nodes);
@@ -262,10 +259,10 @@ public:
         ClassDB::bind_method( D_METHOD("bake_animation_pose","animation","time"), &TrajectoryMotionFeature::bake_animation_pose);
 
         ClassDB::bind_method( D_METHOD("broadphase_query_pose","blackboard","delta"), &TrajectoryMotionFeature::broadphase_query_pose);
-        ClassDB::bind_method( D_METHOD("narrowphase_evaluate_cost","data_to_evaluate"), &TrajectoryMotionFeature::narrowphase_evaluate_cost);
         
         ClassDB::bind_method( D_METHOD("debug_pose_gizmo","gizmo","data","root_transform"), &TrajectoryMotionFeature::debug_pose_gizmo);
     }
+
     GETSET(Color,debug_color_history,godot::Color(1.0f,1.0f,1.0f));
     GETSET(Color,debug_color_future,godot::Color(0.0f,0.0f,0.0f));
 

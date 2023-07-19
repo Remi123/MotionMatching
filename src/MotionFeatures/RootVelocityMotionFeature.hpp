@@ -98,20 +98,15 @@ struct RootVelocityMotionFeature : public MotionFeature {
         return result;
     }
 
-    virtual float narrowphase_evaluate_cost(PackedFloat32Array to_convert)override{
-        Vector3 data_vel = {to_convert[0],to_convert[1],to_convert[2]};
-        return (query_velocity - data_vel).length_squared();
-    }
-
 
 protected:
     static void _bind_methods() {
+        ClassDB::bind_method(D_METHOD("set_weight", "value"), &RootVelocityMotionFeature::set_weight, DEFVAL(1.0f));
+        ClassDB::bind_method(D_METHOD("get_weight"), &RootVelocityMotionFeature::get_weight);
+        godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT, "weight"), "set_weight", "get_weight");
+
         ClassDB::add_property_group(get_class_static(), "Nodes & Resources Sources", "");
         {
-            ClassDB::bind_method(D_METHOD("set_weight", "value"), &RootVelocityMotionFeature::set_weight, DEFVAL(1.0f));
-            ClassDB::bind_method(D_METHOD("get_weight"), &RootVelocityMotionFeature::get_weight);
-            godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT, "weight"), "set_weight", "get_weight");
-
             ClassDB::bind_method(D_METHOD("set_root_bone_name", "value"), &RootVelocityMotionFeature::set_root_bone_name, DEFVAL("%GeneralSkeleton:Root"));
             ClassDB::bind_method(D_METHOD("get_root_bone_name"), &RootVelocityMotionFeature::get_root_bone_name);
             ADD_PROPERTY(PropertyInfo(Variant::STRING, "Root Bone"), "set_root_bone_name", "get_root_bone_name");
@@ -128,14 +123,14 @@ protected:
         }
         ClassDB::add_property_group(get_class_static(), "", "");
 
+        ClassDB::bind_method( D_METHOD("get_weights"), &RootVelocityMotionFeature::get_weights);
         ClassDB::bind_method( D_METHOD("get_dimension"), &RootVelocityMotionFeature::get_dimension);
         ClassDB::bind_method( D_METHOD("setup_nodes","character"), &RootVelocityMotionFeature::setup_nodes);
         
-        // ClassDB::bind_method( D_METHOD("setup_for_animation","animation"), &RootVelocityMotionFeature::setup_for_animation);
-        // ClassDB::bind_method( D_METHOD("bake_animation_pose","animation","time"), &RootVelocityMotionFeature::bake_animation_pose);
+        ClassDB::bind_method( D_METHOD("setup_for_animation","animation"), &RootVelocityMotionFeature::setup_for_animation);
+        ClassDB::bind_method( D_METHOD("bake_animation_pose","animation","time"), &RootVelocityMotionFeature::bake_animation_pose);
 
         ClassDB::bind_method( D_METHOD("broadphase_query_pose","blackboard","delta"), &RootVelocityMotionFeature::broadphase_query_pose);
-        // ClassDB::bind_method( D_METHOD("narrowphase_evaluate_cost","data_to_evaluate"), &RootVelocityMotionFeature::narrowphase_evaluate_cost);
 
         ClassDB::bind_method( D_METHOD("debug_pose_gizmo","gizmo","data","root_transform"), &RootVelocityMotionFeature::debug_pose_gizmo);
     }

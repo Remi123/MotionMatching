@@ -48,8 +48,6 @@ struct MotionFeature : public Resource{
 
     virtual PackedFloat32Array broadphase_query_pose(Dictionary blackboard, float delta){ return {};}
 
-    virtual float narrowphase_evaluate_cost(PackedFloat32Array to_convert){return 0.0;}
-
     virtual void debug_pose_gizmo(Ref<EditorNode3DGizmo> gizmo, const PackedFloat32Array data,godot::Transform3D tr = godot::Transform3D{}){return;}
 
     
@@ -65,7 +63,6 @@ struct MotionFeature : public Resource{
         ClassDB::bind_method( D_METHOD("bake_animation_pose","animation","time"), &MotionFeature::bake_animation_pose);
 
         ClassDB::bind_method( D_METHOD("broadphase_query_pose","blackboard","delta"), &MotionFeature::broadphase_query_pose);
-        ClassDB::bind_method( D_METHOD("narrowphase_evaluate_cost","data_to_evaluate"), &MotionFeature::narrowphase_evaluate_cost);
 
         ClassDB::bind_method( D_METHOD("debug_pose_gizmo","gizmo","data","root_transform"), &MotionFeature::debug_pose_gizmo);
         
