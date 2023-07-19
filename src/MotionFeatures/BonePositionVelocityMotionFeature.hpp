@@ -93,16 +93,26 @@ struct BonePositionVelocityMotionFeature : public MotionFeature {
             if (id >= 0)
                 bones_id.push_back(id);
         }
-        for(auto bone_id = 0; bone_id < _skeleton->get_bone_count(); ++bone_id)
+        for (auto bone_id = 0; bone_id < _skeleton->get_bone_count(); ++bone_id)
         {
-            const auto bone_name = "%GeneralSkeleton:" + _skeleton->get_bone_name(bone_id);
-            PackedInt32Array tracks{};
-            tracks.push_back(animation->find_track(NodePath(bone_name),Animation::TrackType::TYPE_POSITION_3D));
-            tracks.push_back(animation->find_track(NodePath(bone_name),Animation::TrackType::TYPE_ROTATION_3D));
-            //tracks.push_back(animation->find_track(NodePath(bone_name),Animation::TrackType::TYPE_SCALE_3D));
-            bone_tracks[bone_id] = tracks;
+            bone_tracks[bone_id] = Array::make(-1,-1);
         }
+        for (int track_id = 0; track_id < animation->get_track_count(); ++track_id)
+        {
+            // Easier to find bone with the track name than vice-versa
+            const auto bone_idx = _skeleton->find_bone(animation->track_get_path(track_id).get_subname(0));
+            if (bone_idx == -1)
+                continue;
 
+            if (animation->track_get_type(track_id) == Animation::TYPE_POSITION_3D)
+            {
+                bone_tracks[bone_idx][0] = track_id;
+            }
+            else if (animation->track_get_type(track_id) == Animation::TYPE_ROTATION_3D)
+            {
+                bone_tracks[bone_idx][1] = track_id;
+            }
+        }
     }
 
     void set_skeleton_to_animation_timestamp(Ref<Animation> anim, float time){
