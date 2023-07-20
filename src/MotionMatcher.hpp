@@ -182,24 +182,22 @@ struct MotionMatcher : public Node {
     // Useful while baking data and in editor.
     void set_skeleton_to_pose(Ref<Animation> animation,double time)
     {
-        auto skeleton_bones_path = Node::get_path_to(skeleton,true).get_concatenated_names();
-        for(auto bone_id = 0; bone_id < skeleton->get_bone_count(); ++bone_id)
-        {            
-            const auto bone_name = skeleton_bones_path + String(":") +skeleton->get_bone_name(bone_id);
-            
-            const auto pos_track = animation->find_track(NodePath(bone_name),Animation::TrackType::TYPE_POSITION_3D);
-            const auto rot_track = animation->find_track(NodePath(bone_name),Animation::TrackType::TYPE_ROTATION_3D);
-            if ( pos_track >= 0 )
+        for(int i = 0; i < animation->get_track_count();++i)
+        {
+            const auto bone_id= skeleton->find_bone(animation->track_get_path(i).get_subname(0));
+            if (bone_id < 0) continue ; // -1 means not found
+            if (animation->track_get_type(i) == Animation::TYPE_POSITION_3D)
             {
-                const Vector3 position = animation->position_track_interpolate(pos_track,time);
-                skeleton->set_bone_pose_position(bone_id,position * skeleton->get_motion_scale());
-            }            
-            if (rot_track >= 0 )
+                const Vector3 position = animation->position_track_interpolate(i,time);
+                skeleton->set_bone_pose_position(bone_id, position * skeleton->get_motion_scale());
+            }
+            else if (animation->track_get_type(i) == Animation::TYPE_ROTATION_3D)
             {
-                const Quaternion rotation = animation->rotation_track_interpolate(rot_track,time);
-                skeleton->set_bone_pose_rotation(bone_id,rotation);
+                const Quaternion rotation = animation->rotation_track_interpolate(i,time);
+                skeleton->set_bone_pose_rotation(bone_id, rotation * skeleton->get_motion_scale());
             }
         }
+        return;
     }
 
     // Reset the skeleton poses.
