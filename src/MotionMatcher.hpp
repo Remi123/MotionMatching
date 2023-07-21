@@ -513,15 +513,8 @@ struct MotionMatcher : public Node {
             const StringName anim_name = animation_library->get_animation_list()[db_anim_index[re[0].index]];
             const float anim_time = db_anim_timestamp[re[0].index];
 
-            float cost = 0.0f;
-            for(auto j = 0; j< query.size();++j)
-            {
-                cost += weights[j] * abs(re[0].point[j] - query[j]);                    
-            }
-
             results["animation"] = anim_name;
             results["timestamp"] = std::move(anim_time);
-            results["cost"] = cost;
 
             return results;
         }
