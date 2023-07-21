@@ -469,7 +469,7 @@ struct MotionMatcher : public Node {
 
     // query the kdtree.
     // Can include or exclude categories.
-    TypedArray<Dictionary> query_pose(int64_t included_category = std::numeric_limits<int64_t>::max(), int64_t exclude = 0)
+    Dictionary query_pose(int64_t included_category = std::numeric_limits<int64_t>::max(), int64_t exclude = 0)
     {
         PackedFloat32Array query{};
         for (size_t features_index = 0; features_index < motion_features.size(); ++features_index)
@@ -508,29 +508,21 @@ struct MotionMatcher : public Node {
 
 
 
-            TypedArray<Dictionary> results = {};
+            Dictionary results = {};
 
-            String debug = "[";
-            for(auto i = 0; i< re.size();++i)
+            const StringName anim_name = animation_library->get_animation_list()[db_anim_index[re[0].index]];
+            const float anim_time = db_anim_timestamp[re[0].index];
+
+            float cost = 0.0f;
+            for(auto j = 0; j< query.size();++j)
             {
-                Dictionary subresult{};
-                
-                const StringName anim_name = animation_library->get_animation_list()[db_anim_index[re[i].index]];
-                const float anim_time = db_anim_timestamp[re[i].index];
-
-                float cost = 0.0f;
-                for(auto j = 0; j< query.size();++j)
-                {
-                    cost += weights[i] * abs(re[i].point[j] - query[j]);                    
-                }
-
-                subresult["animation"] = anim_name;
-                subresult["timestamp"] = std::move(anim_time);
-                subresult["cost"] = cost;
-
-                results.append(subresult);
+                cost += weights[j] * abs(re[0].point[j] - query[j]);                    
             }
-            debug += "]";
+
+            results["animation"] = anim_name;
+            results["timestamp"] = std::move(anim_time);
+            results["cost"] = cost;
+
             return results;
         }
         return {};
