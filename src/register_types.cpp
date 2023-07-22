@@ -14,6 +14,7 @@
 #include "MotionFeatures/RootVelocityMotionFeature.hpp"
 #include "MotionFeatures/BonePositionVelocityMotionFeature.hpp"
 #include "MotionFeatures/TrajectoryMotionFeature.hpp"
+#include "MotionFeatures/LocalDistanceToPointMotionFeature.hpp"
 #include "CircularBuffer.hpp"
 
 //#include "AnimationNodeInertialization.hpp"
@@ -36,6 +37,7 @@ void gdextension_initialize(ModuleInitializationLevel p_level)
 		ClassDB::register_class<RootVelocityMotionFeature>();
 		ClassDB::register_class<BonePositionVelocityMotionFeature>();
 		ClassDB::register_class<TrajectoryMotionFeature>();
+		ClassDB::register_class<LocalDistanceToPointMotionFeature>();
 
 
 		ClassDB::register_class<MotionMatcher>();
