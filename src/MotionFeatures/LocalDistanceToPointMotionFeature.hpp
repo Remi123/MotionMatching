@@ -33,8 +33,13 @@ struct LocalDistanceToPointMotionFeature : MotionFeature{
 
     virtual PackedFloat32Array bake_animation_pose(Ref<Animation> animation,float time) override 
     {
-        if(point_track_id == -1 || root_track_pos == -1 || root_track_quat == -1 ) 
-            return {};
+        if(point_track_id == -1 || root_track_pos == -1 || root_track_quat == -1 )
+        {
+            PackedFloat32Array result = {};
+            result.resize(get_dimension());
+            result.fill(0.0);
+            return result;
+        }
 
         Vector3 position = animation->position_track_interpolate(root_track_pos,time);
         Quaternion rotation = animation->rotation_track_interpolate(root_track_quat,time).normalized();
