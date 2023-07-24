@@ -180,6 +180,7 @@ struct BonePositionVelocityMotionFeature : public MotionFeature {
     GETSET(PackedVector3Array,bones_vel);
 
     virtual void physics_update(double delta) override {
+        last_known_result.resize(bones_id.size()*2*3);
         bones_pos.resize(bones_id.size());
         bones_vel.resize(bones_id.size());
         for(size_t index = 0; index < bones_id.size(); ++index)
@@ -193,16 +194,22 @@ struct BonePositionVelocityMotionFeature : public MotionFeature {
 
     virtual PackedFloat32Array broadphase_query_pose(Dictionary blackboard,float delta) override{
         // PackedVector3Array current_positions{}, current_velocities{};
-        last_known_result.resize(bone_names.size()*2*3);
+        last_known_result.resize(bones_id.size()*2*3);
+        bones_pos.resize(bones_id.size());
+        bones_vel.resize(bones_id.size());
 
-        // const size_t size = 3;
-        // for(size_t i = 0; i < bone_names.size(); ++i)
-        // {
-        //     Vector3 pos = bones_pos[i], vel = bones_vel[i]; 
+        constexpr size_t size = 3;
+        for(size_t i = 0; i < bones_id.size(); ++i)
+        {
+            Vector3 pos = bones_pos[i], vel = bones_vel[i];
 
-        //     last_known_result[i*size*2] = pos.x;last_known_result[i*size*2+1] = pos.y;last_known_result[i*size*2+2] = pos.z;
-        //     last_known_result[i*size*2+size] = vel.x; last_known_result[i*size*2+size+1] = vel.y; last_known_result[i*size*2+size+2] = vel.z;
-        // }
+            last_known_result[i * size * 2] = pos.x;
+            last_known_result[i * size * 2 + 1] = pos.y;
+            last_known_result[i * size * 2 + 2] = pos.z;
+            last_known_result[i * size * 2 + size] = vel.x;
+            last_known_result[i * size * 2 + size + 1] = vel.y;
+            last_known_result[i * size * 2 + size + 2] = vel.z;
+        }
         return last_known_result;
     }
 
