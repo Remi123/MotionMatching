@@ -123,7 +123,8 @@ struct MotionMatcher : public Node {
 
     // Functions
 
-    virtual void _ready() override {
+    virtual void _enter_tree()  {
+        u::prints("MotionMatcher Init");
         if(godot::Engine::get_singleton()->is_editor_hint())
             return;
 
@@ -133,7 +134,6 @@ struct MotionMatcher : public Node {
             MotionFeature* f = Object::cast_to<MotionFeature>(motion_features[i]);
             if(f != nullptr)
             {
-                u::prints(f->get_name(), f->call("get_dimension").operator int64_t());
                 f->setup_nodes(main_node,skeleton);
                 nb_dimensions += (int64_t)f->call("get_dimension");
             }
@@ -653,6 +653,8 @@ struct MotionMatcher : public Node {
             ClassDB::add_property_group(get_class_static(), "", "");
 
             // Functions
+            //ClassDB::bind_method(D_METHOD("_ready"), &MotionMatcher::_ready);
+
             ClassDB::bind_method(D_METHOD("reset_skeleton_poses"), &MotionMatcher::reset_skeleton_poses);
             ClassDB::bind_method(D_METHOD("set_skeleton_to_pose", "animation", "time"), &MotionMatcher::set_skeleton_to_pose);
 

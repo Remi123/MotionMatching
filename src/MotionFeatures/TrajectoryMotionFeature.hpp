@@ -236,17 +236,17 @@ public:
             //BINDER_PROPERTY_PARAMS(TrajectoryMotionFeature, Variant::PACKED_VECTOR3_ARRAY, history_pos);
             ClassDB::bind_method(D_METHOD("set_history_pos", "value"), &TrajectoryMotionFeature::set_history_pos);
             ClassDB::bind_method(D_METHOD("get_history_pos"), &TrajectoryMotionFeature::get_history_pos);
-            godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_VECTOR3_ARRAY, "history_pos"), "set_history_pos", "get_history_pos");
+            godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_VECTOR3_ARRAY, "query_history_pos"), "set_history_pos", "get_history_pos");
 
             //BINDER_PROPERTY_PARAMS(TrajectoryMotionFeature, Variant::PACKED_VECTOR3_ARRAY, future_pos);
             ClassDB::bind_method(D_METHOD("set_future_pos", "value"), &TrajectoryMotionFeature::set_future_pos);
             ClassDB::bind_method(D_METHOD("get_future_pos"), &TrajectoryMotionFeature::get_future_pos);
-            godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_VECTOR3_ARRAY, "future_pos"), "set_future_pos", "get_future_pos");
+            godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_VECTOR3_ARRAY, "query_future_pos"), "set_future_pos", "get_future_pos");
             
             //BINDER_PROPERTY_PARAMS(TrajectoryMotionFeature, Variant::PACKED_FLOAT32_ARRAY, future_dir);
             ClassDB::bind_method(D_METHOD("set_future_dir", "value"), &TrajectoryMotionFeature::set_future_dir);
             ClassDB::bind_method(D_METHOD("get_future_dir"), &TrajectoryMotionFeature::get_future_dir);
-            godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "future_dir"), "set_future_dir", "get_future_dir");
+            godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "query_future_dir"), "set_future_dir", "get_future_dir");
         }
         ClassDB::add_property_group(get_class_static(), "", "");
 

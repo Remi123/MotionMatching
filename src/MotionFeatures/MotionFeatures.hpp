@@ -28,7 +28,7 @@
 #include <godot_cpp/classes/box_mesh.hpp>
 
 
-struct MotionFeature : public Resource{
+struct MotionFeature : public Resource {
     GDCLASS(MotionFeature,Resource)
 
     virtual ~MotionFeature() = default;
