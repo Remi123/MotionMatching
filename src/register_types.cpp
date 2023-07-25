@@ -15,6 +15,8 @@
 #include "MotionFeatures/BonePositionVelocityMotionFeature.hpp"
 #include "MotionFeatures/TrajectoryMotionFeature.hpp"
 #include "MotionFeatures/LocalDistanceToPointMotionFeature.hpp"
+
+#include <AnimationNodeInertialization.hpp>
 #include "CircularBuffer.hpp"
 
 //#include "AnimationNodeInertialization.hpp"
@@ -28,7 +30,7 @@ void gdextension_initialize(ModuleInitializationLevel p_level)
 		//ClassDB::register_class<AABBTree>();
 		//ClassDB::register_class<KDTree>();
 
-		//ClassDB::register_class<AnimationNodeInertialization>();
+		ClassDB::register_class<AnimationNodeInertialization>();
 
 		ClassDB::register_class<CircularBuffer>();
 		
