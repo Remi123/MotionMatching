@@ -52,14 +52,15 @@ using namespace godot;
 //         BINDER(type,variable)\
 //         ADD_PROPERTY(PropertyInfo(variant_type,#variable,__VA_ARGS__),STRING_PREFIX(set_,variable),STRING_PREFIX(get_,variable));
 
-struct MotionPlayer : public Node {
-    GDCLASS(MotionPlayer,Node)
+struct MotionMatcher : public Node {
+    using u = godot::UtilityFunctions;
+    GDCLASS(MotionMatcher,Node)
 
     static constexpr float interval = 0.1;
     static constexpr float time_delta = 1.f / 30.f;
 
-    MotionPlayer() = default;
-    ~MotionPlayer() = default;
+    MotionMatcher() = default;
+    ~MotionMatcher() = default;
 
     // Properties and variables
 
@@ -72,21 +73,24 @@ struct MotionPlayer : public Node {
     // The track names inside the animations that define the categories, usually a value track to a int.
     GETSET(TypedArray<String>,category_track_names)
 
-    // Get the skeleton TODO : Might be able to use PROPERTY_HINT_NODE_PATH_TO_EDITED_NODE
-    Skeleton3D* skeleton;
-    NodePath skeleton_path;
-    void set_skeleton(NodePath path){
-        skeleton_path = path;
-        skeleton = get_node<Skeleton3D>(path);
+    // Skeleton
+    Skeleton3D* skeleton = nullptr;
+    // NodePath skeleton_path;
+    void set_skeleton(Object* path){
+        // skeleton_path = path;
+        skeleton = Object::cast_to<Skeleton3D>(path);
         }
-    NodePath get_skeleton(){return skeleton_path;}
-    GETSET(NodePath,main_node)
+    Object* get_skeleton(){return cast_to<Object>(skeleton);}
+
+    GETSET(Variant,main_node)
 
     // Animation Library. Each one will be analysed
     GETSET(Ref<AnimationLibrary>,animation_library);
 
     // Array of the motion features.
-    GETSET(Array,motion_features);
+    TypedArray<MotionFeature> motion_features; 
+    TypedArray<MotionFeature> get_motion_features(){return motion_features;} 
+    void set_motion_features(TypedArray<MotionFeature> value){motion_features = value;}
 
     // Dimensional Stats.
     GETSET(PackedFloat32Array,weights)
@@ -119,21 +123,19 @@ struct MotionPlayer : public Node {
 
     // Functions
 
-    virtual void _ready() override {
+    virtual void _enter_tree()  {
+        u::prints("MotionMatcher Init");
         if(godot::Engine::get_singleton()->is_editor_hint())
             return;
 
-        Node* character;
-        character = get_node<Node>(main_node);
         int nb_dimensions = 0;
         for(auto i = 0; i < motion_features.size(); ++i )
         {
             MotionFeature* f = Object::cast_to<MotionFeature>(motion_features[i]);
             if(f != nullptr)
             {
-                u::prints(f->get_name(), f->call(StringName("get_dimension")).operator int64_t());
-                f->setup_nodes(character);
-                nb_dimensions += (int64_t)f->call(StringName("get_dimension"));
+                f->setup_nodes(main_node,skeleton);
+                nb_dimensions += (int64_t)f->call("get_dimension");
             }
 
         }
@@ -167,40 +169,44 @@ struct MotionPlayer : public Node {
     }
 
     virtual void _physics_process(double delta)override{
+        if(godot::Engine::get_singleton()->is_editor_hint())
+            return;
         for(auto i = 0; i < motion_features.size(); ++i )
         {
             MotionFeature* f = Object::cast_to<MotionFeature>(motion_features[i]);
-            f->physics_update(delta);
+            if ( f != nullptr)
+                f->physics_update(delta);
         }
     }
 
     // Useful while baking data and in editor.
     void set_skeleton_to_pose(Ref<Animation> animation,double time)
     {
-        auto the_char = get_node<CharacterBody3D>(main_node);
-        auto skeleton = the_char->get_node<Skeleton3D>("Armature/GeneralSkeleton");
-        for(auto bone_id = 0; bone_id < skeleton->get_bone_count(); ++bone_id)
+        for(int i = 0; i < animation->get_track_count();++i)
         {
-            const auto bone_name = "%GeneralSkeleton:" +skeleton->get_bone_name(bone_id);
-            
-            const auto pos_track = animation->find_track(NodePath(bone_name),Animation::TrackType::TYPE_POSITION_3D);
-            const auto rot_track = animation->find_track(NodePath(bone_name),Animation::TrackType::TYPE_ROTATION_3D);
-            if ( pos_track >= 0 )
+            const auto bone_id= skeleton->find_bone(animation->track_get_path(i).get_subname(0));
+            if (bone_id < 0) continue ; // -1 means not found
+            if (animation->track_get_type(i) == Animation::TYPE_POSITION_3D)
             {
-                const Vector3 position = animation->position_track_interpolate(pos_track,time);
-                skeleton->set_bone_pose_position(bone_id,position * skeleton->get_motion_scale());
-            }            
-            if (rot_track >= 0 )
+                const Vector3 position = animation->position_track_interpolate(i,time);
+                skeleton->set_bone_pose_position(bone_id, position * skeleton->get_motion_scale());
+            }
+            else if (animation->track_get_type(i) == Animation::TYPE_ROTATION_3D)
             {
-                const Quaternion rotation = animation->rotation_track_interpolate(rot_track,time);
-                skeleton->set_bone_pose_rotation(bone_id,rotation);
+                const Quaternion rotation = animation->rotation_track_interpolate(i,time);
+                skeleton->set_bone_pose_rotation(bone_id, rotation * skeleton->get_motion_scale());
             }
         }
+        return;
     }
 
     // Reset the skeleton poses.
     void reset_skeleton_poses(){
-        skeleton = get_node<Skeleton3D>(skeleton_path);
+        if (skeleton == nullptr)
+        {
+            u::print("Skeleton is empty");
+            return;
+        }
         UtilityFunctions::print((skeleton == nullptr)?"Skeleton error, path not found":"Skeleton set");
         
         UtilityFunctions::print("Resetting the skeleton");
@@ -214,7 +220,7 @@ struct MotionPlayer : public Node {
         using namespace godot;
         using u = godot::UtilityFunctions;
 
-        skeleton = get_node<Skeleton3D>(skeleton_path);
+        // skeleton = get_node<Skeleton3D>(skeleton_path);
 
         if (motion_features.size() == 0)
         {
@@ -226,8 +232,7 @@ struct MotionPlayer : public Node {
             u::prints("Skeleton isn't properly set");
             return;
         }
-        Node* character;
-        character = get_node<Node>(main_node);
+
 
         if(kdt != nullptr)
         {
@@ -246,7 +251,7 @@ struct MotionPlayer : public Node {
             else{
                 u::prints(f->get_name(), f->get_dimension());
             }
-            f->setup_nodes(character);
+            f->setup_nodes(main_node,skeleton);
             nb_dimensions += (int)(f->get_dimension());
         }
 
@@ -304,11 +309,11 @@ struct MotionPlayer : public Node {
             auto counter = 0;
             for(auto time = 0.1f; time < length; time += 0.1f)
             {
-                int64_t tmp_category_value = (int32_t)animation->value_track_interpolate(category_tracks[0],time);
-                // for(const auto& category:category_tracks)
-                // {
-                //     tmp_category_value = tmp_category_value | (int64_t)animation->value_track_interpolate(category_tracks[0],time);
-                // }
+                int64_t tmp_category_value = 0;
+                for(const auto& category:category_tracks)
+                {
+                    tmp_category_value = tmp_category_value | (int64_t)animation->value_track_interpolate(category,time);
+                }
                 if (std::bitset<64>(tmp_category_value).test(31))
                 {
                     continue;
@@ -464,7 +469,7 @@ struct MotionPlayer : public Node {
 
     // query the kdtree.
     // Can include or exclude categories.
-    TypedArray<Dictionary> query_pose(int64_t included_category = std::numeric_limits<int64_t>::max(), int64_t exclude = 0)
+    Dictionary query_pose(int64_t included_category = std::numeric_limits<int64_t>::max(), int64_t exclude = 0)
     {
         PackedFloat32Array query{};
         for (size_t features_index = 0; features_index < motion_features.size(); ++features_index)
@@ -503,29 +508,14 @@ struct MotionPlayer : public Node {
 
 
 
-            TypedArray<Dictionary> results = {};
+            Dictionary results = {};
 
-            String debug = "[";
-            for(auto i = 0; i< re.size();++i)
-            {
-                Dictionary subresult{};
-                
-                const StringName anim_name = animation_library->get_animation_list()[db_anim_index[re[i].index]];
-                const float anim_time = db_anim_timestamp[re[i].index];
+            const StringName anim_name = animation_library->get_animation_list()[db_anim_index[re[0].index]];
+            const float anim_time = db_anim_timestamp[re[0].index];
 
-                float cost = 0.0f;
-                for(auto j = 0; j< query.size();++j)
-                {
-                    cost += weights[i] * abs(re[i].point[j] - query[j]);                    
-                }
+            results["animation"] = anim_name;
+            results["timestamp"] = std::move(anim_time);
 
-                subresult["animation"] = anim_name;
-                subresult["timestamp"] = std::move(anim_time);
-                subresult["cost"] = cost;
-
-                results.append(subresult);
-            }
-            debug += "]";
             return results;
         }
         return {};
@@ -592,83 +582,86 @@ struct MotionPlayer : public Node {
         static void _bind_methods()
         {
         // Private section
-        {
-            ClassDB::bind_method(D_METHOD("set_category_value", "value"), &MotionPlayer::set_category_value);
-            ClassDB::bind_method(D_METHOD("get_category_value"), &MotionPlayer::get_category_value);
-            godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::INT, "category_value", PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_CLASS_IS_BITFIELD | PROPERTY_USAGE_DEFAULT), "set_category_value", "get_category_value");
-            // Stats
-            ClassDB::bind_method(D_METHOD("set_means", "value"), &MotionPlayer::set_means);
-            ClassDB::bind_method(D_METHOD("get_means"), &MotionPlayer::get_means);
-            godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "means", PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_STORAGE), "set_means", "get_means");
-            ClassDB::bind_method(D_METHOD("set_variances", "value"), &MotionPlayer::set_variances);
-            ClassDB::bind_method(D_METHOD("get_variances"), &MotionPlayer::get_variances);
-            godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "variances", PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_STORAGE), "set_variances", "get_variances");
-            ClassDB::bind_method(D_METHOD("set_densities", "value"), &MotionPlayer::set_densities);
-            ClassDB::bind_method(D_METHOD("get_densities"), &MotionPlayer::get_densities);
-            godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::ARRAY, "densities", PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_STORAGE), "set_densities", "get_densities");
-            // For retrieving the anim name and timestamp and category
+            {
+                ClassDB::bind_method(D_METHOD("set_category_value", "value"), &MotionMatcher::set_category_value);
+                ClassDB::bind_method(D_METHOD("get_category_value"), &MotionMatcher::get_category_value);
+                godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::INT, "category_value", PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_CLASS_IS_BITFIELD | PROPERTY_USAGE_DEFAULT), "set_category_value", "get_category_value");
+                // Stats
+                ClassDB::bind_method(D_METHOD("set_means", "value"), &MotionMatcher::set_means);
+                ClassDB::bind_method(D_METHOD("get_means"), &MotionMatcher::get_means);
+                godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "means", PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_STORAGE), "set_means", "get_means");
+                ClassDB::bind_method(D_METHOD("set_variances", "value"), &MotionMatcher::set_variances);
+                ClassDB::bind_method(D_METHOD("get_variances"), &MotionMatcher::get_variances);
+                godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "variances", PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_STORAGE), "set_variances", "get_variances");
+                ClassDB::bind_method(D_METHOD("set_densities", "value"), &MotionMatcher::set_densities);
+                ClassDB::bind_method(D_METHOD("get_densities"), &MotionMatcher::get_densities);
+                godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::ARRAY, "densities", PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_STORAGE), "set_densities", "get_densities");
+                // For retrieving the anim name and timestamp and category
 
-            ClassDB::bind_method(D_METHOD("set_db_anim_index", "value"), &MotionPlayer::set_db_anim_index);
-            ClassDB::bind_method(D_METHOD("get_db_anim_index"), &MotionPlayer::get_db_anim_index);
-            godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_INT32_ARRAY, "db_anim_index", PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_STORAGE), "set_db_anim_index", "get_db_anim_index");
-            ClassDB::bind_method(D_METHOD("set_db_anim_timestamp", "value"), &MotionPlayer::set_db_anim_timestamp);
-            ClassDB::bind_method(D_METHOD("get_db_anim_timestamp"), &MotionPlayer::get_db_anim_timestamp);
-            godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "db_anim_timestamp", PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_STORAGE), "set_db_anim_timestamp", "get_db_anim_timestamp");
-            ClassDB::bind_method(D_METHOD("set_db_anim_category", "value"), &MotionPlayer::set_db_anim_category);
-            ClassDB::bind_method(D_METHOD("get_db_anim_category"), &MotionPlayer::get_db_anim_category);
-            godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_INT32_ARRAY, "db_anim_category", PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_STORAGE), "set_db_anim_category", "get_db_anim_category");
-        }
+                ClassDB::bind_method(D_METHOD("set_db_anim_index", "value"), &MotionMatcher::set_db_anim_index);
+                ClassDB::bind_method(D_METHOD("get_db_anim_index"), &MotionMatcher::get_db_anim_index);
+                godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_INT32_ARRAY, "db_anim_index", PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_STORAGE), "set_db_anim_index", "get_db_anim_index");
+                ClassDB::bind_method(D_METHOD("set_db_anim_timestamp", "value"), &MotionMatcher::set_db_anim_timestamp);
+                ClassDB::bind_method(D_METHOD("get_db_anim_timestamp"), &MotionMatcher::get_db_anim_timestamp);
+                godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "db_anim_timestamp", PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_STORAGE), "set_db_anim_timestamp", "get_db_anim_timestamp");
+                ClassDB::bind_method(D_METHOD("set_db_anim_category", "value"), &MotionMatcher::set_db_anim_category);
+                ClassDB::bind_method(D_METHOD("get_db_anim_category"), &MotionMatcher::get_db_anim_category);
+                godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_INT32_ARRAY, "db_anim_category", PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_STORAGE), "set_db_anim_category", "get_db_anim_category");
+            }
 
-        ClassDB::add_property_group(get_class_static(), "Nodes & Resources Sources", "");
-        {
-            ClassDB::bind_method(D_METHOD("set_main_node", "path"), &MotionPlayer::set_main_node);
-            ClassDB::bind_method(D_METHOD("get_main_node"), &MotionPlayer::get_main_node);
-            ADD_PROPERTY(PropertyInfo(Variant::NODE_PATH, "main_node"), "set_main_node", "get_main_node");
-            ClassDB::bind_method(D_METHOD("set_skeleton_path", "skeleton path"), &MotionPlayer::set_skeleton);
-            ClassDB::bind_method(D_METHOD("get_skeleton"), &MotionPlayer::get_skeleton);
-            ADD_PROPERTY(PropertyInfo(Variant::NODE_PATH, "skeleton_node_path"), "set_skeleton_path", "get_skeleton");
+            ClassDB::add_property_group(get_class_static(), "Nodes & Resources Sources", "");
+            {
+                ClassDB::bind_method(D_METHOD("set_main_node", "path"), &MotionMatcher::set_main_node);
+                ClassDB::bind_method(D_METHOD("get_main_node"), &MotionMatcher::get_main_node);
+                ADD_PROPERTY(PropertyInfo(Variant::NODE_PATH, "main_node"), "set_main_node", "get_main_node");
+                ClassDB::bind_method(D_METHOD("set_skeleton_path", "skeleton path"), &MotionMatcher::set_skeleton);
+                ClassDB::bind_method(D_METHOD("get_skeleton"), &MotionMatcher::get_skeleton);
+                ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "skeleton_node_path",PROPERTY_HINT_NODE_TYPE,"Skeleton3D",PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_SCRIPT_VARIABLE ), "set_skeleton_path", "get_skeleton");
 
-            ClassDB::bind_method(D_METHOD("set_animation_library", "value"), &MotionPlayer::set_animation_library);
-            ClassDB::bind_method(D_METHOD("get_animation_library"), &MotionPlayer::get_animation_library);
-            godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::OBJECT, "animation_library", PROPERTY_HINT_RESOURCE_TYPE, "AnimationLibrary"), "set_animation_library", "get_animation_library");
-            ClassDB::bind_method(D_METHOD("set_category_track_names", "value"), &MotionPlayer::set_category_track_names);
-            ClassDB::bind_method(D_METHOD("get_category_track_names"), &MotionPlayer::get_category_track_names);
-            godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_STRING_ARRAY, "category_track_names", PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_DEFAULT), "set_category_track_names", "get_category_track_names");
-        }
+                ClassDB::bind_method(D_METHOD("set_animation_library", "value"), &MotionMatcher::set_animation_library);
+                ClassDB::bind_method(D_METHOD("get_animation_library"), &MotionMatcher::get_animation_library);
+                godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::OBJECT, "animation_library", PROPERTY_HINT_RESOURCE_TYPE, "AnimationLibrary"), "set_animation_library", "get_animation_library");
+                ClassDB::bind_method(D_METHOD("set_category_track_names", "value"), &MotionMatcher::set_category_track_names);
+                ClassDB::bind_method(D_METHOD("get_category_track_names"), &MotionMatcher::get_category_track_names);
+                godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_STRING_ARRAY, "category_track_names", PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_DEFAULT), "set_category_track_names", "get_category_track_names");
+            }
 
-        ClassDB::add_property_group(get_class_static(), "Data & KdTree params", "");
-        {
-            ClassDB::bind_method(D_METHOD("set_MotionData", "value"), &MotionPlayer::set_MotionData);
-            ClassDB::bind_method(D_METHOD("get_MotionData"), &MotionPlayer::get_MotionData);
-            godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "MotionData"), "set_MotionData", "get_MotionData");
-            ClassDB::bind_method(D_METHOD("set_distance_type", "value"), &MotionPlayer::set_distance_type);
-            ClassDB::bind_method(D_METHOD("get_distance_type"), &MotionPlayer::get_distance_type);
-            godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::INT, "distance_type", PROPERTY_HINT_ENUM, "Manhattan:1,EuclidianSquared:2,Maximum:0"), "set_distance_type", "get_distance_type");
-            ClassDB::bind_method(D_METHOD("set_weights", "value"), &MotionPlayer::set_weights);
-            ClassDB::bind_method(D_METHOD("get_weights"), &MotionPlayer::get_weights);
-            godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "weights"), "set_weights", "get_weights");
-        }
+            ClassDB::add_property_group(get_class_static(), "Data & KdTree params", "");
+            {
+                ClassDB::bind_method(D_METHOD("set_MotionData", "value"), &MotionMatcher::set_MotionData);
+                ClassDB::bind_method(D_METHOD("get_MotionData"), &MotionMatcher::get_MotionData);
+                godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "MotionData"), "set_MotionData", "get_MotionData");
+                ClassDB::bind_method(D_METHOD("set_distance_type", "value"), &MotionMatcher::set_distance_type);
+                ClassDB::bind_method(D_METHOD("get_distance_type"), &MotionMatcher::get_distance_type);
+                godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::INT, "distance_type", PROPERTY_HINT_ENUM, "Manhattan:1,EuclidianSquared:2,Maximum:0"), "set_distance_type", "get_distance_type");
+                ClassDB::bind_method(D_METHOD("set_weights", "value"), &MotionMatcher::set_weights);
+                ClassDB::bind_method(D_METHOD("get_weights"), &MotionMatcher::get_weights);
+                godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "weights"), "set_weights", "get_weights");
+            }
 
-        ClassDB::add_property_group(get_class_static(), "Features", "");
-        {
-            ClassDB::bind_method(D_METHOD("set_motion_features", "value"), &MotionPlayer::set_motion_features);
-            ClassDB::bind_method(D_METHOD("get_motion_features"), &MotionPlayer::get_motion_features);
-            godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::ARRAY, "motion_features", godot::PROPERTY_HINT_TYPE_STRING, "24/17:MotionFeature", PROPERTY_USAGE_SCRIPT_VARIABLE | PROPERTY_USAGE_DEFAULT), "set_motion_features", "get_motion_features");
-            ClassDB::bind_method(D_METHOD("set_blackboard", "value"), &MotionPlayer::set_blackboard);
-            ClassDB::bind_method(D_METHOD("get_blackboard"), &MotionPlayer::get_blackboard);
-            godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::DICTIONARY, "blackboard"), "set_blackboard", "get_blackboard");
-        }
+            ClassDB::add_property_group(get_class_static(), "Features", "");
+            {
+                ClassDB::bind_method(D_METHOD("set_motion_features", "value"), &MotionMatcher::set_motion_features);
+                ClassDB::bind_method(D_METHOD("get_motion_features"), &MotionMatcher::get_motion_features);
+                godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::ARRAY, "motion_features", godot::PROPERTY_HINT_TYPE_STRING, u::str(Variant::OBJECT)+'/'+u::str(Variant::BASIS)+":MotionFeature", PROPERTY_USAGE_DEFAULT), "set_motion_features", "get_motion_features");
+                
+                ClassDB::bind_method(D_METHOD("set_blackboard", "value"), &MotionMatcher::set_blackboard);
+                ClassDB::bind_method(D_METHOD("get_blackboard"), &MotionMatcher::get_blackboard);
+                godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::DICTIONARY, "blackboard"), "set_blackboard", "get_blackboard");
+            }
 
-        ClassDB::add_property_group(get_class_static(), "", "");
+            ClassDB::add_property_group(get_class_static(), "", "");
 
-        // Functions
-        ClassDB::bind_method(D_METHOD("reset_skeleton_poses"), &MotionPlayer::reset_skeleton_poses);
-        ClassDB::bind_method(D_METHOD("set_skeleton_to_pose", "animation", "time"), &MotionPlayer::set_skeleton_to_pose);
+            // Functions
+            //ClassDB::bind_method(D_METHOD("_ready"), &MotionMatcher::_ready);
 
-        ClassDB::bind_method(D_METHOD("recalculate_weights"), &MotionPlayer::recalculate_weights);
-        ClassDB::bind_method(D_METHOD("baking_data"), &MotionPlayer::baking_data);
-        ClassDB::bind_method(D_METHOD("query_pose", "include_category", "exclude_category"), &MotionPlayer::query_pose, DEFVAL(std::numeric_limits<int64_t>::max()), DEFVAL(0));
-        ClassDB::bind_method(D_METHOD("check_query_results", "Query", "Result count"), &MotionPlayer::check_query_results);
+            ClassDB::bind_method(D_METHOD("reset_skeleton_poses"), &MotionMatcher::reset_skeleton_poses);
+            ClassDB::bind_method(D_METHOD("set_skeleton_to_pose", "animation", "time"), &MotionMatcher::set_skeleton_to_pose);
+
+            ClassDB::bind_method(D_METHOD("recalculate_weights"), &MotionMatcher::recalculate_weights);
+            ClassDB::bind_method(D_METHOD("baking_data"), &MotionMatcher::baking_data);
+            ClassDB::bind_method(D_METHOD("query_pose", "include_category", "exclude_category"), &MotionMatcher::query_pose, DEFVAL(std::numeric_limits<int64_t>::max()), DEFVAL(0));
+            ClassDB::bind_method(D_METHOD("check_query_results", "Query", "Result count"), &MotionMatcher::check_query_results);
         }
 };
 

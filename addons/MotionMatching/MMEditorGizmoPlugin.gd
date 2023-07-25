@@ -22,7 +22,7 @@ func _init():
 	prints("MMEditorGizmoPlugin")
 
 func _create_gizmo(node):
-	if node.name == "Armature":
+	if node is Skeleton3D:
 		if instance == null:
 			instance = MMGizmo.new()
 		return instance
@@ -38,8 +38,7 @@ func set_lines(lines:PackedVector3Array):
 
 
 func _has_gizmo(node):
-	prints("Checking",node.name,node is MotionPlayer)
-	return node.name == "Armature"
+	return node.name is Skeleton3D
 
 
 func _redraw(gizmo : EditorNode3DGizmo):

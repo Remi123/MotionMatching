@@ -1,7 +1,7 @@
 @tool
 extends Control
 
-var _current : MotionPlayer = null
+var _current : MotionMatcher = null
 var _animplayer : AnimationPlayer = null
 
 @onready var rd : RichTextLabel = $TabContainer/Data/ScrollContainer/PoseData
@@ -24,6 +24,9 @@ func update_info()->void:
 			prints(r.resource_name)
 			var f :MotionFeature= r as MotionFeature
 			nb_dim += r.get_dimension()
+
+		if nb_dim == 0:
+			nb_dim = 1
 
 
 		infotext.clear()
@@ -68,10 +71,10 @@ func update_info()->void:
 
 		infotext.pop()
 
-		for i in range(_current.densities.size()):
-			prints("Dimension",i)
-			for data in _current.densities[i]:
-				prints(data[0],data[1])
+#		for i in range(_current.densities.size()):
+#			prints("Dimension",i)
+#			for data in _current.densities[i]:
+#				prints(data[0],data[1])
 
 
 
@@ -117,7 +120,7 @@ func update_shown_pose_data(pose_index : int)->void:
 		prints("Values interpolated",anim.value_track_interpolate(v,anim_timestep))
 
 	_current.set_skeleton_to_pose(anim,anim_timestep)
-	var skel := _current.get_node(_current.get("skeleton_node_path")) as Skeleton3D
+	var skel := _current.get("skeleton_node_path") as Skeleton3D
 	var tr := skel.get_bone_global_pose(skel.find_bone("Root"))
 	tr = Transform3D()
 
@@ -147,7 +150,7 @@ func update_shown_pose_data(pose_index : int)->void:
 		rd.push_cell()
 		rd.set_cell_row_background_color(Color(0.212, 0.239, 0.29),Color(0.212, 0.239, 0.29)/0.7)
 		rd.set_cell_border_color(Color.LIGHT_GRAY)
-		rd.add_text(r.resource_name +' ' +str(r.get_dimension()))
+		rd.add_text("Feature " + r.resource_name +' dim ' +str(r.get_dimension()))
 		rd.pop()
 		for x in range(0,nb_dim):
 			rd.push_cell()
@@ -224,10 +227,10 @@ func _on_choose_animation_pressed(ID) -> void:
 		var lib :AnimationLibrary = _current.animation_library
 		choose_anim.text = choose_anim.get_popup().get_item_text(ID)
 
-		if _current.anim_index_duration_category.size() != 0:
+		if _current.db_anim_index.size() != 0:
 			var i :int= 0
-			for index in _current.anim_index_duration_category:
-				if index[0] == ID:
+			for index in _current.db_anim_index:
+				if index == ID:
 					$TabContainer/Data/HBoxContainer/MarginContainer2/HBoxContainer/SpinBox.value = i
 					update_shown_pose_data(i)
 					break
