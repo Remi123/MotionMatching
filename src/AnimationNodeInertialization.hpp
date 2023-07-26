@@ -223,9 +223,30 @@ public:
         Ref<Animation> anim = ap->get_animation(current_animation);
 	    double anim_size = (double)anim->get_length();
 
-        current_time += p_time;
+        auto loop_flag = Animation::LoopedFlag::LOOPED_FLAG_NONE;
 
-        blend_animation(current_animation, current_time, p_time, p_seek, p_is_external_seeking, 1.0, Animation::LOOPED_FLAG_NONE);
+        current_time += p_time;
+        if(pending)
+        {
+            if (current_time >= anim_size)
+            {
+                u::prints("Changing", current_animation, pending_animation);
+                current_animation = pending_animation;
+                current_time = pending_timestamp;
+                anim = ap->get_animation(current_animation);
+                anim_size = anim->get_length();
+                pending = false;
+            }
+        }
+        else {
+            if (current_time >= anim_size && anim->get_loop_mode() == Animation::LoopMode::LOOP_LINEAR)
+            {
+                loop_flag = Animation::LoopedFlag::LOOPED_FLAG_END;
+                current_time = Math::fposmod(current_time, anim_size);
+            }
+        }
+
+        blend_animation(current_animation, current_time, p_time, p_seek, p_is_external_seeking, 1.0, loop_flag);
         return anim_size - current_time;
     }
 
@@ -235,6 +256,10 @@ public:
         ERR_FAIL_NULL(skeleton);
         u::prints("AP has",pending_anim_name,ap->has_animation(pending_anim_name));
 
+        if (pending == false && pending_anim_name == pending_animation && abs(pending_time - pending_timestamp) < 0.3)
+        {
+            return;
+        }
 
         //  States 
         //  Normal Pending
@@ -262,6 +287,8 @@ public:
 
         current_animation = String("Inertialization/") +anim_name;
         current_time = 0.0;
+        pending_animation = pending_anim_name;
+        pending_timestamp = pending_time;
 
         String skel_path = skeleton->get_owner()->get_path_to(skeleton,true);
         if (skeleton->is_unique_name_in_owner())
@@ -347,6 +374,7 @@ public:
             }
         }
         anim->set_length(blend_time);
+        return;
         // DEBUG. Remove after
         auto parentless = skeleton->get_parentless_bones();
         for(int i = 0; i < parentless.size();++i)

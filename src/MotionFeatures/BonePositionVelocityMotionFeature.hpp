@@ -149,16 +149,17 @@ struct BonePositionVelocityMotionFeature : public MotionFeature {
         for(size_t index = 0; index < bones_id.size(); ++index)
         {
             const auto bone_id = bones_id[index];
-            prev_pos.push_back(_skeleton->get_bone_global_pose(bone_id).get_origin() * _skeleton->get_motion_scale()) ;
+            prev_pos.push_back(_skeleton->get_bone_global_pose(bone_id).get_origin() / _skeleton->get_motion_scale()) ;
         }
         set_skeleton_to_animation_timestamp(animation,time);
         for(size_t index = 0; index < bones_id.size(); ++index)
         {
             const auto bone_id = bones_id[index];
-            curr_pos.push_back(_skeleton->get_bone_global_pose(bone_id).get_origin() * _skeleton->get_motion_scale());
+            curr_pos.push_back(_skeleton->get_bone_global_pose(bone_id).get_origin() / _skeleton->get_motion_scale());
         }
         const size_t root_id = _skeleton->find_bone(root_bone_name);
-        const Transform3D root = _skeleton->get_bone_global_pose(root_id) * _skeleton->get_motion_scale();
+        Transform3D root = _skeleton->get_bone_global_pose(root_id);
+        root.set_origin(root.origin / _skeleton->get_motion_scale());
 
 
         for(size_t index = 0; index < bones_id.size(); ++index)
@@ -185,7 +186,8 @@ struct BonePositionVelocityMotionFeature : public MotionFeature {
         bones_vel.resize(bones_id.size());
         for(size_t index = 0; index < bones_id.size(); ++index)
         {
-            Vector3 pos = _skeleton->get_bone_global_pose(bones_id[index]).origin; // Bad naming : Not global pose, but model pose.
+            // Bad naming : Not global pose, but model pose.
+            Vector3 pos = _skeleton->get_bone_global_pose(bones_id[index]).origin / _skeleton->get_motion_scale(); 
             Vector3 vel = (pos - bones_pos[index] ) / delta;
             bones_pos[index] = pos;
             bones_vel[index] = vel; 
