@@ -36,6 +36,11 @@
         ClassDB::bind_method( D_METHOD(STRING_PREFIX(set_,variable) ,"value"), &type::set_##variable);\
         ClassDB::bind_method( D_METHOD(STRING_PREFIX(get_,variable) ), &type::get_##variable);\
         ADD_PROPERTY(PropertyInfo(variant_type,#variable,__VA_ARGS__),STRING_PREFIX(set_,variable),STRING_PREFIX(get_,variable));
+
+/// @brief This animation node is for Motion Matching.
+/// It was made to get request for a pose from the list of animations,
+/// make a transition, then play the animation from then.
+/// It can handle transition while 
 struct AnimationNodeInertialization : godot::AnimationRootNode
 {
     GDCLASS(AnimationNodeInertialization,AnimationNode);
@@ -54,32 +59,12 @@ public:
         return "Inertialization";
     }
 
-    bool backward = false;
-	enum PlayMode {
-		PLAY_MODE_FORWARD,
-		PLAY_MODE_BACKWARD
-	};
-    PlayMode play_mode = PLAY_MODE_FORWARD;
 
-    /// @brief Processing. Should manage blending to a new animation pose.
-    /// @param p_time 
-    /// @param p_seek 
-    /// @param p_is_external_seeking 
-    /// @param p_test_only 
-    /// @return 
-    virtual double _process(double p_time, bool p_seek, bool p_is_external_seeking, bool p_test_only)
+
+
+/*
+    virtual double _old_process(double p_time, bool p_seek, bool p_is_external_seeking, bool p_test_only)
     {
-        return 0.0f;
-        if ( ap == nullptr && get_parameter("animation_player") != Variant())
-        {
-            ap = Object::cast_to<AnimationPlayer>(get_parameter("animation_player"));
-            u::prints(ap->get_path());
-        }
-        if ( skeleton == nullptr && get_parameter("skeleton") != Variant())
-        {
-            skeleton = Object::cast_to<Skeleton3D>(get_parameter("skeleton"));
-            u::prints(skeleton->get_path());
-        }
         if(skeleton == nullptr || ap == nullptr)
         {
             return 0.0;
@@ -212,17 +197,43 @@ public:
 
         return is_looping ? 31540000 : anim_size - cur_time;
     }
+    */
 
-    String current_animation = String("");
+    String pending_animation = "";    
+    double pending_timestamp = 0.0;
+    String current_animation = "";
+    double current_time = 0.0;
+
+        /// @brief Processing. Should manage blending to a new animation pose.
+    /// @param p_time 
+    /// @param p_seek 
+    /// @param p_is_external_seeking 
+    /// @param p_test_only 
+    /// @return
+    virtual double _process(double p_time, bool p_seek, bool p_is_external_seeking, bool p_test_only)
+    {
+        if(skeleton == nullptr || ap == nullptr)
+        {
+            return 0.0;
+        }
+        if(!ap->has_animation(current_animation))
+        {
+            return 0.0;
+        }
+        Ref<Animation> anim = ap->get_animation(current_animation);
+	    double anim_size = (double)anim->get_length();
+
+        current_time += p_time;
+
+        blend_animation(current_animation, current_time, p_time, p_seek, p_is_external_seeking, 1.0, Animation::LOOPED_FLAG_NONE);
+        return anim_size - current_time;
+    }
 
     void request_pose(StringName pending_anim_name, float pending_time)
     {
-        // ERR_FAIL_COND_MSG(get_parameter("animation_player") != Variant(), "Animation Player isn't set");
-        // ap = Object::cast_to<AnimationPlayer>((Object*)get_parameter("animation_player"));
         ERR_FAIL_NULL(ap);
-        // ERR_FAIL_COND_MSG(get_parameter("skeleton") != Variant(), "Skeleton isn't set");
-        // skeleton = Object::cast_to<Skeleton3D>(get_parameter("skeleton"));
         ERR_FAIL_NULL(skeleton);
+        u::prints("AP has",pending_anim_name,ap->has_animation(pending_anim_name));
 
 
         //  States 
@@ -238,17 +249,19 @@ public:
         if (! ap->has_animation_library("Inertialization")){
             animlib.instantiate();
             ap->add_animation_library("Inertialization",animlib);
+            u::prints("Creating animation library for inertialization");
         }
         else {
             animlib = ap->get_animation_library("Inertialization");
         }
         ERR_FAIL_NULL(animlib);
         ERR_FAIL_COND(!ap->has_animation_library("Inertialization"));
-        u::prints("Animation Library set");
 
         Ref<Animation> anim = nullptr;
         StringName anim_name = String("inert_") +  u::str(reinterpret_cast<std::uintptr_t>(skeleton));
-        u::prints(anim_name);
+
+        current_animation = String("Inertialization/") +anim_name;
+        current_time = 0.0;
 
         String skel_path = skeleton->get_owner()->get_path_to(skeleton,true);
         if (skeleton->is_unique_name_in_owner())
@@ -259,8 +272,7 @@ public:
         if(! animlib->has_animation(anim_name) ){
             anim.instantiate();
             animlib->add_animation(anim_name,anim);
-
-            u::prints("SkeletonPath",skel_path);
+            anim->set_length(blend_time);
             for (int b = 0; b < skeleton->get_bone_count(); ++b)
             {
                 auto bone_path = skel_path + String(":") + skeleton->get_bone_name(b);
@@ -268,17 +280,26 @@ public:
                 
                 int pos_track = anim->add_track(Animation::TrackType::TYPE_POSITION_3D);                
                 int rot_track = anim->add_track(Animation::TrackType::TYPE_ROTATION_3D);
-
+                
                 anim->track_set_path(pos_track,bone_path);
+                {
+                    anim->track_insert_key(pos_track,0.0,Vector3());
+                    anim->track_insert_key(pos_track,blend_time,Vector3());
+                }
                 anim->track_set_path(rot_track,bone_path);
+                {
+                    anim->track_insert_key(rot_track,0.0,Quaternion());
+                    anim->track_insert_key(rot_track,blend_time,Quaternion());
+                }
             }
+            u::prints("Created animation for Skeleton :",anim_name,anim->get_track_count());
         }
         else {
             anim = animlib->get_animation(anim_name);
         }
         ERR_FAIL_NULL(anim);
         ERR_FAIL_COND(!animlib->has_animation(anim_name));
-        u::prints(anim_name,"tracks",anim->get_track_count());
+
 
         // set transition animation to the current poses of the skeleton
         auto pending_anim = ap->get_animation(pending_anim_name);
@@ -293,47 +314,62 @@ public:
             }
             else if (anim->track_get_type(t) == Animation::TrackType::TYPE_POSITION_3D)
             {
-                anim->track_insert_key(t, 0.0, skeleton->get_bone_pose_position(b));
+                //anim->track_insert_key(t, 0.0, skeleton->get_bone_pose_position(b));
+                anim->track_set_key_time(t,0,0.0);
+                anim->track_set_key_value(t,0,skeleton->get_bone_pose_position(b) / skeleton->get_motion_scale());
+                anim->track_set_key_time(t,1,blend_time);
                 const auto future_pos_track = pending_anim->find_track(track_path, Animation::TrackType::TYPE_POSITION_3D);
                 if (future_pos_track != -1)
                 {
                     const auto future_pos = pending_anim->position_track_interpolate(future_pos_track, pending_time);
-                    anim->position_track_insert_key(t, blend_time, future_pos);
+                    anim->track_set_key_value(t,1,future_pos);
+                }
+                else
+                {
+                    anim->track_set_key_value(t,1,skeleton->get_bone_pose_position(b)/ skeleton->get_motion_scale());
                 }
             }
             else if (anim->track_get_type(t) == Animation::TrackType::TYPE_ROTATION_3D)
             {
-                anim->track_insert_key(t, 0.0, skeleton->get_bone_pose_rotation(b));
-                const auto future_rot_track = pending_anim->find_track(track_path, Animation::TrackType::TYPE_ROTATION_3D);
-                if (future_rot_track != -1)
+                anim->track_set_key_time(t,0,0.0);
+                anim->track_set_key_value(t,0,skeleton->get_bone_pose_rotation(b));
+                anim->track_set_key_time(t,1,blend_time);
+                const auto future_pos_track = pending_anim->find_track(track_path, Animation::TrackType::TYPE_ROTATION_3D);
+                if (future_pos_track != -1)
                 {
-                    const auto future_rot = pending_anim->rotation_track_interpolate(future_rot_track, pending_time);
-                    anim->rotation_track_insert_key(t,blend_time,future_rot);
+                    const auto future_rot = pending_anim->rotation_track_interpolate(future_pos_track, pending_time);
+                    anim->track_set_key_value(t,1,future_rot.normalized());
+                }
+                else
+                {
+                    anim->track_set_key_value(t,1,skeleton->get_bone_pose_rotation(b).normalized());
                 }
             }
         }
-
+        anim->set_length(blend_time);
+        // DEBUG. Remove after
         auto parentless = skeleton->get_parentless_bones();
         for(int i = 0; i < parentless.size();++i)
         {
             auto bone = parentless[i];
-            auto bone_name = skeleton->get_bone_name(bone);
-            auto bone_path = skel_path + String(":") + bone_name;
+            auto bone_path = skel_path + String(":") + skeleton->get_bone_name(bone);
             auto pos_track = anim->find_track(bone_path,Animation::TrackType::TYPE_POSITION_3D);
             auto rot_track = anim->find_track(bone_path,Animation::TrackType::TYPE_ROTATION_3D);
             Array positions{};
             Array rotations{};
+            Array keys{};
             if ( pos_track != -1)
                 for(int j = 0; j < anim->track_get_key_count(pos_track);++j)
                 {
                     positions.append(anim->track_get_key_value(pos_track,j));
+                    keys.append(j);
                 }
             if ( rot_track != -1)
                 for(int j = 0; j < anim->track_get_key_count(rot_track);++j)
                 {
                     rotations.append(anim->track_get_key_value(rot_track,j));
                 }
-            u::prints(bone_path,positions,rotations);
+            u::prints(bone_path,positions,rotations,keys);
         }
         // calculate and save the end pose
 
