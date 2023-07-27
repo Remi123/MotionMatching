@@ -199,6 +199,40 @@ public:
     }
     */
 
+    std::vector<Vector3> bones_pos{};
+    std::vector<Vector3> bones_vel{};
+    std::vector<Quaternion> bones_rot{};
+    std::vector<Vector3> bones_ang{};
+
+    template<typename T>
+    static inline T clampf(T x, T min, T max)
+    {
+        static_assert(std::is_arithmetic_v<T>,"Must be arithmetic");
+        return x > max ? max : x < min ? min : x;
+    }
+
+    static inline Quaternion quat_abs(Quaternion q){
+        return q.w < 0.0 ? -q : q;
+    }
+
+    static inline Vector3 quat_log(Quaternion q, float eps=1e-8f){
+        real_t length = sqrt(q.x*q.x + q.y*q.y + q.z*q.z);
+        if (length < eps)
+        {
+            return Vector3(q.x, q.y, q.z);
+        }
+        else
+        {
+            float halfangle = acosf(clampf(q.w, -1.0f, 1.0f));
+            return halfangle * (Vector3(q.x, q.y, q.z) / length);
+        }
+    }
+
+    static inline Vector3 quat_to_scaled_angle_axis(Quaternion q, float eps=1e-8f)
+    {
+        return 2.0f * quat_log(q, eps);
+    }
+
     String pending_animation = "";    
     double pending_timestamp = 0.0;
     String current_animation = "";
@@ -216,6 +250,29 @@ public:
         {
             return 0.0;
         }
+
+        //u::prints("Velocity update");
+        // Update velocities
+        bones_pos.resize(skeleton->get_bone_count());
+        bones_vel.resize(skeleton->get_bone_count());
+        bones_rot.resize(skeleton->get_bone_count());
+        bones_ang.resize(skeleton->get_bone_count());
+        for(size_t index = 0; index < skeleton->get_bone_count(); ++index)
+        {
+            // Local pos
+            Vector3 pos = skeleton->get_bone_pose_position(index) / skeleton->get_motion_scale(); 
+            Quaternion rot = skeleton->get_bone_pose_rotation(index);
+            Vector3 vel = (pos - bones_pos[index] ) / p_time;
+            Vector3 ang = quat_to_scaled_angle_axis(
+                quat_abs(rot * bones_rot[index].inverse())
+            ) / p_time;
+            bones_pos[index] = std::move(pos);
+            bones_vel[index] = std::move(vel);
+            bones_rot[index] = std::move(rot);
+            bones_ang[index] = std::move(ang);
+        }
+        //u::prints("Velocity updated");
+
         if(!ap->has_animation(current_animation))
         {
             return 0.0;
@@ -232,7 +289,9 @@ public:
             {
                 u::prints("Changing", current_animation, pending_animation);
                 current_animation = pending_animation;
+                pending_animation = "";
                 current_time = pending_timestamp;
+                pending_timestamp = 0.0f;
                 anim = ap->get_animation(current_animation);
                 anim_size = anim->get_length();
                 pending = false;
@@ -250,14 +309,19 @@ public:
         return anim_size - current_time;
     }
 
-    void request_pose(StringName pending_anim_name, float pending_time)
+    void request_pose(StringName p_next_anim, float p_next_timestamp)
     {
         ERR_FAIL_NULL(ap);
         ERR_FAIL_NULL(skeleton);
-        u::prints("AP has",pending_anim_name,ap->has_animation(pending_anim_name));
 
-        if (pending == false && pending_anim_name == pending_animation && abs(pending_time - pending_timestamp) < 0.3)
+        if (pending == true && p_next_anim == pending_animation && abs(p_next_timestamp - current_time) < blend_time)
         {
+            // Already transitioning to this poses.
+            return;
+        }
+        if (pending == false && p_next_anim == current_animation && abs(p_next_timestamp - current_time) < blend_time)
+        {
+            // Already playing this poses.
             return;
         }
 
@@ -287,14 +351,10 @@ public:
 
         current_animation = String("Inertialization/") +anim_name;
         current_time = 0.0;
-        pending_animation = pending_anim_name;
-        pending_timestamp = pending_time;
+        pending_animation = p_next_anim;
+        pending_timestamp = p_next_timestamp;
 
-        String skel_path = skeleton->get_owner()->get_path_to(skeleton,true);
-        if (skeleton->is_unique_name_in_owner())
-        {
-            skel_path = "%" + skeleton->get_name();
-        }
+        String skel_path = skeleton->is_unique_name_in_owner() ? "%" + skeleton->get_name() : skeleton->get_owner()->get_path_to(skeleton,true);
 
         if(! animlib->has_animation(anim_name) ){
             anim.instantiate();
@@ -327,9 +387,8 @@ public:
         ERR_FAIL_NULL(anim);
         ERR_FAIL_COND(!animlib->has_animation(anim_name));
 
-
         // set transition animation to the current poses of the skeleton
-        auto pending_anim = ap->get_animation(pending_anim_name);
+        auto pending_anim = ap->get_animation(p_next_anim);
         for(int t = 0; t < anim->get_track_count(); ++t){
             const auto track_path = anim->track_get_path(t);
             const auto bone_name = track_path.get_subname(0);
@@ -341,20 +400,22 @@ public:
             }
             else if (anim->track_get_type(t) == Animation::TrackType::TYPE_POSITION_3D)
             {
-                //anim->track_insert_key(t, 0.0, skeleton->get_bone_pose_position(b));
                 anim->track_set_key_time(t,0,0.0);
                 anim->track_set_key_value(t,0,skeleton->get_bone_pose_position(b) / skeleton->get_motion_scale());
                 anim->track_set_key_time(t,1,blend_time);
                 const auto future_pos_track = pending_anim->find_track(track_path, Animation::TrackType::TYPE_POSITION_3D);
                 if (future_pos_track != -1)
                 {
-                    const auto future_pos = pending_anim->position_track_interpolate(future_pos_track, pending_time);
+                    const auto future_pos = pending_anim->position_track_interpolate(future_pos_track, p_next_timestamp);
                     anim->track_set_key_value(t,1,future_pos);
                 }
                 else
                 {
                     anim->track_set_key_value(t,1,skeleton->get_bone_pose_position(b)/ skeleton->get_motion_scale());
                 }
+
+                
+
             }
             else if (anim->track_get_type(t) == Animation::TrackType::TYPE_ROTATION_3D)
             {
@@ -364,7 +425,7 @@ public:
                 const auto future_pos_track = pending_anim->find_track(track_path, Animation::TrackType::TYPE_ROTATION_3D);
                 if (future_pos_track != -1)
                 {
-                    const auto future_rot = pending_anim->rotation_track_interpolate(future_pos_track, pending_time);
+                    const auto future_rot = pending_anim->rotation_track_interpolate(future_pos_track, p_next_timestamp);
                     anim->track_set_key_value(t,1,future_rot.normalized());
                 }
                 else
