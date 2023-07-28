@@ -204,39 +204,16 @@ public:
     std::vector<Quaternion> bones_rot{};
     std::vector<Vector3> bones_ang{};
 
-    template<typename T>
-    static inline T clampf(T x, T min, T max)
-    {
-        static_assert(std::is_arithmetic_v<T>,"Must be arithmetic");
-        return x > max ? max : x < min ? min : x;
-    }
 
-    static inline Quaternion quat_abs(Quaternion q){
-        return q.w < 0.0 ? -q : q;
-    }
 
-    static inline Vector3 quat_log(Quaternion q, float eps=1e-8f){
-        real_t length = sqrt(q.x*q.x + q.y*q.y + q.z*q.z);
-        if (length < eps)
-        {
-            return Vector3(q.x, q.y, q.z);
-        }
-        else
-        {
-            float halfangle = acosf(clampf(q.w, -1.0f, 1.0f));
-            return halfangle * (Vector3(q.x, q.y, q.z) / length);
-        }
-    }
+    //--------------------------------------
 
-    static inline Vector3 quat_to_scaled_angle_axis(Quaternion q, float eps=1e-8f)
-    {
-        return 2.0f * quat_log(q, eps);
-    }
+
 
     String pending_animation = "";    
     double pending_timestamp = 0.0;
-    String current_animation = "";
-    double current_time = 0.0;
+    String transition_animation = "";
+    double transition_time = 0.0;
 
         /// @brief Processing. Should manage blending to a new animation pose.
     /// @param p_time 
@@ -263,8 +240,8 @@ public:
             Vector3 pos = skeleton->get_bone_pose_position(index) / skeleton->get_motion_scale(); 
             Quaternion rot = skeleton->get_bone_pose_rotation(index);
             Vector3 vel = (pos - bones_pos[index] ) / p_time;
-            Vector3 ang = quat_to_scaled_angle_axis(
-                quat_abs(rot * bones_rot[index].inverse())
+            Vector3 ang = CritDampSpring::quat_to_scaled_angle_axis(
+                CritDampSpring::quat_abs(rot * bones_rot[index].inverse())
             ) / p_time;
             bones_pos[index] = std::move(pos);
             bones_vel[index] = std::move(vel);
@@ -273,40 +250,43 @@ public:
         }
         //u::prints("Velocity updated");
 
-        if(!ap->has_animation(current_animation))
+        if(!ap->has_animation(transition_animation))
         {
             return 0.0;
         }
-        Ref<Animation> anim = ap->get_animation(current_animation);
-	    double anim_size = (double)anim->get_length();
+
 
         auto loop_flag = Animation::LoopedFlag::LOOPED_FLAG_NONE;
 
-        current_time += p_time;
+        
         if(pending)
         {
-            if (current_time >= anim_size)
+            transition_time += p_time;
+            Ref<Animation> anim = ap->get_animation(transition_animation);
+	        double anim_size = (double)anim->get_length();
+            blend_animation(transition_animation, transition_time, p_time, p_seek, p_is_external_seeking, 1.0, loop_flag);
+            if (transition_time >= anim_size)
             {
-                u::prints("Changing", current_animation, pending_animation);
-                current_animation = pending_animation;
-                pending_animation = "";
-                current_time = pending_timestamp;
-                pending_timestamp = 0.0f;
-                anim = ap->get_animation(current_animation);
-                anim_size = anim->get_length();
-                pending = false;
+                u::prints("Changing", transition_animation, pending_animation);
+                // TODO REWORK how we transition
+                pending = true;
             }
+            return anim_size - transition_time;
         }
         else {
-            if (current_time >= anim_size && anim->get_loop_mode() == Animation::LoopMode::LOOP_LINEAR)
+            pending_timestamp += p_time;
+            Ref<Animation> anim = ap->get_animation(pending_animation);
+	        double anim_size = (double)anim->get_length();
+            if (pending_timestamp >= anim_size && anim->get_loop_mode() == Animation::LoopMode::LOOP_LINEAR)
             {
                 loop_flag = Animation::LoopedFlag::LOOPED_FLAG_END;
-                current_time = Math::fposmod(current_time, anim_size);
+                pending_timestamp = Math::fposmod(pending_timestamp, anim_size);
             }
+            blend_animation(pending_animation, pending_timestamp, p_time, p_seek, p_is_external_seeking, 1.0, loop_flag);
+            return anim_size - pending_timestamp;
         }
 
-        blend_animation(current_animation, current_time, p_time, p_seek, p_is_external_seeking, 1.0, loop_flag);
-        return anim_size - current_time;
+
     }
 
     void request_pose(StringName p_next_anim, float p_next_timestamp)
@@ -314,16 +294,16 @@ public:
         ERR_FAIL_NULL(ap);
         ERR_FAIL_NULL(skeleton);
 
-        if (pending == true && p_next_anim == pending_animation && abs(p_next_timestamp - current_time) < blend_time)
-        {
-            // Already transitioning to this poses.
-            return;
-        }
-        if (pending == false && p_next_anim == current_animation && abs(p_next_timestamp - current_time) < blend_time)
-        {
-            // Already playing this poses.
-            return;
-        }
+        // if (pending == true && p_next_anim == pending_animation && abs(p_next_timestamp - transition_time) < 0.25)
+        // {
+        //     // Already transitioning to this poses.
+        //     return;
+        // }
+        // if (pending == false && p_next_anim == transition_animation && abs(p_next_timestamp - transition_time) < 0.25)
+        // {
+        //     // Already playing this poses.
+        //     return;
+        // }
 
         //  States 
         //  Normal Pending
@@ -349,17 +329,18 @@ public:
         Ref<Animation> anim = nullptr;
         StringName anim_name = String("inert_") +  u::str(reinterpret_cast<std::uintptr_t>(skeleton));
 
-        current_animation = String("Inertialization/") +anim_name;
-        current_time = 0.0;
+        transition_animation = String("Inertialization/") +anim_name;
+        transition_time = 0.0;
         pending_animation = p_next_anim;
         pending_timestamp = p_next_timestamp;
 
         String skel_path = skeleton->is_unique_name_in_owner() ? "%" + skeleton->get_name() : skeleton->get_owner()->get_path_to(skeleton,true);
+        auto duration = CritDampSpring::halflife_to_duration(halflife) + 0.16f;
 
         if(! animlib->has_animation(anim_name) ){
             anim.instantiate();
             animlib->add_animation(anim_name,anim);
-            anim->set_length(blend_time);
+            anim->set_length(duration);
             for (int b = 0; b < skeleton->get_bone_count(); ++b)
             {
                 auto bone_path = skel_path + String(":") + skeleton->get_bone_name(b);
@@ -370,25 +351,33 @@ public:
                 
                 anim->track_set_path(pos_track,bone_path);
                 {
-                    anim->track_insert_key(pos_track,0.0,Vector3());
-                    anim->track_insert_key(pos_track,blend_time,Vector3());
+                    // anim->track_insert_key(pos_track,0.0,Vector3());
+                    // anim->track_insert_key(pos_track,blend_time,Vector3());
                 }
                 anim->track_set_path(rot_track,bone_path);
                 {
-                    anim->track_insert_key(rot_track,0.0,Quaternion());
-                    anim->track_insert_key(rot_track,blend_time,Quaternion());
+                    // anim->track_insert_key(rot_track,0.0,Quaternion());
+                    // anim->track_insert_key(rot_track,blend_time,Quaternion());
                 }
             }
             u::prints("Created animation for Skeleton :",anim_name,anim->get_track_count());
         }
         else {
             anim = animlib->get_animation(anim_name);
+            for(auto i = 0; i < anim->get_track_count(); ++i)
+            {                
+                for(auto j = 0; j < anim->track_get_key_count(i); ++j )
+                {
+                    anim->track_remove_key(i,j);
+                }
+            }
         }
         ERR_FAIL_NULL(anim);
         ERR_FAIL_COND(!animlib->has_animation(anim_name));
 
         // set transition animation to the current poses of the skeleton
         auto pending_anim = ap->get_animation(p_next_anim);
+
         for(int t = 0; t < anim->get_track_count(); ++t){
             const auto track_path = anim->track_get_path(t);
             const auto bone_name = track_path.get_subname(0);
@@ -400,41 +389,72 @@ public:
             }
             else if (anim->track_get_type(t) == Animation::TrackType::TYPE_POSITION_3D)
             {
-                anim->track_set_key_time(t,0,0.0);
-                anim->track_set_key_value(t,0,skeleton->get_bone_pose_position(b) / skeleton->get_motion_scale());
-                anim->track_set_key_time(t,1,blend_time);
+                Vector3 curr_bone_pos = skeleton->get_bone_pose_position(b) / skeleton->get_motion_scale();
+                Vector3 fut_bone_pos = curr_bone_pos;
+                Vector3 curr_bone_vel = bones_vel[b];
+                Vector3 fut_bone_vel = Vector3();
+                
                 const auto future_pos_track = pending_anim->find_track(track_path, Animation::TrackType::TYPE_POSITION_3D);
                 if (future_pos_track != -1)
                 {
-                    const auto future_pos = pending_anim->position_track_interpolate(future_pos_track, p_next_timestamp);
-                    anim->track_set_key_value(t,1,future_pos);
+                    fut_bone_pos = pending_anim->position_track_interpolate(future_pos_track, p_next_timestamp);
+                    fut_bone_vel = (pending_anim->position_track_interpolate(future_pos_track, p_next_timestamp + 0.16f) - fut_bone_pos) / 0.016f;
+                    Vector3 offset_x{}, offset_v{};
+                    Vector3 in_x{fut_bone_pos}, in_v{fut_bone_vel};
+                    Vector3 out_x, out_v;
+                    CritDampSpring::inertialize_transition(offset_x,offset_v,curr_bone_pos,curr_bone_vel,fut_bone_pos,fut_bone_vel);
+                    // Let's inertialize
+
+                    for(auto delta = 0.0f; delta < duration; delta += 0.16f)
+                    {
+                        CritDampSpring::inertialize_update(out_x,out_v,offset_x,offset_v,in_x,in_v,0.1,0.16f);
+                        anim->position_track_insert_key(t,delta,out_x);
+                    }
                 }
                 else
                 {
-                    anim->track_set_key_value(t,1,skeleton->get_bone_pose_position(b)/ skeleton->get_motion_scale());
+                    anim->position_track_insert_key(t,0.0,curr_bone_pos);
+                    anim->position_track_insert_key(t,duration,curr_bone_pos);
                 }
+                anim->track_set_interpolation_type(t,Animation::InterpolationType::INTERPOLATION_LINEAR);
 
-                
 
             }
             else if (anim->track_get_type(t) == Animation::TrackType::TYPE_ROTATION_3D)
             {
-                anim->track_set_key_time(t,0,0.0);
-                anim->track_set_key_value(t,0,skeleton->get_bone_pose_rotation(b));
-                anim->track_set_key_time(t,1,blend_time);
+                Quaternion curr_bone_rot = skeleton->get_bone_pose_rotation(b);
+                Quaternion fut_bone_rot = curr_bone_rot;
+                Vector3 curr_bone_ang = bones_ang[b];
+                Vector3 fut_bone_ang = Vector3();
                 const auto future_pos_track = pending_anim->find_track(track_path, Animation::TrackType::TYPE_ROTATION_3D);
                 if (future_pos_track != -1)
                 {
-                    const auto future_rot = pending_anim->rotation_track_interpolate(future_pos_track, p_next_timestamp);
-                    anim->track_set_key_value(t,1,future_rot.normalized());
+                    fut_bone_rot = pending_anim->rotation_track_interpolate(future_pos_track, p_next_timestamp);
+                    fut_bone_ang = CritDampSpring::quat_to_scaled_angle_axis(
+                        CritDampSpring::quat_abs(pending_anim->rotation_track_interpolate(future_pos_track, p_next_timestamp + 0.16f) * fut_bone_rot.inverse())
+                    ) / 0.16f;
+                    
+                    Quaternion offset_x{}; Vector3 offset_v{};
+                    Quaternion in_x{fut_bone_rot};Vector3 in_v{fut_bone_ang}; 
+                    Quaternion out_x; Vector3 out_v;
+                    CritDampSpring::inertialize_transition(offset_x,offset_v,curr_bone_rot,curr_bone_ang,fut_bone_rot,fut_bone_ang);
+                    // Let's inertialize
+                    for(auto delta = 0.10f; delta < duration; delta += 0.16f)
+                    {
+                        CritDampSpring::inertialize_update(out_x,out_v,offset_x,offset_v,in_x,in_v,halflife,0.16f);
+                        anim->rotation_track_insert_key(t,delta,out_x);
+                    }
                 }
                 else
                 {
-                    anim->track_set_key_value(t,1,skeleton->get_bone_pose_rotation(b).normalized());
+                    anim->rotation_track_insert_key(t,0.0,curr_bone_rot);
+                    anim->rotation_track_insert_key(t,duration,curr_bone_rot);
                 }
+                anim->track_set_interpolation_type(t,Animation::InterpolationType::INTERPOLATION_LINEAR);
+
             }
         }
-        anim->set_length(blend_time);
+        anim->set_length(duration);
         return;
         // DEBUG. Remove after
         auto parentless = skeleton->get_parentless_bones();
@@ -516,10 +536,15 @@ public:
         return false;
     }
 
+    GETSET(float,halflife,0.2);
 
 protected:
     static void _bind_methods()
     {
+        ClassDB::bind_method( D_METHOD("set_halflife" ,"value"), &AnimationNodeInertialization::set_halflife); 
+        ClassDB::bind_method( D_METHOD("get_halflife" ), &AnimationNodeInertialization::get_halflife); 
+        godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT,"halflife"), "set_halflife", "get_halflife");
+
         ClassDB::bind_method( D_METHOD("set_blend_time" ,"value"), &AnimationNodeInertialization::set_blend_time); 
         ClassDB::bind_method( D_METHOD("get_blend_time" ), &AnimationNodeInertialization::get_blend_time); 
         godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT,"blend_time"), "set_blend_time", "get_blend_time");

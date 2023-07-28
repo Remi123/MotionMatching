@@ -50,6 +50,10 @@ struct CritDampSpring : public RefCounted
         return (4.0f * Ln2) / (halflife + eps);
     }
 
+    static inline float halflife_to_duration(float halflife, float initial_value = 1.0f, float eps = 1e-5f){
+        return halflife * log(eps/initial_value) / log(0.5);
+    }
+
     static inline float damping_to_halflife(float damping, float eps = 1e-5f) {
         return (4.0f * Ln2) / (damping + eps);
     }
@@ -83,7 +87,58 @@ struct CritDampSpring : public RefCounted
         return damping_to_halflife(2.0 * ((v_max / (x_goal - x)) * exp(1.0f)));
     }
 
+    static inline Quaternion quat_exp(Vector3 v, float eps=1e-8f)
+    {
+        float halfangle = sqrtf(v.x*v.x + v.y*v.y + v.z*v.z);
+        
+        if (halfangle < eps)
+        {
+            Quaternion q{};
+            q.w = 1.0f; q.x = v.x; q.y = v.y; q.z = v.z;
+            return q.normalized();
+        }
+        else
+        {
+            float c = cosf(halfangle);
+            float s = sinf(halfangle) / halfangle;
+            Quaternion q{};
+            q.w = c; q.x = s * v.x; q.y = s * v.y; q.z = s * v.z;
+            return q.normalized();
+        }
+    }
+        template<typename T>
+    static inline T clampf(T x, T min, T max)
+    {
+        static_assert(std::is_arithmetic_v<T>,"Must be arithmetic");
+        return x > max ? max : x < min ? min : x;
+    }
 
+    static inline Quaternion quat_abs(Quaternion q){
+        return q.w < 0.0 ? -q : q;
+    }
+
+    static inline Vector3 quat_log(Quaternion q, float eps=1e-8f){
+        real_t length = sqrt(q.x*q.x + q.y*q.y + q.z*q.z);
+        if (length < eps)
+        {
+            return Vector3(q.x, q.y, q.z);
+        }
+        else
+        {
+            float halfangle = acosf(clampf(q.w, -1.0f, 1.0f));
+            return halfangle * (Vector3(q.x, q.y, q.z) / length);
+        }
+    }
+
+    static inline Quaternion quat_from_scaled_angle_axis(Vector3 v, float eps = 1e-8f)
+    {
+        return quat_exp(v / 2.0f, eps);
+    }
+
+    static inline Vector3 quat_to_scaled_angle_axis(Quaternion q, float eps = 1e-8f)
+    {
+        return 2.0f * quat_log(q, eps);
+    }
 
     static void _spring_damper_exact(
         float& x,
@@ -188,6 +243,29 @@ struct CritDampSpring : public RefCounted
         x = eydt * (x + j1 * dt);
         v = eydt * (v - j1 * y * dt);
     }
+    static inline void _decay_spring_damper_exact(Vector3& x,Vector3& v, float halflife, float dt) {
+        float y = halflife_to_damping(halflife) / 2.0f;
+        Vector3 j1 = v + x * y;
+        float eydt = fast_negexp(y * dt);
+        x = eydt * (x + j1 * dt);
+        v = eydt * (v - j1 * y * dt);
+    }    
+    static inline void _decay_spring_damper_exact(
+        Quaternion& x, 
+        Vector3& v, 
+        const float halflife, 
+        const float dt)
+    {
+        float y = halflife_to_damping(halflife) / 2.0f; 
+        
+        Vector3 j0 = quat_to_scaled_angle_axis(x);
+        Vector3 j1 = v + j0*y;
+        
+        float eydt = fast_negexp(y*dt);
+
+        x = quat_from_scaled_angle_axis(eydt*(j0 + j1*dt));
+        v = eydt*(v - j1*y*dt);
+    }
     static inline PackedFloat32Array decay_spring_damper_exact(float x, float v, float halflife,float dt){
         PackedFloat32Array result;
         _decay_spring_damper_exact(x,v,halflife,dt);
@@ -280,6 +358,93 @@ struct CritDampSpring : public RefCounted
         return answer;
     }
 
+    static inline void inertialize_transition(
+        Vector3& off_x, 
+        Vector3& off_v, 
+        const Vector3 src_x,
+        const Vector3 src_v,
+        const Vector3 dst_x,
+        const Vector3 dst_v)
+    {
+        off_x = (src_x + off_x) - dst_x;
+        off_v = (src_v + off_v) - dst_v;
+    }
+
+
+
+    static inline void inertialize_update(
+        Vector3& out_x, 
+        Vector3& out_v,
+        Vector3& off_x, 
+        Vector3& off_v,
+        const Vector3 in_x, 
+        const Vector3 in_v,
+        const float halflife,
+        const float dt)
+    {
+        CritDampSpring::_decay_spring_damper_exact(off_x, off_v, halflife, dt);
+        out_x = in_x + off_x;
+        out_v = in_v + off_v;
+    }
+
+    static inline void inertialize_transition(
+        Quaternion &off_x,
+        Vector3 &off_v,
+        const Quaternion src_x,
+        const Vector3 src_v,
+        const Quaternion dst_x,
+        const Vector3 dst_v)
+    {
+        off_x = CritDampSpring::quat_abs((off_x * src_x) * dst_x.inverse());
+        off_v = (off_v + src_v) - dst_v;
+    }
+    static inline void inertialize_update(
+        Quaternion &out_x,
+        Vector3 &out_v,
+        Quaternion &off_x,
+        Vector3 &off_v,
+        const Quaternion in_x,
+        const Vector3 in_v,
+        const float halflife,
+        const float dt)
+    {
+        CritDampSpring::_decay_spring_damper_exact(off_x, off_v, halflife, dt);
+        out_x = off_x * in_x;
+        out_v = off_v + off_x.xform(in_v);
+    }
+
+    static inline Vector3 calculate_offset_vec3(const Vector3 src_x,const Vector3 dst_x,const Vector3 off_x = Vector3())
+    {
+        return (src_x + off_x) - dst_x;
+    }
+    static inline Quaternion calculate_offset_quat(const Quaternion src_q,const Quaternion dst_q,const Quaternion off_q = Quaternion())
+    {
+        return CritDampSpring::quat_abs((off_q * src_q) * dst_q.inverse());
+    }
+
+
+
+    static inline Dictionary binded_inertia_transition(const Vector3 off_x,
+                                                       const Vector3 off_v,
+                                                       const Vector3 src_x,
+                                                       const Vector3 src_v,
+                                                       const Vector3 dst_x,
+                                                       const Vector3 dst_v,
+                                                       const Quaternion off_q,
+                                                       const Vector3 off_a,
+                                                       const Quaternion src_q,
+                                                       const Vector3 src_a,
+                                                       const Quaternion dst_q,
+                                                       const Vector3 dst_a)
+    {
+        Dictionary result;
+        result["position_offset"] = (src_x + off_x) - dst_x;
+        result["velocity_offset"] = (src_v + off_v) - dst_v;
+        result["rotation_offset"] = CritDampSpring::quat_abs((off_q * src_q) * dst_q.inverse());
+        result["angular_offset"] = (off_a + src_a) - dst_a;
+        return result;
+    }
+
 
     
 protected:
@@ -290,6 +455,7 @@ protected:
         ClassDB::bind_static_method("CritDampSpring", D_METHOD("damp_adjustment_exact_quat", "g", "halflife", "dt", "eps"), &CritDampSpring::damp_adjustment_exact_quat, DEFVAL(1e-8f));
         ClassDB::bind_static_method("CritDampSpring", D_METHOD("damp_adjustment_exact", "g", "halflife", "dt", "eps"), &CritDampSpring::damp_adjustment_exact, DEFVAL(1e-8f));
 
+        ClassDB::bind_static_method("CritDampSpring", D_METHOD("halflife_to_duration", "halflife", "initial_value", "eps"), &CritDampSpring::halflife_to_damping, DEFVAL(1.0f), DEFVAL(1e-5f));
         ClassDB::bind_static_method("CritDampSpring", D_METHOD("halflife_to_damping", "halflife", "eps"), &CritDampSpring::halflife_to_damping, DEFVAL(1e-5f));
         ClassDB::bind_static_method("CritDampSpring", D_METHOD("damping_to_halflife", "damping", "eps"), &CritDampSpring::damping_to_halflife, DEFVAL(1e-5f));
         ClassDB::bind_static_method("CritDampSpring", D_METHOD("frequency_to_stiffness", "frequency"), &CritDampSpring::frequency_to_stiffness);
