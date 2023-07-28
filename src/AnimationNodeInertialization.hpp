@@ -269,7 +269,9 @@ public:
             {
                 u::prints("Changing", transition_animation, pending_animation);
                 // TODO REWORK how we transition
-                pending = true;
+                transition_time = 0.0f;
+                pending = false;
+                return 0.0f;
             }
             return anim_size - transition_time;
         }
@@ -336,6 +338,7 @@ public:
 
         String skel_path = skeleton->is_unique_name_in_owner() ? "%" + skeleton->get_name() : skeleton->get_owner()->get_path_to(skeleton,true);
         auto duration = CritDampSpring::halflife_to_duration(halflife) + 0.16f;
+
 
         if(! animlib->has_animation(anim_name) ){
             anim.instantiate();
@@ -405,11 +408,12 @@ public:
                     CritDampSpring::inertialize_transition(offset_x,offset_v,curr_bone_pos,curr_bone_vel,fut_bone_pos,fut_bone_vel);
                     // Let's inertialize
 
-                    for(auto delta = 0.0f; delta < duration; delta += 0.16f)
+                    for(auto delta = 0.0f; delta < duration  -  0.16f; delta += 0.16f)
                     {
-                        CritDampSpring::inertialize_update(out_x,out_v,offset_x,offset_v,in_x,in_v,0.1,0.16f);
+                        CritDampSpring::inertialize_update(out_x,out_v,offset_x,offset_v,in_x,in_v,halflife,0.16f);
                         anim->position_track_insert_key(t,delta,out_x);
                     }
+                    anim->position_track_insert_key(t,duration,fut_bone_pos);
                 }
                 else
                 {
@@ -439,11 +443,12 @@ public:
                     Quaternion out_x; Vector3 out_v;
                     CritDampSpring::inertialize_transition(offset_x,offset_v,curr_bone_rot,curr_bone_ang,fut_bone_rot,fut_bone_ang);
                     // Let's inertialize
-                    for(auto delta = 0.10f; delta < duration; delta += 0.16f)
+                    for(auto delta = 0.0f; delta < duration -  0.16f; delta += 0.16f)
                     {
                         CritDampSpring::inertialize_update(out_x,out_v,offset_x,offset_v,in_x,in_v,halflife,0.16f);
                         anim->rotation_track_insert_key(t,delta,out_x);
                     }
+                    anim->rotation_track_insert_key(t,duration,fut_bone_rot);
                 }
                 else
                 {

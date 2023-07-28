@@ -51,7 +51,7 @@ struct CritDampSpring : public RefCounted
     }
 
     static inline float halflife_to_duration(float halflife, float initial_value = 1.0f, float eps = 1e-5f){
-        return halflife * log(eps/initial_value) / log(0.5);
+        return halflife * (log(eps/initial_value) / log(0.5));
     }
 
     static inline float damping_to_halflife(float damping, float eps = 1e-5f) {
@@ -455,7 +455,7 @@ protected:
         ClassDB::bind_static_method("CritDampSpring", D_METHOD("damp_adjustment_exact_quat", "g", "halflife", "dt", "eps"), &CritDampSpring::damp_adjustment_exact_quat, DEFVAL(1e-8f));
         ClassDB::bind_static_method("CritDampSpring", D_METHOD("damp_adjustment_exact", "g", "halflife", "dt", "eps"), &CritDampSpring::damp_adjustment_exact, DEFVAL(1e-8f));
 
-        ClassDB::bind_static_method("CritDampSpring", D_METHOD("halflife_to_duration", "halflife", "initial_value", "eps"), &CritDampSpring::halflife_to_damping, DEFVAL(1.0f), DEFVAL(1e-5f));
+        ClassDB::bind_static_method("CritDampSpring", D_METHOD("halflife_to_duration", "halflife", "initial_value", "eps"), &CritDampSpring::halflife_to_duration, DEFVAL(1.0f), DEFVAL(1e-5f));
         ClassDB::bind_static_method("CritDampSpring", D_METHOD("halflife_to_damping", "halflife", "eps"), &CritDampSpring::halflife_to_damping, DEFVAL(1e-5f));
         ClassDB::bind_static_method("CritDampSpring", D_METHOD("damping_to_halflife", "damping", "eps"), &CritDampSpring::damping_to_halflife, DEFVAL(1e-5f));
         ClassDB::bind_static_method("CritDampSpring", D_METHOD("frequency_to_stiffness", "frequency"), &CritDampSpring::frequency_to_stiffness);
