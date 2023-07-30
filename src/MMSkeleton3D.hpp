@@ -29,12 +29,14 @@
 #include <CritSpringDamper.hpp>
 
 // Macro setup. Mostly there to simplify writing all those
-#define GETSET(type,variable,...) type variable{__VA_ARGS__}; type get_##variable(){return  variable;} void set_##variable(type value){variable = value;}
+#define GETSET(type,variable,...) type variable{__VA_ARGS__};\
+    type get_##variable(){return  variable;}  \
+    void set_##variable(type value){variable = value;}
 #define STR(x) #x
 #define STRING_PREFIX(prefix,s) STR(prefix##s)
 #define BINDER_PROPERTY_PARAMS(type,variant_type,variable,...)\
         ClassDB::bind_method( D_METHOD(STRING_PREFIX(set_,variable) ,"value"), &type::set_##variable);\
-        ClassDB::bind_method( D_METHOD(STRING_PREFIX(get_,variable) ), &type::get_##variable);\
+        ClassDB::bind_method( D_METHOD(STRING_PREFIX(get_,variable) ), &type::get_##variable); \
         ADD_PROPERTY(PropertyInfo(variant_type,#variable,__VA_ARGS__),STRING_PREFIX(set_,variable),STRING_PREFIX(get_,variable));
 
 /// @brief This animation node is for Motion Matching.
@@ -60,13 +62,25 @@ struct MMSkeleton3D : godot::Skeleton3D
 
     GETSET(float,halflife,0.1);
 
-    GETSET(String,root_path);
+    String root_bone_name{}; uint32_t root_bone_id = -1;
+    String get_root_bone_name(){return root_bone_name;} 
+    void set_root_bone_name(String value){
+        root_bone_id = find_bone(value);
+        if (root_bone_id < 0)
+        {
+            u::prints("Didn't find bone ",value);
+            root_bone_id = -1;
+            root_bone_name = "";
+        }
+        root_bone_name = value;        
+    }
+
     Ref<Animation> pending_desired_anim = nullptr;
     float pending_desired_time = 0.0f;
 
     bool new_request = false;
 
-    virtual void request_animation(Ref<Animation> p_animation, float p_time)
+    virtual void request_animation(Ref<Animation> p_animation, float p_time,float new_halflife = -1.0f)
     {
         // TODO : This is a test to see if preventing going to the same animation give better result
         // Maybe it's not the job of the skeleton to prevent such conditions ?
@@ -74,6 +88,10 @@ struct MMSkeleton3D : godot::Skeleton3D
         {
             u::prints("Same animation");
             return;
+        }
+        if ( new_halflife > 0.0f)
+        {
+            set_halflife(new_halflife);
         }
         new_request = true;
         bones_kform.reserve(get_bone_count());
@@ -159,10 +177,15 @@ struct MMSkeleton3D : godot::Skeleton3D
     protected:
     static void _bind_methods()
     {
-        ClassDB::bind_method(D_METHOD("request_animation","animation","timestamp"),&MMSkeleton3D::request_animation);
+        ClassDB::bind_method(D_METHOD("request_animation","animation","timestamp","new_halflife"),&MMSkeleton3D::request_animation,(-1.0f));
 
         ClassDB::bind_method( D_METHOD("set_halflife" ,"value"), &MMSkeleton3D::set_halflife); 
         ClassDB::bind_method( D_METHOD("get_halflife" ), &MMSkeleton3D::get_halflife); 
-        godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT,"halflife"), "set_halflife", "get_halflife");
+        godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT,"halflife"
+        , PROPERTY_HINT_RANGE, "0.0,1,0.01,or_greater"), "set_halflife", "get_halflife");
+
+        ClassDB::bind_method( D_METHOD("set_root_bone_name" ,"value"), &MMSkeleton3D::set_root_bone_name); 
+        ClassDB::bind_method( D_METHOD("get_root_bone_name" ), &MMSkeleton3D::get_root_bone_name); 
+        godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::STRING,"root_bone_name"), "set_root_bone_name", "get_root_bone_name");
     }
 };
