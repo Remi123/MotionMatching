@@ -17,6 +17,7 @@
 #include "MotionFeatures/LocalDistanceToPointMotionFeature.hpp"
 
 #include <AnimationNodeInertialization.hpp>
+#include <MMSkeleton3D.hpp>
 #include "CircularBuffer.hpp"
 
 //#include "AnimationNodeInertialization.hpp"
@@ -41,7 +42,7 @@ void gdextension_initialize(ModuleInitializationLevel p_level)
 		ClassDB::register_class<TrajectoryMotionFeature>();
 		ClassDB::register_class<LocalDistanceToPointMotionFeature>();
 
-
+		ClassDB::register_class<MMSkeleton3D>();
 		ClassDB::register_class<MotionMatcher>();
 		ClassDB::register_class<CritDampSpring>();
 	}

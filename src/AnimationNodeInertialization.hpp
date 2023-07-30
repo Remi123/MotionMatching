@@ -204,11 +204,142 @@ public:
     std::vector<Quaternion> bones_rot{};
     std::vector<Vector3> bones_ang{};
 
+    struct kform
+    {
+        Vector3 pos = Vector3(0, 0, 0); // Position
+        Quaternion rot = Quaternion();  // Rotation
+        Vector3 scl = Vector3(1, 1, 1); // Scale
+        Vector3 vel = Vector3(0, 0, 0); // Linear Velocity
+        Vector3 ang = Vector3(0, 0, 0); // Angular Velocity
+        Vector3 svl = Vector3(0, 0, 0); // Scalar Velocity
+    };
+
+    HashMap<NodePath,kform> bones_kform{}, bones_offset{};
+
+void create_animation_if_required(){
+        // create transition animation if necessary
+        if (! ap->has_animation_library(inertialization_animation_library_name)){
+            inertialization_animation_library.instantiate();
+            ap->add_animation_library(inertialization_animation_library_name,inertialization_animation_library);
+            u::prints("Creating animation library",inertialization_animation_library_name);
+        }
+
+        ERR_FAIL_NULL(inertialization_animation_library);
+        ERR_FAIL_COND(!ap->has_animation_library(inertialization_animation_library_name));
+
+        String skel_path = skeleton->is_unique_name_in_owner() ? "%" + skeleton->get_name() : skeleton->get_owner()->get_path_to(skeleton,true);
+        inertialization_animation_name = String("inert_") +  u::str(reinterpret_cast<std::uintptr_t>(skeleton));
+
+        if(! inertialization_animation_library->has_animation(inertialization_animation_name) ){
+            inertialization_animation.instantiate();
+            inertialization_animation->set_length(0.16f);
+            for (int b = 0; b < skeleton->get_bone_count(); ++b)
+            {
+                NodePath bone_path = skel_path + String(":") + skeleton->get_bone_name(b);
+                auto local_tr = skeleton->get_bone_pose(b);
+                
+                int pos_track = inertialization_animation->add_track(Animation::TrackType::TYPE_POSITION_3D);                
+                int rot_track = inertialization_animation->add_track(Animation::TrackType::TYPE_ROTATION_3D);
+                
+                inertialization_animation->track_set_path(pos_track,bone_path);
+                {
+                    inertialization_animation->position_track_insert_key(pos_track,0.0,Vector3());
+                    inertialization_animation->track_set_interpolation_type(pos_track,Animation::InterpolationType::INTERPOLATION_NEAREST);
+                }
+                inertialization_animation->track_set_path(rot_track,bone_path);
+                {
+                    inertialization_animation->rotation_track_insert_key(rot_track,0.0,Quaternion());
+                    inertialization_animation->track_set_interpolation_type(rot_track,Animation::InterpolationType::INTERPOLATION_NEAREST);
+
+                }
+                bones_kform[bone_path] = kform();
+                bones_offset[bone_path] = kform();
+            }
+            u::prints("Created animation for Skeleton :",inertialization_animation_name,inertialization_animation->get_track_count());
+            inertialization_animation_library->add_animation(inertialization_animation_name,inertialization_animation);
+        }
+        ERR_FAIL_NULL(inertialization_animation);
+        auto anim_name = String(inertialization_animation_library_name) +'/'+inertialization_animation_name;
+        ERR_FAIL_COND_MSG(!ap->has_animation(anim_name),"No animation named " + anim_name);
+    }
+
 
 
     //--------------------------------------
+    virtual double _attemped_process(double p_time, bool p_seek, bool p_is_external_seeking, bool p_test_only)
+    {
+        if(skeleton == nullptr || ap == nullptr )
+        {
+            return 0.0;
+        }
+        create_animation_if_required();
+        if (pending_desired_anim == nullptr || inertialization_animation == nullptr)
+        {
+            return 0.0f;
+        }
+        auto anim_name = String(inertialization_animation_library_name) + '/' + inertialization_animation_name;
+        inertialization_animation = ap->get_animation(anim_name);
+        // update the currents kforms informations
+        // inertialize
+        pending_desired_time += p_time;
+        for(int t = 0; t < inertialization_animation->get_track_count(); ++t )
+        {
+            // TODO Store track path in the pending to not always search for tracks
+            if( inertialization_animation->track_get_type(t) == Animation::TrackType::TYPE_POSITION_3D)
+            {                 
+                auto desired_track = pending_desired_anim->find_track(inertialization_animation->track_get_path(t),Animation::TrackType::TYPE_POSITION_3D);
+                if(desired_track != -1)
+                {
+                    Vector3 pos = pending_desired_anim->position_track_interpolate(desired_track,pending_desired_time);
+                    // TODO pos must be inertialized
+                    //inertialization_animation->track_set_key_value(t,0,pos);
+                    inertialization_animation->position_track_insert_key(t,0.0,pos);
+                }
+                else {
+                }
+            }
+            else if( inertialization_animation->track_get_type(t) == Animation::TrackType::TYPE_ROTATION_3D)
+            {                 
+                auto desired_track = pending_desired_anim->find_track(inertialization_animation->track_get_path(t),Animation::TrackType::TYPE_ROTATION_3D);
+                if(desired_track != -1)
+                {
+                    Quaternion rot = pending_desired_anim->rotation_track_interpolate(desired_track,pending_desired_time);
+                    // // TODO rot must be inertialized
+
+                    inertialization_animation->rotation_track_insert_key(t,0.0,rot);
+                   // Quaternion cur = inertialization_animation->rotation_track_interpolate(t,0.0f);
+                   // inertialization_animation->rotation_track_insert_key(t,0.0,(cur * Quaternion(Vector3(0,1,0),u::deg_to_rad(20)).normalized()));
+                } else {
+                    // Quaternion cur = inertialization_animation->rotation_track_interpolate(t,0.0f);
+                    // inertialization_animation->rotation_track_insert_key(t,0.0,(cur * Quaternion(Vector3(0,1,0),u::deg_to_rad(20)).normalized()));
+                    //u::prints("not found rot track for",inertialization_animation->track_get_path(t));
+                }           
+            }
+        }
+        auto loop_flag =  Animation::LoopedFlag::LOOPED_FLAG_NONE;
+
+        if(yes)
+        {
+            blend_animation(anim_name, 0.01, p_time, false, false, 1.0, loop_flag);
+        }
+        else {
+            blend_animation(anim_name, 0.01, p_time, false, false, 1.0, loop_flag);
+        }
+        yes = !yes;
+        inertialization_animation->emit_changed();
+        inertialization_animation_library->emit_changed();
+        return 0.016; pending_desired_anim->get_length() - pending_desired_time;
+    }
+    bool yes = true;
+    String inertialization_animation_library_name = String("Inertialization");
+    Ref<AnimationLibrary> inertialization_animation_library = nullptr;
+    String inertialization_animation_name = "";
+    Ref<Animation> inertialization_animation = nullptr;
+    Ref<Animation> pending_desired_anim = nullptr;
+    float pending_desired_time = 0.0f;
 
 
+    
 
     String pending_animation = "";    
     double pending_timestamp = 0.0;
@@ -221,7 +352,7 @@ public:
     /// @param p_is_external_seeking 
     /// @param p_test_only 
     /// @return
-    virtual double _process(double p_time, bool p_seek, bool p_is_external_seeking, bool p_test_only)
+    virtual double _old_process(double p_time, bool p_seek, bool p_is_external_seeking, bool p_test_only)
     {
         if(skeleton == nullptr || ap == nullptr)
         {
@@ -295,6 +426,7 @@ public:
     {
         ERR_FAIL_NULL(ap);
         ERR_FAIL_NULL(skeleton);
+        ERR_FAIL_COND_MSG(!ap->has_animation(p_next_anim),"No animation named " + p_next_anim);
 
         // if (pending == true && p_next_anim == pending_animation && abs(p_next_timestamp - transition_time) < 0.25)
         // {
@@ -314,6 +446,14 @@ public:
         //   During the transition, it should be possible to switch the desired pose without problem.
 
         pending = true;
+        pending_desired_anim = ap->get_animation(p_next_anim);
+        pending_desired_time = p_next_timestamp;
+        // TODO : Should inertialize_transition and update offset
+        auto a = ap->get_animation(inertialization_animation_library_name + '/' + inertialization_animation_name);
+        auto t = a->find_track("%GeneralSkeleton:Hips",Animation::TrackType::TYPE_ROTATION_3D);
+        auto rot = a->rotation_track_interpolate(t,0.0);
+        u::prints("Root rot",rot);
+        return;
 
         // create transition animation if necessary
         Ref<AnimationLibrary> animlib = nullptr;
