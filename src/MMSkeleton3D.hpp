@@ -106,44 +106,44 @@ struct MMSkeleton3D : godot::Skeleton3D
             }
             else if (pending_desired_anim->track_get_type(t) == Animation::TrackType::TYPE_POSITION_3D)
             {
-                if (new_request)
-                {
-                    auto fut_bone_pos = pending_desired_anim->position_track_interpolate(t, current_time);
-                    auto fut_bone_vel = (pending_desired_anim->position_track_interpolate(t, current_time + 0.16f) - fut_bone_pos) / 0.016f;
-                    CritDampSpring::inertialize_transition(bones_offset[bone_id].pos, bones_offset[bone_id].vel,
-                                                           bones_kform[bone_id].pos, bones_kform[bone_id].vel,
-                                                           fut_bone_pos, fut_bone_vel);
-                }
                 auto fut_bone_pos = pending_desired_anim->position_track_interpolate(t, current_time);
                 auto fut_bone_vel = (pending_desired_anim->position_track_interpolate(t, current_time + 0.16) - fut_bone_pos) / 0.016;
+                if (new_request)
+                {
+                    // At this point the animation desired changed
+                    CritDampSpring::inertialize_transition(bones_offset[bone_id].pos, bones_offset[bone_id].vel, // Offset are calculated...
+                                                           bones_kform[bone_id].pos, bones_kform[bone_id].vel,   // Between current pos of the bone...
+                                                           fut_bone_pos, fut_bone_vel);                          // and the desired pose
+                }
 
-                CritDampSpring::inertialize_update(bones_kform[bone_id].pos, bones_kform[bone_id].vel,
-                                                   bones_offset[bone_id].pos, bones_offset[bone_id].vel,
-                                                   fut_bone_pos, fut_bone_vel,
-                                                   halflife, delta);
-                set_bone_pose_position(bone_id, bones_kform[bone_id].pos * get_motion_scale());
+                CritDampSpring::inertialize_update(bones_kform[bone_id].pos, bones_kform[bone_id].vel,   // Current pos of the bone
+                                                   bones_offset[bone_id].pos, bones_offset[bone_id].vel, // Current Offset pos, get reduced every frame
+                                                   fut_bone_pos, fut_bone_vel,                           // Desired position from the animation
+                                                   halflife,                                             // Stats on how the offset decay
+                                                   delta);                                               // delta time between frames
+                set_bone_pose_position(bone_id, bones_kform[bone_id].pos * get_motion_scale());          // Set the bone position with motion_scale
             }
             else if (pending_desired_anim->track_get_type(t) == Animation::TrackType::TYPE_ROTATION_3D)
             {
-                if (new_request)
-                {
-                    auto fut_bone_rot = pending_desired_anim->rotation_track_interpolate(t, current_time);
-                    auto fut_bone_ang = CritDampSpring::quat_to_scaled_angle_axis(
-                                            CritDampSpring::quat_abs(pending_desired_anim->rotation_track_interpolate(t, current_time + 0.16f) * fut_bone_rot.inverse())) /
-                                        0.16f;
-                    CritDampSpring::inertialize_transition(bones_offset[bone_id].rot, bones_offset[bone_id].ang,
-                                                           bones_kform[bone_id].rot, bones_kform[bone_id].ang,
-                                                           fut_bone_rot, fut_bone_ang);
-                }
                 auto fut_bone_rot = pending_desired_anim->rotation_track_interpolate(t, current_time);
                 auto fut_bone_ang = CritDampSpring::quat_to_scaled_angle_axis(
-                                        CritDampSpring::quat_abs(pending_desired_anim->rotation_track_interpolate(t, current_time + 0.16f) * fut_bone_rot.inverse())) / 0.16f;
+                                        CritDampSpring::quat_abs(pending_desired_anim->rotation_track_interpolate(t, current_time + 0.16f) * fut_bone_rot.inverse())) /
+                                    0.16f;
 
-                CritDampSpring::inertialize_update(bones_kform[bone_id].rot, bones_kform[bone_id].ang,
-                                                   bones_offset[bone_id].rot, bones_offset[bone_id].ang,
-                                                   fut_bone_rot, fut_bone_ang,
-                                                   halflife, delta);
-                set_bone_pose_rotation(bone_id, bones_kform[bone_id].rot);
+                if (new_request)
+                {
+                    // At this point the animation desired changed
+                    CritDampSpring::inertialize_transition(bones_offset[bone_id].rot, bones_offset[bone_id].ang, // Offset are calculated...
+                                                           bones_kform[bone_id].rot, bones_kform[bone_id].ang,   // Between current rot of the bone...
+                                                           fut_bone_rot, fut_bone_ang);                          // and the desired pose
+                }
+
+                CritDampSpring::inertialize_update(bones_kform[bone_id].rot, bones_kform[bone_id].ang,   // Current rot of the bone
+                                                   bones_offset[bone_id].rot, bones_offset[bone_id].ang, // Current Offset rot, get reduced every frame
+                                                   fut_bone_rot, fut_bone_ang,                           // Desired rotation from the animation
+                                                   halflife,                                             // Stats on how the offset decay
+                                                   delta);                                               // delta time between frames
+                set_bone_pose_rotation(bone_id, bones_kform[bone_id].rot);                               // Set the bone rotation
             }
         }
 
