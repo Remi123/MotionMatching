@@ -31,7 +31,8 @@ void gdextension_initialize(ModuleInitializationLevel p_level)
 		//ClassDB::register_class<AABBTree>();
 		//ClassDB::register_class<KDTree>();
 
-		ClassDB::register_class<AnimationNodeInertialization>();
+		// Not Working
+		// ClassDB::register_class<AnimationNodeInertialization>();
 
 		ClassDB::register_class<CircularBuffer>();
 		

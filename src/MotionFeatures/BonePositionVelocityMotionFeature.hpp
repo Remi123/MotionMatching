@@ -59,6 +59,10 @@ struct BonePositionVelocityMotionFeature : public MotionFeature {
     HashMap<uint32_t,PackedInt32Array> bone_tracks{};
 
     virtual int get_dimension()override{
+        if(use_inertialization)
+        {
+            return bone_names.size();
+        }
         return bone_names.size() * 3 * 2;
     }
     virtual void setup_nodes(Variant main_node, Skeleton3D* skeleton) override{
@@ -161,15 +165,34 @@ struct BonePositionVelocityMotionFeature : public MotionFeature {
         Transform3D root = _skeleton->get_bone_global_pose(root_id);
         root.set_origin(root.origin / _skeleton->get_motion_scale());
 
-
-        for(size_t index = 0; index < bones_id.size(); ++index)
+        if (use_inertialization)
         {
-            const auto pos = root.xform_inv(curr_pos[index]);
-            result.push_back(pos.x);result.push_back(pos.y);result.push_back(pos.z);
-            const auto vel = root.basis.xform_inv(curr_pos[index] - prev_pos[index])/0.1;
-            result.push_back(vel.x);result.push_back(vel.y);result.push_back(vel.z);
+            for (size_t index = 0; index < bones_id.size(); ++index)
+            {
+                const auto pos = root.xform_inv(curr_pos[index]);
+                const auto vel = root.basis.xform_inv(curr_pos[index] - prev_pos[index]) / 0.1;
+                const auto cost = inertialization_cost_function(pos, vel, inertialization_halflife);
+                result.push_back(cost.x);result.push_back(cost.y);result.push_back(cost.z);
+            }
+            return result;
         }
-        return result;
+        else
+        {
+            for (size_t index = 0; index < bones_id.size(); ++index)
+            {
+                const auto pos = root.xform_inv(curr_pos[index]);
+                result.push_back(pos.x);result.push_back(pos.y);result.push_back(pos.z);
+                const auto vel = root.basis.xform_inv(curr_pos[index] - prev_pos[index]) / 0.1;
+                result.push_back(vel.x);result.push_back(vel.y);result.push_back(vel.z);
+            }
+            return result;
+        }
+    }
+
+    Vector3 inertialization_cost_function(Vector3 pos, Vector3 vel, float halflife)
+    {
+        const auto halfdamp =  CritDampSpring::halflife_to_damping(halflife) / 2.0;
+        return (2*pos) / halfdamp + vel / (halfdamp * halfdamp);
     }
 
     PackedVector3Array last_known_positions{};
@@ -181,7 +204,7 @@ struct BonePositionVelocityMotionFeature : public MotionFeature {
     GETSET(PackedVector3Array,bones_vel);
 
     virtual void physics_update(double delta) override {
-        last_known_result.resize(bones_id.size()*2*3);
+
         bones_pos.resize(bones_id.size());
         bones_vel.resize(bones_id.size());
         for(size_t index = 0; index < bones_id.size(); ++index)
@@ -194,13 +217,28 @@ struct BonePositionVelocityMotionFeature : public MotionFeature {
         } 
     }
 
-    virtual PackedFloat32Array broadphase_query_pose(Dictionary blackboard,float delta) override{
-        // PackedVector3Array current_positions{}, current_velocities{};
-        last_known_result.resize(bones_id.size()*2*3);
+    virtual PackedFloat32Array broadphase_query_pose(Dictionary blackboard,float delta) override{        
         bones_pos.resize(bones_id.size());
         bones_vel.resize(bones_id.size());
-
         constexpr size_t size = 3;
+
+        if(use_inertialization)
+        {
+            last_known_result.resize(bones_id.size() * 3);
+            for (size_t i = 0; i < bones_id.size(); ++i)
+            {
+                Vector3 pos = bones_pos[i], vel = bones_vel[i];
+                auto cost = inertialization_cost_function(pos, vel, inertialization_halflife);
+                last_known_result[i * size] = cost.x;
+                last_known_result[i * size + 1] = cost.y;
+                last_known_result[i * size + 2] = cost.z;
+            }
+            return last_known_result;
+        }
+
+        last_known_result.resize(bones_id.size()*2*3);
+
+
         for(size_t i = 0; i < bones_id.size(); ++i)
         {
             Vector3 pos = bones_pos[i], vel = bones_vel[i];
@@ -217,8 +255,20 @@ struct BonePositionVelocityMotionFeature : public MotionFeature {
 
     float weight_bone_pos{1.0f}; float get_weight_bone_pos(){return weight_bone_pos;} void set_weight_bone_pos(float value){weight_bone_pos = value;}
     float weight_bone_vel{1.0f}; float get_weight_bone_vel(){return weight_bone_vel;} void set_weight_bone_vel(float value){weight_bone_vel = value;}
+    float weight_inertialization{1.0f}; float get_weight_inertialization(){return weight_inertialization;} void set_weight_inertialization(float value){weight_inertialization = value;}
+    
     virtual PackedFloat32Array get_weights() override{
         PackedFloat32Array result{};
+
+        if (use_inertialization)
+        {
+            for (auto i = 0; i < 3 * bone_names.size(); ++i)
+            {
+                result.append(weight_inertialization);
+            }
+            return result;
+        }
+
         for(auto i =0; i < 3 * bone_names.size(); ++i)
         {
             result.append(weight_bone_pos);
@@ -236,6 +286,9 @@ struct BonePositionVelocityMotionFeature : public MotionFeature {
     }
     String get_root_bone_name(){return root_bone_name;}
 
+    GETSET(bool,use_inertialization)
+    GETSET(float,inertialization_halflife,0.01)
+
 protected:
     static void _bind_methods() {
         ClassDB::bind_method(D_METHOD("set_weight_bone_pos", "value"), &BonePositionVelocityMotionFeature::set_weight_bone_pos);
@@ -246,8 +299,17 @@ protected:
         godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT, "weight_bone_vel"), "set_weight_bone_vel", "get_weight_bone_vel");
 
 
+
         ClassDB::add_property_group(get_class_static(), "Nodes & Resources Sources", "");
         {
+            ClassDB::bind_method( D_METHOD("set_use_inertialization" ,"value"), &BonePositionVelocityMotionFeature::set_use_inertialization); 
+            ClassDB::bind_method( D_METHOD("get_use_inertialization" ), &BonePositionVelocityMotionFeature::get_use_inertialization); 
+            godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::BOOL,"use_inertialization"), "set_use_inertialization", "get_use_inertialization");
+
+            ClassDB::bind_method( D_METHOD("set_inertialization_halflife" ,"value"), &BonePositionVelocityMotionFeature::set_inertialization_halflife); 
+            ClassDB::bind_method( D_METHOD("get_inertialization_halflife" ), &BonePositionVelocityMotionFeature::get_inertialization_halflife); 
+            godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT,"inertialization_halflife"), "set_inertialization_halflife", "get_inertialization_halflife");
+
             ClassDB::bind_method(D_METHOD("set_root_bone_name", "value"), &BonePositionVelocityMotionFeature::set_root_bone_name, DEFVAL("Root"));
             ClassDB::bind_method(D_METHOD("get_root_bone_name"), &BonePositionVelocityMotionFeature::get_root_bone_name);
             ADD_PROPERTY(PropertyInfo(Variant::STRING, "Root Bone"), "set_root_bone_name", "get_root_bone_name");
@@ -313,6 +375,11 @@ protected:
         auto velocity_color = gizmo->get_plugin()->get_material(mat_name_vel,gizmo);
         position_color->set_albedo(debug_color_position);
         velocity_color->set_albedo(debug_color_velocity);
+
+        if(use_inertialization)
+        {
+            return;
+        }
 
         constexpr int s = 3;
         for(size_t index = 0; index < bone_names.size(); ++index)

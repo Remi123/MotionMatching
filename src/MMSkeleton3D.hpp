@@ -271,10 +271,30 @@ struct MMSkeleton3D : godot::Skeleton3D
         current_time += delta;
     }
 
+    Vector3 get_root_motion_velocity()
+    {
+        if (root_bone_id < 0)
+        {
+            return {};
+        }
+        return bones_kform[root_bone_id].rot.xform_inv(bones_kform[root_bone_id].vel);
+    }
+    Quaternion get_root_motion_angular()
+    {
+        if (root_bone_id < 0)
+        {
+            return {};
+        }
+        return CritDampSpring::quat_from_scaled_angle_axis(bones_kform[root_bone_id].ang);
+    }
+
     protected:
     static void _bind_methods()
     {
         ClassDB::bind_method(D_METHOD("request_animation","animation","timestamp","new_halflife"),&MMSkeleton3D::request_animation,(-1.0f));
+        
+        ClassDB::bind_method(D_METHOD("get_root_motion_velocity"),&MMSkeleton3D::get_root_motion_velocity);
+        ClassDB::bind_method(D_METHOD("get_root_motion_angular"),&MMSkeleton3D::get_root_motion_angular);
 
         ClassDB::bind_method( D_METHOD("set_halflife" ,"value"), &MMSkeleton3D::set_halflife); 
         ClassDB::bind_method( D_METHOD("get_halflife" ), &MMSkeleton3D::get_halflife); 
