@@ -328,7 +328,7 @@ void create_animation_if_required(){
         yes = !yes;
         inertialization_animation->emit_changed();
         inertialization_animation_library->emit_changed();
-        return 0.016; pending_desired_anim->get_length() - pending_desired_time;
+        return 0.016;
     }
     bool yes = true;
     String inertialization_animation_library_name = String("Inertialization");
