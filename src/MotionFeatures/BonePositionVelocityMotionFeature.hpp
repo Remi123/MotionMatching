@@ -61,7 +61,7 @@ struct BonePositionVelocityMotionFeature : public MotionFeature {
     virtual int get_dimension()override{
         if(use_inertialization)
         {
-            return bone_names.size();
+            return bone_names.size() * 3;
         }
         return bone_names.size() * 3 * 2;
     }
@@ -83,9 +83,14 @@ struct BonePositionVelocityMotionFeature : public MotionFeature {
         last_known_positions.fill({});
         last_known_velocities.resize(bones_id.size());
         last_known_velocities.fill({});
-        last_known_result.resize(bones_id.size()*2*3);
+        if (use_inertialization)
+        {
+            last_known_result.resize(bones_id.size() * 3);
+            last_known_result.fill({});
+            return;
+        }
+        last_known_result.resize(bones_id.size() * 2 * 3);
         last_known_result.fill({});
-
     }
     virtual void setup_for_animation(Ref<Animation> animation)override{
         _skeleton->reset_bone_poses();
@@ -297,7 +302,10 @@ protected:
         ClassDB::bind_method(D_METHOD("set_weight_bone_vel", "value"), &BonePositionVelocityMotionFeature::set_weight_bone_vel);
         ClassDB::bind_method(D_METHOD("get_weight_bone_vel"), &BonePositionVelocityMotionFeature::get_weight_bone_vel);
         godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT, "weight_bone_vel"), "set_weight_bone_vel", "get_weight_bone_vel");
-
+        ClassDB::bind_method(D_METHOD("set_weight_inertialization", "value"), &BonePositionVelocityMotionFeature::set_weight_inertialization);
+        ClassDB::bind_method(D_METHOD("get_weight_inertialization"), &BonePositionVelocityMotionFeature::get_weight_inertialization);
+        godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT, "weight_inertialization"), "set_weight_inertialization", "get_weight_inertialization");
+        
 
 
         ClassDB::add_property_group(get_class_static(), "Nodes & Resources Sources", "");

@@ -24,7 +24,7 @@
 
 using namespace godot;
 
-void gdextension_initialize(ModuleInitializationLevel p_level)
+void gdextension_MM_initialize(ModuleInitializationLevel p_level)
 {
 	if (p_level == MODULE_INITIALIZATION_LEVEL_SCENE)
 	{
@@ -49,7 +49,7 @@ void gdextension_initialize(ModuleInitializationLevel p_level)
 	}
 }
 
-void gdextension_terminate(ModuleInitializationLevel p_level)
+void gdextension_MM_terminate(ModuleInitializationLevel p_level)
 {
 	if (p_level == MODULE_INITIALIZATION_LEVEL_SCENE)
 	{
@@ -60,11 +60,11 @@ extern "C" {
 
 // Initialization.
 
-	GDExtensionBool GDE_EXPORT gdextension_init(GDExtensionInterfaceGetProcAddress p_get_proc_address, GDExtensionClassLibraryPtr p_library, GDExtensionInitialization *r_initialization) {
+	GDExtensionBool GDE_EXPORT gdextension_motion_matching_init(GDExtensionInterfaceGetProcAddress p_get_proc_address, GDExtensionClassLibraryPtr p_library, GDExtensionInitialization *r_initialization) {
 		godot::GDExtensionBinding::InitObject init_obj(p_get_proc_address, p_library, r_initialization);
 
-		init_obj.register_initializer(gdextension_initialize);
-		init_obj.register_terminator(gdextension_terminate);
+		init_obj.register_initializer(gdextension_MM_initialize);
+		init_obj.register_terminator(gdextension_MM_terminate);
 		init_obj.set_minimum_library_initialization_level(MODULE_INITIALIZATION_LEVEL_SCENE);
 
 		return init_obj.init();

@@ -279,9 +279,9 @@ struct CritDampSpring : public RefCounted
     //	Apprehension parameter controls how far into the future we try to track the linear interpolation
     static void _timed_spring_damper_exact(
         float& x, float& v,
-        const float xi,
-        const float& x_goal, const float& t_goal,
-        const float& halflife, const float& dt,
+        float& xi,
+        const float x_goal, const float t_goal,
+        const float halflife, const float& dt,
         float apprehension = 2.0f
     )
     {
@@ -293,10 +293,10 @@ struct CritDampSpring : public RefCounted
         const float x_goal_future = t_goal_future < t_goal ? xi + v_goal * t_goal_future : x_goal;
 
         _simple_spring_damper_exact(x, v, x_goal_future, halflife, dt);
-        x += v_goal * dt;
+        xi += v_goal * dt;
     }
     static inline PackedFloat32Array timed_spring_damper_exact(float x, float v,
-        const float xi,
+        float xi,
         const float x_goal, const float t_goal,
         const float halflife, const float dt,
         const float apprehension = 2.0f
@@ -305,6 +305,7 @@ struct CritDampSpring : public RefCounted
         _timed_spring_damper_exact(x,v,xi,x_goal,t_goal,halflife,dt,apprehension);
         result.append(x);
         result.append(v);
+        result.append(xi);
         return result;
     }
 
