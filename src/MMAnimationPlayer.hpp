@@ -91,6 +91,7 @@ struct MMAnimationPlayer : godot::AnimationPlayer
         //
         if(p_animation_name == get_current_animation() && abs(p_time - get_current_animation_position()) < time_diff)
         {
+            // We are already playing
             return false;
         }
         if ( new_halflife > 0.0f)
@@ -104,17 +105,19 @@ struct MMAnimationPlayer : godot::AnimationPlayer
         current_time = p_time;
         const double delta = 0.016;
         const String skeleton_path = _skeleton->is_unique_name_in_owner() ? "%" + _skeleton->get_name() : _skeleton->get_owner()->get_path_to(this, true);
-        u::prints(skeleton_path);
-        std::vector<String> missing_pos{};
+
+        p_time = u::clampf(p_time,0.0,p_animation->get_length()-halflife);
+        const auto future_time = u::clampf(p_time+delta,0.0,p_animation->get_length());
+
         for (auto bone_id = 0; bone_id < _skeleton->get_bone_count(); ++bone_id)
         {
-            const auto future_time = u::clampf(p_time+delta,0.0,p_animation->get_length());
+            
             const String bone_path = skeleton_path + String(":") + _skeleton->get_bone_name(bone_id);  
 
             if (auto track_pos = p_animation->find_track(bone_path, Animation::TrackType::TYPE_POSITION_3D); track_pos != -1)
             {
                 Vector3 fut_bone_pos = p_animation->position_track_interpolate(track_pos, p_time);
-                Vector3 fut_bone_vel = (p_animation->position_track_interpolate(track_pos, future_time) - fut_bone_pos) / delta;
+                Vector3 fut_bone_vel = (p_animation->position_track_interpolate(track_pos, future_time) - fut_bone_pos) / abs(future_time - p_time);
 
                 // Offset are calculated Between current pos of the bone and the desired pose
                 CritDampSpring::inertialize_transition(bones_offset[bone_id].pos, bones_offset[bone_id].vel,
@@ -128,7 +131,7 @@ struct MMAnimationPlayer : godot::AnimationPlayer
                 Quaternion fut_bone_rot = p_animation->rotation_track_interpolate(track_rot, p_time);
                 Vector3 fut_bone_ang = CritDampSpring::quat_to_scaled_angle_axis(
                                            CritDampSpring::quat_abs(p_animation->rotation_track_interpolate(track_rot, future_time) * fut_bone_rot.inverse())) /
-                                       delta;
+                                       abs(future_time - p_time);
 
                 // At this point the animation desired changed
                 CritDampSpring::inertialize_transition(bones_offset[bone_id].rot, bones_offset[bone_id].ang, // Offset are calculated...
@@ -139,7 +142,7 @@ struct MMAnimationPlayer : godot::AnimationPlayer
 
         current_time = p_time;
         play(p_animation_name);
-        seek(p_time);
+        seek(p_time,true);
 
         return true;
     }
@@ -211,6 +214,8 @@ struct MMAnimationPlayer : godot::AnimationPlayer
         const auto delta = get_process_callback() == AnimationProcessCallback::ANIMATION_PROCESS_PHYSICS ? get_physics_process_delta_time() : get_process_delta_time();
         const auto track_type = animation->track_get_type(track);
 
+        const auto p_time = u::clampf(get_current_animation_position(), 0.0, animation->get_length()-halflife);
+        const auto future_time = u::clampf(p_time + delta, 0.0, animation->get_length());
 
         switch(track_type)
         {
@@ -218,7 +223,7 @@ struct MMAnimationPlayer : godot::AnimationPlayer
             case Animation::TYPE_POSITION_3D:
             {
                 Vector3 fut_bone_pos = value;
-                Vector3 fut_bone_vel = (animation->position_track_interpolate(track, get_current_animation_position() + delta) - fut_bone_pos) / delta;                
+                Vector3 fut_bone_vel = (animation->position_track_interpolate(track, future_time) - fut_bone_pos) / abs(future_time-p_time);                
                 
                 // Root bone have a special process
                 if (bone_id == root_bone_id)
@@ -242,7 +247,7 @@ struct MMAnimationPlayer : godot::AnimationPlayer
             {
                 Quaternion fut_bone_rot = value;
                 Vector3 fut_bone_ang = CritDampSpring::quat_to_scaled_angle_axis(
-                                        CritDampSpring::quat_abs(animation->rotation_track_interpolate(track, get_current_animation_position()  + delta) * fut_bone_rot.inverse())) / delta;
+                                        CritDampSpring::quat_abs(animation->rotation_track_interpolate(track, future_time) * fut_bone_rot.inverse())) / abs(future_time-p_time);
 
                 if (bone_id == root_bone_id)
                 {
