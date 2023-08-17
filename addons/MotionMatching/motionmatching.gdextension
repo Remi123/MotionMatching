@@ -1,6 +1,6 @@
 [configuration]
 
-entry_symbol = "gdextension_init"
+entry_symbol = "gdextension_motion_matching_init"
 compatibility_minimum = 4.1
 
 [libraries]
