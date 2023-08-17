@@ -39,6 +39,46 @@
         ClassDB::bind_method( D_METHOD(STRING_PREFIX(get_,variable) ), &type::get_##variable); \
         ADD_PROPERTY(PropertyInfo(variant_type,#variable,__VA_ARGS__),STRING_PREFIX(set_,variable),STRING_PREFIX(get_,variable));
 
+struct kforms
+{
+    std::vector<Vector3> pos; // Position
+    std::vector<Quaternion> rot;  // Rotation
+    std::vector<Vector3> scl; // Scale
+    std::vector<Vector3> vel; // Linear Velocity
+    std::vector<Vector3> ang; // Angular Velocity
+    std::vector<Vector3> svl; // Scalar Velocity
+
+    kforms(std::size_t N): pos(N,Vector3()),rot(N,Quaternion()),scl(N,Vector3(1,1,1)),vel(N,Vector3()),ang(N,Vector3()),svl(N,Vector3())
+    {}
+
+    void reserve(std::size_t N){
+        pos.reserve(N); rot.reserve(N); scl.reserve(N);vel.reserve(N); ang.reserve(N); svl.reserve(N);
+    }
+
+    struct proxy{
+        Vector3& pos; 
+        Quaternion& rot ;
+        Vector3& scl ;
+        Vector3& vel ;
+        Vector3& ang ;
+        Vector3& svl ;
+        proxy(kforms& k, std::size_t N):
+            pos{k.pos[N]},rot{k.rot[N]},scl{k.scl[N]},vel{k.vel[N]},ang{k.ang[N]},svl{k.svl[N]}
+        {}
+    };
+
+    inline const proxy operator[](const std::size_t N) noexcept{
+        return proxy(*this,N);
+    }
+
+    void reset(const std::size_t N){
+        pos[N] = Vector3() ;rot[N] = Quaternion(); scl[N] = Vector3(1,1,1) ;vel[N] = Vector3();ang[N] = Vector3();svl[N] = Vector3();
+    }
+
+
+
+
+};
 
 /// @brief This animation node is for Motion Matching.
 /// It was made to get request for a pose from the list of animations,
@@ -49,17 +89,7 @@ struct MMAnimationPlayer : godot::AnimationPlayer
     GDCLASS(MMAnimationPlayer,AnimationPlayer);
     using u = godot::UtilityFunctions;
 
-    struct kform
-    {
-        Vector3 pos = Vector3(0, 0, 0); // Position
-        Quaternion rot = Quaternion();  // Rotation
-        Vector3 scl = Vector3(1, 1, 1); // Scale
-        Vector3 vel = Vector3(0, 0, 0); // Linear Velocity
-        Vector3 ang = Vector3(0, 0, 0); // Angular Velocity
-        Vector3 svl = Vector3(0, 0, 0); // Scalar Velocity
-    };
-
-    HashMap<int32_t,kform> bones_kform{}, bones_offset{};
+    kforms bones_kform{0}, bones_offset{0};
 
     GETSET(float,halflife,0.1);
     NodePath skeleton_path{};
@@ -170,11 +200,11 @@ struct MMAnimationPlayer : godot::AnimationPlayer
         bones_offset.reserve(bone_count);
         for (int b = 0; b < bone_count; ++b)
         {
-            bones_kform[b] = kform();
+            bones_kform.reset(b);
             bones_kform[b].pos = _skeleton->get_bone_pose_position(b);
             bones_kform[b].rot = _skeleton->get_bone_pose_rotation(b);
 
-            bones_offset[b] = kform();
+            bones_offset.reset(b);
         }
     }
 
