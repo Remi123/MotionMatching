@@ -79,8 +79,6 @@ struct MMAnimationPlayer : godot::AnimationPlayer
     Ref<Animation> pending_desired_anim = nullptr;
     float pending_desired_time = 0.0f;
 
-    bool new_request = false;
-
     virtual bool request_animation(StringName p_animation_name, float p_time,float new_halflife = -1.0f, float time_diff = 0.0f)
     {
         _skeleton = get_node<Skeleton3D>(skeleton_path);
@@ -102,7 +100,6 @@ struct MMAnimationPlayer : godot::AnimationPlayer
         bones_kform.reserve(_skeleton->get_bone_count());
         bones_offset.reserve(_skeleton->get_bone_count());
 
-        current_time = p_time;
         const double delta = 0.016;
         const String skeleton_path = _skeleton->is_unique_name_in_owner() ? "%" + _skeleton->get_name() : _skeleton->get_owner()->get_path_to(this, true);
 
@@ -140,14 +137,11 @@ struct MMAnimationPlayer : godot::AnimationPlayer
             }
         }
 
-        current_time = p_time;
         play(p_animation_name);
         seek(p_time,true);
 
         return true;
     }
-
-    double current_time = 0.0;
 
     virtual void _ready() override
     {
@@ -182,18 +176,9 @@ struct MMAnimationPlayer : godot::AnimationPlayer
 
             bones_offset[b] = kform();
         }
-
-
-        transition_src_pos  = root_bone_id != -1 ? _skeleton->get_bone_pose_position(root_bone_id) : Vector3();
-        transition_src_rot  = root_bone_id != -1 ? _skeleton->get_bone_pose_rotation(root_bone_id) : Quaternion();
-        transition_dst_pos = Vector3();
-        transition_dst_rot = Quaternion();
     }
 
-    Vector3 transition_src_pos;
-    Quaternion transition_src_rot;
-    Vector3 transition_dst_pos;
-    Quaternion transition_dst_rot;
+
 
     virtual Variant _post_process_key_value(const Ref<Animation> &animation, int32_t track, const Variant &value, Object *object, int32_t bone_id) const
     {
@@ -276,9 +261,18 @@ struct MMAnimationPlayer : godot::AnimationPlayer
     /*
     void inertialize_root_transition(const Ref<Animation> &animation, int32_t track, const Variant &value, Object *object, int32_t bone_id, double delta)
     {
-        if(animation->track_get_type(track) == Animation::TrackType::TYPE_POSITION_3D)
-        transition_dst_pos = animation->position_track_interpolate(track, current_time);
+
+
+        transition_src_pos  = root_bone_id != -1 ? _skeleton->get_bone_pose_position(root_bone_id) : Vector3();
+        transition_src_rot  = root_bone_id != -1 ? _skeleton->get_bone_pose_rotation(root_bone_id) : Quaternion();
+        transition_dst_pos = Vector3();
+        transition_dst_rot = Quaternion();
     }
+
+    Vector3 transition_src_pos;
+    Quaternion transition_src_rot;
+    Vector3 transition_dst_pos;
+    Quaternion transition_dst_rot;
 
     void root_bone_process(double delta)
     {

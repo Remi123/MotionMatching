@@ -16,9 +16,7 @@
 #include "MotionFeatures/TrajectoryMotionFeature.hpp"
 #include "MotionFeatures/LocalDistanceToPointMotionFeature.hpp"
 
-#include <AnimationNodeInertialization.hpp>
 #include <MMAnimationPlayer.hpp>
-#include <MMSkeleton3D.hpp>
 #include "CircularBuffer.hpp"
 
 //#include "AnimationNodeInertialization.hpp"
@@ -32,8 +30,6 @@ void gdextension_MM_initialize(ModuleInitializationLevel p_level)
 		//ClassDB::register_class<AABBTree>();
 		//ClassDB::register_class<KDTree>();
 
-		// Not Working
-		// ClassDB::register_class<AnimationNodeInertialization>();
 
 		ClassDB::register_class<CircularBuffer>();
 		
