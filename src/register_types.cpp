@@ -40,7 +40,6 @@ void gdextension_MM_initialize(ModuleInitializationLevel p_level)
 		ClassDB::register_class<TrajectoryMotionFeature>();
 		ClassDB::register_class<LocalDistanceToPointMotionFeature>();
 
-		ClassDB::register_class<MMSkeleton3D>();
 		ClassDB::register_class<MMAnimationPlayer>();
 
 		ClassDB::register_class<MotionMatcher>();
