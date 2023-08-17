@@ -101,7 +101,7 @@ struct MMAnimationPlayer : godot::AnimationPlayer
         bones_offset.reserve(_skeleton->get_bone_count());
 
         const double delta = 0.016;
-        const String skeleton_path = _skeleton->is_unique_name_in_owner() ? "%" + _skeleton->get_name() : _skeleton->get_owner()->get_path_to(this, true);
+        const String skeleton_path = _skeleton->is_unique_name_in_owner() ? '%' + _skeleton->get_name() : String(_skeleton->get_owner()->get_path_to(this, true));
 
         p_time = u::clampf(p_time,0.0,p_animation->get_length()-halflife);
         const auto future_time = u::clampf(p_time+delta,0.0,p_animation->get_length());
