@@ -150,6 +150,7 @@ struct BonePositionVelocityMotionFeature : public MotionFeature {
         }
     }
 
+    // TODO : Remove Dependancy on skeleton.
     virtual PackedFloat32Array bake_animation_pose(Ref<Animation> animation,float time)override{
         
         PackedVector3Array prev_pos{},curr_pos{};
