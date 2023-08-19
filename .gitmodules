@@ -1,4 +1,4 @@
 [submodule "godot-cpp"]
 	path = godot-cpp
 	url = https://github.com/godotengine/godot-cpp.git
-	branch = 1009da4d7e395abadfdb454cff6623e9456181c4
+	branch = 4.1
