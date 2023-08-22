@@ -20,6 +20,7 @@ grow_horizontal = 2
 grow_vertical = 2
 
 [node name="Info" type="PanelContainer" parent="TabContainer"]
+visible = false
 clip_contents = true
 layout_mode = 2
 
@@ -128,64 +129,85 @@ autowrap_mode = 0
 context_menu_enabled = true
 selection_enabled = true
 
-[node name="Test" type="HFlowContainer" parent="TabContainer"]
+[node name="Calculation" type="HFlowContainer" parent="TabContainer"]
 visible = false
 layout_mode = 2
 
-[node name="MarginContainer" type="MarginContainer" parent="TabContainer/Test"]
+[node name="MarginContainer" type="MarginContainer" parent="TabContainer/Calculation"]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="HFlowContainer" type="HFlowContainer" parent="TabContainer/Test/MarginContainer"]
+[node name="HFlowContainer" type="HFlowContainer" parent="TabContainer/Calculation/MarginContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="Label2" type="Label" parent="TabContainer/Test/MarginContainer/HFlowContainer"]
+[node name="Label2" type="Label" parent="TabContainer/Calculation/MarginContainer/HFlowContainer"]
 layout_mode = 2
 text = "Discover Halflife from Derivative  -  Start:"
 
-[node name="SpinBox" type="SpinBox" parent="TabContainer/Test/MarginContainer/HFlowContainer"]
+[node name="SpinBox" type="SpinBox" parent="TabContainer/Calculation/MarginContainer/HFlowContainer"]
 layout_mode = 2
 step = 0.1
 value = 1.0
 allow_greater = true
 allow_lesser = true
 
-[node name="Label3" type="Label" parent="TabContainer/Test/MarginContainer/HFlowContainer"]
+[node name="Label3" type="Label" parent="TabContainer/Calculation/MarginContainer/HFlowContainer"]
 layout_mode = 2
 text = "End
 "
 
-[node name="SpinBox2" type="SpinBox" parent="TabContainer/Test/MarginContainer/HFlowContainer"]
+[node name="SpinBox2" type="SpinBox" parent="TabContainer/Calculation/MarginContainer/HFlowContainer"]
 layout_mode = 2
 step = 0.1
 value = 1.0
 allow_greater = true
 allow_lesser = true
 
-[node name="Label4" type="Label" parent="TabContainer/Test/MarginContainer/HFlowContainer"]
+[node name="Label4" type="Label" parent="TabContainer/Calculation/MarginContainer/HFlowContainer"]
 layout_mode = 2
 text = "Max Derivative"
 
-[node name="SpinBox3" type="SpinBox" parent="TabContainer/Test/MarginContainer/HFlowContainer"]
+[node name="SpinBox3" type="SpinBox" parent="TabContainer/Calculation/MarginContainer/HFlowContainer"]
 layout_mode = 2
 step = 0.1
 value = 1.0
 allow_greater = true
 allow_lesser = true
 
-[node name="equal" type="Label" parent="TabContainer/Test/MarginContainer/HFlowContainer"]
+[node name="equal" type="Label" parent="TabContainer/Calculation/MarginContainer/HFlowContainer"]
 layout_mode = 2
 text = "="
 
-[node name="Answer2" type="Label" parent="TabContainer/Test/MarginContainer/HFlowContainer"]
+[node name="Answer2" type="Label" parent="TabContainer/Calculation/MarginContainer/HFlowContainer"]
 layout_mode = 2
+
+[node name="AnimationTracks" type="HFlowContainer" parent="TabContainer"]
+layout_mode = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="TabContainer/AnimationTracks"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 5
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 5
+
+[node name="HFlowContainer" type="HFlowContainer" parent="TabContainer/AnimationTracks/MarginContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Button" type="Button" parent="TabContainer/AnimationTracks/MarginContainer/HFlowContainer"]
+layout_mode = 2
+size_flags_horizontal = 2
+text = "Add Category Track"
 
 [connection signal="pressed" from="TabContainer/Data/HBoxContainer/MarginContainer/Button" to="." method="bake_data_current"]
 [connection signal="value_changed" from="TabContainer/Data/HBoxContainer/MarginContainer2/HBoxContainer/SpinBox" to="." method="update_shown_pose_data"]
 [connection signal="pressed" from="TabContainer/Data/HBoxContainer/MarginContainer3/Button" to="." method="on_look_for_similar_pressed"]
 [connection signal="pressed" from="TabContainer/Data/HBoxContainer/MarginContainer4/Button" to="." method="on_recalculate_weights"]
 [connection signal="pressed" from="TabContainer/Data/HBoxContainer/MarginContainer5/ChooseAnimation" to="." method="_on_choose_animation_pressed"]
-[connection signal="value_changed" from="TabContainer/Test/MarginContainer/HFlowContainer/SpinBox" to="." method="_max_der_calculate"]
-[connection signal="value_changed" from="TabContainer/Test/MarginContainer/HFlowContainer/SpinBox2" to="." method="_max_der_calculate"]
-[connection signal="value_changed" from="TabContainer/Test/MarginContainer/HFlowContainer/SpinBox3" to="." method="_max_der_calculate"]
+[connection signal="value_changed" from="TabContainer/Calculation/MarginContainer/HFlowContainer/SpinBox" to="." method="_max_der_calculate"]
+[connection signal="value_changed" from="TabContainer/Calculation/MarginContainer/HFlowContainer/SpinBox2" to="." method="_max_der_calculate"]
+[connection signal="value_changed" from="TabContainer/Calculation/MarginContainer/HFlowContainer/SpinBox3" to="." method="_max_der_calculate"]
+[connection signal="pressed" from="TabContainer/AnimationTracks/MarginContainer/HFlowContainer/Button" to="." method="_on_add_category"]
