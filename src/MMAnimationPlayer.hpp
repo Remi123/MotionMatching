@@ -116,6 +116,11 @@ struct MMAnimationPlayer : godot::AnimationPlayer
                 Vector3 fut_bone_pos = p_animation->position_track_interpolate(track_pos, p_time);
                 Vector3 fut_bone_vel = (p_animation->position_track_interpolate(track_pos, future_time) - fut_bone_pos) / abs(future_time - p_time);
 
+                if(bone_id == root_bone_id)
+                {
+                    fut_bone_pos = Vector3();
+                }
+
                 // Offset are calculated Between current pos of the bone and the desired pose
                 CritDampSpring::inertialize_transition(bones_offset[bone_id].pos, bones_offset[bone_id].vel,
                                                        bones_kform[bone_id].pos, bones_kform[bone_id].vel,
@@ -129,6 +134,11 @@ struct MMAnimationPlayer : godot::AnimationPlayer
                 Vector3 fut_bone_ang = CritDampSpring::quat_to_scaled_angle_axis(
                                            CritDampSpring::quat_abs(p_animation->rotation_track_interpolate(track_rot, future_time) * fut_bone_rot.inverse())) /
                                        abs(future_time - p_time);
+
+                if(bone_id == root_bone_id)
+                {
+                    fut_bone_rot = Quaternion();
+                }
 
                 // At this point the animation desired changed
                 CritDampSpring::inertialize_transition(bones_offset[bone_id].rot, bones_offset[bone_id].ang, // Offset are calculated...
@@ -191,7 +201,7 @@ struct MMAnimationPlayer : godot::AnimationPlayer
             return value;
         }
         auto* s = cast_to<Skeleton3D>(object);
-        // We need to modify some internal values, so const_cast it is.
+        // We need to modify some internal values, so const_cast it is because this member function is const.
         // According to C++ Standard section 7.1.6.1 para 4 : "Except that any class member declared mutable (7.1.1) can be modified, 
         // any attempt to modify a const object during its lifetime (3.8) results in undefined behavior"
         // In other word, as long as the AnimationPlayer object isn't declared const, we are not in UB
@@ -214,14 +224,13 @@ struct MMAnimationPlayer : godot::AnimationPlayer
                 if (bone_id == root_bone_id)
                 {
                     fut_bone_pos = Vector3();
-                    return Vector3();
                 }
 
                 CritDampSpring::inertialize_update(_self->bones_kform[bone_id].pos, _self->bones_kform[bone_id].vel,   // Current pos of the bone
                                                 _self->bones_offset[bone_id].pos, _self->bones_offset[bone_id].vel, // Current Offset pos, get reduced every frame
                                                 fut_bone_pos, fut_bone_vel,                                         // Desired position from the animation
                                                 halflife,                                                           // Stats on how the offset decay
-                                                delta);                                                             // delta time between frames
+                                                delta * get_speed_scale());                                         // delta time between frames
                 return (bone_id == root_bone_id) ? Vector3() :  _self->bones_kform[bone_id].pos * _skeleton->get_motion_scale();                                       // Set the bone position with motion_scale
             
             }   
@@ -237,14 +246,13 @@ struct MMAnimationPlayer : godot::AnimationPlayer
                 if (bone_id == root_bone_id)
                 {
                     fut_bone_rot = Quaternion();
-                    return Quaternion();
                 }
 
                 CritDampSpring::inertialize_update(_self->bones_kform[bone_id].rot, _self->bones_kform[bone_id].ang,   // Current rot of the bone
                                                    _self->bones_offset[bone_id].rot, _self->bones_offset[bone_id].ang, // Current Offset rot, get reduced every frame
                                                    fut_bone_rot, fut_bone_ang,                                         // Desired rotation from the animation
                                                    halflife,                                                           // Stats on how the offset decay
-                                                   delta);                                                             // delta time between frames
+                                                   delta * get_speed_scale());                                         // delta time between frames
                 return bone_id == root_bone_id ? Quaternion() : _self->bones_kform[bone_id].rot;                                                                       // Set the bone rotation
             }
             break;
