@@ -209,8 +209,9 @@ struct MMAnimationPlayer : godot::AnimationPlayer
         const auto delta = get_process_callback() == AnimationProcessCallback::ANIMATION_PROCESS_PHYSICS ? get_physics_process_delta_time() : get_process_delta_time();
         const auto track_type = animation->track_get_type(track);
 
-        const auto p_time = u::clampf(get_current_animation_position(), 0.0, animation->get_length()-halflife);
+        const auto p_time = u::clampf(get_current_animation_position(), 0.0, animation->get_length());
         const auto future_time = u::clampf(p_time + delta, 0.0, animation->get_length());
+        const auto delta_diff = abs(future_time-p_time);
 
         switch(track_type)
         {
@@ -218,7 +219,7 @@ struct MMAnimationPlayer : godot::AnimationPlayer
             case Animation::TYPE_POSITION_3D:
             {
                 Vector3 fut_bone_pos = value;
-                Vector3 fut_bone_vel = (animation->position_track_interpolate(track, future_time) - fut_bone_pos) / abs(future_time-p_time);                
+                Vector3 fut_bone_vel = u::is_zero_approx(delta_diff) ? Vector3() : (animation->position_track_interpolate(track, future_time) - fut_bone_pos) / delta_diff;                
                 
                 // Root bone have a special process
                 if (bone_id == root_bone_id)
@@ -240,8 +241,7 @@ struct MMAnimationPlayer : godot::AnimationPlayer
             case Animation::TYPE_ROTATION_3D:
             {
                 Quaternion fut_bone_rot = value;
-                Vector3 fut_bone_ang = CritDampSpring::quat_to_scaled_angle_axis(
-                                        CritDampSpring::quat_abs(animation->rotation_track_interpolate(track, future_time) * fut_bone_rot.inverse())) / abs(future_time-p_time);
+                Vector3 fut_bone_ang = u::is_zero_approx(delta_diff) ? Vector3() : CritDampSpring::quat_to_scaled_angle_axis(CritDampSpring::quat_abs(animation->rotation_track_interpolate(track, future_time) * fut_bone_rot.inverse())) / delta_diff;
 
                 if (bone_id == root_bone_id)
                 {
