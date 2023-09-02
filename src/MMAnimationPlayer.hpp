@@ -367,7 +367,7 @@ struct MMAnimationPlayer : godot::AnimationPlayer
         {
             return {};
         }
-        return bones_kform[root_bone_id].rot.xform_inv(bones_kform[root_bone_id].vel);
+        return bones_kform[root_bone_id].rot.xform_inv(bones_kform[root_bone_id].vel * get_speed_scale());
     }
     Quaternion get_root_motion_angular()
     {
@@ -375,7 +375,7 @@ struct MMAnimationPlayer : godot::AnimationPlayer
         {
             return {};
         }
-        return CritDampSpring::quat_from_scaled_angle_axis(bones_kform[root_bone_id].ang);
+        return CritDampSpring::quat_from_scaled_angle_axis(bones_kform[root_bone_id].ang * get_speed_scale());
     }
 
     protected:
