@@ -26,6 +26,7 @@
 
 #include <godot_cpp/classes/animation_root_node.hpp>
 
+#include <KForm.hpp>
 #include <CritSpringDamper.hpp>
 
 // Macro setup. Mostly there to simplify writing all those
@@ -39,43 +40,6 @@
         ClassDB::bind_method( D_METHOD(STRING_PREFIX(get_,variable) ), &type::get_##variable); \
         ADD_PROPERTY(PropertyInfo(variant_type,#variable,__VA_ARGS__),STRING_PREFIX(set_,variable),STRING_PREFIX(get_,variable));
 
-
-struct kform
-{
-    Vector3 pos = Vector3();
-    Quaternion rot = Quaternion();
-    Vector3 scl= Vector3(1.0,1.0,1.0);
-    Vector3 vel= Vector3();
-    Vector3 ang= Vector3();
-    Vector3 svl= Vector3();
-    friend kform operator*(kform v,kform w){
-        kform out;
-        out.pos = v.rot.xform(w.pos * v.scl) + v.pos;        
-        out.rot = v.rot * w.rot;        
-        out.scl = w.scl * v.scl;        
-        out.vel = v.rot.xform( w.vel * v.scl)+ v.vel + 
-                v.ang.cross(v.rot.xform( w.pos * v.scl)) +
-                v.rot.xform( w.pos * v.scl * v.svl);
-        out.ang = v.rot.xform(w.ang) + v.ang;        
-        out.svl = w.svl + v.svl;        
-        return out;     
-    }
-    friend kform operator/(kform v, kform w)
-    {
-        kform out;
-        out.pos = v.rot.xform_inv(w.pos - v.pos);
-        out.rot = v.rot.inverse() * w.rot;
-        out.scl = w.scl / v.scl;
-        out.vel = v.rot.xform_inv(w.vel - v.vel - v.ang.cross(v.rot.xform(out.pos * v.scl))) -
-                  v.rot.xform(out.pos * v.scl * v.svl);
-        out.ang = v.rot.xform_inv(w.ang - v.ang);
-        out.svl = w.svl - v.svl;
-        return out;
-    }
-    kform inverse(){
-        return kform() / *this;
-    }
-}; 
 
 
 struct kforms
@@ -93,18 +57,6 @@ struct kforms
     void reserve(std::size_t N){
         pos.reserve(N); rot.reserve(N); scl.reserve(N);vel.reserve(N); ang.reserve(N); svl.reserve(N);
     }
-
-    struct proxy{
-        Vector3& pos; 
-        Quaternion& rot ;
-        Vector3& scl ;
-        Vector3& vel ;
-        Vector3& ang ;
-        Vector3& svl ;
-        proxy(kforms& k, std::size_t N):
-            pos{k.pos[N]},rot{k.rot[N]},scl{k.scl[N]},vel{k.vel[N]},ang{k.ang[N]},svl{k.svl[N]}
-        {}
-    };
 
     inline const kform operator[](const std::size_t N) noexcept{
         kform out{};
@@ -453,7 +405,7 @@ struct MMAnimationPlayer : godot::AnimationPlayer
         return result;
    }
 
-   Dictionary get_global_bone_info(StringName bone_name)
+   Dictionary get_model_bone_info(StringName bone_name)
    {
         using vec3 = Vector3;
         using quat = Quaternion;
@@ -533,7 +485,7 @@ struct MMAnimationPlayer : godot::AnimationPlayer
         ClassDB::bind_method(D_METHOD("request_animation", "animation", "timestamp", "new_halflife","skip_same_anim_difference"), &MMAnimationPlayer::request_animation, (-1.0f),(0.0f));
 
         ClassDB::bind_method(D_METHOD("get_local_bone_info","bone_name"),&MMAnimationPlayer::get_local_bone_info);
-        ClassDB::bind_method(D_METHOD("get_global_bone_info","bone_name"),&MMAnimationPlayer::get_global_bone_info);
+        ClassDB::bind_method(D_METHOD("get_model_bone_info","bone_name"),&MMAnimationPlayer::get_model_bone_info);
 
         ClassDB::bind_method(D_METHOD("get_root_motion_velocity"), &MMAnimationPlayer::get_root_motion_velocity);
         ClassDB::bind_method(D_METHOD("get_root_motion_angular"),&MMAnimationPlayer::get_root_motion_angular);

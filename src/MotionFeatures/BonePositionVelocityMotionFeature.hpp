@@ -30,6 +30,7 @@
 #include <godot_cpp/classes/character_body3d.hpp>
 
 #include <MotionFeatures/MotionFeatures.hpp>
+#include <KForm.hpp>
 
 using namespace godot;
 using u = godot::UtilityFunctions;
@@ -45,6 +46,7 @@ struct BonePositionVelocityMotionFeature : public MotionFeature {
 
     // Skeleton
     Skeleton3D* _skeleton = nullptr;
+    Ref<SkeletonProfile> _skel = nullptr;
 
 
 
@@ -104,7 +106,7 @@ struct BonePositionVelocityMotionFeature : public MotionFeature {
         }
         for (auto bone_id = 0; bone_id < _skeleton->get_bone_count(); ++bone_id)
         {
-            bone_tracks[bone_id] = Array::make(-1,-1);
+            bone_tracks[bone_id] = Array::make(-1,-1,-1);
         }
         for (int track_id = 0; track_id < animation->get_track_count(); ++track_id)
         {
@@ -120,6 +122,10 @@ struct BonePositionVelocityMotionFeature : public MotionFeature {
             else if (animation->track_get_type(track_id) == Animation::TYPE_ROTATION_3D)
             {
                 bone_tracks[bone_idx][1] = track_id;
+            }
+            else if (animation->track_get_type(track_id) == Animation::TYPE_SCALE_3D)
+            {
+                bone_tracks[bone_idx][2] = track_id;
             }
         }
     }
@@ -148,6 +154,103 @@ struct BonePositionVelocityMotionFeature : public MotionFeature {
                 _skeleton->set_bone_pose_rotation(bone_id,rotation);
             }
         }
+    }
+
+    virtual void setup_profile(Ref<SkeletonProfile> skeleton_profile){
+        _skel = skeleton_profile;
+        bones_id.clear();
+        if(_skel!=nullptr)
+        {
+            for(size_t i = 0; i < bone_names.size();++i)
+            {
+                const size_t id = _skel->find_bone(bone_names[i]);
+                if (id >= 0)
+                    bones_id.push_back(id);
+            }
+            u::prints("Bones id",bone_names,bones_id);
+        }
+    }
+    virtual PackedFloat32Array bake_animation_pose2(Ref<Animation> animation,float time){
+        constexpr float dt = 0.05f;
+
+        PackedFloat32Array result{};
+ 
+        for (size_t index = 0; index < bones_id.size(); ++index)
+        {
+
+            // Get the list of transform to accumulate
+            std::vector<int> parents_id{bones_id[index]};
+            {
+                int tmp_p = bones_id[index];
+                while (!_skel->get_bone_parent(tmp_p).is_empty())
+                {
+                    int new_parent = _skel->find_bone(_skel->get_bone_parent(tmp_p));
+                    parents_id.push_back(new_parent);
+                    tmp_p = new_parent;
+                }
+                std::reverse(parents_id.begin(), parents_id.end());
+            }
+            std::vector<kform> parents_tr{};
+            parents_tr.reserve(parents_id.size());
+            for (auto p : parents_id)
+            {
+                kform s0 = _skel->get_reference_pose(p); // time
+                kform s1 = s0; // time + dt
+                auto tpos = bone_tracks[p][0];
+                auto trot = bone_tracks[p][1];
+                auto tscl = bone_tracks[p][2];
+                if (tpos != -1)
+                {
+                    s0.pos = animation->position_track_interpolate(tpos, time);
+                    s1.pos = animation->position_track_interpolate(tpos, time + dt);
+                }
+                if (trot != -1)
+                {
+                    s0.rot = animation->rotation_track_interpolate(trot, time);
+                    s1.rot = animation->rotation_track_interpolate(trot, time + dt);
+                }
+                if (tscl != -1)
+                {
+                    s0.scl = animation->scale_track_interpolate(tscl, time);
+                    s1.scl = animation->scale_track_interpolate(tscl, time + dt);
+                }
+
+                parents_tr.push_back(s0.finite_difference(s1,dt));
+            }
+            // Accumulate transforms
+            kform global = std::reduce(parents_tr.begin(),parents_tr.end(),kform{},[](kform&v,kform&w){
+                return v * w;
+            });
+            kform model{};
+            // Remove root
+            {
+                kform root = parents_tr[0];
+                model.pos = root.rot.inverse().xform(global.pos - root.pos);
+                model.vel = root.rot.inverse().xform(global.vel);
+                model.rot = root.rot.inverse() * global.rot;
+                model.ang = root.rot.inverse().xform(global.ang);
+            }
+            // Serialize
+            if (use_inertialization)
+            {
+                const auto cost = inertialization_cost_function(model.pos, model.vel, inertialization_halflife);
+                result.push_back(cost.x);
+                result.push_back(cost.y);
+                result.push_back(cost.z);
+            }
+            else
+            {
+                result.push_back(model.pos.x);
+                result.push_back(model.pos.y);
+                result.push_back(model.pos.z);
+                result.push_back(model.vel.x);
+                result.push_back(model.vel.y);
+                result.push_back(model.vel.z);
+            }
+        }
+
+
+        return result;
     }
 
     // TODO : Remove Dependancy on skeleton.
