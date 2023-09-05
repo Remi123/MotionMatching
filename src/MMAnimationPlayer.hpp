@@ -39,6 +39,45 @@
         ClassDB::bind_method( D_METHOD(STRING_PREFIX(get_,variable) ), &type::get_##variable); \
         ADD_PROPERTY(PropertyInfo(variant_type,#variable,__VA_ARGS__),STRING_PREFIX(set_,variable),STRING_PREFIX(get_,variable));
 
+
+struct kform
+{
+    Vector3 pos = Vector3();
+    Quaternion rot = Quaternion();
+    Vector3 scl= Vector3(1.0,1.0,1.0);
+    Vector3 vel= Vector3();
+    Vector3 ang= Vector3();
+    Vector3 svl= Vector3();
+    friend kform operator*(kform v,kform w){
+        kform out;
+        out.pos = v.rot.xform(w.pos * v.scl) + v.pos;        
+        out.rot = v.rot * w.rot;        
+        out.scl = w.scl * v.scl;        
+        out.vel = v.rot.xform( w.vel * v.scl)+ v.vel + 
+                v.ang.cross(v.rot.xform( w.pos * v.scl)) +
+                v.rot.xform( w.pos * v.scl * v.svl);
+        out.ang = v.rot.xform(w.ang) + v.ang;        
+        out.svl = w.svl + v.svl;        
+        return out;     
+    }
+    friend kform operator/(kform v, kform w)
+    {
+        kform out;
+        out.pos = v.rot.xform_inv(w.pos - v.pos);
+        out.rot = v.rot.inverse() * w.rot;
+        out.scl = w.scl / v.scl;
+        out.vel = v.rot.xform_inv(w.vel - v.vel - v.ang.cross(v.rot.xform(out.pos * v.scl))) -
+                  v.rot.xform(out.pos * v.scl * v.svl);
+        out.ang = v.rot.xform_inv(w.ang - v.ang);
+        out.svl = w.svl - v.svl;
+        return out;
+    }
+    kform inverse(){
+        return kform() / *this;
+    }
+}; 
+
+
 struct kforms
 {
     std::vector<Vector3> pos; // Position
@@ -67,8 +106,15 @@ struct kforms
         {}
     };
 
-    inline const proxy operator[](const std::size_t N) noexcept{
-        return proxy(*this,N);
+    inline const kform operator[](const std::size_t N) noexcept{
+        kform out{};
+        out.pos = pos[N];
+        out.rot = {rot[N]};
+        out.scl = {scl[N]};
+        out.vel = {vel[N]};
+        out.ang = {ang[N]};
+        out.svl = {svl[N]};
+        return out;
     }
 
     void reset(const std::size_t N){
@@ -152,8 +198,8 @@ struct MMAnimationPlayer : godot::AnimationPlayer
                 }
 
                 // Offset are calculated Between current pos of the bone and the desired pose
-                CritDampSpring::inertialize_transition(bones_offset[bone_id].pos, bones_offset[bone_id].vel,
-                                                       bones_kform[bone_id].pos, bones_kform[bone_id].vel,
+                CritDampSpring::inertialize_transition(bones_offset.pos[bone_id], bones_offset.vel[bone_id],
+                                                       bones_kform.pos[bone_id], bones_kform.vel[bone_id],
                                                        fut_bone_pos, fut_bone_vel);
             }
 
@@ -171,8 +217,8 @@ struct MMAnimationPlayer : godot::AnimationPlayer
                 }
 
                 // At this point the animation desired changed
-                CritDampSpring::inertialize_transition(bones_offset[bone_id].rot, bones_offset[bone_id].ang, // Offset are calculated...
-                                                       bones_kform[bone_id].rot, bones_kform[bone_id].ang,   // Between current rot of the bone...
+                CritDampSpring::inertialize_transition(bones_offset.rot[bone_id], bones_offset.ang[bone_id], // Offset are calculated...
+                                                       bones_kform.rot[bone_id], bones_kform.ang[bone_id],   // Between current rot of the bone...
                                                        fut_bone_rot, fut_bone_ang);                          // and the desired pose
             }
         }
@@ -211,8 +257,8 @@ struct MMAnimationPlayer : godot::AnimationPlayer
         for (int b = 0; b < bone_count; ++b)
         {
             bones_kform.reset(b);
-            bones_kform[b].pos = _skeleton->get_bone_pose_position(b);
-            bones_kform[b].rot = _skeleton->get_bone_pose_rotation(b);
+            bones_kform.pos[b] = _skeleton->get_bone_pose_position(b);
+            bones_kform.rot[b] = _skeleton->get_bone_pose_rotation(b);
 
             bones_offset.reset(b);
         }
@@ -257,12 +303,12 @@ struct MMAnimationPlayer : godot::AnimationPlayer
                     fut_bone_pos = Vector3();
                 }
 
-                CritDampSpring::inertialize_update(_self->bones_kform[bone_id].pos, _self->bones_kform[bone_id].vel,   // Current pos of the bone
-                                                _self->bones_offset[bone_id].pos, _self->bones_offset[bone_id].vel, // Current Offset pos, get reduced every frame
+                CritDampSpring::inertialize_update(_self->bones_kform.pos[bone_id], _self->bones_kform.vel[bone_id],   // Current pos of the bone
+                                                _self->bones_offset.pos[bone_id], _self->bones_offset.vel[bone_id], // Current Offset pos, get reduced every frame
                                                 fut_bone_pos, fut_bone_vel,                                         // Desired position from the animation
                                                 halflife,                                                           // Stats on how the offset decay
                                                 delta * get_speed_scale());                                         // delta time between frames
-                return (bone_id == root_bone_id) ? Vector3() :  _self->bones_kform[bone_id].pos * _skeleton->get_motion_scale();                                       // Set the bone position with motion_scale
+                return (bone_id == root_bone_id) ? Vector3() :  _self->bones_kform.pos[bone_id] * _skeleton->get_motion_scale();                                       // Set the bone position with motion_scale
             
             }   
             break;
@@ -278,12 +324,12 @@ struct MMAnimationPlayer : godot::AnimationPlayer
                     fut_bone_rot = Quaternion();
                 }
 
-                CritDampSpring::inertialize_update(_self->bones_kform[bone_id].rot, _self->bones_kform[bone_id].ang,   // Current rot of the bone
-                                                   _self->bones_offset[bone_id].rot, _self->bones_offset[bone_id].ang, // Current Offset rot, get reduced every frame
+                CritDampSpring::inertialize_update(_self->bones_kform.rot[bone_id], _self->bones_kform.ang[bone_id],   // Current rot of the bone
+                                                   _self->bones_offset.rot[bone_id], _self->bones_offset.ang[bone_id], // Current Offset rot, get reduced every frame
                                                    fut_bone_rot, fut_bone_ang,                                         // Desired rotation from the animation
                                                    halflife,                                                           // Stats on how the offset decay
                                                    delta * get_speed_scale());                                         // delta time between frames
-                return bone_id == root_bone_id ? Quaternion() : _self->bones_kform[bone_id].rot;                                                                       // Set the bone rotation
+                return bone_id == root_bone_id ? Quaternion() : _self->bones_kform.rot[bone_id];                                                                       // Set the bone rotation
             }
             break;
 
@@ -391,13 +437,82 @@ struct MMAnimationPlayer : godot::AnimationPlayer
     }
     */
 
+   Dictionary get_local_bone_info(StringName bone_name)
+   {
+        ERR_FAIL_COND_V(_skeleton == nullptr,{});
+        auto id = _skeleton->find_bone(bone_name);
+        ERR_FAIL_COND_V_MSG(id == -1,{},"Bone " +bone_name + " doesn't exist in skeleton");
+        const auto kin = bones_kform[id];
+        Dictionary result = Dictionary{};
+        result["position"] = kin.pos;
+        result["linear_vel"] = kin.vel;
+        result["rotation"] = kin.rot;
+        result["angular_vel"] = kin.ang;
+        result["scale"] = kin.scl;
+        result["scalar_vel"] = kin.svl;
+        return result;
+   }
+
+   Dictionary get_global_bone_info(StringName bone_name)
+   {
+        using vec3 = Vector3;
+        using quat = Quaternion;
+
+        ERR_FAIL_COND_V(_skeleton == nullptr, {});
+        auto id = _skeleton->find_bone(bone_name);
+        ERR_FAIL_COND_V_MSG(id == -1,{},"Bone " +bone_name + " doesn't exist in skeleton");
+        std::vector<int> parents_id{id};
+        auto tmp_p = id;
+        while( _skeleton->get_bone_parent(tmp_p) != -1)
+        {
+            auto new_parent = _skeleton->get_bone_parent(tmp_p);
+            parents_id.push_back(new_parent);
+            tmp_p = new_parent;
+        }
+        std::reverse(parents_id.begin(),parents_id.end());
+        kform global{};
+        kform parent{};
+        for(auto& i = parents_id.begin(); i != parents_id.end(); ++i)
+        {
+            const auto local = bones_kform[*i];
+            // Position
+            global.pos = parent.rot.xform(local.pos * parent.scl) + parent.pos;
+            // Rotation
+            global.rot = parent.rot * local.rot;
+            // Scale
+            global.scl = local.scl * parent.scl;
+            // Linear Velocity
+            global.vel = parent.rot.xform(local.vel*parent.scl)+
+                        parent.vel +
+                        parent.ang.cross(parent.rot.xform(local.pos * parent.scl)) +
+                        parent.rot.xform(local.pos * parent.scl * parent.svl);
+            
+            // Angular Velocity
+            global.ang = parent.rot.xform(local.ang) + parent.ang;
+            
+            // Scalar Velocity
+            global.svl = local.svl + parent.svl;
+
+
+            parent = global;
+        }
+        Dictionary result = Dictionary{};
+        result["position"] = global.pos;
+        result["linear_vel"] = global.vel;
+        result["rotation"] = global.rot;
+        result["angular_vel"] = global.ang;
+        result["scale"] = global.scl;
+        result["scalar_vel"] = global.svl;
+        return result;
+   }
+
     Vector3 get_root_motion_velocity()
     {
         if (root_bone_id < 0)
         {
             return {};
         }
-        return bones_kform[root_bone_id].rot.xform_inv(bones_kform[root_bone_id].vel * get_speed_scale());
+        return bones_kform.rot[root_bone_id].xform_inv(bones_kform.vel[root_bone_id] * get_speed_scale());
     }
     Quaternion get_root_motion_angular()
     {
@@ -405,7 +520,7 @@ struct MMAnimationPlayer : godot::AnimationPlayer
         {
             return {};
         }
-        return CritDampSpring::quat_from_scaled_angle_axis(bones_kform[root_bone_id].ang * get_speed_scale());
+        return CritDampSpring::quat_from_scaled_angle_axis(bones_kform.ang[root_bone_id] * get_speed_scale());
     }
 
     protected:
@@ -416,6 +531,9 @@ struct MMAnimationPlayer : godot::AnimationPlayer
         godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::NODE_PATH, "skeleton_path", PROPERTY_HINT_NODE_PATH_VALID_TYPES, "Skeleton3D"), "set_skeleton_path", "get_skeleton_path");
         
         ClassDB::bind_method(D_METHOD("request_animation", "animation", "timestamp", "new_halflife","skip_same_anim_difference"), &MMAnimationPlayer::request_animation, (-1.0f),(0.0f));
+
+        ClassDB::bind_method(D_METHOD("get_local_bone_info","bone_name"),&MMAnimationPlayer::get_local_bone_info);
+        ClassDB::bind_method(D_METHOD("get_global_bone_info","bone_name"),&MMAnimationPlayer::get_global_bone_info);
 
         ClassDB::bind_method(D_METHOD("get_root_motion_velocity"), &MMAnimationPlayer::get_root_motion_velocity);
         ClassDB::bind_method(D_METHOD("get_root_motion_angular"),&MMAnimationPlayer::get_root_motion_angular);

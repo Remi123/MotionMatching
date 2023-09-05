@@ -16,6 +16,8 @@
 #include "MotionFeatures/TrajectoryMotionFeature.hpp"
 #include "MotionFeatures/LocalDistanceToPointMotionFeature.hpp"
 
+#include <MMAnimationLibrary.hpp>
+
 #include <MMAnimationPlayer.hpp>
 #include "CircularBuffer.hpp"
 
@@ -41,6 +43,7 @@ void gdextension_MM_initialize(ModuleInitializationLevel p_level)
 		ClassDB::register_class<LocalDistanceToPointMotionFeature>();
 
 		ClassDB::register_class<MMAnimationPlayer>();
+		ClassDB::register_class<MMAnimationLibrary>();
 
 		ClassDB::register_class<MotionMatcher>();
 		ClassDB::register_class<CritDampSpring>();
