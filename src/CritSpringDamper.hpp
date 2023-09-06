@@ -140,6 +140,11 @@ struct CritDampSpring : public RefCounted
         return 2.0f * quat_log(q, eps);
     }
 
+    static inline Vector3 quat_differentiate_angular_velocity(Quaternion next, Quaternion curr, float dt, float eps = 1e-8f)
+    {
+        return quat_to_scaled_angle_axis(quat_abs(next * curr.inverse()), eps) / dt;
+    }
+
     static void _spring_damper_exact(
         float& x,
         float& v,

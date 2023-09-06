@@ -31,6 +31,7 @@
 
 #include <MotionFeatures/MotionFeatures.hpp>
 #include <KForm.hpp>
+#include <algorithm>
 
 using namespace godot;
 using u = godot::UtilityFunctions;

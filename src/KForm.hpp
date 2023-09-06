@@ -43,7 +43,7 @@ struct kform
         return output;
     }
 
-    friend kform operator*(kform v,kform w){
+    friend kform operator*(const kform v,const kform w){
         kform out;
         out.pos = v.rot.xform(w.pos * v.scl) + v.pos;        
         out.rot = v.rot * w.rot;        
@@ -55,7 +55,7 @@ struct kform
         out.svl = w.svl + v.svl;        
         return out;     
     }
-    friend kform operator/(kform v, kform w)
+    friend kform operator/(const kform v,const kform w)
     {
         kform out;
         out.pos = v.rot.xform_inv(w.pos - v.pos);
@@ -67,7 +67,7 @@ struct kform
         out.svl = w.svl - v.svl;
         return out;
     }
-    kform inverse(){
-        return kform() / *this;
+    kform inverse() const{
+        return kform() / (*this);
     }
 }; 
