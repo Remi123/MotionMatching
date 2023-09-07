@@ -154,6 +154,14 @@ struct MMAnimationPlayer : godot::AnimationPlayer
                 Vector3 fut_bone_pos = p_animation->position_track_interpolate(track_pos, p_time);
                 Vector3 fut_bone_vel = (p_animation->position_track_interpolate(track_pos, future_time) - fut_bone_pos) / abs(future_time - p_time);
 
+                // Root bone have a special process
+                if (bone_id == root_bone_id)
+                {
+                    Quaternion q = p_animation->rotation_track_interpolate(root_track_rot,p_time);
+                    fut_bone_vel = q.xform_inv(fut_bone_vel);
+                    fut_bone_pos = Vector3();
+                }
+
                 // Offset are calculated Between current pos of the bone and the desired pose
                 CritDampSpring::inertialize_transition(bones_offset.pos[bone_id], bones_offset.vel[bone_id],
                                                        bones_kform.pos[bone_id], bones_kform.vel[bone_id],
@@ -165,6 +173,13 @@ struct MMAnimationPlayer : godot::AnimationPlayer
                 Quaternion r0 = p_animation->rotation_track_interpolate(track_rot, p_time);
                 Quaternion r1 = p_animation->rotation_track_interpolate(track_rot, future_time);
                 Vector3 curr_ang = CritDampSpring::quat_differentiate_angular_velocity(r1,r0,abs(future_time - p_time));
+
+                // Root bone have a special process
+                if (bone_id == root_bone_id)
+                {
+                    curr_ang = r0.xform_inv(curr_ang);
+                    r0 = Quaternion();
+                }
 
                 // At this point the animation desired changed
                 CritDampSpring::inertialize_transition(bones_offset.rot[bone_id], bones_offset.ang[bone_id], // Offset are calculated...
