@@ -165,7 +165,7 @@ struct MMAnimationPlayer : godot::AnimationPlayer
                 // Offset are calculated Between current pos of the bone and the desired pose
                 CritDampSpring::inertialize_transition(bones_offset.pos[bone_id], bones_offset.vel[bone_id],
                                                        bones_kform.pos[bone_id], bones_kform.vel[bone_id],
-                                                       fut_bone_pos, fut_bone_vel);
+                                                       fut_bone_pos * _skeleton->get_motion_scale(), fut_bone_vel);
             }
 
             if ( track_rot != -1)
@@ -272,10 +272,10 @@ struct MMAnimationPlayer : godot::AnimationPlayer
 
                 CritDampSpring::inertialize_update(_self->bones_kform.pos[bone_id], _self->bones_kform.vel[bone_id],   // Current pos of the bone
                                                 _self->bones_offset.pos[bone_id], _self->bones_offset.vel[bone_id], // Current Offset pos, get reduced every frame
-                                                curr_pos, fut_vel,                                         // Desired position from the animation
+                                                curr_pos * _skeleton->get_motion_scale(), fut_vel,                                         // Desired position from the animation
                                                 halflife,                                                           // Stats on how the offset decay
                                                 delta * get_speed_scale());                                         // delta time between frames
-                return _self->bones_kform.pos[bone_id] * _skeleton->get_motion_scale();                                       // Set the bone position with motion_scale
+                return _self->bones_kform.pos[bone_id];                                       // Set the bone position with motion_scale
             
             }   
             break;
@@ -339,8 +339,10 @@ struct MMAnimationPlayer : godot::AnimationPlayer
         }
 
         return std::reduce(parents_id.rbegin(), parents_id.rend(), kform{},
-                                   [this](const kform &acc, int i)
-                                   { return acc * bones_kform[i]; });
+                           [this](const kform &acc, int i)
+                           {
+                               return acc * bones_kform[i];
+                           });
    }
 
     Dictionary get_global_bone_info(StringName bone_name)

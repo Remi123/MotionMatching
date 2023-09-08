@@ -30,7 +30,7 @@ struct kform
         return Vector3(std::logf(v.x),std::logf(v.y),std::logf(v.z));
     }
 
-    kform finite_difference(kform input_next, float dt)
+    kform finite_difference(kform input_next, float dt) const
     {
         kform output = *this;
         output.vel = (input_next.pos - pos) / dt;
