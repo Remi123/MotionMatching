@@ -56,35 +56,43 @@ struct MMAnimationLibrary : public AnimationLibrary {
     using u = godot::UtilityFunctions;
     GDCLASS(MMAnimationLibrary,AnimationLibrary)
 
-    MMAnimationLibrary()
+    MMAnimationLibrary() : AnimationLibrary()
     {
-        u::prints("MMAL","Constructor");
-        fill_kdtree();
+        u::prints("MMAL", "Constructor",MotionData.size());
     }
-    ~MMAnimationLibrary(){
+    ~MMAnimationLibrary()
+    {
         u::prints("MMAL", "Destructor");
         if (kdt != nullptr)
         {
             delete kdt;
         }
     }
-    void _notification(int what){
-        switch ( what ){
-            case NOTIFICATION_POSTINITIALIZE: // Constructor
+
+    void _notification(int what)
+    {
+        switch (what)
+        {
+        case NOTIFICATION_POSTINITIALIZE: // Constructor
+        {
+            u::prints("MMAL NOTIFICATION_POSTINITIALIZE", "InEditor:", godot::Engine::get_singleton()->is_editor_hint());
+            if (!Engine::get_singleton()->is_editor_hint())
             {
-                u::prints("MMAL NOTIFICATION_POSTINITIALIZE","InEditor:",godot::Engine::get_singleton()->is_editor_hint());
+                fill_kdtree();
             }
-            break;
-            case NOTIFICATION_PREDELETE: // Destructor
+        }
+        break;
+        case NOTIFICATION_PREDELETE: // Destructor
+        {
+            u::prints("MMAL NOTIFICATION_PREDELETE", "InEditor:", godot::Engine::get_singleton()->is_editor_hint());
+            if (kdt != nullptr)
             {
-                u::prints("MMAL NOTIFICATION_PREDELETE","InEditor:",godot::Engine::get_singleton()->is_editor_hint());
-                if(kdt != nullptr){
-                    delete kdt;
-                }
+                delete kdt;
             }
-            break;
-            default:
-                u::prints("MMAL Default notification",what);
+        }
+        break;
+        default:
+            u::prints("MMAL Default notification", what);
         }
     }
 
@@ -125,22 +133,24 @@ struct MMAnimationLibrary : public AnimationLibrary {
             kdt->set_distance(distance_type);
     }
 
+    void _cache_kdtree(bool reset = false){
+        if(reset)
+        {
+            if(kdt != nullptr);
+                delete kdt;
+            kdt = nullptr;
+        }
+        if(kdt == nullptr)
+        {
+            fill_kdtree();
+        }
+    }
+
     void fill_kdtree()
     {
-        ERR_FAIL_COND_EDMSG(motion_features.is_empty(),"No Motion Features to extract data");
+        u::prints("MF size",motion_features.size());
+        ERR_FAIL_COND_EDMSG(nb_dimensions == 0,"Number Dimensions is zero");
         ERR_FAIL_COND_EDMSG(MotionData.is_empty(),"Motion Data is Empty");
-        int nb_dimensions = 0;
-        for(auto i = 0; i < motion_features.size(); ++i )
-        {
-            MotionFeature* f = Object::cast_to<MotionFeature>(motion_features[i]);
-            if(f != nullptr)
-            {
-                auto dim = (int64_t)f->call("get_dimension");
-                ERR_FAIL_COND_MSG(dim <= 0,"Motions Feature index " + u::str(i) +" can't have dimensions be zero or less");
-                nb_dimensions += dim;
-            }
-        }
-        
 
         u::prints("Total Dimension", nb_dimensions);
         if(kdt != nullptr)
@@ -157,7 +167,10 @@ struct MMAnimationLibrary : public AnimationLibrary {
             std::vector<float> point(begin,end);
             nodes.push_back(Kdtree::KdNode(std::move(point),&db_anim_category[i],i));
         }
+        u::prints("Creating kdtree");
         kdt = new Kdtree::KdTree(&nodes,distance_type);
+
+        weights.resize(nb_dimensions);
 
         auto begin = weights.ptr(), end = weights.ptr(); // We use the ptr as iterator.
         begin = std::next(begin,0);
@@ -177,11 +190,8 @@ struct MMAnimationLibrary : public AnimationLibrary {
         ERR_FAIL_COND_EDMSG(motion_features.is_empty(),"No Motion Features to extract data");
         ERR_FAIL_COND_EDMSG(skeleton_profile == nullptr,"Skeleton_profile is empty");
 
-        if(kdt != nullptr)
-        {
-            delete kdt;
-        }
         u::prints("Preparing Features...");
+        nb_dimensions = 0;
         for(auto i = 0; i < motion_features.size(); ++i )
         {
             MotionFeature* f = Object::cast_to<MotionFeature>(motion_features[i]);
@@ -214,7 +224,7 @@ struct MMAnimationLibrary : public AnimationLibrary {
             auto clock_start = std::chrono::system_clock::now();
 
             auto anim_name = anim_names[anim_index];
-            auto animation = animation_library->get_animation(anim_name);
+            auto animation = get_animation(anim_name);
 
 
             std::vector<int32_t> category_tracks{};
@@ -258,7 +268,7 @@ struct MMAnimationLibrary : public AnimationLibrary {
                 {
                     MotionFeature* f = Object::cast_to<MotionFeature>(motion_features[features_index]);
                     PackedFloat32Array feature_data = f->bake_animation_pose(animation,time);
-                    ERR_FAIL_COND_MSG(feature_data.size() != f->get_dimension(),"Features no." + u::str(features_index)+"bake_animation_pose didn't return a array of the correct size:" +u::str(feature_data.size())+ "!=" + u::(f->get_dimension()) );
+                    ERR_FAIL_COND_MSG(feature_data.size() != f->get_dimension(),"Features no." + u::str(features_index)+"bake_animation_pose didn't return a array of the correct size:" +u::str(feature_data.size())+ "!=" + u::str(f->get_dimension()) );
                     pose_data.append_array(feature_data);                    
                 }
 
@@ -312,23 +322,126 @@ struct MMAnimationLibrary : public AnimationLibrary {
         u::prints("Data Normalized. Copy data to Motion Data property...");
         MotionData = data.duplicate();
 
+        if(weights.size() != nb_dimensions)
+        {
+            WARN_PRINT_ED("Weights resized to " + u::str(nb_dimensions)+ " and reset to ones.");
+            weights.resize(nb_dimensions);
+            weights.fill(1.0);
+        }
+
         u::prints("Finished All Animations");
         u::prints("NbDim",nb_dimensions,"NbPoses:",data.size()/nb_dimensions,"Size",data.size());
     }
+
+    // Calculate the weights using the features get_weights() functions.
+    // Take into consideration the number of dimensions.
+    // The calculation might be reconsidered, but it's the best I found.
+    void recalculate_weights()
+    {
+        weights.clear();
+        using namespace boost::accumulators;
+        accumulator_set<double, stats<tag::min,tag::max,tag::sum,tag::count> > weight_stats, dim_stats, total;
+        for (auto features_index = 0; features_index < motion_features.size(); ++features_index)
+        {   
+            MotionFeature *f = Object::cast_to<MotionFeature>(motion_features[features_index]);
+            
+            weights.append_array(f->get_weights() );
+            u::prints(f->get_name(),f->get_weights());
+        }
+        u::prints("Total:",weights);
+        for(auto i = 0; i < weights.size(); ++i)
+        {
+            weight_stats(weights[i]);
+        }
+        u::prints("Sum weight:",(double)sum(weight_stats), "Count:",(double)count(weight_stats));
+        for (auto features_index = 0; features_index < motion_features.size(); ++features_index)
+        {
+            MotionFeature *f = Object::cast_to<MotionFeature>(motion_features[features_index]);            
+            dim_stats(f->get_dimension());
+        }
+        u::prints("Sum stats",sum(dim_stats));
+        for (auto features_index = 0, offset = 0; features_index < motion_features.size(); ++features_index)
+        {
+            MotionFeature *f = Object::cast_to<MotionFeature>(motion_features[features_index]);
+            for(auto i = offset; i < offset + f->get_dimension();++i)
+            {
+                weights[i] = abs(weights[i]) / sum(weight_stats) / f->get_dimension();
+                total(weights[i]);
+            }
+            offset += f->get_dimension();
+        }
+        u::prints("Sum",sum(weight_stats));
+        if (min(total) < 1.0f && min(total) > 0.0f)
+        {
+            for(auto i = 0; i < weights.size(); ++i)
+            {
+                weights[i] *= 1 / min(total);
+            }
+        }
+    }
+
+    // Bypass the feature query, and ask directly which poses is the most similar.
+    // The query must be of the correct dimension.
+    Array check_query_results(PackedFloat32Array query,int64_t nb_result = 1)
+    {
+        _cache_kdtree(true);
+
+        auto begin = weights.ptr(), end = weights.ptr(); // We use the ptr as iterator.
+        begin = std::next(begin,0);
+        end =   std::next(begin,query.size());
+        const std::vector<float> tmp_weight(begin,end);
+
+        kdt->set_distance(distance_type,&tmp_weight);
+
+        auto query_data = Kdtree::CoordPoint(query.ptr(),std::next(query.ptr(),query.size()));
+
+        u::prints("query Constructed");
+
+        Kdtree::KdNodeVector re{};
+        kdt->k_nearest_neighbors(query_data,nb_result,&re);
+        u::prints("Results obtained");
+        Array result;
+        for(auto i : re)
+        {
+            const auto anim_name = get_animation_list()[db_anim_index[i.index]];
+            const auto anim_time = db_anim_timestamp[i.index];
+            const auto anim_cat = db_anim_category[i.index];
+            result.append(Array::make(anim_name,anim_time,anim_cat));
+        }
+        return result;
+    }
+
 
 protected:
     static void _bind_methods()
     {
         // Functions
         {
-            // ClassDB::bind_method(D_METHOD("_notification","what"), &MMAnimationLibrary::_notification);
             ClassDB::bind_method(D_METHOD("bake_data"), &MMAnimationLibrary::bake_data);
+            ClassDB::bind_method(D_METHOD("recalculate_weights"), &MMAnimationLibrary::recalculate_weights);
+            ClassDB::bind_method(D_METHOD("check_query_results", "Query", "Result count"), &MMAnimationLibrary::check_query_results);
+            // ClassDB::bind_method(D_METHOD("query_pose", "include_category", "exclude_category"), &MMAnimationLibrary::query_pose, DEFVAL(std::numeric_limits<int64_t>::max()), DEFVAL(0));
+        }
+        // Internal properties
+        {
+            ClassDB::bind_method(D_METHOD("set_nb_dimensions", "value"), &MMAnimationLibrary::set_nb_dimensions);
+            ClassDB::bind_method(D_METHOD("get_nb_dimensions"), &MMAnimationLibrary::get_nb_dimensions);
+            godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::INT, "nb_dimensions", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_READ_ONLY), "set_nb_dimensions", "get_nb_dimensions");
+            ClassDB::bind_method(D_METHOD("set_db_anim_index", "value"), &MMAnimationLibrary::set_db_anim_index);
+            ClassDB::bind_method(D_METHOD("get_db_anim_index"), &MMAnimationLibrary::get_db_anim_index);
+            godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_INT32_ARRAY, "db_anim_index", PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_STORAGE), "set_db_anim_index", "get_db_anim_index");
+            ClassDB::bind_method(D_METHOD("set_db_anim_timestamp", "value"), &MMAnimationLibrary::set_db_anim_timestamp);
+            ClassDB::bind_method(D_METHOD("get_db_anim_timestamp"), &MMAnimationLibrary::get_db_anim_timestamp);
+            godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "db_anim_timestamp", PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_STORAGE), "set_db_anim_timestamp", "get_db_anim_timestamp");
+            ClassDB::bind_method(D_METHOD("set_db_anim_category", "value"), &MMAnimationLibrary::set_db_anim_category);
+            ClassDB::bind_method(D_METHOD("get_db_anim_category"), &MMAnimationLibrary::get_db_anim_category);
+            godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_INT32_ARRAY, "db_anim_category", PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_STORAGE), "set_db_anim_category", "get_db_anim_category");
         }
         ClassDB::add_property_group(get_class_static(), "Dependancy resources", "");
         {
-                ClassDB::bind_method(D_METHOD("set_skeleton_profile", "value"), &MMAnimationLibrary::set_skeleton_profile);
-                ClassDB::bind_method(D_METHOD("get_skeleton_profile"), &MMAnimationLibrary::get_skeleton_profile);
-                godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::OBJECT, "skeleton_profile", PROPERTY_HINT_RESOURCE_TYPE, "SkeletonProfile"), "set_skeleton_profile", "get_skeleton_profile");
+            ClassDB::bind_method(D_METHOD("set_skeleton_profile", "value"), &MMAnimationLibrary::set_skeleton_profile);
+            ClassDB::bind_method(D_METHOD("get_skeleton_profile"), &MMAnimationLibrary::get_skeleton_profile);
+            godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::OBJECT, "skeleton_profile", PROPERTY_HINT_RESOURCE_TYPE, "SkeletonProfile"), "set_skeleton_profile", "get_skeleton_profile");
         }
         ClassDB::add_property_group(get_class_static(), "Features", "");
         {
