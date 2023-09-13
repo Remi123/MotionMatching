@@ -96,6 +96,7 @@ struct BonePositionVelocityMotionFeature : public MotionFeature {
         last_known_result.fill({});
     }
     virtual void setup_for_animation(Ref<Animation> animation)override{
+        return;
         _skeleton->reset_bone_poses();
         bone_tracks.clear();
         bones_id.clear();
@@ -157,8 +158,11 @@ struct BonePositionVelocityMotionFeature : public MotionFeature {
         }
     }
 
-    virtual void setup_profile(Ref<SkeletonProfile> skeleton_profile){
+    NodePath _skel_path;
+
+    virtual void setup_profile(NodePath skeleton_path,Ref<SkeletonProfile> skeleton_profile){
         _skel = skeleton_profile;
+        _skel_path = skeleton_path;
         bones_id.clear();
         if(_skel!=nullptr)
         {
@@ -171,82 +175,92 @@ struct BonePositionVelocityMotionFeature : public MotionFeature {
             u::prints("Bones id",bone_names,bones_id);
         }
     }
-    virtual PackedFloat32Array bake_animation_pose2(Ref<Animation> animation,float time){
+
+    kform sample_bone_in_anim(Ref<Animation> animation,float time,NodePath skel)
+    {
+
+    }
+
+    virtual PackedFloat32Array bake_animation_pose(Ref<Animation> animation,float time)override{
         constexpr float dt = 0.05f;
 
         PackedFloat32Array result{};
+        kform kbone{};
  
-        for (size_t index = 0; index < bones_id.size(); ++index)
+        for (size_t index = 0; index < bone_names.size(); ++index)
         {
+            auto path = u::str(_skel_path)+u::str(":")+bone_names[index];
+            kbone = kform(_skel,animation,time,path,kform::Space::RootMotion);
+            u::prints(path,kbone.vel);
 
             // Get the list of transform to accumulate
-            std::vector<int> parents_id{bones_id[index]};
-            {
-                int tmp_p = bones_id[index];
-                while (!_skel->get_bone_parent(tmp_p).is_empty())
-                {
-                    int new_parent = _skel->find_bone(_skel->get_bone_parent(tmp_p));
-                    parents_id.push_back(new_parent);
-                    tmp_p = new_parent;
-                }
-                std::reverse(parents_id.begin(), parents_id.end());
-            }
-            std::vector<kform> parents_tr{};
-            parents_tr.reserve(parents_id.size());
-            for (auto p : parents_id)
-            {
-                kform s0 = _skel->get_reference_pose(p); // time
-                kform s1 = s0; // time + dt
-                auto tpos = bone_tracks[p][0];
-                auto trot = bone_tracks[p][1];
-                auto tscl = bone_tracks[p][2];
-                if (tpos != -1)
-                {
-                    s0.pos = animation->position_track_interpolate(tpos, time);
-                    s1.pos = animation->position_track_interpolate(tpos, time + dt);
-                }
-                if (trot != -1)
-                {
-                    s0.rot = animation->rotation_track_interpolate(trot, time);
-                    s1.rot = animation->rotation_track_interpolate(trot, time + dt);
-                }
-                if (tscl != -1)
-                {
-                    s0.scl = animation->scale_track_interpolate(tscl, time);
-                    s1.scl = animation->scale_track_interpolate(tscl, time + dt);
-                }
+            // std::vector<int> parents_id{bones_id[index]};
+            // {
+            //     int tmp_p = bones_id[index];
+            //     while (!_skel->get_bone_parent(tmp_p).is_empty())
+            //     {
+            //         int new_parent = _skel->find_bone(_skel->get_bone_parent(tmp_p));
+            //         parents_id.push_back(new_parent);
+            //         tmp_p = new_parent;
+            //     }
+            //     std::reverse(parents_id.begin(), parents_id.end());
+            // }
+            // std::vector<kform> parents_tr{};
+            // parents_tr.reserve(parents_id.size());
+            // for (auto p : parents_id)
+            // {
+            //     kform s0 = _skel->get_reference_pose(p); // time
+            //     kform s1 = s0; // time + dt
+            //     auto tpos = bone_tracks[p][0];
+            //     auto trot = bone_tracks[p][1];
+            //     auto tscl = bone_tracks[p][2];
+            //     if (tpos != -1)
+            //     {
+            //         s0.pos = animation->position_track_interpolate(tpos, time);
+            //         s1.pos = animation->position_track_interpolate(tpos, time + dt);
+            //     }
+            //     if (trot != -1)
+            //     {
+            //         s0.rot = animation->rotation_track_interpolate(trot, time);
+            //         s1.rot = animation->rotation_track_interpolate(trot, time + dt);
+            //     }
+            //     if (tscl != -1)
+            //     {
+            //         s0.scl = animation->scale_track_interpolate(tscl, time);
+            //         s1.scl = animation->scale_track_interpolate(tscl, time + dt);
+            //     }
 
-                parents_tr.push_back(s0.finite_difference(s1,dt));
-            }
-            // Accumulate transforms
-            kform global = std::reduce(parents_tr.begin(),parents_tr.end(),kform{},[](kform&v,kform&w){
-                return v * w;
-            });
-            kform model{};
-            // Remove root
-            {
-                kform root = parents_tr[0];
-                model.pos = root.rot.inverse().xform(global.pos - root.pos);
-                model.vel = root.rot.inverse().xform(global.vel);
-                model.rot = root.rot.inverse() * global.rot;
-                model.ang = root.rot.inverse().xform(global.ang);
-            }
+            //     parents_tr.push_back(kform::finite_difference(s0,s1,dt));
+            // }
+            // // Accumulate transforms
+            // kform global = std::reduce(parents_tr.begin(),parents_tr.end(),kform{},[](kform&v,kform&w){
+            //     return v * w;
+            // });
+
+            // // Remove root
+            // {
+            //     kform root = parents_tr[0];
+            //     kbone.pos = root.rot.inverse().xform(global.pos - root.pos);
+            //     kbone.vel = root.rot.inverse().xform(global.vel);
+            //     kbone.rot = root.rot.inverse() * global.rot;
+            //     kbone.ang = root.rot.inverse().xform(global.ang);
+            // }
             // Serialize
             if (use_inertialization)
             {
-                const auto cost = inertialization_cost_function(model.pos, model.vel, inertialization_halflife);
+                const auto cost = inertialization_cost_function(kbone.pos, kbone.vel, inertialization_halflife);
                 result.push_back(cost.x);
                 result.push_back(cost.y);
                 result.push_back(cost.z);
             }
             else
             {
-                result.push_back(model.pos.x);
-                result.push_back(model.pos.y);
-                result.push_back(model.pos.z);
-                result.push_back(model.vel.x);
-                result.push_back(model.vel.y);
-                result.push_back(model.vel.z);
+                result.push_back(kbone.pos.x);
+                result.push_back(kbone.pos.y);
+                result.push_back(kbone.pos.z);
+                result.push_back(kbone.vel.x);
+                result.push_back(kbone.vel.y);
+                result.push_back(kbone.vel.z);
             }
         }
 
@@ -255,7 +269,7 @@ struct BonePositionVelocityMotionFeature : public MotionFeature {
     }
 
     // TODO : Remove Dependancy on skeleton.
-    virtual PackedFloat32Array bake_animation_pose(Ref<Animation> animation,float time)override{
+    virtual PackedFloat32Array bake_animation_pose2(Ref<Animation> animation,float time){
         
         PackedVector3Array prev_pos{},curr_pos{};
         PackedFloat32Array result{};

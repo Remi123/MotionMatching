@@ -5,6 +5,15 @@
 #include "godot_cpp/variant/vector3.hpp"
 #include <CritSpringDamper.hpp>
 
+#include <godot_cpp/classes/animation.hpp>
+#include <godot_cpp/classes/animation_library.hpp>
+#include <godot_cpp/classes/animation_player.hpp>
+#include <godot_cpp/classes/bone_map.hpp>
+
+#include <godot_cpp/classes/character_body3d.hpp>
+#include <godot_cpp/classes/skeleton3d.hpp>
+#include <godot_cpp/classes/skeleton_profile.hpp>
+
 using namespace godot;
 
 struct kform
@@ -26,21 +35,118 @@ struct kform
         vel{},ang{},svl{}
     {}
 
+    enum Space {
+        Local,Model,RootMotion,Global
+    };
+
+    kform(Ref<SkeletonProfile> skel, Ref<Animation> anim, double time, NodePath bonepath, Space space)
+        : kform(skel->get_reference_pose(skel->find_bone(bonepath.get_concatenated_subnames())))
+    {
+        switch (space)
+        {
+        case Local:
+            _local(skel, anim, time, bonepath);
+        case Model:
+            _model(skel, anim, time, bonepath);
+        case RootMotion:
+            _root(skel, anim, time, bonepath);
+        case Global:
+            _global(skel, anim, time, bonepath);
+        }
+    }
+    static constexpr double dt = 0.016;
+    //DONE
+    void _local(Ref<SkeletonProfile> skel,Ref<Animation> anim,double time,NodePath bonepath){
+        *this = skel->get_reference_pose(skel->find_bone(bonepath.get_concatenated_subnames()));
+        auto tpos = anim->find_track(bonepath,Animation::TrackType::TYPE_POSITION_3D);
+        auto trot = anim->find_track(bonepath,Animation::TrackType::TYPE_ROTATION_3D);
+        auto tscl = anim->find_track(bonepath,Animation::TrackType::TYPE_SCALE_3D);
+        kform s1 = *this;
+        if (tpos != -1)
+        {
+            pos = anim->position_track_interpolate(tpos, time);
+            s1.pos = anim->position_track_interpolate(tpos, time + dt);
+        }
+        if (trot != -1)
+        {
+            rot = anim->rotation_track_interpolate(trot, time);
+            s1.rot = anim->rotation_track_interpolate(trot, time + dt);
+        }
+        if (tscl != -1)
+        {
+            scl = anim->scale_track_interpolate(tscl, time);
+            s1.scl = anim->scale_track_interpolate(tscl, time + dt);
+        }
+        finite_difference(s1,dt);
+    }
+    // Done
+    void _model(Ref<SkeletonProfile> skel,Ref<Animation> anim,double time,NodePath bonepath){
+        _global(skel,anim,time,bonepath);
+        auto root = kform{};
+        root._local(skel,anim,time,bonepath.get_concatenated_names() + String(":") + skel->get_root_bone());
+        *this = *this / root;
+    }
+    //TODO
+    void _root(Ref<SkeletonProfile> skel,Ref<Animation> anim,double time,NodePath bonepath){
+        _global(skel,anim,time,bonepath);
+        auto root = kform{};
+        root._local(skel,anim,time,bonepath.get_concatenated_names() + String(":") + skel->get_root_bone());
+        *this = root / *this;
+    }
+    //DONE
+    void _global(Ref<SkeletonProfile> skel, Ref<Animation> anim, double time, NodePath bonepath)
+    {
+        kform s1 = *this;
+
+        std::vector<kform> locals{};
+        String skelpath = bonepath.get_concatenated_names();
+        StringName bone = bonepath.get_concatenated_subnames();
+        int bone_id = skel->find_bone(bone);
+
+        do
+        {
+            kform l = *this;
+            l._local(skel, anim, time, skelpath + ':' + u::str(bone));
+            locals.push_back(l);
+
+            bone = skel->get_bone_parent(bone_id);
+            bone_id = skel->find_bone(bone);
+        } while (bone_id != -1);
+
+        *this = std::reduce(locals.rbegin(), locals.rend(), kform{},
+                            [](const kform &acc, const kform &i)
+                            {
+                                return acc * i;
+                            });
+    }
+
     static Vector3 _log(Vector3 v){
         return Vector3(std::logf(v.x),std::logf(v.y),std::logf(v.z));
     }
 
-    kform finite_difference(kform input_next, float dt) const
+    kform& finite_difference(kform input_next, float _dt)
     {
-        kform output = *this;
-        output.vel = (input_next.pos - pos) / dt;
+        vel = (input_next.pos - pos) / _dt;
 
-        output.ang = CritDampSpring::quat_to_scaled_angle_axis(CritDampSpring::quat_abs(
+        ang = CritDampSpring::quat_to_scaled_angle_axis(CritDampSpring::quat_abs(
                             input_next.rot * rot.inverse())) /
-                        dt;
+                        _dt;
 
-        output.svl = _log(input_next.scl / scl) / dt;
-        return output;
+        svl = _log(input_next.scl / scl) / _dt;
+        return *this;
+    }
+
+    static kform finite_difference(const kform& input_curr,const kform& input_next, float _dt)
+    {
+        kform out = input_curr;
+        out.vel = (input_next.pos - out.pos) / _dt;
+
+        out.ang = CritDampSpring::quat_to_scaled_angle_axis(CritDampSpring::quat_abs(
+                            input_next.rot * out.rot.inverse())) /
+                        _dt;
+
+        out.svl = _log(input_next.scl / out.scl) / _dt;
+        return out;
     }
 
     friend kform operator*(const kform v,const kform w){

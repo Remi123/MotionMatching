@@ -96,6 +96,7 @@ struct MMAnimationLibrary : public AnimationLibrary {
         }
     }
 
+    GETSET(StringName,skeleton_path);
     GETSET(Ref<SkeletonProfile>,skeleton_profile)
 
     // Category tracks
@@ -182,14 +183,13 @@ struct MMAnimationLibrary : public AnimationLibrary {
     }
 
 
-
-
+    
+    
 
     void bake_data()
     {
         ERR_FAIL_COND_EDMSG(motion_features.is_empty(),"No Motion Features to extract data");
         ERR_FAIL_COND_EDMSG(skeleton_profile == nullptr,"Skeleton_profile is empty");
-
         u::prints("Preparing Features...");
         nb_dimensions = 0;
         for(auto i = 0; i < motion_features.size(); ++i )
@@ -197,7 +197,7 @@ struct MMAnimationLibrary : public AnimationLibrary {
             MotionFeature* f = Object::cast_to<MotionFeature>(motion_features[i]);
             ERR_FAIL_NULL_MSG(f,"Features no."+u::str(i) + "is null");
             u::prints("Feature no.",i,f->get_name(),"Dimensions:", f->get_dimension());
-            f->setup_profile(skeleton_profile);
+            f->setup_profile(NodePath(skeleton_path),skeleton_profile);
             nb_dimensions += (int)(f->get_dimension());
         }
         u::prints("Total Dimension", nb_dimensions);
@@ -218,6 +218,8 @@ struct MMAnimationLibrary : public AnimationLibrary {
         using acc_stats = stats<tag::density,tag::max,tag::min,tag::median,tag::skewness,tag::variance>;
         const accumulator_set<float,acc_stats> default_acc (tag::density::num_bins = 10, tag::density::cache_size = 15);
         std::vector<accumulator_set<float,acc_stats>> data_stats(nb_dimensions,default_acc);
+
+        u::prints("Starting animation baking...");
 
         for(auto anim_index = 0; anim_index < anim_names.size(); ++anim_index)
         {
@@ -439,6 +441,9 @@ protected:
         }
         ClassDB::add_property_group(get_class_static(), "Dependancy resources", "");
         {
+            ClassDB::bind_method(D_METHOD("set_skeleton_path", "value"), &MMAnimationLibrary::set_skeleton_path);
+            ClassDB::bind_method(D_METHOD("get_skeleton_path"), &MMAnimationLibrary::get_skeleton_path);
+            godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::STRING_NAME, "skeleton_path"), "set_skeleton_path", "get_skeleton_path");
             ClassDB::bind_method(D_METHOD("set_skeleton_profile", "value"), &MMAnimationLibrary::set_skeleton_profile);
             ClassDB::bind_method(D_METHOD("get_skeleton_profile"), &MMAnimationLibrary::get_skeleton_profile);
             godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::OBJECT, "skeleton_profile", PROPERTY_HINT_RESOURCE_TYPE, "SkeletonProfile"), "set_skeleton_profile", "get_skeleton_profile");
