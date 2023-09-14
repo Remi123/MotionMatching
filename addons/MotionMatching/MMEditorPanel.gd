@@ -4,7 +4,7 @@ class_name MMEditorPanel extends Control
 var _current : MMAnimationLibrary = null
 # var _animplayer : AnimationPlayer = null
 
-# @onready var rd : RichTextLabel = $TabContainer/Data/ScrollContainer/PoseData
+@onready var rd : RichTextLabel = $TabContainer/Data/ScrollContainer/PoseData
 
 # @onready var gizmo := preload("res://addons/MotionMatching/MMEditorGizmoPlugin.gd") # setup by the plugin
 
@@ -14,79 +14,64 @@ var _current : MMAnimationLibrary = null
 # 	print('MMEditorPanel Ready')
 # 	update_info()
 
-# @onready var infotext : RichTextLabel = $TabContainer/Info/PanelContainer/InfoText
+@onready var infotext : RichTextLabel = $TabContainer/Info/PanelContainer/InfoText
 
 func update_info()->void:
 	$TabContainer/Info/MarginContainer4/HBoxContainer/PathText.text = _current.resource_path
-	pass
-# 	if _current:
 
-# 		var nb_dim = 0
-# 		for r in _current.motion_features:
-# 			prints(r.resource_name)
-# 			var f :MotionFeature= r as MotionFeature
-# 			nb_dim += r.get_dimension()
+	if _current:
 
-# 		if nb_dim == 0:
-# 			nb_dim = 1
+		var nb_dim = _current.nb_dimensions
+
+		if nb_dim == 0:
+			nb_dim = 1
 
 
-# 		infotext.clear()
-# 		var info := [	["Nb Features", _current.motion_features.size()],
-# 						["Nb Dimension",nb_dim],
-# 						["Nb Poses",_current.MotionData.size()/nb_dim],
-# 					]
-# 		infotext.push_table(info.size())
-# 		for t in info:
-# 			infotext.push_cell()
-# 			infotext.set_cell_padding(Rect2i(5,0,5,5))
-# 			infotext.set_cell_border_color(Color.LIGHT_GRAY)
-# 			infotext.append_text(t[0]+":"+str(t[1]))
-# 			infotext.pop()
-# 		infotext.pop()
+		infotext.clear()
+		var info := [	["Nb Features", _current.motion_features.size()],
+						["Nb Dimension",nb_dim],
+						["Nb Poses",_current.MotionData.size()/nb_dim],
+					]
+		infotext.push_table(info.size())
+		for t in info:
+			infotext.push_cell()
+			infotext.set_cell_padding(Rect2i(5,0,5,5))
+			infotext.set_cell_border_color(Color.LIGHT_GRAY)
+			infotext.append_text(t[0]+":"+str(t[1]))
+			infotext.pop()
+		infotext.pop()
+		prints("Gos")
 
-# 		infotext.append_text("\n\nDimensional informations:\n")
+		infotext.append_text("\n\nDimensional informations:\n")
 
-# 		infotext.push_table(1 + nb_dim)
-
-# 		info = [
-# 			["Dimensions",range(nb_dim)],
-# 			["Means",_current.means],
-# 			["Variances",_current.variances],
-# 			["Weights",_current.weights],
-# 		]
-# 		for i in info:
-# 			infotext.push_cell()
-# 			#infotext.set_cell_padding(Rect2i(5,0,5,5))
-# 			infotext.set_cell_border_color(Color.LIGHT_GRAY)
-# 			infotext.append_text(i[0])
-# 			infotext.pop()
-# 			for subinfo in i[1]:
-# 				infotext.push_cell()
-# 				infotext.set_cell_row_background_color(Color(0.212, 0.239, 0.29)/0.9,Color(0.212, 0.239, 0.29)*0.8)
-# 				infotext.set_cell_border_color(Color.LIGHT_GRAY)
-# 				if subinfo is float:
-# 					infotext.append_text("%*.*f" % [0,3, subinfo ])
-# 				elif subinfo is int:
-# 					infotext.append_text(str(subinfo))
-# 				infotext.pop()
-
-# 		infotext.pop()
-
-# #		for i in range(_current.densities.size()):
-# #			prints("Dimension",i)
-# #			for data in _current.densities[i]:
-# #				prints(data[0],data[1])
+		infotext.push_table(nb_dim+1)
 
 
+		info = [
+			["Dimensions",range(nb_dim)],
+			["Means",_current.means],
+			["Variances",_current.variances],
+			["Weights",_current.weights],
+		]
 
-# 		if _current.animation_library != null:
-# 			var lib :AnimationLibrary = _current.animation_library
-# 			choose_anim.get_popup().clear()
-# 			for anim_name in lib.get_animation_list():
-# 				choose_anim.get_popup().add_item(anim_name)
-# 			choose_anim.get_popup().connect("id_pressed",_on_choose_animation_pressed)
+		for i in info:
+			infotext.push_cell()
+			infotext.set_cell_padding(Rect2i(5,0,5,5))
+			infotext.set_cell_border_color(Color.LIGHT_GRAY)
+			infotext.append_text(i[0])
+			infotext.pop()
+			prints(i[0],i[1].size())
+			for subinfo in i[1]:
+				infotext.push_cell()
+				infotext.set_cell_row_background_color(Color(0.212, 0.239, 0.29)/0.9,Color(0.212, 0.239, 0.29)*0.8)
+				infotext.set_cell_border_color(Color.LIGHT_GRAY)
+				if subinfo is float:
+					infotext.append_text("%*.*f" % [0,3, subinfo ])
+				elif subinfo is int:
+					infotext.append_text(str(subinfo))
+				infotext.pop()
 
+		infotext.pop()
 
 
 
@@ -96,26 +81,26 @@ func bake_data_current()->void:
 	_current.bake_data()
 	update_info()
 
-# func update_shown_pose_data(pose_index : int)->void:
+func update_shown_pose_data(value: float) -> void:
+	assert(_current.nb_dimensions > 0)
+	prints("Hello")
+	var nb_dim = _current.nb_dimensions
 
-# 	var nb_dim = 0
-# 	for r in _current.motion_features:
-# 		var f :MotionFeature= r as MotionFeature
-# 		nb_dim += r.get_dimension()
+	var pose_index :int = value as int
 
-# 	if pose_index > _current.MotionData.size()/nb_dim:
-# 		return
+	if pose_index > _current.MotionData.size()/nb_dim:
+		return
 
-# 	var pose := _current.MotionData.slice(pose_index*nb_dim,pose_index*nb_dim+nb_dim)
-# 	for i in range(pose.size()):
-# 		pose[i] = pose[i] * _current.variances[i] + _current.means[i]
+	var pose := _current.MotionData.slice(pose_index*nb_dim,pose_index*nb_dim+nb_dim)
+	for i in range(pose.size()):
+		pose[i] = pose[i] * _current.variances[i] + _current.means[i]
 
-# 	rd.clear()
-# 	var animlib :AnimationLibrary= _current.animation_library as AnimationLibrary
-# 	var anim_name := animlib.get_animation_list()[_current.db_anim_index[pose_index]]
-# 	var anim := animlib.get_animation(anim_name)
-# 	var anim_timestep := _current.db_anim_timestamp[pose_index]
-# 	var anim_cat := _current.db_anim_category[pose_index]
+	rd.clear()
+	var animlib :AnimationLibrary= _current as AnimationLibrary
+	var anim_name := animlib.get_animation_list()[_current.db_anim_index[pose_index]]
+	var anim := animlib.get_animation(anim_name)
+	var anim_timestep := _current.db_anim_timestamp[pose_index]
+	var anim_cat := _current.db_anim_category[pose_index]
 
 # 	if anim_name == "Idle":
 # 		var v := anim.find_track("MotionPlayer:loco_category",Animation.TYPE_VALUE)
@@ -129,51 +114,51 @@ func bake_data_current()->void:
 
 
 
-# 	rd.push_table(4)
-# 	for t in [anim_name,"%*.*f" % [0,3, anim_timestep ], str(anim.length),str(anim_cat)]:
-# 		rd.push_cell()
-# 		rd.set_cell_padding(Rect2i(5,0,5,5))
-# 		rd.set_cell_border_color(Color.LIGHT_GRAY)
-# 		rd.append_text(t)
-# 		rd.pop()
-# 	rd.pop()
-# 	rd.append_text("\n")
+	rd.push_table(4)
+	for t in [anim_name,"%*.*f" % [0,3, anim_timestep ], str(anim.length),str(anim_cat)]:
+		rd.push_cell()
+		rd.set_cell_padding(Rect2i(5,0,5,5))
+		rd.set_cell_border_color(Color.LIGHT_GRAY)
+		rd.append_text(t)
+		rd.pop()
+	rd.pop()
+	rd.append_text("\n")
 
-# 	rd.push_table(pose.size() + 1,INLINE_ALIGNMENT_CENTER)
+	rd.push_table(pose.size() + 1,INLINE_ALIGNMENT_CENTER)
 
 # 	var debug_lines := PackedVector3Array()
 # 	gizmo.instance.clear()
 
 # #	gizmo.create_material("main",Color.BLUE)
 
-# 	var offset := 0
-# 	for r in _current.motion_features:
-# 		var f :MotionFeature= r as MotionFeature
-# 		rd.push_cell()
-# 		rd.set_cell_row_background_color(Color(0.212, 0.239, 0.29),Color(0.212, 0.239, 0.29)/0.7)
-# 		rd.set_cell_border_color(Color.LIGHT_GRAY)
-# 		rd.add_text("Feature " + r.resource_name +' dim ' +str(r.get_dimension()))
-# 		rd.pop()
-# 		for x in range(0,nb_dim):
-# 			rd.push_cell()
-# 			rd.set_cell_row_background_color(Color(0.212, 0.239, 0.29),Color(0.212, 0.239, 0.29)/0.7)
+	var offset := 0
+	for r in _current.motion_features:
+		var f :MotionFeature= r as MotionFeature
+		rd.push_cell()
+		rd.set_cell_row_background_color(Color(0.212, 0.239, 0.29),Color(0.212, 0.239, 0.29)/0.7)
+		rd.set_cell_border_color(Color.LIGHT_GRAY)
+		rd.add_text("Feature " + r.resource_name +' dim ' +str(r.get_dimension())+ ' ')
+		rd.pop()
+		for x in range(0,nb_dim):
+			rd.push_cell()
+			rd.set_cell_row_background_color(Color(0.212, 0.239, 0.29),Color(0.212, 0.239, 0.29)/0.7)
 
-# 			if x < r.get_dimension():
-# 				rd.set_cell_border_color(Color.LIGHT_SLATE_GRAY)
-# 				var showed_value := pose[offset+x] #* _current.max_values[offset + x]
-# 				rd.add_text("%*.*f" % [0,3, showed_value ])
-# 			else:
-# 				rd.add_text("")
-# 			rd.pop()
+			if x < r.get_dimension():
+				rd.set_cell_border_color(Color.LIGHT_SLATE_GRAY)
+				var showed_value := pose[offset+x] #* _current.max_values[offset + x]
+				rd.add_text("%*.*f" % [0,3, showed_value ])
+			else:
+				rd.add_text("")
+			rd.pop()
 
-# 		var showed_values :=  pose.slice(offset,offset+r.get_dimension())
+		var showed_values :=  pose.slice(offset,offset+r.get_dimension())
 
 
-# 		r.debug_pose_gizmo(gizmo.instance,showed_values,tr )
+#		r.debug_pose_gizmo(gizmo.instance,showed_values,tr )
 
-# 		offset += r.get_dimension()
+		offset += r.get_dimension()
 
-# 	rd.pop()
+	rd.pop()
 
 
 @onready var s := $TabContainer/Calculation/MarginContainer/HFlowContainer/SpinBox
@@ -188,7 +173,7 @@ func on_recalculate_weights()->void:
 	_current.recalculate_weights()
 	prints(_current.weights)
 # 	var animlib := _current.animation_library as AnimationLibrary
-# 	update_info()
+	update_info()
 
 
 
@@ -245,3 +230,6 @@ func on_look_for_similar_pressed() -> void:
 # 		anim.track_set_interpolation_type(category_track,Animation.INTERPOLATION_NEAREST)
 
 # 	pass # Replace with function body.
+
+
+

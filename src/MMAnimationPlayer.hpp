@@ -345,12 +345,38 @@ struct MMAnimationPlayer : godot::AnimationPlayer
                            });
    }
 
+   kform get_bone_info(StringName bone_name,kform::Space space)
+   {
+        ERR_FAIL_COND_V(_skeleton == nullptr, {});
+        auto id = _skeleton->find_bone(bone_name);
+        ERR_FAIL_COND_V_MSG(id == -1,{},"Bone " +bone_name + " doesn't exist in skeleton");
+        if (space == kform::Space::Local)
+        {
+            return bones_kform[id];
+        }
+        else if(space == kform::Space::Global)
+        {
+            return get_bone_global_kform(id);
+        }
+        else if(space == kform::Space::RootMotion)
+        {
+            kform global = get_bone_global_kform(id);
+            return bones_kform[root_bone_id] / global;
+        }
+        else if(space == kform::Space::Model)
+        {
+            kform global = get_bone_global_kform(id);
+            return global / bones_kform[root_bone_id];
+        }
+        return kform{};
+   }
+
     Dictionary get_global_bone_info(StringName bone_name)
    {
         ERR_FAIL_COND_V(_skeleton == nullptr, {});
         auto id = _skeleton->find_bone(bone_name);
         ERR_FAIL_COND_V_MSG(id == -1,{},"Bone " +bone_name + " doesn't exist in skeleton");
-        kform global = get_bone_global_kform(id);
+        kform global = get_bone_info(bone_name,kform::Space::Global);
 
         Dictionary result = Dictionary{};
         result["position"] = global.pos;
@@ -367,8 +393,7 @@ struct MMAnimationPlayer : godot::AnimationPlayer
         ERR_FAIL_COND_V(_skeleton == nullptr, {});
         auto id = _skeleton->find_bone(bone_name);
         ERR_FAIL_COND_V_MSG(id == -1,{},"Bone " +bone_name + " doesn't exist in skeleton");
-        kform global = get_bone_global_kform(id);
-        global = bones_kform[root_bone_id] / global;
+        kform global = get_bone_info(bone_name,kform::Space::RootMotion);
 
         Dictionary result = Dictionary{};
         result["position"] = global.pos;

@@ -413,6 +413,8 @@ struct MMAnimationLibrary : public AnimationLibrary {
         return result;
     }
 
+    
+
 
 protected:
     static void _bind_methods()
@@ -426,6 +428,17 @@ protected:
         }
         // Internal properties
         {
+            ClassDB::bind_method(D_METHOD("set_means", "value"), &MMAnimationLibrary::set_means);
+            ClassDB::bind_method(D_METHOD("get_means"), &MMAnimationLibrary::get_means);
+            godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "means", PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_READ_ONLY), "set_means", "get_means");
+            ClassDB::bind_method(D_METHOD("set_variances", "value"), &MMAnimationLibrary::set_variances);
+            ClassDB::bind_method(D_METHOD("get_variances"), &MMAnimationLibrary::get_variances);
+            godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "variances", PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_READ_ONLY), "set_variances", "get_variances");
+            ClassDB::bind_method(D_METHOD("set_densities", "value"), &MMAnimationLibrary::set_densities);
+            ClassDB::bind_method(D_METHOD("get_densities"), &MMAnimationLibrary::get_densities);
+            godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::ARRAY, "densities", PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_READ_ONLY), "set_densities", "get_densities");
+
+
             ClassDB::bind_method(D_METHOD("set_nb_dimensions", "value"), &MMAnimationLibrary::set_nb_dimensions);
             ClassDB::bind_method(D_METHOD("get_nb_dimensions"), &MMAnimationLibrary::get_nb_dimensions);
             godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::INT, "nb_dimensions", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_READ_ONLY), "set_nb_dimensions", "get_nb_dimensions");

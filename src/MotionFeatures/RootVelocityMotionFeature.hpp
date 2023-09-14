@@ -98,9 +98,33 @@ struct RootVelocityMotionFeature : public MotionFeature {
         return result;
     }
 
+    PackedFloat32Array serialize_charbody3d(CharacterBody3D * body)
+    {
+        PackedFloat32Array result{};
+        auto vel = body->get_global_transform().basis.get_quaternion().xform_inv(body->get_velocity());
+        result.push_back(vel.x);
+        result.push_back(vel.y);
+        result.push_back(vel.z);
+        return result;
+    }
+    PackedFloat32Array serialize_vec3(Vector3 local_vel)
+    {
+        PackedFloat32Array result{};
+        result.push_back(local_vel.x);
+        result.push_back(local_vel.y);
+        result.push_back(local_vel.z);
+        return result;
+    }
+
 
 protected:
     static void _bind_methods() {
+
+        {
+            ClassDB::bind_method(D_METHOD("serialize_CharacterBody3d", "body"), &RootVelocityMotionFeature::serialize_charbody3d);
+            ClassDB::bind_method(D_METHOD("serialize_Local_Velocity", "local_velocity"), &RootVelocityMotionFeature::serialize_vec3);
+        }
+
         ClassDB::bind_method(D_METHOD("set_weight", "value"), &RootVelocityMotionFeature::set_weight, DEFVAL(1.0f));
         ClassDB::bind_method(D_METHOD("get_weight"), &RootVelocityMotionFeature::get_weight);
         godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT, "weight"), "set_weight", "get_weight");
