@@ -413,7 +413,71 @@ struct MMAnimationLibrary : public AnimationLibrary {
         return result;
     }
 
-    
+    struct Category_Pred : Kdtree::KdNodePredicate
+    {
+        const std::bitset<64> m_desired_category;
+        const std::bitset<64> m_exclude_category;
+        Category_Pred(int64_t included_category_bitfield, int64_t excluded_category_bitfield = 0):
+            m_desired_category{static_cast<uint64_t>(included_category_bitfield)}
+            ,m_exclude_category{static_cast<uint64_t>(excluded_category_bitfield)}
+        {}
+
+        virtual bool operator()(const Kdtree::KdNode& node) const {
+            static constexpr std::bitset<64> zero = {};
+            const std::bitset<64> node_category = *((int32_t*)node.data);
+            const bool include = (m_desired_category & node_category) == node_category;
+            const bool exclude = (m_exclude_category & node_category) == zero;
+            return include && exclude;
+        }
+    };
+
+    Dictionary query_pose(PackedFloat32Array query,int64_t included_category = std::numeric_limits<int64_t>::max(), int64_t excluded_category = 0)
+    {
+        
+        ERR_FAIL_COND_V_MSG(query.size() != nb_dimensions, {}, "Query must the same size as nb_dimensions");
+        // Create three if needs be
+        _cache_kdtree();
+
+        // Normalization
+        for (size_t i = 0; i < means.size();++i)
+        {
+            query[i] = (query[i] - means[i])/variances[i]; 
+        }
+
+        {
+            Kdtree::KdNodeVector re{};
+
+            auto query_data = Kdtree::CoordPoint(query.ptr(),std::next(query.ptr(),kdt->dimension));
+            auto clock_start = std::chrono::system_clock::now();
+            if(included_category == std::numeric_limits<int64_t>::max())
+                kdt->k_nearest_neighbors(query_data,1,&re);
+            else
+            {
+                auto pred = Category_Pred(included_category,excluded_category);
+                kdt->k_nearest_neighbors(query_data,1,&re,&pred);
+            }
+
+            auto clock_end = std::chrono::system_clock::now();
+            
+            float duration = float(std::chrono::duration_cast <std::chrono::microseconds> (clock_end - clock_start).count());
+
+
+
+
+            Dictionary results = {};
+
+            const StringName anim_name = get_animation_list()[db_anim_index[re[0].index]];
+            const float anim_time = db_anim_timestamp[re[0].index];
+
+            results["animation"] = anim_name;
+            results["timestamp"] = std::move(anim_time);
+
+            return results;
+        }
+        return {};
+
+    }
+
 
 
 protected:
