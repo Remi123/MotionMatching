@@ -83,8 +83,8 @@ func bake_data_current()->void:
 
 func update_shown_pose_data(value: float) -> void:
 	assert(_current.nb_dimensions > 0)
-	prints("Hello")
-	var nb_dim = _current.nb_dimensions
+
+	var nb_dim := _current.nb_dimensions
 
 	var pose_index :int = value as int
 
@@ -130,7 +130,7 @@ func update_shown_pose_data(value: float) -> void:
 # 	gizmo.instance.clear()
 
 # #	gizmo.create_material("main",Color.BLUE)
-
+	var global_offset := pose_index*nb_dim
 	var offset := 0
 	for r in _current.motion_features:
 		var f :MotionFeature= r as MotionFeature
@@ -145,7 +145,7 @@ func update_shown_pose_data(value: float) -> void:
 
 			if x < r.get_dimension():
 				rd.set_cell_border_color(Color.LIGHT_SLATE_GRAY)
-				var showed_value := pose[offset+x] #* _current.max_values[offset + x]
+				var showed_value := (pose[offset+x] * _current.variances[offset+x]) + _current.means[offset+x]
 				rd.add_text("%*.*f" % [0,3, showed_value ])
 			else:
 				rd.add_text("")

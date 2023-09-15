@@ -35,9 +35,40 @@ struct kform
         vel{},ang{},svl{}
     {}
 
+    kform(Vector3 p,Quaternion r,Vector3 s,Vector3 lv,Vector3 av,Vector3 sv) : 
+        pos{p},rot{r}, scl{s}, vel{lv}, ang{av}, svl{sv}
+    {}
+
+    kform(Ref<SkeletonProfile> skel,NodePath bonepath,Ref<Animation> anim,double time) : 
+        kform{skel->get_reference_pose(skel->find_bone(bonepath.get_concatenated_subnames()))}
+    {
+        auto tpos = anim->find_track(bonepath,Animation::TrackType::TYPE_POSITION_3D);
+        auto trot = anim->find_track(bonepath,Animation::TrackType::TYPE_ROTATION_3D);
+        auto tscl = anim->find_track(bonepath,Animation::TrackType::TYPE_SCALE_3D);
+        kform s1 = *this;
+        if (tpos != -1)
+        {
+            pos = anim->position_track_interpolate(tpos, time);
+            s1.pos = anim->position_track_interpolate(tpos, time + dt);
+        }
+        if (trot != -1)
+        {
+            rot = anim->rotation_track_interpolate(trot, time);
+            s1.rot = anim->rotation_track_interpolate(trot, time + dt);
+        }
+        if (tscl != -1)
+        {
+            scl = anim->scale_track_interpolate(tscl, time);
+            s1.scl = anim->scale_track_interpolate(tscl, time + dt);
+        }
+        *this = finite_difference(*this,s1,dt);
+    }
+
     enum Space {
         Local,Model,RootMotion,Global
     };
+
+    
 
     kform(Ref<SkeletonProfile> skel, Ref<Animation> anim, double time, NodePath bonepath, Space space)
         : kform(skel->get_reference_pose(skel->find_bone(bonepath.get_concatenated_subnames())))
@@ -46,12 +77,16 @@ struct kform
         {
         case Local:
             _local(skel, anim, time, bonepath);
+            break;
         case Model:
             _model(skel, anim, time, bonepath);
+            break;
         case RootMotion:
             _root(skel, anim, time, bonepath);
+            break;
         case Global:
             _global(skel, anim, time, bonepath);
+            break;
         }
     }
     static constexpr double dt = 0.016;
@@ -77,7 +112,7 @@ struct kform
             scl = anim->scale_track_interpolate(tscl, time);
             s1.scl = anim->scale_track_interpolate(tscl, time + dt);
         }
-        finite_difference(s1,dt);
+        *this = finite_difference(*this,s1,dt);
     }
     // Done
     void _model(Ref<SkeletonProfile> skel,Ref<Animation> anim,double time,NodePath bonepath){
@@ -100,7 +135,7 @@ struct kform
 
         std::vector<kform> locals{};
         String skelpath = bonepath.get_concatenated_names();
-        StringName bone = bonepath.get_concatenated_subnames();
+        String bone = bonepath.get_concatenated_subnames();
         int bone_id = skel->find_bone(bone);
 
         do

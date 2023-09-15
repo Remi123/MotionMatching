@@ -478,17 +478,141 @@ struct MMAnimationLibrary : public AnimationLibrary {
 
     }
 
+    enum Space
+    {
+        Local,
+        Model,
+        RootMotion,
+        Global
+    };
 
+    Dictionary sample_bone_global_info(StringName animation_name, double time, NodePath bone_path)
+    {
+        ERR_FAIL_COND_V(skeleton_profile == nullptr, {});
+        ERR_FAIL_COND_V(!has_animation(animation_name), {});
+        std::vector<kform> trs{};
+        String _skel = bone_path.get_concatenated_names();
+        String bone = bone_path.get_concatenated_subnames();
+        do
+        {
+            trs.emplace_back(kform{skeleton_profile, NodePath(_skel + ":" + bone), get_animation(animation_name), time});
+            bone = skeleton_profile->get_bone_parent(skeleton_profile->find_bone(bone));
+        } while (!bone.is_empty());
+
+        auto kbone = std::reduce(trs.rbegin(), trs.rend(), kform{},
+                                 [](const kform &acc, const kform &i)
+                                 {
+                                     return acc * i;
+                                 });
+        Dictionary result = Dictionary{};
+        result["position"] = kbone.pos;
+        result["linear_vel"] = kbone.vel;
+        result["rotation"] = kbone.rot;
+        result["angular_vel"] = kbone.ang;
+        result["scale"] = kbone.scl;
+        result["scalar_vel"] = kbone.svl;
+        return result;
+    }
+
+    Dictionary sample_bone_model_info(StringName animation_name, double time, NodePath bone_path)
+    {
+
+        ERR_FAIL_COND_V(skeleton_profile == nullptr, {});
+        ERR_FAIL_COND_V(!has_animation(animation_name), {});
+        std::vector<kform> trs{};
+        String _skel = bone_path.get_concatenated_names();
+        String bone = bone_path.get_concatenated_subnames();
+        do
+        {
+            trs.emplace_back(kform{skeleton_profile, NodePath(_skel + ":" + bone), get_animation(animation_name), time});
+            bone = skeleton_profile->get_bone_parent(skeleton_profile->find_bone(bone));
+        } while (!bone.is_empty() && bone != skeleton_profile->get_root_bone());
+
+        auto kbone = std::reduce(trs.rbegin(), trs.rend(), kform{},
+                                 [](const kform &acc, const kform &i)
+                                 {
+                                     return acc * i;
+                                 });
+        Dictionary result = Dictionary{};
+        result["position"] = kbone.pos;
+        result["linear_vel"] = kbone.vel;
+        result["rotation"] = kbone.rot;
+        result["angular_vel"] = kbone.ang;
+        result["scale"] = kbone.scl;
+        result["scalar_vel"] = kbone.svl;
+        return result;
+    }
+
+    Dictionary sample_bone_rootmotion_info(StringName animation_name, double time, NodePath bone_path)
+    {
+        ERR_FAIL_COND_V(skeleton_profile == nullptr, {});
+        ERR_FAIL_COND_V(!has_animation(animation_name), {});
+        std::vector<kform> trs{};
+        String _skel = bone_path.get_concatenated_names();
+        String bone = bone_path.get_concatenated_subnames();
+        do
+        {
+            trs.emplace_back(kform{skeleton_profile, NodePath(_skel + ":" + bone), get_animation(animation_name), time});
+            bone = skeleton_profile->get_bone_parent(skeleton_profile->find_bone(bone));
+        } while (!bone.is_empty() && bone != skeleton_profile->get_root_bone());
+
+        kform root{skeleton_profile,NodePath(_skel + ":" + skeleton_profile->get_root_bone()), get_animation(animation_name),time};
+        root.vel = root.rot.xform_inv(root.vel);
+        root.ang = root.rot.xform_inv(root.ang);
+        root.pos = Vector3();
+        root.rot = Quaternion();
+
+        auto kbone = std::reduce(trs.rbegin(), trs.rend(), root,
+                                 [](const kform &acc, const kform &i)
+                                 {
+                                     return acc * i;
+                                 });
+        Dictionary result = Dictionary{};
+        result["position"] = kbone.pos;
+        result["linear_vel"] = kbone.vel;
+        result["rotation"] = kbone.rot;
+        result["angular_vel"] = kbone.ang;
+        result["scale"] = kbone.scl;
+        result["scalar_vel"] = kbone.svl;
+        return result;
+    }
+
+    Dictionary sample_bone_local_info(StringName animation_name, double time, NodePath bone_path)
+    {
+        ERR_FAIL_COND_V(skeleton_profile == nullptr, {});
+        ERR_FAIL_COND_V(!has_animation(animation_name), {});
+        kform bone = kform{skeleton_profile, bone_path, get_animation(animation_name), time};
+        Dictionary result = Dictionary{};
+        result["position"] = bone.pos;
+        result["linear_vel"] = bone.vel;
+        result["rotation"] = bone.rot;
+        result["angular_vel"] = bone.ang;
+        result["scale"] = bone.scl;
+        result["scalar_vel"] = bone.svl;
+        return result;
+    }
 
 protected:
     static void _bind_methods()
     {
+        // Enum
+        {
+            BIND_ENUM_CONSTANT(Local);
+            BIND_ENUM_CONSTANT(Model);
+            BIND_ENUM_CONSTANT(RootMotion);
+            BIND_ENUM_CONSTANT(Global);
+        }
         // Functions
         {
+            ClassDB::bind_method(D_METHOD("sample_bone_local_info", "animation_name", "time", "bone_path"), &MMAnimationLibrary::sample_bone_local_info);
+            ClassDB::bind_method(D_METHOD("sample_bone_model_info", "animation_name", "time", "bone_path"), &MMAnimationLibrary::sample_bone_model_info);
+            ClassDB::bind_method(D_METHOD("sample_bone_rootmotion_info", "animation_name", "time", "bone_path"), &MMAnimationLibrary::sample_bone_rootmotion_info);
+            ClassDB::bind_method(D_METHOD("sample_bone_global_info", "animation_name", "time", "bone_path"), &MMAnimationLibrary::sample_bone_global_info);
+
             ClassDB::bind_method(D_METHOD("bake_data"), &MMAnimationLibrary::bake_data);
             ClassDB::bind_method(D_METHOD("recalculate_weights"), &MMAnimationLibrary::recalculate_weights);
             ClassDB::bind_method(D_METHOD("check_query_results", "Query", "Result count"), &MMAnimationLibrary::check_query_results);
-            // ClassDB::bind_method(D_METHOD("query_pose", "include_category", "exclude_category"), &MMAnimationLibrary::query_pose, DEFVAL(std::numeric_limits<int64_t>::max()), DEFVAL(0));
+            ClassDB::bind_method(D_METHOD("query_pose", "serialized_query", "include_category", "exclude_category"), &MMAnimationLibrary::query_pose, DEFVAL(std::numeric_limits<int64_t>::max()), DEFVAL(0));
         }
         // Internal properties
         {
@@ -548,4 +672,31 @@ protected:
             godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "weights"), "set_weights", "get_weights");
         }
     }
+public :
+    static kform sample_bone_rootmotion_kform(Ref<Animation> animation, double time,Ref<SkeletonProfile> skeleton_profile, NodePath bone_path)
+    {
+        ERR_FAIL_COND_V(skeleton_profile == nullptr, kform{});
+        std::vector<kform> trs{};
+        String _skel = bone_path.get_concatenated_names();
+        String bone = bone_path.get_concatenated_subnames();
+        do
+        {
+            trs.emplace_back(kform{skeleton_profile, NodePath(_skel + ":" + bone), animation, time});
+            bone = skeleton_profile->get_bone_parent(skeleton_profile->find_bone(bone));
+        } while (!bone.is_empty() && bone != skeleton_profile->get_root_bone());
+
+        kform root{skeleton_profile,NodePath(_skel + ":" + skeleton_profile->get_root_bone()), animation,time};
+        root.vel = root.rot.xform_inv(root.vel);
+        root.ang = root.rot.xform_inv(root.ang);
+        root.pos = Vector3();
+        root.rot = Quaternion();
+
+        return std::reduce(trs.rbegin(), trs.rend(), root,
+                                 [](const kform &acc, const kform &i)
+                                 {
+                                     return acc * i;
+                                 });
+    }
 };
+
+VARIANT_ENUM_CAST(MMAnimationLibrary::Space);

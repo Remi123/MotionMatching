@@ -32,6 +32,7 @@
 
 #include <MotionFeatures/MotionFeatures.hpp>
 #include <KForm.hpp>
+#include <MMAnimationLibrary.hpp>
 #include <algorithm>
 
 using namespace godot;
@@ -166,7 +167,8 @@ struct BonePositionVelocityMotionFeature : public MotionFeature {
         for (size_t index = 0; index < bone_names.size(); ++index)
         {
             auto path = u::str(_skel_path)+u::str(":")+bone_names[index];
-            kbone = kform(_skel,animation,time,path,kform::Space::RootMotion);
+            kbone = MMAnimationLibrary::sample_bone_rootmotion_kform(animation,time,_skel,path);
+            // kbone = kform(_skel,animation,time,path,kform::Space::Model);
             
             // Serialize
             if (use_inertialization)
@@ -332,7 +334,7 @@ struct BonePositionVelocityMotionFeature : public MotionFeature {
             result.resize(bone_names.size() * 3);
             for (size_t i = 0; i < bone_names.size(); ++i)
             {
-                kform b = mm_player->get_bone_info(bone_names[i], kform::Space::Global);
+                kform b = mm_player->get_bone_global_kform(_skel->find_bone(bone_names[i]));
                 Vector3 pos = b.pos, vel = b.vel;
                 auto cost = inertialization_cost_function(pos, vel, inertialization_halflife);
                 result[i * size] = cost.x;
@@ -345,7 +347,7 @@ struct BonePositionVelocityMotionFeature : public MotionFeature {
         {
             for (size_t i = 0; i < bone_names.size(); ++i)
             {
-                kform b = mm_player->get_bone_info(bone_names[i], kform::Space::Global);
+                kform b = mm_player->get_bone_global_kform(_skel->find_bone(bone_names[i]));
                 Vector3 pos = b.pos, vel = b.vel;
 
                 result[i * size * 2] = pos.x;
