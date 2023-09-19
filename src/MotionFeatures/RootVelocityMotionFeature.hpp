@@ -149,7 +149,8 @@ protected:
 
         ClassDB::bind_method( D_METHOD("get_weights"), &RootVelocityMotionFeature::get_weights);
         ClassDB::bind_method( D_METHOD("get_dimension"), &RootVelocityMotionFeature::get_dimension);
-        ClassDB::bind_method( D_METHOD("setup_nodes","character"), &RootVelocityMotionFeature::setup_nodes);
+        ClassDB::bind_method( D_METHOD("setup_nodes","character"), &RootVelocityMotionFeature::setup_nodes);        
+        ClassDB::bind_method( D_METHOD("setup_profile","skeleton_path","skeleton_profile"), &RootVelocityMotionFeature::setup_profile);
         
         ClassDB::bind_method( D_METHOD("setup_for_animation","animation"), &RootVelocityMotionFeature::setup_for_animation);
         ClassDB::bind_method( D_METHOD("bake_animation_pose","animation","time"), &RootVelocityMotionFeature::bake_animation_pose);

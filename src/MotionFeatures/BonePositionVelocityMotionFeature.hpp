@@ -326,7 +326,8 @@ struct BonePositionVelocityMotionFeature : public MotionFeature {
     GETSET(bool,use_inertialization)
     GETSET(float,inertialization_halflife,0.01)
 
-    PackedFloat32Array serialize_mmplayer(MMAnimationPlayer* player){
+    PackedFloat32Array serialize_mmplayer(MMAnimationPlayer* mm_player){
+        ERR_FAIL_NULL_V_MSG(mm_player,{},"MMAnimationPlayer is null");
         constexpr size_t size = 3;
         PackedFloat32Array result{};
         if (use_inertialization)
@@ -334,6 +335,7 @@ struct BonePositionVelocityMotionFeature : public MotionFeature {
             result.resize(bone_names.size() * 3);
             for (size_t i = 0; i < bone_names.size(); ++i)
             {
+                // _skel isn't init
                 kform b = mm_player->get_bone_global_kform(_skel->find_bone(bone_names[i]));
                 Vector3 pos = b.pos, vel = b.vel;
                 auto cost = inertialization_cost_function(pos, vel, inertialization_halflife);
@@ -345,6 +347,7 @@ struct BonePositionVelocityMotionFeature : public MotionFeature {
         }
         else
         {
+            result.resize(bone_names.size() * 3 * 2);
             for (size_t i = 0; i < bone_names.size(); ++i)
             {
                 kform b = mm_player->get_bone_global_kform(_skel->find_bone(bone_names[i]));
@@ -427,6 +430,7 @@ protected:
         ClassDB::bind_method( D_METHOD("get_weights"), &BonePositionVelocityMotionFeature::get_weights);
         ClassDB::bind_method( D_METHOD("get_dimension"), &BonePositionVelocityMotionFeature::get_dimension);
         ClassDB::bind_method( D_METHOD("setup_nodes","character"), &BonePositionVelocityMotionFeature::setup_nodes);
+        ClassDB::bind_method( D_METHOD("setup_profile","skeleton_path","skeleton_profile"), &BonePositionVelocityMotionFeature::setup_profile);
         
         ClassDB::bind_method( D_METHOD("setup_for_animation","animation"), &BonePositionVelocityMotionFeature::setup_for_animation);
         ClassDB::bind_method( D_METHOD("bake_animation_pose","animation","time"), &BonePositionVelocityMotionFeature::bake_animation_pose);
