@@ -9,7 +9,7 @@ var plugin_ref : EditorPlugin
 
 # @onready var gizmo := preload("res://addons/MotionMatching/MMEditorGizmoPlugin.gd") # setup by the plugin
 
-# @onready var choose_anim :MenuButton= $TabContainer/Data/HBoxContainer/MarginContainer5/ChooseAnimation
+@onready var choose_anim :MenuButton= $TabContainer/Data/HBoxContainer/MarginContainer5/ChooseAnimation
 
 # func _ready() -> void:
 # 	print('MMEditorPanel Ready')
@@ -26,6 +26,12 @@ func update_info()->void:
 
 		if nb_dim == 0:
 			nb_dim = 1
+
+		choose_anim.get_popup().clear()
+		for a in _current.get_animation_list():
+			print(a)
+			choose_anim.get_popup().add_item(a)
+		choose_anim.get_popup().id_pressed.connect(_on_choose_animation_pressed)
 
 
 		infotext.clear()
@@ -112,9 +118,6 @@ func update_shown_pose_data(value: float) -> void:
 # 	var tr := skel.get_bone_global_pose(skel.find_bone("Root"))
 # 	tr = Transform3D()
 
-
-
-
 	rd.push_table(4)
 	for t in [anim_name,"%*.*f" % [0,3, anim_timestep ], str(anim.length),str(anim_cat)]:
 		rd.push_cell()
@@ -199,19 +202,19 @@ func on_look_for_similar_pressed() -> void:
 
 
 
-# func _on_choose_animation_pressed(ID) -> void:
-# 	if _current.animation_library != null:
-# 		var lib :AnimationLibrary = _current.animation_library
-# 		choose_anim.text = choose_anim.get_popup().get_item_text(ID)
+func _on_choose_animation_pressed(ID) -> void:
+	if not _current.get_animation_list().is_empty() :
+		var lib :AnimationLibrary = _current
+		choose_anim.text = choose_anim.get_popup().get_item_text(ID)
 
-# 		if _current.db_anim_index.size() != 0:
-# 			var i :int= 0
-# 			for index in _current.db_anim_index:
-# 				if index == ID:
-# 					$TabContainer/Data/HBoxContainer/MarginContainer2/HBoxContainer/SpinBox.value = i
-# 					update_shown_pose_data(i)
-# 					break
-# 				i += 1
+		if _current.db_anim_index.size() != 0:
+			var i :int= 0
+			for index in _current.db_anim_index:
+				if index == ID:
+					$TabContainer/Data/HBoxContainer/MarginContainer2/HBoxContainer/SpinBox.value = i
+					update_shown_pose_data(i)
+					break
+				i += 1
 
 # 	pass # Replace with function body.
 
