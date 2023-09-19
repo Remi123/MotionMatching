@@ -2,7 +2,8 @@
 class_name MMEditorPanel extends Control
 
 var _current : MMAnimationLibrary = null
-# var _animplayer : AnimationPlayer = null
+
+var plugin_ref : EditorPlugin
 
 @onready var rd : RichTextLabel = $TabContainer/Data/ScrollContainer/PoseData
 
@@ -230,6 +231,39 @@ func on_look_for_similar_pressed() -> void:
 # 		anim.track_set_interpolation_type(category_track,Animation.INTERPOLATION_NEAREST)
 
 # 	pass # Replace with function body.
+var fileDialog : EditorFileDialog
+func add_animation():
+	fileDialog = EditorFileDialog.new()
+	fileDialog.file_mode = EditorFileDialog.FILE_MODE_OPEN_FILES
+	fileDialog.mode = EditorFileDialog.MODE_MAXIMIZED
+	fileDialog.access = EditorFileDialog.ACCESS_RESOURCES
+	fileDialog.file_selected.connect(on_file_selected)
+	fileDialog.files_selected.connect(on_files_selected)
+	fileDialog.dir_selected.connect(on_file_selected)
+	var viewport = plugin_ref.get_editor_interface().get_editor_main_screen()
+	viewport.add_child(fileDialog)
+	fileDialog.set_meta("_created_by", self) # needed so the script is not directly freed after the run function. Would disconnect all signals otherwise
+	fileDialog.popup(Rect2(0,0, 700, 500)) # Giving the dialog a predefined size
+	print("end")
+	pass
 
+func on_files_selected(filesname : PackedStringArray):
+	for path in filesname:
+		var anim_name = path.get_file().split(".")[0]
+		var file := load(path)
+		if file is Animation:
+			prints(anim_name,file)
+			if _current.add_animation(anim_name,file) != OK:
+				prints("Didn't add",anim_name)
+	if (fileDialog != null):
+		fileDialog.queue_free() # Dialog has to be freed in order for the script t
+
+
+	pass
+
+func on_file_selected(filename : String) :
+	print(filename)
+	if (fileDialog != null):
+		fileDialog.queue_free() # Dialog has to be freed in order for the script t
 
 

@@ -51,6 +51,7 @@ func visibility() -> void:
 		prints("Selected MMAL",l.resource_path)
 		al = l
 		bottompanel._current = al
+		bottompanel.plugin_ref = self
 		bottompanel.update_info()
 		add_control_to_bottom_panel(bottompanel,"MotionMatching")
 		make_bottom_panel_item_visible(bottompanel)
