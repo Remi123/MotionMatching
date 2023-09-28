@@ -679,13 +679,16 @@ public :
         std::vector<kform> trs{};
         String _skel = bone_path.get_concatenated_names();
         String bone = bone_path.get_concatenated_subnames();
+
         do
         {
             trs.emplace_back(kform{skeleton_profile, NodePath(_skel + ":" + bone), animation, time});
             bone = skeleton_profile->get_bone_parent(skeleton_profile->find_bone(bone));
         } while (!bone.is_empty() && bone != skeleton_profile->get_root_bone());
 
-        kform root{skeleton_profile,NodePath(_skel + ":" + skeleton_profile->get_root_bone()), animation,time};
+        const auto root_path = NodePath(_skel + ":" + skeleton_profile->get_root_bone());
+        
+        kform root{skeleton_profile,root_path, animation,time};
         root.vel = root.rot.xform_inv(root.vel);
         root.ang = root.rot.xform_inv(root.ang);
         root.pos = Vector3();

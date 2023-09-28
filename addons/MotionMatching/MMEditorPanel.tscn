@@ -125,6 +125,7 @@ theme_override_constants/margin_bottom = 20
 [node name="ChooseAnimation" type="MenuButton" parent="TabContainer/Data/HBoxContainer/MarginContainer5"]
 layout_mode = 2
 text = "Animation:"
+flat = false
 
 [node name="ScrollContainer" type="ScrollContainer" parent="TabContainer/Data"]
 layout_mode = 2
@@ -138,7 +139,7 @@ size_flags_horizontal = 3
 focus_mode = 2
 theme_override_colors/font_selected_color = Color(0, 0, 0, 1)
 bbcode_enabled = true
-text = "[table=16][cell][img=24]res://icon.svg[/img][/cell][cell]Hello World[/cell][cell]Hello World[/cell][cell]Hello World[/cell][cell]Hello World[/cell][cell]Hello World[/cell][cell]Hello World[/cell][cell]Hello World[/cell][cell]Hello World[/cell][cell]Hello World[/cell][cell]Hello World[/cell][cell]Hello World[/cell][cell]Hello World[/cell][cell]Hello World[/cell][cell]Hello World[/cell][cell]Hello World[/cell][/table]"
+text = "Select an index"
 fit_content = true
 scroll_following = true
 autowrap_mode = 0
@@ -231,4 +232,5 @@ text = "Add All Animations in Folder"
 [connection signal="value_changed" from="TabContainer/Calculation/MarginContainer/HFlowContainer/SpinBox" to="." method="_max_der_calculate"]
 [connection signal="value_changed" from="TabContainer/Calculation/MarginContainer/HFlowContainer/SpinBox2" to="." method="_max_der_calculate"]
 [connection signal="value_changed" from="TabContainer/Calculation/MarginContainer/HFlowContainer/SpinBox3" to="." method="_max_der_calculate"]
+[connection signal="pressed" from="TabContainer/AnimationTracks/MarginContainer/HFlowContainer/Button" to="." method="_on_add_category"]
 [connection signal="pressed" from="TabContainer/AnimationTracks/MarginContainer/HFlowContainer/Button2" to="." method="add_animation"]

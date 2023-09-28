@@ -219,19 +219,20 @@ func _on_choose_animation_pressed(ID) -> void:
 # 	pass # Replace with function body.
 
 
-# func _on_add_category() -> void:
-# 	for animname in _current.animation_library.get_animation_list():
-# 		var anim := _current.animation_library.get_animation(animname)
-# 		var category_track := anim.find_track(_current.category_track_names[0],Animation.TYPE_VALUE)
-# 		if category_track == -1:
-# 			category_track = anim.add_track(Animation.TYPE_VALUE)
-# 			anim.track_set_path(category_track,_current.category_track_names[0])
+func _on_add_category() -> void:
+	for animname in _current.get_animation_list():
+		var anim := _current.get_animation(animname)
+		var category_track := anim.find_track(_current.category_track_names[0],Animation.TYPE_VALUE)
+		if category_track == -1:
+			category_track = anim.add_track(Animation.TYPE_VALUE)
+			anim.track_set_path(category_track,_current.category_track_names[0])
 
-# 		var max_time := max(anim.length*0.95,anim.length-0.3)
-# 		anim.track_insert_key(category_track,max_time,4294967295)
+		anim.track_insert_key(category_track,0.0,0)
+		var max_time := min(anim.length*0.98,anim.length-0.3)
+		anim.track_insert_key(category_track,max_time,4294967295)
 
-# 		anim.value_track_set_update_mode(category_track,Animation.UPDATE_DISCRETE)
-# 		anim.track_set_interpolation_type(category_track,Animation.INTERPOLATION_NEAREST)
+		anim.value_track_set_update_mode(category_track,Animation.UPDATE_DISCRETE)
+		anim.track_set_interpolation_type(category_track,Animation.INTERPOLATION_NEAREST)
 
 # 	pass # Replace with function body.
 var fileDialog : EditorFileDialog

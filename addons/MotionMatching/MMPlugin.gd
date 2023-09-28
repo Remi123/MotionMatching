@@ -11,10 +11,6 @@ var last_path := ""
 var al :MMAnimationLibrary
 
 func _enter_tree() -> void:
-	# add_node_3d_gizmo_plugin(gizmo_plugin)
-	#
-	# bottompanel.gizmo = gizmo_plugin
-	# Initialization of the plugin goes here.
 	pass
 
 func _get_plugin_icon() -> Texture2D:
@@ -32,11 +28,6 @@ func _input(event: InputEvent) -> void:
 func _exit_tree() -> void:
 	remove_control_from_bottom_panel(bottompanel)
 	bottompanel.queue_free()
-	# remove_node_3d_gizmo_plugin(gizmo_plugin)
-	#
-	# if(bottompanel != null):
-	# 	bottompanel.free()
-	# Clean-up of the plugin goes here.
 	pass
 
 func _has_main_screen()->bool:
@@ -52,22 +43,12 @@ func visibility() -> void:
 		al = l
 		bottompanel._current = al
 		bottompanel.plugin_ref = self
-		bottompanel.update_info()
+
 		add_control_to_bottom_panel(bottompanel,"MotionMatching")
 		make_bottom_panel_item_visible(bottompanel)
+		bottompanel.update_info()
 	else :
 		remove_control_from_bottom_panel(bottompanel)
-# 	bottompanel.visible = v
 
-
-# 	if v:
-# 		print(get_tree())
-
-# 		bottompanel._current = nodes.filter(func (x): return x is MotionMatcher)[0]
-# 		bottompanel._animplayer =bottompanel._current.owner.find_children("*","AnimationPlayer",true,true)[0]
-# 		add_control_to_bottom_panel(bottompanel,"MotionMatching")
-# 		make_bottom_panel_item_visible(bottompanel)
-# 	else :
-# 		remove_control_from_bottom_panel(bottompanel)
 
 
