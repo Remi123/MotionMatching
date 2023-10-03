@@ -192,7 +192,7 @@ struct MotionMatcher : public Node {
             else if (animation->track_get_type(i) == Animation::TYPE_ROTATION_3D)
             {
                 const Quaternion rotation = animation->rotation_track_interpolate(i,time);
-                skeleton->set_bone_pose_rotation(bone_id, rotation * skeleton->get_motion_scale());
+                skeleton->set_bone_pose_rotation(bone_id, rotation);
             }
         }
         return;

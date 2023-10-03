@@ -1,4 +1,5 @@
 @tool
+class_name MMPlugin
 extends EditorPlugin
 
 var bottompanel :MMEditorPanel= preload("res://addons/MotionMatching/MMEditorPanel.tscn").instantiate()

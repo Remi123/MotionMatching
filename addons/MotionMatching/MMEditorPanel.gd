@@ -270,4 +270,45 @@ func on_file_selected(filename : String) :
 	if (fileDialog != null):
 		fileDialog.queue_free() # Dialog has to be freed in order for the script t
 
+# Note: passing a value for the type parameter causes a crash
+static func get_child_of_type(node: Node, child_type):
+	for i in range(node.get_child_count()):
+		var child = node.get_child(i)
+		if is_instance_of(child,child_type):
+			return child
+
+func set_skeleton_to_pose(index:float):
+	# Find skeleton
+	var skeleton :Skeleton3D= get_child_of_type(plugin_ref.get_editor_interface().get_edited_scene_root(),Skeleton3D)
+	assert(skeleton != null,"Skeleton not found")
+	var nb_dim := _current.nb_dimensions
+
+	var pose_index :int = index as int
+
+	if pose_index > _current.MotionData.size()/nb_dim:
+		return
+
+	var pose := _current.MotionData.slice(pose_index*nb_dim,pose_index*nb_dim+nb_dim)
+	for i in range(pose.size()):
+		pose[i] = pose[i] * _current.variances[i] + _current.means[i]
+
+	var animlib :AnimationLibrary= _current as AnimationLibrary
+	var anim_name := animlib.get_animation_list()[_current.db_anim_index[pose_index]]
+	var anim := animlib.get_animation(anim_name)
+	var anim_timestep := _current.db_anim_timestamp[pose_index]
+
+	for i in range(anim.get_track_count()):
+		var bone_id = skeleton.find_bone(anim.track_get_path(i).get_subname(0))
+		if bone_id == -1:
+			continue
+		elif anim.track_get_type(i) == Animation.TYPE_POSITION_3D:
+			var position := anim.position_track_interpolate(i,anim_timestep)
+			skeleton.set_bone_pose_position(bone_id,position * skeleton.get_motion_scale())
+		elif anim.track_get_type(i) == Animation.TYPE_ROTATION_3D:
+			var rotation := anim.rotation_track_interpolate(i,anim_timestep)
+			skeleton.set_bone_pose_rotation(bone_id,rotation)
+		elif anim.track_get_type(i) == Animation.TYPE_SCALE_3D:
+			var scale := anim.scale_track_interpolate(i,anim_timestep)
+			skeleton.set_bone_pose_scale(bone_id,scale)
+
 

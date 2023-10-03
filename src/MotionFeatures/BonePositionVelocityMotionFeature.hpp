@@ -193,51 +193,6 @@ struct BonePositionVelocityMotionFeature : public MotionFeature {
         return result;
     }
 
-    // TODO : Remove Dependancy on skeleton.
-    // virtual PackedFloat32Array bake_animation_pose2(Ref<Animation> animation,float time){
-        
-    //     PackedVector3Array prev_pos{},curr_pos{};
-    //     PackedFloat32Array result{};
-    //     set_skeleton_to_animation_timestamp(animation,time-0.1);
-    //     for(size_t index = 0; index < bones_id.size(); ++index)
-    //     {
-    //         const auto bone_id = bones_id[index];
-    //         prev_pos.push_back(_skeleton->get_bone_global_pose(bone_id).get_origin() / _skeleton->get_motion_scale()) ;
-    //     }
-    //     set_skeleton_to_animation_timestamp(animation,time);
-    //     for(size_t index = 0; index < bones_id.size(); ++index)
-    //     {
-    //         const auto bone_id = bones_id[index];
-    //         curr_pos.push_back(_skeleton->get_bone_global_pose(bone_id).get_origin() / _skeleton->get_motion_scale());
-    //     }
-    //     const size_t root_id = _skeleton->find_bone(root_bone_name);
-    //     Transform3D root = _skeleton->get_bone_global_pose(root_id);
-    //     root.set_origin(root.origin / _skeleton->get_motion_scale());
-
-    //     if (use_inertialization)
-    //     {
-    //         for (size_t index = 0; index < bones_id.size(); ++index)
-    //         {
-    //             const auto pos = root.xform_inv(curr_pos[index]);
-    //             const auto vel = root.basis.xform_inv(curr_pos[index] - prev_pos[index]) / 0.1;
-    //             const auto cost = inertialization_cost_function(pos, vel, inertialization_halflife);
-    //             result.push_back(cost.x);result.push_back(cost.y);result.push_back(cost.z);
-    //         }
-    //         return result;
-    //     }
-    //     else
-    //     {
-    //         for (size_t index = 0; index < bones_id.size(); ++index)
-    //         {
-    //             const auto pos = root.xform_inv(curr_pos[index]);
-    //             result.push_back(pos.x);result.push_back(pos.y);result.push_back(pos.z);
-    //             const auto vel = root.basis.xform_inv(curr_pos[index] - prev_pos[index]) / 0.1;
-    //             result.push_back(vel.x);result.push_back(vel.y);result.push_back(vel.z);
-    //         }
-    //         return result;
-    //     }
-    // }
-
     Vector3 inertialization_cost_function(Vector3 pos, Vector3 vel, float halflife)
     {
         const auto halfdamp =  CritDampSpring::halflife_to_damping(halflife) / 2.0;
