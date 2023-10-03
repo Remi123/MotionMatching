@@ -4,6 +4,10 @@ entry_symbol = "gdextension_motion_matching_init"
 compatibility_minimum = 4.1
 reloadable = true
 
+[icons]
+MMAnimationPlayer = "res://addons/MotionMatching/icon_mmap.svg"
+MMAnimationLibrary = "res://addons/MotionMatching/icon_mmal.svg"
+
 [libraries]
 
 macos.debug = "bin/libMotionMatching.macos.template_debug.framework"
