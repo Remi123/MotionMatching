@@ -16,9 +16,7 @@ struct CircularBuffer : public godot::RefCounted
     using capacity_t = typename boost::circular_buffer_space_optimized<godot::Variant>::capacity_type;
     using value_type = typename boost::circular_buffer_space_optimized<godot::Variant>::value_type;
 
-    CircularBuffer(): buffer{capacity_t{1,1}}    
-    {}
-    ~CircularBuffer() = default;
+    
 
     void set_capacity(int i){ 
         if (i < 0) return;
@@ -95,5 +93,5 @@ struct CircularBuffer : public godot::RefCounted
         ClassDB::bind_method( D_METHOD("_iter_next","arg"),&CircularBuffer::_iter_next);
         ClassDB::bind_method( D_METHOD("_iter_get","arg"),&CircularBuffer::_iter_get);
     }
-    boost::circular_buffer_space_optimized<godot::Variant> buffer;
+    boost::circular_buffer_space_optimized<godot::Variant> buffer{capacity_t{1,1}};
 };

@@ -37,7 +37,7 @@ func _has_main_screen()->bool:
 func visibility() -> void:
 
 	var nodes :Array= get_editor_interface().get_selection().get_selected_nodes()
-	var v = nodes.any(func(x):return x is MotionMatcher)
+	#var v = nodes.any(func(x):return x is MotionMatcher)
 	var l = ResourceLoader.load(get_editor_interface().get_current_path())
 	if l is MMAnimationLibrary:
 		prints("Selected MMAL",l.resource_path)
