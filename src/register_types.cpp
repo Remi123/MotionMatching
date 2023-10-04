@@ -45,7 +45,9 @@ void gdextension_MM_initialize(ModuleInitializationLevel p_level)
 		ClassDB::register_class<MMAnimationPlayer>();
 		ClassDB::register_class<MMAnimationLibrary>();
 
-		ClassDB::register_class<MotionMatcher>();
+		// Deprecated
+		//ClassDB::register_class<MotionMatcher>();
+
 		ClassDB::register_class<CritDampSpring>();
 	}
 }

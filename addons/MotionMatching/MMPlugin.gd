@@ -15,7 +15,7 @@ func _enter_tree() -> void:
 	pass
 
 func _get_plugin_icon() -> Texture2D:
-	return preload("res://addons/MotionMatching/jump-icon.svg")
+	return preload("res://addons/MotionMatching/icons/icon_mm.svg")
 
 func _input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.is_released():

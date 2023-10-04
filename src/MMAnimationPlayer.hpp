@@ -157,8 +157,11 @@ struct MMAnimationPlayer : godot::AnimationPlayer
                 // Root bone have a special process
                 if (bone_id == root_bone_id)
                 {
-                    Quaternion q = p_animation->rotation_track_interpolate(root_track_rot,p_time);
-                    fut_bone_vel = q.xform_inv(fut_bone_vel);
+                    if(root_track_rot != -1)
+                    {
+                        Quaternion q = p_animation->rotation_track_interpolate(root_track_rot,p_time);
+                        fut_bone_vel = q.xform_inv(fut_bone_vel);
+                    }
                     fut_bone_pos = Vector3();
                 }
 
@@ -196,10 +199,12 @@ struct MMAnimationPlayer : godot::AnimationPlayer
 
     virtual void _ready() override
     {
+        AnimationMixer::_ready();
         if (godot::Engine::get_singleton()->is_editor_hint())
         {
             return;
         }
+        u::prints("MMAnimationPlayer Init",skeleton_path);
         _skeleton = get_node<Skeleton3D>(skeleton_path);
         ERR_FAIL_NULL(_skeleton);
         root_bone_id = _skeleton->find_bone(root_bone_name);
@@ -264,11 +269,13 @@ struct MMAnimationPlayer : godot::AnimationPlayer
                 // Root bone have a special process
                 if (bone_id == root_bone_id)
                 {
-                    Quaternion q = animation->rotation_track_interpolate(root_track_rot,p_time);
-                    fut_vel = q.xform_inv(fut_vel);
+                    if (root_track_rot != -1)
+                    {
+                        Quaternion q = animation->rotation_track_interpolate(root_track_rot, p_time);
+                        fut_vel = q.xform_inv(fut_vel);
+                    }
                     curr_pos = Vector3();
                 }
-
 
                 CritDampSpring::inertialize_update(_self->bones_kform.pos[bone_id], _self->bones_kform.vel[bone_id],   // Current pos of the bone
                                                 _self->bones_offset.pos[bone_id], _self->bones_offset.vel[bone_id], // Current Offset pos, get reduced every frame

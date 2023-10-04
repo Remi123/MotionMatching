@@ -1,12 +1,12 @@
 [configuration]
 
 entry_symbol = "gdextension_motion_matching_init"
-compatibility_minimum = 4.1
+compatibility_minimum = 4.2
 reloadable = true
 
 [icons]
-MMAnimationPlayer = "res://addons/MotionMatching/icon_mmap.svg"
-MMAnimationLibrary = "res://addons/MotionMatching/icon_mmal.svg"
+MMAnimationPlayer = "res://addons/MotionMatching/icons/icon_mmap.svg"
+MMAnimationLibrary = "res://addons/MotionMatching/icons/icon_mmal.svg"
 
 [libraries]
 
