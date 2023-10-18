@@ -30,7 +30,7 @@ struct CritDampSpring : public RefCounted
 
     static Quaternion damp_adjustment_exact_quat(Quaternion g, float halflife, float dt, float eps=1e-8) {
         float factor = 1.0 - fast_negexp((CritDampSpring::Ln2 * dt) / (halflife + eps));
-        return Quaternion().slerp(g, factor);
+        return Quaternion().slerp(g, factor).normalized();
     }
     static Variant damper_exponential(Variant variable, Variant goal, float damping, float dt) {
         float ft = 1.0f / (float)ProjectSettings::get_singleton()->get("physics/common/physics_ticks_per_second");

@@ -90,7 +90,7 @@ struct MMAnimationPlayer : godot::AnimationPlayer
 
     kforms bones_kform{0}, bones_offset{0};
 
-    GETSET(float,halflife,0.1);
+    GETSET(float,halflife,0.1f);
     NodePath skeleton_path{};
     NodePath get_skeleton_path() { return skeleton_path; }
     void set_skeleton_path(NodePath value)
@@ -147,7 +147,7 @@ struct MMAnimationPlayer : godot::AnimationPlayer
             {
                 root_track_pos = track_pos;
                 root_track_rot = track_rot;
-            }            
+            }
 
             if (track_pos != -1)
             {

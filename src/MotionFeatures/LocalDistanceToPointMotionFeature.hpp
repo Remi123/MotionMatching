@@ -80,13 +80,13 @@ struct LocalDistanceToPointMotionFeature : MotionFeature{
         ClassDB::add_property_group(get_class_static(), "", "");
         ClassDB::bind_method( D_METHOD("get_weights"), &LocalDistanceToPointMotionFeature::get_weights);
         ClassDB::bind_method( D_METHOD("get_dimension"), &LocalDistanceToPointMotionFeature::get_dimension);
-        ClassDB::bind_method( D_METHOD("setup_nodes","character"), &LocalDistanceToPointMotionFeature::setup_nodes);
+        // ClassDB::bind_method( D_METHOD("setup_nodes","character"), &LocalDistanceToPointMotionFeature::setup_nodes);
         
         ClassDB::bind_method( D_METHOD("setup_for_animation","animation"), &LocalDistanceToPointMotionFeature::setup_for_animation);
         ClassDB::bind_method( D_METHOD("bake_animation_pose","animation","time"), &LocalDistanceToPointMotionFeature::bake_animation_pose);
 
         ClassDB::bind_method( D_METHOD("broadphase_query_pose","blackboard","delta"), &LocalDistanceToPointMotionFeature::broadphase_query_pose);
 
-        ClassDB::bind_method( D_METHOD("debug_pose_gizmo","gizmo","data","root_transform"), &LocalDistanceToPointMotionFeature::debug_pose_gizmo);
+        // ClassDB::bind_method( D_METHOD("debug_pose_gizmo","gizmo","data","root_transform"), &LocalDistanceToPointMotionFeature::debug_pose_gizmo);
     }
 };
