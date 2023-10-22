@@ -21,6 +21,8 @@
 #include <godot_cpp/classes/character_body3d.hpp>
 #include <godot_cpp/classes/skeleton3d.hpp>
 
+#include <godot_cpp/classes/time.hpp>
+
 #include "godot_cpp/core/math.hpp"
 #include "godot_cpp/variant/vector3.hpp"
 
@@ -54,6 +56,11 @@ struct kforms
 
     kforms(std::size_t N): pos(N,Vector3()),rot(N,Quaternion()),scl(N,Vector3(1,1,1)),vel(N,Vector3()),ang(N,Vector3()),svl(N,Vector3())
     {}
+
+    Transform3D get_transform(std::size_t N)
+    {
+        return Transform3D(Basis(rot[N],scl[N]),pos[N]);
+    }
 
     void reserve(std::size_t N){
         pos.reserve(N); rot.reserve(N); scl.reserve(N);vel.reserve(N); ang.reserve(N); svl.reserve(N);
@@ -92,126 +99,29 @@ struct MMAnimationPlayer : godot::AnimationPlayer
 
     GETSET(float,halflife,0.1f);
     NodePath skeleton_path{};
-    NodePath get_skeleton_path() { return skeleton_path; }
-    void set_skeleton_path(NodePath value)
-    {
-        skeleton_path = value;
-    }
     Skeleton3D* _skeleton = nullptr;
 
-    String root_bone_name{}; 
-    String get_root_bone_name(){return root_bone_name;} 
-    void set_root_bone_name(String value){
-        root_bone_name = value;      
-    }
     int32_t root_bone_id = -1;
-    int root_track_pos = -1;
-    int root_track_rot = -1;
 
     Ref<Animation> pending_desired_anim = nullptr;
     float pending_desired_time = 0.0f;
 
-    virtual bool request_animation(StringName p_animation_name, float p_time,float new_halflife = -1.0f, float time_diff = 0.0f)
-    {
-        _skeleton = get_node<Skeleton3D>(skeleton_path);
-        ERR_FAIL_NULL_V(_skeleton,false);
-        auto p_animation = get_animation(p_animation_name);
-        ERR_FAIL_NULL_V(p_animation,false);
-
-        //
-        if(p_animation_name == get_current_animation() && abs(p_time - get_current_animation_position()) < time_diff)
-        {
-            // We are already playing
-            return false;
-        }
-        if ( new_halflife > 0.0f)
-        {
-            set_halflife(new_halflife);
-        }
-
-        bones_kform.reserve(_skeleton->get_bone_count());
-        bones_offset.reserve(_skeleton->get_bone_count());
-
-        const double delta = 0.016;
-        const String skeleton_path = _skeleton->is_unique_name_in_owner() ? '%' + _skeleton->get_name() : String(_skeleton->get_owner()->get_path_to(this, true));
-
-        p_time = u::clampf(p_time,0.0,p_animation->get_length()-halflife);
-        const auto future_time = u::clampf(p_time+delta,0.0,p_animation->get_length());
-        for (auto bone_id = 0; bone_id < _skeleton->get_bone_count(); ++bone_id)
-        {
-            const String bone_path = skeleton_path + String(":") + _skeleton->get_bone_name(bone_id);  
-            auto track_pos = p_animation->find_track(bone_path, Animation::TrackType::TYPE_POSITION_3D);
-            auto track_rot = p_animation->find_track(bone_path, Animation::TrackType::TYPE_ROTATION_3D);
-            // Root bone have a special process
-            if (bone_id == root_bone_id)
-            {
-                root_track_pos = track_pos;
-                root_track_rot = track_rot;
-            }
-
-            if (track_pos != -1)
-            {
-                Vector3 fut_bone_pos = p_animation->position_track_interpolate(track_pos, p_time);
-                Vector3 fut_bone_vel = (p_animation->position_track_interpolate(track_pos, future_time) - fut_bone_pos) / abs(future_time - p_time);
-
-                // Root bone have a special process
-                if (bone_id == root_bone_id)
-                {
-                    if(root_track_rot != -1)
-                    {
-                        Quaternion q = p_animation->rotation_track_interpolate(root_track_rot,p_time);
-                        fut_bone_vel = q.xform_inv(fut_bone_vel);
-                    }
-                    fut_bone_pos = Vector3();
-                }
-
-                // Offset are calculated Between current pos of the bone and the desired pose
-                CritDampSpring::inertialize_transition(bones_offset.pos[bone_id], bones_offset.vel[bone_id],
-                                                       bones_kform.pos[bone_id], bones_kform.vel[bone_id],
-                                                       fut_bone_pos , fut_bone_vel);
-            }
-
-            if ( track_rot != -1)
-            {
-                Quaternion r0 = p_animation->rotation_track_interpolate(track_rot, p_time);
-                Quaternion r1 = p_animation->rotation_track_interpolate(track_rot, future_time);
-                Vector3 curr_ang = CritDampSpring::quat_differentiate_angular_velocity(r1,r0,abs(future_time - p_time));
-
-                // Root bone have a special process
-                if (bone_id == root_bone_id)
-                {
-                    curr_ang = r0.xform_inv(curr_ang);
-                    r0 = Quaternion();
-                }
-
-                // At this point the animation desired changed
-                CritDampSpring::inertialize_transition(bones_offset.rot[bone_id], bones_offset.ang[bone_id], // Offset are calculated...
-                                                       bones_kform.rot[bone_id], bones_kform.ang[bone_id],   // Between current rot of the bone...
-                                                       r0, curr_ang);                          // and the desired pose
-            }
-        }
-
-        play(p_animation_name);
-        seek(p_time,true);
-
-        return true;
-    }
-
     virtual void _ready() override
     {
         AnimationMixer::_ready();
-        if (godot::Engine::get_singleton()->is_editor_hint())
+        u::prints("MMAnimationPlayer Init",u::str(skeleton_path));
+        
+        if(Engine::get_singleton()->is_editor_hint())
         {
             return;
         }
-        u::prints("MMAnimationPlayer Init",skeleton_path);
-        _skeleton = get_node<Skeleton3D>(skeleton_path);
+        skeleton_path = NodePath(get_root_motion_track().get_concatenated_names());
+        _skeleton = get_node<Skeleton3D>(NodePath(skeleton_path));
         ERR_FAIL_NULL(_skeleton);
-        root_bone_id = _skeleton->find_bone(root_bone_name);
-        u::prints("Root Bone Id",root_bone_id);
 
         _skeleton->reset_bone_poses();
         inertialize_reset();
+        root_bone_id = _skeleton->find_bone(get_root_motion_track().get_concatenated_subnames());
     }
 
     void inertialize_reset(bool skeleton_to_rest = false)
@@ -230,91 +140,159 @@ struct MMAnimationPlayer : godot::AnimationPlayer
             bones_kform.reset(b);
             bones_kform.pos[b] = _skeleton->get_bone_pose_position(b);
             bones_kform.rot[b] = _skeleton->get_bone_pose_rotation(b);
+            bones_kform.scl[b] = _skeleton->get_bone_pose_scale(b);
 
             bones_offset.reset(b);
         }
     }
 
-    virtual Variant _post_process_key_value(const Ref<Animation> &animation, int32_t track, const Variant &value, Object *object, int32_t bone_id) const
+    virtual bool request_animation(StringName p_animation_name, float p_time = 0.0f,float new_halflife = -1.0f, float time_diff = 0.0f)
     {
-        if(Engine::get_singleton()->is_editor_hint())
+        _skeleton = get_node<Skeleton3D>(NodePath(skeleton_path));
+        ERR_FAIL_NULL_V(_skeleton,false);
+        auto p_animation = get_animation(p_animation_name);
+        ERR_FAIL_NULL_V(p_animation,false);
+        bones_kform.reserve(_skeleton->get_bone_count());
+        bones_offset.reserve(_skeleton->get_bone_count());
+        //
+        if(p_animation_name == get_current_animation() && abs(p_time - get_current_animation_position()) < time_diff)
         {
-            return value;
+            // We are already playing
+            return false;
         }
-        if(animation == nullptr)
+        if ( new_halflife > 0.0f)
         {
-            return value;
+            set_halflife(new_halflife);
         }
-        auto* s = cast_to<Skeleton3D>(object);
-        // We need to modify some internal values, so const_cast it is because this member function is const.
-        // According to C++ Standard section 7.1.6.1 para 4 : "Except that any class member declared mutable (7.1.1) can be modified, 
-        // any attempt to modify a const object during its lifetime (3.8) results in undefined behavior"
-        // In other word, as long as the AnimationPlayer object isn't declared const, we are not in UB
-        auto *_self = const_cast<MMAnimationPlayer *>(this);
-        const auto delta = get_process_callback() == AnimationProcessCallback::ANIMATION_PROCESS_PHYSICS ? get_physics_process_delta_time() : get_process_delta_time();
-        const auto track_type = animation->track_get_type(track);
 
-        const auto p_time = u::clampf(get_current_animation_position(), 0.0, animation->get_length());
-        const auto future_time = u::clampf(p_time + delta, 0.0, animation->get_length());
-        const auto delta_diff = abs(future_time-p_time);
+        auto root_id = -1;
 
-        switch(track_type)
+        const double delta = 0.016;
+
+        p_time = u::clampf(p_time,0.0,p_animation->get_length()-halflife);
+        const auto future_time = u::clampf(p_time+delta,0.0,p_animation->get_length());
+        for (auto bone_id = 0; bone_id < _skeleton->get_bone_count(); ++bone_id)
         {
-            // Position
-            case Animation::TYPE_POSITION_3D:
-            {
-                Vector3 curr_pos = value;
-                Vector3 fut_vel = u::is_zero_approx(delta_diff) ? Vector3() : (animation->position_track_interpolate(track, future_time) - curr_pos) / delta_diff;                
-                
-                // Root bone have a special process
-                if (bone_id == root_bone_id)
+            const Transform3D bone_rest = _skeleton->get_bone_rest(bone_id);
+            const String bone_path = u::str(skeleton_path) + String(":") + _skeleton->get_bone_name(bone_id);
+
+            auto track_pos = p_animation->find_track(bone_path, Animation::TrackType::TYPE_POSITION_3D);
+            auto track_rot = p_animation->find_track(bone_path, Animation::TrackType::TYPE_ROTATION_3D);
+
+            //POSITION 3D
+                Vector3 desired_position = bone_rest.origin,
+                        desired_linear_vel = Vector3();
+                if (track_pos != -1)
                 {
-                    if (root_track_rot != -1)
-                    {
-                        Quaternion q = animation->rotation_track_interpolate(root_track_rot, p_time);
-                        fut_vel = q.xform_inv(fut_vel);
-                    }
-                    curr_pos = Vector3();
+                    desired_position = p_animation->position_track_interpolate(track_pos, p_time);
+                    desired_linear_vel = (p_animation->position_track_interpolate(track_pos, future_time) - desired_position) / abs(future_time - p_time);
                 }
 
-                CritDampSpring::inertialize_update(_self->bones_kform.pos[bone_id], _self->bones_kform.vel[bone_id],   // Current pos of the bone
-                                                _self->bones_offset.pos[bone_id], _self->bones_offset.vel[bone_id], // Current Offset pos, get reduced every frame
-                                                curr_pos, fut_vel,                                         // Desired position from the animation
-                                                halflife,                                                           // Stats on how the offset decay
-                                                delta * get_speed_scale());                                         // delta time between frames
-                return _self->bones_kform.pos[bone_id] * _skeleton->get_motion_scale();                                       // Set the bone position with motion_scale
-            
-            }   
-            break;
-
-            // Rotation
-            case Animation::TYPE_ROTATION_3D:
-            {
-                Quaternion curr_rot = value;
-                Quaternion fut_rot = animation->rotation_track_interpolate(track, future_time);
-                Vector3 curr_ang = u::is_zero_approx(delta_diff) ? Vector3() : CritDampSpring::quat_differentiate_angular_velocity(fut_rot,curr_rot,delta_diff);
-
-                // Root bone have a special process
-                if (bone_id == root_bone_id)
+            //ROTATION 3D
+                Quaternion desired_rotation = bone_rest.basis.get_rotation_quaternion();
+                Vector3 desired_angular_vel = Vector3{};
+                if ( track_rot != -1)
                 {
-                    curr_ang = curr_rot.xform_inv(curr_ang);
-                    curr_rot = Quaternion();
+                    desired_rotation = p_animation->rotation_track_interpolate(track_rot, p_time).normalized();
+                    Quaternion r1 = p_animation->rotation_track_interpolate(track_rot, future_time).normalized();
+                    desired_angular_vel = CritDampSpring::quat_differentiate_angular_velocity(r1,desired_rotation,abs(future_time - p_time)).normalized();
                 }
 
-                CritDampSpring::inertialize_update(_self->bones_kform.rot[bone_id], _self->bones_kform.ang[bone_id],   // Current rot of the bone
-                                                   _self->bones_offset.rot[bone_id], _self->bones_offset.ang[bone_id], // Current Offset rot, get reduced every frame
-                                                   curr_rot, curr_ang,                                         // Desired rotation from the animation
-                                                   halflife,                                                           // Stats on how the offset decay
-                                                   delta * get_speed_scale());                                         // delta time between frames
-                return _self->bones_kform.rot[bone_id];                                                                       // Set the bone rotation
-            }
-            break;
 
-            // We only manage position and rotation for now
-            default:
-                break;
+            // ROOT BONE
+            // Root bone have a special process
+            if (NodePath(bone_path) ==  get_root_motion_track())
+            {
+                auto rooting = desired_rotation.inverse();
+                desired_position = Vector3();
+                desired_linear_vel = rooting.xform(desired_linear_vel);
+                desired_rotation = Quaternion();
+                //desired_angular_vel doesn't change
             }
-            return value;
+            // Offset are calculated Between current pos of the bone and the desired pose
+            CritDampSpring::inertialize_transition(bones_offset.pos[bone_id], bones_offset.vel[bone_id],
+                                        bones_kform.pos[bone_id], bones_kform.vel[bone_id],
+                                        desired_position , desired_linear_vel);
+            CritDampSpring::inertialize_transition(bones_offset.rot[bone_id], bones_offset.ang[bone_id], // Offset are calculated...
+                                                    bones_kform.rot[bone_id], bones_kform.ang[bone_id],   // Between current rot of the bone...
+                                                    desired_rotation, desired_angular_vel);                          // and the desired pose
+        }
+
+
+        play(p_animation_name);
+        seek(p_time,true);
+
+        return true;
+    }
+
+    virtual void _physics_process(double _delta) override
+    {
+        if(Engine::get_singleton()->is_editor_hint() )
+        {
+            return;
+        }
+        if(!use_inertialization || get_current_animation().is_empty())
+        {            
+            return;
+        }
+
+        // Let's hope this is done after AnimationMixer's _notification
+        Ref<Animation> animation = get_animation(get_current_animation());
+        String skel_path = get_root_motion_track().get_concatenated_names();
+        const auto current_time = u::clampf(get_current_animation_position(), 0.0, animation->get_length());
+        const auto future_time = u::clampf(current_time + _delta, 0.0, animation->get_length());
+        const auto delta_diff = abs(future_time-current_time);
+        for (auto bone_id = 0; bone_id < _skeleton->get_bone_count(); ++bone_id)
+        {
+            const String bone_path = skel_path + String(":") + _skeleton->get_bone_name(bone_id);
+            const int track_pos = animation->find_track(bone_path,Animation::TrackType::TYPE_POSITION_3D);
+            const int track_rot = animation->find_track(bone_path,Animation::TrackType::TYPE_ROTATION_3D);
+
+            Vector3 desired_position = _skeleton->get_bone_pose_position(bone_id),desired_velocity = Vector3{};
+            Quaternion desired_rotation = _skeleton->get_bone_pose_rotation(bone_id); Vector3 desired_angular = Vector3{};
+
+            if(get_current_animation().is_empty())
+            {
+                desired_position = _skeleton->get_bone_pose_position(bone_id);
+                desired_velocity = Vector3();
+                desired_rotation = _skeleton->get_bone_pose_rotation(bone_id);
+                desired_angular = Vector3();
+            }
+            else
+            {
+                if(track_pos != -1)
+                {
+                    desired_position = animation->position_track_interpolate(track_pos, current_time);
+                    desired_velocity = u::is_zero_approx(delta_diff) ? Vector3() : (animation->position_track_interpolate(track_pos, future_time) - desired_position) / delta_diff;                
+                }
+                if(track_pos != -1)
+                {
+                    desired_rotation = animation->rotation_track_interpolate(track_rot, current_time);
+                    desired_angular = u::is_zero_approx(delta_diff) ? Vector3() : CritDampSpring::quat_differentiate_angular_velocity( animation->rotation_track_interpolate(track_rot, future_time), desired_rotation,delta_diff);
+                }
+ 
+                if (bone_path == u::str(get_root_motion_track()))
+                {
+                    desired_velocity = desired_rotation.xform_inv(desired_velocity); 
+                    desired_angular = desired_rotation.xform_inv(desired_angular);
+                    desired_position = Vector3();
+                    desired_rotation = Quaternion();
+                }
+            }
+
+            CritDampSpring::inertialize_update(
+                bones_kform.pos[bone_id], bones_kform.vel[bone_id],   // Current pos of the bone
+                bones_offset.pos[bone_id],bones_offset.vel[bone_id], // Current Offset pos, get reduced every frame
+                desired_position, desired_velocity,                                         // Desired position from the animation
+                halflife,                                                           // Stats on how the offset decay
+                _delta * get_speed_scale());                                         // delta time between frames
+            CritDampSpring::inertialize_update(bones_kform.rot[bone_id],bones_kform.ang[bone_id],   // Current rot of the bone
+                bones_offset.rot[bone_id],bones_offset.ang[bone_id], // Current Offset rot, get reduced every frame
+                desired_rotation, desired_angular,                                         // Desired rotation from the animation
+                halflife,                                                           // Stats on how the offset decay
+                _delta * get_speed_scale());                                         // delta time between frames
+
+        }
     }
 
    Dictionary get_local_bone_info(StringName bone_name)
@@ -349,7 +327,7 @@ struct MMAnimationPlayer : godot::AnimationPlayer
                            [this,motion_scale](const kform &acc, int i)
                            {
                                auto info = bones_kform[i];
-                            //    info.pos *= motion_scale;
+                               info.pos *= motion_scale;
                                return acc * info;
                            });
    }
@@ -455,14 +433,16 @@ struct MMAnimationPlayer : godot::AnimationPlayer
         return CritDampSpring::quat_from_scaled_angle_axis(bones_kform.ang[root_bone_id]*delta*get_playing_speed());
     }
 
+    GETSET(bool, use_inertialization, true)
+
     protected:
     static void _bind_methods()
     {
-        ClassDB::bind_method(D_METHOD("set_skeleton_path", "value"), &MMAnimationPlayer::set_skeleton_path);
-        ClassDB::bind_method(D_METHOD("get_skeleton_path"), &MMAnimationPlayer::get_skeleton_path);
-        godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::NODE_PATH, "skeleton_path", PROPERTY_HINT_NODE_PATH_VALID_TYPES, "Skeleton3D"), "set_skeleton_path", "get_skeleton_path");
-        
-        ClassDB::bind_method(D_METHOD("request_animation", "animation", "timestamp", "new_halflife","skip_same_anim_difference"), &MMAnimationPlayer::request_animation, (-1.0f),(0.0f));
+        ClassDB::bind_method(D_METHOD("request_animation", "animation", "timestamp", "new_halflife","skip_same_anim_difference"), &MMAnimationPlayer::request_animation, (0.0f),(-1.0f),(0.0f));
+
+        ClassDB::bind_method( D_METHOD("set_use_inertialization" ,"value"), &MMAnimationPlayer::set_use_inertialization);
+        ClassDB::bind_method( D_METHOD("get_use_inertialization" ), &MMAnimationPlayer::get_use_inertialization);
+        godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::BOOL,"use_inertialization"), "set_use_inertialization", "get_use_inertialization");
 
         ClassDB::bind_method(D_METHOD("get_local_bone_info","bone_name"),&MMAnimationPlayer::get_local_bone_info);
         ClassDB::bind_method(D_METHOD("get_model_bone_info","bone_name"),&MMAnimationPlayer::get_model_bone_info);
@@ -476,8 +456,5 @@ struct MMAnimationPlayer : godot::AnimationPlayer
         godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT,"halflife"
         , PROPERTY_HINT_RANGE, "0.0,1.0,0.01,or_greater"), "set_halflife", "get_halflife");
 
-        ClassDB::bind_method( D_METHOD("set_root_bone_name" ,"value"), &MMAnimationPlayer::set_root_bone_name); 
-        ClassDB::bind_method( D_METHOD("get_root_bone_name" ), &MMAnimationPlayer::get_root_bone_name); 
-        godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::STRING,"root_bone_name"), "set_root_bone_name", "get_root_bone_name");
     }
 };

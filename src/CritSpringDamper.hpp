@@ -114,7 +114,7 @@ struct CritDampSpring : public RefCounted
     }
 
     static inline Quaternion quat_abs(Quaternion q){
-        return q.w < 0.0 ? -q : q;
+        return (q.w < 0.0 ? -q : q).normalized();
     }
 
     static inline Vector3 quat_log(Quaternion q, float eps=1e-8f){
@@ -132,7 +132,7 @@ struct CritDampSpring : public RefCounted
 
     static inline Quaternion quat_from_scaled_angle_axis(Vector3 v, float eps = 1e-8f)
     {
-        return quat_exp(v / 2.0f, eps);
+        return quat_exp(v / 2.0f, eps).normalized();
     }
 
     static inline Vector3 quat_to_scaled_angle_axis(Quaternion q, float eps = 1e-8f)
@@ -401,7 +401,7 @@ struct CritDampSpring : public RefCounted
         const Quaternion dst_x,
         const Vector3 dst_v)
     {
-        off_x = CritDampSpring::quat_abs((off_x * src_x) * dst_x.inverse());
+        off_x = CritDampSpring::quat_abs((off_x * src_x) * dst_x.inverse()).normalized();
         off_v = (off_v + src_v) - dst_v;
     }
     static inline void inertialize_update(
@@ -415,7 +415,7 @@ struct CritDampSpring : public RefCounted
         const float dt)
     {
         CritDampSpring::_decay_spring_damper_exact(off_x, off_v, halflife, dt);
-        out_x = off_x * in_x;
+        out_x = (off_x * in_x).normalized();
         out_v = off_v + off_x.xform(in_v);
     }
 
