@@ -41,7 +41,7 @@ void initialize_motion_matching_module(ModuleInitializationLevel p_level) {
 		ClassDB::register_class<BonePositionVelocityMotionFeature>();
 		ClassDB::register_class<TrajectoryMotionFeature>();
 
-		ClassDB::register_class<MotionPlayer>();
+		ClassDB::register_class<MotionMatcher>();
 		ClassDB::register_class<CritDampSpring>();
 	}
 }

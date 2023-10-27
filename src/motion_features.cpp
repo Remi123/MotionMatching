@@ -397,7 +397,7 @@ int BonePositionVelocityMotionFeature::get_dimension() {
 
 void BonePositionVelocityMotionFeature::set_to_skeleton(NodePath path) {
 	if (is_local_to_scene() && get_local_scene() != nullptr) {
-		Node *mp = get_local_scene()->get_node_or_null(NodePath("MotionPlayer"));
+		Node *mp = get_local_scene()->get_node_or_null(NodePath("MotionMatcher"));
 		skeleton = cast_to<Skeleton3D>(mp->get_node(path));
 		to_skeleton = get_local_scene()->get_path_to(skeleton);
 	}

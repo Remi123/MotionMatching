@@ -1,7 +1,7 @@
 @tool
 extends Control
 
-var _current: MotionPlayer = null
+var _current: MotionMatcher = null
 var _animplayer: AnimationPlayer = null
 
 @onready var rd: RichTextLabel = $TabContainer/Data/ScrollContainer/PoseData
@@ -113,7 +113,7 @@ func update_shown_pose_data(pose_index: int) -> void:
 	var anim_cat := _current.db_anim_category[pose_index]
 
 	if anim_name == "Idle":
-		var v := anim.find_track("MotionPlayer:loco_category", Animation.TYPE_VALUE)
+		var v := anim.find_track("MotionMatcher:loco_category", Animation.TYPE_VALUE)
 		prints("Values interpolated", anim.value_track_interpolate(v, anim_timestep))
 
 	_current.set_skeleton_to_pose(anim, anim_timestep)

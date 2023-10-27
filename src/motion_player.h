@@ -69,8 +69,8 @@
 #define STR(x) #x
 #define STRING_PREFIX(prefix, s) STR(prefix##s)
 
-struct MotionPlayer : public Node {
-	GDCLASS(MotionPlayer, Node)
+struct MotionMatcher : public Node {
+	GDCLASS(MotionMatcher, Node)
 
 	struct Stats {
 		float max = 0.0f;
@@ -88,8 +88,8 @@ struct MotionPlayer : public Node {
 	static constexpr float interval = 0.1;
 	static constexpr float time_delta = 1.f / 30.f;
 
-	MotionPlayer() = default;
-	~MotionPlayer() = default;
+	MotionMatcher() = default;
+	~MotionMatcher() = default;
 
 	// Properties and variables
 

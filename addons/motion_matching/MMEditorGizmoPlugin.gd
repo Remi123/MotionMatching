@@ -45,5 +45,5 @@ func set_lines(lines: PackedVector3Array):
 
 
 func _has_gizmo(node):
-	prints("Checking", node.name, node is MotionPlayer)
+	prints("Checking", node.name, node is MotionMatcher)
 	return node.name == "Armature"

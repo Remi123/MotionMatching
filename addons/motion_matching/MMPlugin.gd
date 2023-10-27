@@ -28,13 +28,13 @@ func _has_main_screen() -> bool:
 
 func visibility() -> void:
 	var nodes: Array = get_editor_interface().get_selection().get_selected_nodes()
-	var v = nodes.any(func(x): return x is MotionPlayer)
+	var v = nodes.any(func(x): return x is MotionMatcher)
 	bottompanel.visible = v
 
 	if v:
 		print(get_tree())
 
-		bottompanel._current = nodes.filter(func(x): return x is MotionPlayer)[0]
+		bottompanel._current = nodes.filter(func(x): return x is MotionMatcher)[0]
 		bottompanel._animplayer = (
 			bottompanel._current.owner.find_children("*", "AnimationPlayer", true, true)[0]
 		)
