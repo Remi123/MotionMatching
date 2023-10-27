@@ -425,7 +425,7 @@ struct MMAnimationPlayer : godot::AnimationPlayer
                            [this, motion_scale](const kform &acc, int i)
                            {
                                auto info = bones_kform[i];
-                            //    info.pos *= motion_scale;
+                               info.pos *= motion_scale;
                                return acc * info;
                            });
    }
