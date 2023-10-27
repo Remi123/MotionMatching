@@ -32,7 +32,7 @@
 #include "scene/resources/material.h"
 
 #ifdef TOOLS_ENABLED
-void PredictionMotionFeature::debug_pose_gizmo(Ref<EditorNode3DGizmo> gizmo, const PackedFloat32Array data, Transform3D tr) {
+void TrajectoryMotionFeature::debug_pose_gizmo(Ref<EditorNode3DGizmo> gizmo, const PackedFloat32Array data, Transform3D tr) {
 	Ref<StandardMaterial3D> white = gizmo->get_plugin()->get_material("white", gizmo);
 	Ref<StandardMaterial3D> green = gizmo->get_plugin()->get_material("green", gizmo);
 	Ref<StandardMaterial3D> orange = gizmo->get_plugin()->get_material("orange", gizmo);
@@ -54,7 +54,7 @@ void PredictionMotionFeature::debug_pose_gizmo(Ref<EditorNode3DGizmo> gizmo, con
 }
 #endif
 
-PackedFloat32Array PredictionMotionFeature::broadphase_query_pose(Dictionary blackboard, float p_delta) {
+PackedFloat32Array TrajectoryMotionFeature::broadphase_query_pose(Dictionary blackboard, float p_delta) {
 	PackedFloat32Array result{};
 	Array blackboard_array;
 	blackboard_array.resize(3);
@@ -82,7 +82,7 @@ PackedFloat32Array PredictionMotionFeature::broadphase_query_pose(Dictionary bla
 	return result;
 }
 
-PackedFloat32Array PredictionMotionFeature::bake_animation_pose(Ref<Animation> animation, float time) {
+PackedFloat32Array TrajectoryMotionFeature::bake_animation_pose(Ref<Animation> animation, float time) {
 	PackedFloat32Array result{};
 	Vector3 curr_pos = animation->position_track_interpolate(root_tracks[0], time);
 	Quaternion curr_rot = animation->rotation_track_interpolate(root_tracks[1], time);
@@ -133,7 +133,7 @@ PackedFloat32Array PredictionMotionFeature::bake_animation_pose(Ref<Animation> a
 	return result;
 }
 
-void PredictionMotionFeature::setup_for_animation(Ref<Animation> animation) {
+void TrajectoryMotionFeature::setup_for_animation(Ref<Animation> animation) {
 	start_time = 0.1f;
 	end_time = std::floor(animation->get_length() * 10) / 10.0f;
 	root_tracks[0] = animation->find_track(root_bone_name, Animation::TrackType::TYPE_POSITION_3D);
@@ -153,12 +153,12 @@ void PredictionMotionFeature::setup_for_animation(Ref<Animation> animation) {
 	}
 }
 
-void PredictionMotionFeature::setup_nodes(Variant character) {
+void TrajectoryMotionFeature::setup_nodes(Variant character) {
 	CharacterBody3D *n = Object::cast_to<CharacterBody3D>(character);
 	skeleton = cast_to<Skeleton3D>(n->get_node(NodePath("Armature/GeneralSkeleton")));
 }
 
-int PredictionMotionFeature::get_dimension() {
+int TrajectoryMotionFeature::get_dimension() {
 	// Offset for each
 	const int32_t past_pos = 2 * past_time_dt.size();
 	const int32_t future_pos = 2 * future_time_dt.size();
@@ -166,7 +166,7 @@ int PredictionMotionFeature::get_dimension() {
 	return past_pos + future_pos + future_rot_angle;
 }
 
-void PredictionMotionFeature::create_default_dt() {
+void TrajectoryMotionFeature::create_default_dt() {
 	past_time_dt.clear();
 	future_time_dt.clear();
 	float time = past_delta;
@@ -179,7 +179,7 @@ void PredictionMotionFeature::create_default_dt() {
 	}
 }
 
-PackedFloat32Array PredictionMotionFeature::get_weights() {
+PackedFloat32Array TrajectoryMotionFeature::get_weights() {
 	PackedFloat32Array result{};
 	for (int32_t i = 0; i < 2 * past_time_dt.size(); ++i) {
 		result.append(weight_history_pos);
@@ -193,7 +193,7 @@ PackedFloat32Array PredictionMotionFeature::get_weights() {
 	return result;
 }
 
-PredictionMotionFeature::PredictionMotionFeature() {
+TrajectoryMotionFeature::TrajectoryMotionFeature() {
 	set_local_to_scene(true);
 }
 
@@ -417,28 +417,28 @@ void RootVelocityMotionFeature::_bind_methods() {
 }
 
 
-void PredictionMotionFeature::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("set_weight_history_pos"), &PredictionMotionFeature::set_weight_history_pos);
-	ClassDB::bind_method(D_METHOD("get_weight_history_pos"), &PredictionMotionFeature::get_weight_history_pos);
+void TrajectoryMotionFeature::_bind_methods() {
+	ClassDB::bind_method(D_METHOD("set_weight_history_pos"), &TrajectoryMotionFeature::set_weight_history_pos);
+	ClassDB::bind_method(D_METHOD("get_weight_history_pos"), &TrajectoryMotionFeature::get_weight_history_pos);
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "weight_history_pos"), "set_weight_history_pos", "get_weight_history_pos");
-	ClassDB::bind_method(D_METHOD("set_weight_prediction_pos"), &PredictionMotionFeature::set_weight_prediction_pos);
-	ClassDB::bind_method(D_METHOD("get_weight_prediction_pos"), &PredictionMotionFeature::get_weight_prediction_pos);
+	ClassDB::bind_method(D_METHOD("set_weight_prediction_pos"), &TrajectoryMotionFeature::set_weight_prediction_pos);
+	ClassDB::bind_method(D_METHOD("get_weight_prediction_pos"), &TrajectoryMotionFeature::get_weight_prediction_pos);
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "weight_prediction_pos"), "set_weight_prediction_pos", "get_weight_prediction_pos");
-	ClassDB::bind_method(D_METHOD("set_weight_prediction_angle"), &PredictionMotionFeature::set_weight_prediction_angle);
-	ClassDB::bind_method(D_METHOD("get_weight_prediction_angle"), &PredictionMotionFeature::get_weight_prediction_angle);
+	ClassDB::bind_method(D_METHOD("set_weight_prediction_angle"), &TrajectoryMotionFeature::set_weight_prediction_angle);
+	ClassDB::bind_method(D_METHOD("get_weight_prediction_angle"), &TrajectoryMotionFeature::get_weight_prediction_angle);
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "weight_prediction_angle"), "set_weight_prediction_angle", "get_weight_prediction_angle");
 
 	PackedFloat32Array m_default{};
 	m_default.push_back(0.2);
 	m_default.push_back(0.4);
-	ClassDB::bind_method(D_METHOD("set_root_bone_name", "root_bone_name"), &PredictionMotionFeature::set_weight_prediction_angle, DEFVAL("%GeneralSkeleton:Root"));
-	ClassDB::bind_method(D_METHOD("get_root_bone_name"), &PredictionMotionFeature::get_weight_prediction_angle);
+	ClassDB::bind_method(D_METHOD("set_root_bone_name", "root_bone_name"), &TrajectoryMotionFeature::set_weight_prediction_angle, DEFVAL("%GeneralSkeleton:Root"));
+	ClassDB::bind_method(D_METHOD("get_root_bone_name"), &TrajectoryMotionFeature::get_weight_prediction_angle);
 	ADD_PROPERTY(PropertyInfo(Variant::STRING, "root_bone_name"), "set_root_bone_name", "get_root_bone_name");
-	ClassDB::bind_method(D_METHOD("set_past_time_dt", "past_time_delta"), &PredictionMotionFeature::set_past_time_dt, DEFVAL(m_default));
-	ClassDB::bind_method(D_METHOD("get_past_time_dt"), &PredictionMotionFeature::get_past_time_dt);
+	ClassDB::bind_method(D_METHOD("set_past_time_dt", "past_time_delta"), &TrajectoryMotionFeature::set_past_time_dt, DEFVAL(m_default));
+	ClassDB::bind_method(D_METHOD("get_past_time_dt"), &TrajectoryMotionFeature::get_past_time_dt);
 	ADD_PROPERTY(PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "past_time_dt"), "set_past_time_dt", "get_past_time_dt");
-	ClassDB::bind_method(D_METHOD("set_future_time_dt", "future_time_delta"), &PredictionMotionFeature::set_future_time_dt);
-	ClassDB::bind_method(D_METHOD("get_future_time_dt"), &PredictionMotionFeature::get_future_time_dt);
+	ClassDB::bind_method(D_METHOD("set_future_time_dt", "future_time_delta"), &TrajectoryMotionFeature::set_future_time_dt);
+	ClassDB::bind_method(D_METHOD("get_future_time_dt"), &TrajectoryMotionFeature::get_future_time_dt);
 	ADD_PROPERTY(PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "future_time_dt"), "set_future_time_dt", "get_future_time_dt");
 }
 

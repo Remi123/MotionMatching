@@ -11,7 +11,7 @@ def get_doc_classes():
         "MotionPlayer",
         "MotionFeature",
         "CritDampSpring",
-        "PredictionMotionFeature",
+        "TrajectoryMotionFeature",
         "RootVelocityMotionFeature",
         "BonePositionVelocityMotionFeature",
     ]

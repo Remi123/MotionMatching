@@ -210,8 +210,8 @@ protected:
 #endif
 };
 
-struct PredictionMotionFeature : public MotionFeature {
-	GDCLASS(PredictionMotionFeature, MotionFeature)
+struct TrajectoryMotionFeature : public MotionFeature {
+	GDCLASS(TrajectoryMotionFeature, MotionFeature)
 
 	GETSET(Skeleton3D *, skeleton, nullptr);
 	GETSET(String, root_bone_name, "%GeneralSkeleton:Root")
@@ -232,7 +232,7 @@ struct PredictionMotionFeature : public MotionFeature {
 	GETSET(float, weight_prediction_pos, 1.0f);
 	GETSET(float, weight_prediction_angle, 1.0f);
 	virtual PackedFloat32Array get_weights() override;
-	PredictionMotionFeature();
+	TrajectoryMotionFeature();
 
 private:
 	void create_default_dt();
