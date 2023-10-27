@@ -233,6 +233,40 @@ struct CritDampSpring : public RefCounted
         x = eydt * (j0 + j1 * dt) + x_goal;
         v = eydt * (v - j1 * y * dt);
     }
+    static void _simple_spring_damper_exact(
+    Vector3& x, 
+    Vector3& v, 
+    const Vector3 x_goal, 
+    const float halflife, 
+    const float dt)
+    {
+        float y = halflife_to_damping(halflife) / 2.0f; 
+        Vector3 j0 = x - x_goal;
+        Vector3 j1 = v + j0*y;
+        float eydt = fast_negexp(y*dt);
+
+        x = eydt*(j0 + j1*dt) + x_goal;
+        v = eydt*(v - j1*y*dt);
+    }
+
+    static void _simple_spring_damper_exact(
+    Quaternion& x, 
+    Vector3& v, 
+    const Quaternion x_goal, 
+    const float halflife, 
+    const float dt)
+    {
+        float y = halflife_to_damping(halflife) / 2.0f; 
+        
+        Vector3 j0 = quat_to_scaled_angle_axis(quat_abs(x *x_goal.inverse()));
+        Vector3 j1 = v + j0*y;
+        
+        float eydt = fast_negexp(y*dt);
+
+        x = quat_from_scaled_angle_axis(eydt*(j0 + j1*dt)) *  x_goal;
+        v = eydt*(v - j1*y*dt);
+    }
+
     static inline PackedFloat32Array simple_spring_damper_exact(float x, float v, float x_goal, float halflife, float dt){
         _simple_spring_damper_exact(x,v,x_goal,halflife,dt);
         PackedFloat32Array result;
