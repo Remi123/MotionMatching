@@ -97,6 +97,7 @@ struct MMAnimationPlayer : godot::AnimationPlayer
 
     kforms bones_kform{0}, bones_offset{0};
 
+    float default_halflife = 0.1f;
     GETSET(float,halflife,0.1f);
     NodePath skeleton_path{};
     Skeleton3D* _skeleton = nullptr;
@@ -108,13 +109,14 @@ struct MMAnimationPlayer : godot::AnimationPlayer
 
     virtual void _ready() override
     {
-        AnimationMixer::_ready();
+        AnimationPlayer::_ready();
         u::prints("MMAnimationPlayer Init",u::str(skeleton_path));
         
         if(Engine::get_singleton()->is_editor_hint())
         {
             return;
         }
+        default_halflife = halflife;
         skeleton_path = NodePath(get_root_motion_track().get_concatenated_names());
         _skeleton = get_node<Skeleton3D>(NodePath(skeleton_path));
         ERR_FAIL_NULL(_skeleton);
@@ -147,8 +149,15 @@ struct MMAnimationPlayer : godot::AnimationPlayer
         }
     }
 
-    bool request_pose(StringName p_animation_name, float p_time = 0.0f);
+    void request_pose(StringName p_animation_name, float p_time = 0.0f,float new_halflife = -1.0f)
     {
+        if ( new_halflife > 0.0f)
+        {
+            set_halflife(new_halflife);
+        }
+        else {
+            set_halflife(default_halflife);
+        }
         last_anim = p_animation_name;
         last_timestamp = p_time;
         stop();
@@ -158,6 +167,7 @@ struct MMAnimationPlayer : godot::AnimationPlayer
     {
         _skeleton = get_node<Skeleton3D>(NodePath(skeleton_path));
         ERR_FAIL_NULL_V(_skeleton,false);
+        const auto motion_scale = _skeleton->get_motion_scale();
         auto p_animation = get_animation(p_animation_name);
 
         ERR_FAIL_NULL_V(p_animation,false);
@@ -172,6 +182,9 @@ struct MMAnimationPlayer : godot::AnimationPlayer
         if ( new_halflife > 0.0f)
         {
             set_halflife(new_halflife);
+        }
+        else {
+            set_halflife(default_halflife);
         }
         last_anim = p_animation_name;
         last_timestamp = p_time;
@@ -195,8 +208,8 @@ struct MMAnimationPlayer : godot::AnimationPlayer
                         desired_linear_vel = bones_kform.vel[bone_id]; // Vector3();
                 if (track_pos != -1)
                 {
-                    desired_position = p_animation->position_track_interpolate(track_pos, p_time);
-                    desired_linear_vel = (p_animation->position_track_interpolate(track_pos, future_time) - desired_position) / abs(future_time - p_time);
+                    desired_position = p_animation->position_track_interpolate(track_pos, p_time)* motion_scale ;
+                    desired_linear_vel = ((p_animation->position_track_interpolate(track_pos, future_time)* motion_scale)- desired_position) / abs(future_time - p_time);
                 }
 
             //ROTATION 3D
@@ -223,7 +236,7 @@ struct MMAnimationPlayer : godot::AnimationPlayer
             // Offset are calculated Between current pos of the bone and the desired pose
             CritDampSpring::inertialize_transition(bones_offset.pos[bone_id], bones_offset.vel[bone_id],
                                         bones_kform.pos[bone_id], bones_kform.vel[bone_id],
-                                        desired_position , desired_linear_vel);
+                                        desired_position, desired_linear_vel);
             CritDampSpring::inertialize_transition(bones_offset.rot[bone_id], bones_offset.ang[bone_id], // Offset are calculated...
                                                     bones_kform.rot[bone_id], bones_kform.ang[bone_id],   // Between current rot of the bone...
                                                     desired_rotation, desired_angular_vel);                          // and the desired pose
@@ -239,7 +252,7 @@ struct MMAnimationPlayer : godot::AnimationPlayer
 
     void _on_anim_finish(StringName p_animation_name)
     {
-
+        set_halflife(default_halflife);
         auto p_animation = get_animation(p_animation_name);
         auto p_time = p_animation->get_length();
 
@@ -264,6 +277,7 @@ struct MMAnimationPlayer : godot::AnimationPlayer
         Ref<Animation> animation = get_current_animation().is_empty() ? nullptr : get_animation(get_current_animation());
 
         String skel_path = get_root_motion_track().get_concatenated_names();
+        const auto motion_scale = _skeleton->get_motion_scale();
 
         const auto current_time = animation == nullptr ? 0.0 : u::clampf(get_current_animation_position(), 0.0, animation->get_length());
         const auto future_time =  animation == nullptr ? _delta : u::clampf(current_time + _delta, 0.0, animation->get_length());
@@ -302,7 +316,7 @@ struct MMAnimationPlayer : godot::AnimationPlayer
                 }
 
                 CritDampSpring::_simple_spring_damper_exact(
-                    bones_kform.pos[bone_id],bones_kform.vel[bone_id]
+                    bones_kform.pos[bone_id] * motion_scale,bones_kform.vel[bone_id]
                     ,desired.pos,halflife,_delta
                 );
                 CritDampSpring::_simple_spring_damper_exact(
@@ -320,7 +334,7 @@ struct MMAnimationPlayer : godot::AnimationPlayer
             }
             else
             {
-                desired.pos = _skeleton->get_bone_pose_position(bone_id);
+                desired.pos = _skeleton->get_bone_pose_position(bone_id); // Have MotionScale
                 desired.vel = Vector3();
                 desired.rot = _skeleton->get_bone_pose_rotation(bone_id);
                 desired.ang = Vector3();
@@ -330,8 +344,8 @@ struct MMAnimationPlayer : godot::AnimationPlayer
                 const int track_rot = animation->find_track(bone_path,Animation::TrackType::TYPE_ROTATION_3D);
                 if(track_pos != -1)
                 {
-                    desired.pos = animation->position_track_interpolate(track_pos, current_time);
-                    desired.vel = u::is_zero_approx(delta_diff) ? Vector3() : (animation->position_track_interpolate(track_pos, future_time) - desired.pos) / delta_diff;                
+                    desired.pos = animation->position_track_interpolate(track_pos, current_time) * motion_scale;
+                    desired.vel = u::is_zero_approx(delta_diff) ? Vector3() : ((animation->position_track_interpolate(track_pos, future_time)* motion_scale) - desired.pos) / delta_diff;                
                 }
                 if(track_pos != -1)
                 {
@@ -375,7 +389,7 @@ struct MMAnimationPlayer : godot::AnimationPlayer
         ERR_FAIL_COND_V_MSG(id == -1,{},"Bone " +bone_name + " doesn't exist in skeleton");
         const auto kin = bones_kform[id];
         Dictionary result = Dictionary{};
-        result["position"] = kin.pos * _skeleton->get_motion_scale();
+        result["position"] = kin.pos;
         result["linear_vel"] = kin.vel;
         result["rotation"] = kin.rot;
         result["angular_vel"] = kin.ang;
@@ -400,7 +414,7 @@ struct MMAnimationPlayer : godot::AnimationPlayer
                            [this,motion_scale](const kform &acc, int i)
                            {
                                auto info = bones_kform[i];
-                               info.pos *= motion_scale;
+                            //    info.pos *= motion_scale;
                                return acc * info;
                            });
    }
@@ -425,7 +439,7 @@ struct MMAnimationPlayer : godot::AnimationPlayer
                            [this, motion_scale](const kform &acc, int i)
                            {
                                auto info = bones_kform[i];
-                               info.pos *= motion_scale;
+                            //    info.pos *= motion_scale;
                                return acc * info;
                            });
    }
@@ -513,6 +527,8 @@ struct MMAnimationPlayer : godot::AnimationPlayer
         ClassDB::bind_method(D_METHOD("_on_anim_finish","anim"),&MMAnimationPlayer::_on_anim_finish);
 
         ClassDB::bind_method(D_METHOD("request_animation", "animation", "timestamp", "new_halflife","skip_same_anim_difference"), &MMAnimationPlayer::request_animation, (0.0f),(-1.0f),(-1.0f));
+        ClassDB::bind_method(D_METHOD("request_pose", "animation", "timestamp", "new_halflife"), &MMAnimationPlayer::request_pose, (0.0f),(-1.0f));
+        
 
         ClassDB::bind_method(D_METHOD("get_local_bone_info","bone_name"),&MMAnimationPlayer::get_local_bone_info);
         ClassDB::bind_method(D_METHOD("get_model_bone_info","bone_name"),&MMAnimationPlayer::get_model_bone_info);
