@@ -270,7 +270,7 @@ struct MMAnimationLibrary : public AnimationLibrary {
                 {
                     MotionFeature* f = Object::cast_to<MotionFeature>(motion_features[features_index]);
                     PackedFloat32Array feature_data = f->bake_animation_pose(animation,time);
-                    ERR_FAIL_COND_MSG(feature_data.size() != f->get_dimension(),"Features no." + u::str(features_index)+"bake_animation_pose didn't return a array of the correct size:" +u::str(feature_data.size())+ "!=" + u::str(int(f->get_dimension())) );
+                    ERR_FAIL_COND_MSG(feature_data.size() != f->get_dimension(),"Features no." + u::str(features_index)+"bake_animation_pose didn't return a array of the correct size:");
                     pose_data.append_array(feature_data);                    
                 }
 
