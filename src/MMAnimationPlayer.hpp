@@ -410,7 +410,7 @@ struct MMAnimationPlayer : godot::AnimationPlayer
             tmp_p = new_parent;
         }
         const auto motion_scale = _skeleton->get_motion_scale();
-        return std::reduce(parents_id.rbegin(), parents_id.rend(), kform{},
+        return std::accumulate(parents_id.rbegin(), parents_id.rend(), kform{},
                            [this,motion_scale](const kform &acc, int i)
                            {
                                auto info = bones_kform[i];
@@ -435,7 +435,7 @@ struct MMAnimationPlayer : godot::AnimationPlayer
         } while (tmp_p != -1 && tmp_p != root_bone_id);
 
         const auto motion_scale = _skeleton->get_motion_scale();
-        return std::reduce(parents_id.rbegin(), parents_id.rend(), kform{},
+        return std::accumulate(parents_id.rbegin(), parents_id.rend(), kform{},
                            [this, motion_scale](const kform &acc, int i)
                            {
                                auto info = bones_kform[i];
