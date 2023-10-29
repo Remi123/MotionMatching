@@ -64,6 +64,18 @@ if env["platform"] == "macos":
         ),
         source=sources,
     )
+elif env["platform"] == "windows":
+    env.Append(CXXFLAGS=" /EHsc ") # for some reason it became not default
+    library = env.SharedLibrary(
+        addon_path + "bin/lib{}.{}.{}.{}{}".format(
+            project_name,
+            env["platform"],
+            debug_or_release,
+            env["arch"],
+            env["SHLIBSUFFIX"],
+        ),
+        source=sources,
+    )
 else:
     library = env.SharedLibrary(
         addon_path + "bin/lib{}.{}.{}.{}{}".format(
