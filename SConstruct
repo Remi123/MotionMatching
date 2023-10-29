@@ -54,6 +54,11 @@ if env["target"] == "release" or env["target"] == "template_release":
 else:
     debug_or_release = "template_debug"
 
+# Exception handling, or lack-there-off
+if env["platform"] == "windows":
+    env.Append(CXXFLAGS=" /EHsc ") # for some reason it became not default
+else :
+    env.Append(CXXFLAGS=" -fno-exceptions ")
 
 if env["platform"] == "macos":
     library = env.SharedLibrary(
@@ -61,18 +66,6 @@ if env["platform"] == "macos":
             project_name,
             env["platform"],
             debug_or_release,
-        ),
-        source=sources,
-    )
-elif env["platform"] == "windows":
-    env.Append(CXXFLAGS=" /EHsc ") # for some reason it became not default
-    library = env.SharedLibrary(
-        addon_path + "bin/lib{}.{}.{}.{}{}".format(
-            project_name,
-            env["platform"],
-            debug_or_release,
-            env["arch"],
-            env["SHLIBSUFFIX"],
         ),
         source=sources,
     )
