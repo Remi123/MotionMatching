@@ -158,7 +158,7 @@ struct kform
     }
 
     static Vector3 _log(Vector3 v){
-        return Vector3(std::logf(v.x),std::logf(v.y),std::logf(v.z));
+        return Vector3(std::log(v.x),std::log(v.y),std::log(v.z));
     }
 
     kform& finite_difference(kform input_next, float _dt)

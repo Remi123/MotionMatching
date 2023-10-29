@@ -7,8 +7,6 @@
 // License:   BSD style license
 //            (see the file LICENSE for details)
 //
-#pragma once
-
 #include "kdtree.hpp"
 #include <math.h>
 #include <algorithm>
