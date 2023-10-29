@@ -58,7 +58,7 @@ else:
 if env["platform"] == "windows":
     env.Append(CXXFLAGS=" /EHsc ") # for some reason it became not default
 else :
-    env.Append(CXXFLAGS=" -fno-exceptions ")
+    env.Append(CXXFLAGS=" -fexceptions ")
 
 if env["platform"] == "macos":
     library = env.SharedLibrary(
