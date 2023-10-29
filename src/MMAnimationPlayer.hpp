@@ -314,9 +314,9 @@ struct MMAnimationPlayer : godot::AnimationPlayer
                     desired.pos = Vector3();
                     desired.rot = Quaternion();
                 }
-
+                bones_kform.pos[bone_id] *= motion_scale;
                 CritDampSpring::_simple_spring_damper_exact(
-                    bones_kform.pos[bone_id] * motion_scale,bones_kform.vel[bone_id]
+                    bones_kform.pos[bone_id] ,bones_kform.vel[bone_id]
                     ,desired.pos,halflife,_delta
                 );
                 CritDampSpring::_simple_spring_damper_exact(

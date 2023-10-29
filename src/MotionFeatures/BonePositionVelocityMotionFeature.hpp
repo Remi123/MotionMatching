@@ -142,7 +142,7 @@ struct BonePositionVelocityMotionFeature : public MotionFeature {
 
     NodePath _skel_path;
 
-    virtual void setup_profile(NodePath skeleton_path,Ref<SkeletonProfile> skeleton_profile){
+    virtual void setup_profile(NodePath skeleton_path,Ref<SkeletonProfile> skeleton_profile) override{
         _skel = skeleton_profile;
         _skel_path = skeleton_path;
         bones_id.clear();
