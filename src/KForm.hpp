@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cmath>
+
 #include <godot_cpp/variant/utility_functions.hpp>
 #include "godot_cpp/core/math.hpp"
 #include "godot_cpp/variant/vector3.hpp"
