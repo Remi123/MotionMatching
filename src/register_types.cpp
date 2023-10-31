@@ -12,10 +12,9 @@
 #include "MotionFeatures/RootVelocityMotionFeature.hpp"
 #include "MotionFeatures/BonePositionVelocityMotionFeature.hpp"
 #include "MotionFeatures/TrajectoryMotionFeature.hpp"
-#include "MotionFeatures/LocalDistanceToPointMotionFeature.hpp"
+
 
 #include <MMAnimationLibrary.hpp>
-
 #include <MMAnimationPlayer.hpp>
 #include "CircularBuffer.hpp"
 
@@ -44,7 +43,6 @@ void gdextension_MM_initialize(ModuleInitializationLevel p_level)
 		ClassDB::register_class<RootVelocityMotionFeature>();
 		ClassDB::register_class<BonePositionVelocityMotionFeature>();
 		ClassDB::register_class<TrajectoryMotionFeature>();
-		ClassDB::register_class<LocalDistanceToPointMotionFeature>();
 
 		ClassDB::register_class<MMAnimationPlayer>();
 		ClassDB::register_class<MMAnimationLibrary>();
