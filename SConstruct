@@ -13,20 +13,19 @@ except:
     # We apply platform specific toolchains via our custom tools.
     env = Environment(tools=["default"], PLATFORM="")
 
+env = SConscript("godot-cpp/SConstruct",'env')
+
 # TODO: Do not copy environment after godot-cpp/test is updated <https://github.com/godotengine/godot-cpp/blob/master/test/SConstruct>.
 # env["disable_exceptions"] = False # for now we allows exception since the kdtree use them.
 
-opts = Variables([], ARGUMENTS)
-opts.Add("disable_exceptions", "disable exceptions", False)
-
-
-opts.Update(env)
-env = SConscript("godot-cpp/SConstruct",'env')
-print(env["disable_exceptions"])
 env["disable_exceptions"] = False # for now we allows exception since the kdtree use them.
-print(env["disable_exceptions"])
-print(env['CXXFLAGS'])
-print(env['is_msvc'])
+if env["disable_exceptions"]:
+    if env.get("is_msvc", False):
+        env.Append(CPPDEFINES=[("_HAS_EXCEPTIONS", 0)])
+    else:
+        env.Append(CXXFLAGS=["-fno-exceptions"])
+elif env.get("is_msvc", False):
+    env.Append(CXXFLAGS=["/EHsc"])
 
 
 
