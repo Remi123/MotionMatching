@@ -5,11 +5,17 @@ import fnmatch
 import os
 
 
-
+try:
+    Import("env")
+except:
+    # Default tools with no platform defaults to gnu toolchain.
+    # We apply platform specific toolchains via our custom tools.
+    env = Environment(tools=["default"], PLATFORM="")
 
 # TODO: Do not copy environment after godot-cpp/test is updated <https://github.com/godotengine/godot-cpp/blob/master/test/SConstruct>.
-env = SConscript("godot-cpp/SConstruct")
 env["disable_exceptions"] = False # for now we allows exception since the kdtree use them.
+env = SConscript("godot-cpp/SConstruct")
+
 
 
 
