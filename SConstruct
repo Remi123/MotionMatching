@@ -4,20 +4,22 @@ from pathlib import Path
 import fnmatch
 import os
 
-# Initial options inheriting from CLI args
-opts = Variables([], ARGUMENTS)
-# Define options
-opts.Add("Boost_INCLUDE_DIR", "boost library include path", "")
-opts.Add("Boost_LIBRARY_DIRS", "boost library library path", "")
+
 
 
 # TODO: Do not copy environment after godot-cpp/test is updated <https://github.com/godotengine/godot-cpp/blob/master/test/SConstruct>.
 env = SConscript("godot-cpp/SConstruct")
+
+
+
+# Initial options inheriting from CLI args
+opts = Variables([], ARGUMENTS)
+opts.Add("Boost_INCLUDE_DIR", "boost library include path", "")
+opts.Add("Boost_LIBRARY_DIRS", "boost library library path", "")
 opts.Update(env)
-
-# Add Included files files.
-
 boost_path = Dir(env['Boost_INCLUDE_DIR'])
+
+# Add Included files.
 env.Append(CPPPATH=["src/","thirdparty/",boost_path])
 
 sources = []
@@ -55,10 +57,11 @@ else:
     debug_or_release = "template_debug"
 
 # Exception handling, or lack-there-off
-if env["platform"] == "windows":
-    env.Append(CXXFLAGS=" /EHsc ") # for some reason it became not default
-else :
-    env.Append(CXXFLAGS=" -fexceptions ")
+# TODO : Debug should support exception for debugging, but release shouldn't
+# if env["platform"] == "windows":
+#     env.Append(CXXFLAGS=" /EHsc /D_HAS_EXCEPTIONS=0") # for some reason it became not default
+# else :
+#     env.Append(CXXFLAGS=" -fno-exceptions ")
 
 if env["platform"] == "macos":
     library = env.SharedLibrary(

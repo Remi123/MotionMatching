@@ -294,14 +294,14 @@ struct MMAnimationPlayer : godot::AnimationPlayer
                 animation = get_animation(last_anim);
 
                 desired = bones_kform[bone_id];
-
-                const Transform3D bone_rest = _skeleton->get_bone_rest(bone_id);
+                
+                const Transform3D bone_rest = _skeleton->get_bone_rest(bone_id).scaled_local(Vector3(1,1,1) * motion_scale);
                 const String bone_path = u::str(skeleton_path) + String(":") + _skeleton->get_bone_name(bone_id);
 
                 auto track_pos = animation->find_track(bone_path, Animation::TrackType::TYPE_POSITION_3D);
                 if(track_pos != -1)
                 {
-                    desired.pos = animation->position_track_interpolate(track_pos, last_timestamp);
+                    desired.pos = animation->position_track_interpolate(track_pos, last_timestamp) * motion_scale;
                 }
                 auto track_rot = animation->find_track(bone_path, Animation::TrackType::TYPE_ROTATION_3D);
                 if(track_rot != -1)
@@ -314,9 +314,9 @@ struct MMAnimationPlayer : godot::AnimationPlayer
                     desired.pos = Vector3();
                     desired.rot = Quaternion();
                 }
-                bones_kform.pos[bone_id] *= motion_scale;
+
                 CritDampSpring::_simple_spring_damper_exact(
-                    bones_kform.pos[bone_id] ,bones_kform.vel[bone_id]
+                    bones_kform.pos[bone_id],bones_kform.vel[bone_id]
                     ,desired.pos,halflife,_delta
                 );
                 CritDampSpring::_simple_spring_damper_exact(
