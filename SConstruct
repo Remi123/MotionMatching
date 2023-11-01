@@ -9,6 +9,7 @@ import os
 
 # TODO: Do not copy environment after godot-cpp/test is updated <https://github.com/godotengine/godot-cpp/blob/master/test/SConstruct>.
 env = SConscript("godot-cpp/SConstruct")
+env["disable_exceptions"] = False # for now we allows exception since the kdtree use them.
 
 
 
@@ -44,31 +45,18 @@ addon_path = "addons/MotionMatching/"
 project_name = "MotionMatching"
 
 # TODO: Cache is disabled currently.
-# scons_cache_path = os.environ.get("SCONS_CACHE")
-# if scons_cache_path != None:
-#     CacheDir(scons_cache_path)
-#     print("Scons cache enabled... (path: '" + scons_cache_path + "')")
+scons_cache_path = os.environ.get("SCONS_CACHE")
+if scons_cache_path != None:
+    CacheDir(scons_cache_path)
+    print("Scons cache enabled... (path: '" + scons_cache_path + "')")
 
-# Create the library target (e.g. libexample.linux.debug.x86_64.so).
-debug_or_release = ""
-if env["target"] == "release" or env["target"] == "template_release":
-    debug_or_release = "template_release"
-else:
-    debug_or_release = "template_debug"
-
-# Exception handling, or lack-there-off
-# TODO : Debug should support exception for debugging, but release shouldn't
-# if env["platform"] == "windows":
-#     env.Append(CXXFLAGS=" /EHsc /D_HAS_EXCEPTIONS=0") # for some reason it became not default
-# else :
-#     env.Append(CXXFLAGS=" -fno-exceptions ")
 
 if env["platform"] == "macos":
     library = env.SharedLibrary(
         addon_path + "bin/lib{0}.{1}.{2}.framework/{0}.{1}.{2}".format(
             project_name,
             env["platform"],
-            debug_or_release,
+            env["target"],
         ),
         source=sources,
     )
@@ -77,7 +65,7 @@ else:
         addon_path + "bin/lib{}.{}.{}.{}{}".format(
             project_name,
             env["platform"],
-            debug_or_release,
+            env["target"],
             env["arch"],
             env["SHLIBSUFFIX"],
         ),
