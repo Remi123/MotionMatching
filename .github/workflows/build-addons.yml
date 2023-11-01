@@ -144,6 +144,7 @@ jobs:
 
             -   name: Compile Addon
                 run:  scons  
+                        disable_exceptions=false
                         platform=${{ matrix.platform }} 
                         target=${{ matrix.target }} 
                         arch=${{ matrix.arch }} 

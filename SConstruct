@@ -6,15 +6,27 @@ import os
 
 
 try:
-    Import("env")
+    env = Environment()
+    print(env.ARGUMENTS)
 except:
     # Default tools with no platform defaults to gnu toolchain.
     # We apply platform specific toolchains via our custom tools.
     env = Environment(tools=["default"], PLATFORM="")
 
 # TODO: Do not copy environment after godot-cpp/test is updated <https://github.com/godotengine/godot-cpp/blob/master/test/SConstruct>.
+# env["disable_exceptions"] = False # for now we allows exception since the kdtree use them.
+
+opts = Variables([], ARGUMENTS)
+opts.Add("disable_exceptions", "disable exceptions", False)
+
+
+opts.Update(env)
+env = SConscript("godot-cpp/SConstruct",'env')
+print(env["disable_exceptions"])
 env["disable_exceptions"] = False # for now we allows exception since the kdtree use them.
-env = SConscript("godot-cpp/SConstruct")
+print(env["disable_exceptions"])
+print(env['CXXFLAGS'])
+print(env['is_msvc'])
 
 
 
