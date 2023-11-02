@@ -34,7 +34,7 @@ elif env.get("is_msvc", False):
 opts = Variables([], ARGUMENTS)
 opts.Add("Boost_INCLUDE_DIR", "boost library include path", "")
 opts.Add("Boost_LIBRARY_DIRS", "boost library library path", "")
-opts.Add("precision","floating point precision","single")
+opts.Add("precision","floating point precision", "double")
 
 opts.Update(env)
 boost_path = Dir(env['Boost_INCLUDE_DIR'])
