@@ -7,6 +7,11 @@
 // License:   BSD style license
 //            (see the file LICENSE for details)
 //
+
+// MODIFICATION
+// Removed throw to make it pass fno-exceptions. The in case of throw nothing will
+// be done to the current state of the object. This include the constructor
+
 #include "kdtree.hpp"
 #include <math.h>
 #include <algorithm>
@@ -182,8 +187,11 @@ KdTree::KdTree(const KdNodeVector* nodes, int distance_type /*=2*/) {
   float val;
   // copy over input data
   if (!nodes || nodes->empty())
-    throw std::invalid_argument(
-        "kdtree::KdTree(): argument nodes must not be empty");
+  {
+    // throw std::invalid_argument(
+    //     "kdtree::KdTree(): argument nodes must not be empty");
+    return;
+  }
   
   dimension = nodes->begin()->point.size();
   allnodes = *nodes;
@@ -276,9 +284,12 @@ void KdTree::k_nearest_neighbors(const CoordPoint& point, size_t k,
   result->clear();
   if (k < 1) return;
   if (point.size() != dimension)
-    throw std::invalid_argument(
-        "kdtree::k_nearest_neighbors(): point must be of same dimension as "
-        "kdtree");
+  {
+    // throw std::invalid_argument(
+    //     "kdtree::k_nearest_neighbors(): point must be of same dimension as "
+    //     "kdtree");
+    return;
+  }
 
   // collect result of k values in neighborheap
   //std::priority_queue<nn4heap, std::vector<nn4heap>, compare_nn4heap>*
@@ -325,9 +336,12 @@ void KdTree::range_nearest_neighbors(const CoordPoint& point, float r,
 
   result->clear();
   if (point.size() != dimension)
-    throw std::invalid_argument(
-        "kdtree::k_nearest_neighbors(): point must be of same dimension as "
-        "kdtree");
+  {
+    // throw std::invalid_argument(
+    //     "kdtree::k_nearest_neighbors(): point must be of same dimension as "
+    //     "kdtree");
+    return;
+  }
   if (this->distance_type == 2) {
     // if euclidien distance is used the range must be squared because we
     // get squared distances from this implementation
