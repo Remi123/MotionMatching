@@ -341,8 +341,7 @@ struct MMAnimationLibrary : public AnimationLibrary {
     void recalculate_weights()
     {
         weights.clear();
-        using namespace boost::accumulators;
-        accumulator_set<double, stats<tag::min,tag::max,tag::sum,tag::count> > weight_stats, dim_stats, total;
+
         for (auto features_index = 0; features_index < motion_features.size(); ++features_index)
         {   
             MotionFeature *f = Object::cast_to<MotionFeature>(motion_features[features_index]);
@@ -350,36 +349,7 @@ struct MMAnimationLibrary : public AnimationLibrary {
             weights.append_array(f->get_weights() );
             u::prints(f->get_name(),f->get_weights());
         }
-        u::prints("Total:",weights);
-        for(auto i = 0; i < weights.size(); ++i)
-        {
-            weight_stats(weights[i]);
-        }
-        u::prints("Sum weight:",(double)sum(weight_stats), "Count:",(double)count(weight_stats));
-        for (auto features_index = 0; features_index < motion_features.size(); ++features_index)
-        {
-            MotionFeature *f = Object::cast_to<MotionFeature>(motion_features[features_index]);            
-            dim_stats(f->get_dimension());
-        }
-        u::prints("Sum stats",sum(dim_stats));
-        for (auto features_index = 0, offset = 0; features_index < motion_features.size(); ++features_index)
-        {
-            MotionFeature *f = Object::cast_to<MotionFeature>(motion_features[features_index]);
-            for(auto i = offset; i < offset + f->get_dimension();++i)
-            {
-                weights[i] = abs(weights[i]) / sum(weight_stats) / f->get_dimension();
-                total(weights[i]);
-            }
-            offset += f->get_dimension();
-        }
-        u::prints("Sum",sum(weight_stats));
-        if (min(total) < 1.0f && min(total) > 0.0f)
-        {
-            for(auto i = 0; i < weights.size(); ++i)
-            {
-                weights[i] *= 1 / min(total);
-            }
-        }
+        u::prints("New Weights Values:",weights);
     }
 
     // Bypass the feature query, and ask directly which poses is the most similar.
