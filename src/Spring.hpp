@@ -125,7 +125,7 @@ struct Spring : public RefCounted
         }
         else
         {
-            float halfangle = acosf(clampf(q.w, -1.0f, 1.0f));
+            real_t halfangle = acosf(clampf(q.w, real_t(-1.0), real_t(1.0)));
             return halfangle * (Vector3(q.x, q.y, q.z) / length);
         }
     }
