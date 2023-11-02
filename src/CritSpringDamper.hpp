@@ -30,7 +30,7 @@ struct CritDampSpring : public RefCounted
 
     static Quaternion damp_adjustment_exact_quat(Quaternion g, float halflife, float dt, float eps=1e-8) {
         float factor = 1.0 - fast_negexp((CritDampSpring::Ln2 * dt) / (halflife + eps));
-        return Quaternion().slerp(g, factor);
+        return Quaternion().slerp(g, factor).normalized();
     }
     static Variant damper_exponential(Variant variable, Variant goal, float damping, float dt) {
         float ft = 1.0f / (float)ProjectSettings::get_singleton()->get("physics/common/physics_ticks_per_second");
@@ -114,7 +114,7 @@ struct CritDampSpring : public RefCounted
     }
 
     static inline Quaternion quat_abs(Quaternion q){
-        return q.w < 0.0 ? -q : q;
+        return (q.w < 0.0 ? -q : q).normalized();
     }
 
     static inline Vector3 quat_log(Quaternion q, float eps=1e-8f){
@@ -132,12 +132,17 @@ struct CritDampSpring : public RefCounted
 
     static inline Quaternion quat_from_scaled_angle_axis(Vector3 v, float eps = 1e-8f)
     {
-        return quat_exp(v / 2.0f, eps);
+        return quat_exp(v / 2.0f, eps).normalized();
     }
 
     static inline Vector3 quat_to_scaled_angle_axis(Quaternion q, float eps = 1e-8f)
     {
         return 2.0f * quat_log(q, eps);
+    }
+
+    static inline Vector3 quat_differentiate_angular_velocity(Quaternion next, Quaternion curr, float dt, float eps = 1e-8f)
+    {
+        return quat_to_scaled_angle_axis(quat_abs(next * curr.inverse()), eps) / dt;
     }
 
     static void _spring_damper_exact(
@@ -228,6 +233,40 @@ struct CritDampSpring : public RefCounted
         x = eydt * (j0 + j1 * dt) + x_goal;
         v = eydt * (v - j1 * y * dt);
     }
+    static void _simple_spring_damper_exact(
+    Vector3& x, 
+    Vector3& v, 
+    const Vector3 x_goal, 
+    const float halflife, 
+    const float dt)
+    {
+        float y = halflife_to_damping(halflife) / 2.0f; 
+        Vector3 j0 = x - x_goal;
+        Vector3 j1 = v + j0*y;
+        float eydt = fast_negexp(y*dt);
+
+        x = eydt*(j0 + j1*dt) + x_goal;
+        v = eydt*(v - j1*y*dt);
+    }
+
+    static void _simple_spring_damper_exact(
+    Quaternion& x, 
+    Vector3& v, 
+    const Quaternion x_goal, 
+    const float halflife, 
+    const float dt)
+    {
+        float y = halflife_to_damping(halflife) / 2.0f; 
+        
+        Vector3 j0 = quat_to_scaled_angle_axis(quat_abs(x *x_goal.inverse()));
+        Vector3 j1 = v + j0*y;
+        
+        float eydt = fast_negexp(y*dt);
+
+        x = quat_from_scaled_angle_axis(eydt*(j0 + j1*dt)) *  x_goal;
+        v = eydt*(v - j1*y*dt);
+    }
+
     static inline PackedFloat32Array simple_spring_damper_exact(float x, float v, float x_goal, float halflife, float dt){
         _simple_spring_damper_exact(x,v,x_goal,halflife,dt);
         PackedFloat32Array result;
@@ -396,7 +435,7 @@ struct CritDampSpring : public RefCounted
         const Quaternion dst_x,
         const Vector3 dst_v)
     {
-        off_x = CritDampSpring::quat_abs((off_x * src_x) * dst_x.inverse());
+        off_x = CritDampSpring::quat_abs((off_x * src_x) * dst_x.inverse()).normalized();
         off_v = (off_v + src_v) - dst_v;
     }
     static inline void inertialize_update(
@@ -410,7 +449,7 @@ struct CritDampSpring : public RefCounted
         const float dt)
     {
         CritDampSpring::_decay_spring_damper_exact(off_x, off_v, halflife, dt);
-        out_x = off_x * in_x;
+        out_x = (off_x * in_x).normalized();
         out_v = off_v + off_x.xform(in_v);
     }
 

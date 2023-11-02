@@ -207,8 +207,29 @@ public:
         return result;
     }
 
+    PackedFloat32Array serialize_trajectory_local(PackedVector3Array history_pos,PackedVector3Array future_pos,PackedFloat32Array future_dir)
+    {
+        PackedFloat32Array result{};
+        for(auto elem: history_pos)
+        {
+            result.append(elem.x);
+            result.append(elem.z);
+        }
+        for(auto elem: future_pos)
+        {
+            result.append(elem.x);
+            result.append(elem.z);
+        }
+        result.append_array(future_dir);
+        return result;
+    }
+
     protected:
     static void _bind_methods() {
+
+        {
+            ClassDB::bind_method(D_METHOD("serialize_trajectory_local", "history_local_pos","prediction_local_pos","prediction_local_dir_angle"), &TrajectoryMotionFeature::serialize_trajectory_local);
+        }
 
         ClassDB::bind_method( D_METHOD("set_weight_history_pos","value"), &TrajectoryMotionFeature::set_weight_history_pos ); ClassDB::bind_method( D_METHOD("get_weight_history_pos"), &TrajectoryMotionFeature::get_weight_history_pos); godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT,"weight_history_pos"), "set_weight_history_pos", "get_weight_history_pos");
         ClassDB::bind_method( D_METHOD("set_weight_prediction_pos","value"), &TrajectoryMotionFeature::set_weight_prediction_pos ); ClassDB::bind_method( D_METHOD("get_weight_prediction_pos"), &TrajectoryMotionFeature::get_weight_prediction_pos); godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT,"weight_prediction_pos"), "set_weight_prediction_pos", "get_weight_prediction_pos");

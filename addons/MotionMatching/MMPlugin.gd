@@ -1,50 +1,55 @@
 @tool
+class_name MMPlugin
 extends EditorPlugin
 
-var bottompanel
+var bottompanel :MMEditorPanel= preload("res://addons/MotionMatching/MMEditorPanel.tscn").instantiate()
 
-const MMEditorGizmoPlugin = preload("res://addons/MotionMatching/MMEditorGizmoPlugin.gd")
+# const MMEditorGizmoPlugin :MMEditorGizmoPlugin= preload("res://addons/MotionMatching/MMEditorGizmoPlugin.gd")
 
-var gizmo_plugin := MMEditorGizmoPlugin.new()
+# var gizmo_plugin := MMEditorGizmoPlugin.new()
 
-
+var last_path := ""
+var al :MMAnimationLibrary
 
 func _enter_tree() -> void:
-	add_node_3d_gizmo_plugin(gizmo_plugin)
-	bottompanel = preload("res://addons/MotionMatching/MMEditorPanel.tscn").instantiate()
-	bottompanel.gizmo = gizmo_plugin
-	# Initialization of the plugin goes here.
-
-#	_make_visible(false)
-
-	get_editor_interface().get_selection().selection_changed.connect(visibility)
 	pass
 
+func _get_plugin_icon() -> Texture2D:
+	return preload("res://addons/MotionMatching/icons/icon_mm.svg")
+
+func _input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.is_released():
+		if last_path != get_editor_interface().get_current_path():
+			last_path = get_editor_interface().get_current_path()
+			remove_control_from_bottom_panel(bottompanel)
+			visibility()
+
+	pass
 
 func _exit_tree() -> void:
-	remove_node_3d_gizmo_plugin(gizmo_plugin)
 	remove_control_from_bottom_panel(bottompanel)
-	if(bottompanel != null):
-		bottompanel.free()
-	# Clean-up of the plugin goes here.
+	bottompanel.queue_free()
 	pass
 
 func _has_main_screen()->bool:
 	return false
 
 func visibility() -> void:
+
 	var nodes :Array= get_editor_interface().get_selection().get_selected_nodes()
-	var v = nodes.any(func(x):return x is MotionMatcher)
-	bottompanel.visible = v
+	#var v = nodes.any(func(x):return x is MotionMatcher)
+	var l = ResourceLoader.load(get_editor_interface().get_current_path())
+	if l is MMAnimationLibrary:
+		prints("Selected MMAL",l.resource_path)
+		al = l
+		bottompanel._current = al
+		bottompanel.plugin_ref = self
 
-	if v:
-		print(get_tree())
-
-		bottompanel._current = nodes.filter(func (x): return x is MotionMatcher)[0]
-		bottompanel._animplayer =bottompanel._current.owner.find_children("*","AnimationPlayer",true,true)[0]
 		add_control_to_bottom_panel(bottompanel,"MotionMatching")
 		make_bottom_panel_item_visible(bottompanel)
+		bottompanel.update_info()
 	else :
 		remove_control_from_bottom_panel(bottompanel)
+
 
 

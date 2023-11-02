@@ -1,5 +1,3 @@
-#pragma once
-
 #include "register_types.h"
 
 #include <gdextension_interface.h>
@@ -14,12 +12,23 @@
 #include "MotionFeatures/RootVelocityMotionFeature.hpp"
 #include "MotionFeatures/BonePositionVelocityMotionFeature.hpp"
 #include "MotionFeatures/TrajectoryMotionFeature.hpp"
-#include "MotionFeatures/LocalDistanceToPointMotionFeature.hpp"
 
+
+#include <MMAnimationLibrary.hpp>
 #include <MMAnimationPlayer.hpp>
 #include "CircularBuffer.hpp"
 
-//#include "AnimationNodeInertialization.hpp"
+namespace boost
+{
+#ifdef BOOST_NO_EXCEPTIONS
+void throw_exception( std::exception const & e ){
+	godot::UtilityFunctions::prints("MotionMatching catched exception : ",e.what());
+    //throw 11; // This handle exceptions when dealing with no exception.
+	// TODO 
+};
+#endif
+}// namespace boost
+
 
 using namespace godot;
 
@@ -27,10 +36,6 @@ void gdextension_MM_initialize(ModuleInitializationLevel p_level)
 {
 	if (p_level == MODULE_INITIALIZATION_LEVEL_SCENE)
 	{
-		//ClassDB::register_class<AABBTree>();
-		//ClassDB::register_class<KDTree>();
-
-
 		ClassDB::register_class<CircularBuffer>();
 		
 		ClassDB::register_class<MotionFeature>(true); // Abstract class
@@ -38,11 +43,10 @@ void gdextension_MM_initialize(ModuleInitializationLevel p_level)
 		ClassDB::register_class<RootVelocityMotionFeature>();
 		ClassDB::register_class<BonePositionVelocityMotionFeature>();
 		ClassDB::register_class<TrajectoryMotionFeature>();
-		ClassDB::register_class<LocalDistanceToPointMotionFeature>();
 
 		ClassDB::register_class<MMAnimationPlayer>();
+		ClassDB::register_class<MMAnimationLibrary>();
 
-		ClassDB::register_class<MotionMatcher>();
 		ClassDB::register_class<CritDampSpring>();
 	}
 }

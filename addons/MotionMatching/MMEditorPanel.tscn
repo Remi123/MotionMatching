@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3 uid="uid://cgx5x8caibsnl"]
 
-[ext_resource type="Script" path="res://addons/MotionMatching/MMEditorPanel.gd" id="1_wva2m"]
+[ext_resource type="Script" path="res://addons/MotionMatching/MMEditorPanel.gd" id="1_n132c"]
 
 [node name="MMEditorPanel" type="Control"]
 layout_mode = 3
@@ -9,7 +9,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-script = ExtResource("1_wva2m")
+script = ExtResource("1_n132c")
 
 [node name="TabContainer" type="TabContainer" parent="."]
 layout_mode = 1
@@ -19,13 +19,44 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="Info" type="PanelContainer" parent="TabContainer"]
-visible = false
+[node name="Info" type="VBoxContainer" parent="TabContainer"]
 clip_contents = true
 layout_mode = 2
 
+[node name="MarginContainer4" type="MarginContainer" parent="TabContainer/Info"]
+layout_mode = 2
+size_flags_vertical = 0
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="HBoxContainer" type="HBoxContainer" parent="TabContainer/Info/MarginContainer4"]
+layout_mode = 2
+
+[node name="PathLabel" type="Label" parent="TabContainer/Info/MarginContainer4/HBoxContainer"]
+layout_mode = 2
+text = "Path:"
+
+[node name="PathText" type="Label" parent="TabContainer/Info/MarginContainer4/HBoxContainer"]
+layout_mode = 2
+text = "
+"
+
+[node name="BakeButton" type="Button" parent="TabContainer/Info/MarginContainer4/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 10
+size_flags_vertical = 4
+text = "Bake Data"
+
+[node name="WeightButton" type="Button" parent="TabContainer/Info/MarginContainer4/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 8
+text = "Recalculate weights"
+
 [node name="PanelContainer" type="ScrollContainer" parent="TabContainer/Info"]
 layout_mode = 2
+size_flags_vertical = 3
 follow_focus = true
 horizontal_scroll_mode = 2
 vertical_scroll_mode = 2
@@ -53,10 +84,6 @@ theme_override_constants/margin_left = 20
 theme_override_constants/margin_top = 20
 theme_override_constants/margin_right = 20
 theme_override_constants/margin_bottom = 20
-
-[node name="Button" type="Button" parent="TabContainer/Data/HBoxContainer/MarginContainer"]
-layout_mode = 2
-text = "Bake Data"
 
 [node name="MarginContainer2" type="MarginContainer" parent="TabContainer/Data/HBoxContainer"]
 layout_mode = 2
@@ -88,17 +115,6 @@ theme_override_constants/margin_bottom = 20
 layout_mode = 2
 text = "Look for similar"
 
-[node name="MarginContainer4" type="MarginContainer" parent="TabContainer/Data/HBoxContainer"]
-layout_mode = 2
-theme_override_constants/margin_left = 20
-theme_override_constants/margin_top = 20
-theme_override_constants/margin_right = 20
-theme_override_constants/margin_bottom = 20
-
-[node name="Button" type="Button" parent="TabContainer/Data/HBoxContainer/MarginContainer4"]
-layout_mode = 2
-text = "Recalculate weights"
-
 [node name="MarginContainer5" type="MarginContainer" parent="TabContainer/Data/HBoxContainer"]
 layout_mode = 2
 theme_override_constants/margin_left = 20
@@ -109,6 +125,7 @@ theme_override_constants/margin_bottom = 20
 [node name="ChooseAnimation" type="MenuButton" parent="TabContainer/Data/HBoxContainer/MarginContainer5"]
 layout_mode = 2
 text = "Animation:"
+flat = false
 
 [node name="ScrollContainer" type="ScrollContainer" parent="TabContainer/Data"]
 layout_mode = 2
@@ -122,7 +139,7 @@ size_flags_horizontal = 3
 focus_mode = 2
 theme_override_colors/font_selected_color = Color(0, 0, 0, 1)
 bbcode_enabled = true
-text = "[table=16][cell][img=24]res://icon.svg[/img][/cell][cell]Hello World[/cell][cell]Hello World[/cell][cell]Hello World[/cell][cell]Hello World[/cell][cell]Hello World[/cell][cell]Hello World[/cell][cell]Hello World[/cell][cell]Hello World[/cell][cell]Hello World[/cell][cell]Hello World[/cell][cell]Hello World[/cell][cell]Hello World[/cell][cell]Hello World[/cell][cell]Hello World[/cell][cell]Hello World[/cell][/table]"
+text = "Select an index"
 fit_content = true
 scroll_following = true
 autowrap_mode = 0
@@ -183,6 +200,7 @@ text = "="
 layout_mode = 2
 
 [node name="AnimationTracks" type="HFlowContainer" parent="TabContainer"]
+visible = false
 layout_mode = 2
 
 [node name="MarginContainer" type="MarginContainer" parent="TabContainer/AnimationTracks"]
@@ -202,12 +220,18 @@ layout_mode = 2
 size_flags_horizontal = 2
 text = "Add Category Track"
 
-[connection signal="pressed" from="TabContainer/Data/HBoxContainer/MarginContainer/Button" to="." method="bake_data_current"]
+[node name="Button2" type="Button" parent="TabContainer/AnimationTracks/MarginContainer/HFlowContainer"]
+layout_mode = 2
+size_flags_horizontal = 2
+text = "Add All Animations in Folder"
+
+[connection signal="pressed" from="TabContainer/Info/MarginContainer4/HBoxContainer/BakeButton" to="." method="bake_data_current"]
+[connection signal="pressed" from="TabContainer/Info/MarginContainer4/HBoxContainer/WeightButton" to="." method="on_recalculate_weights"]
 [connection signal="value_changed" from="TabContainer/Data/HBoxContainer/MarginContainer2/HBoxContainer/SpinBox" to="." method="update_shown_pose_data"]
+[connection signal="value_changed" from="TabContainer/Data/HBoxContainer/MarginContainer2/HBoxContainer/SpinBox" to="." method="set_skeleton_to_pose"]
 [connection signal="pressed" from="TabContainer/Data/HBoxContainer/MarginContainer3/Button" to="." method="on_look_for_similar_pressed"]
-[connection signal="pressed" from="TabContainer/Data/HBoxContainer/MarginContainer4/Button" to="." method="on_recalculate_weights"]
-[connection signal="pressed" from="TabContainer/Data/HBoxContainer/MarginContainer5/ChooseAnimation" to="." method="_on_choose_animation_pressed"]
 [connection signal="value_changed" from="TabContainer/Calculation/MarginContainer/HFlowContainer/SpinBox" to="." method="_max_der_calculate"]
 [connection signal="value_changed" from="TabContainer/Calculation/MarginContainer/HFlowContainer/SpinBox2" to="." method="_max_der_calculate"]
 [connection signal="value_changed" from="TabContainer/Calculation/MarginContainer/HFlowContainer/SpinBox3" to="." method="_max_der_calculate"]
 [connection signal="pressed" from="TabContainer/AnimationTracks/MarginContainer/HFlowContainer/Button" to="." method="_on_add_category"]
+[connection signal="pressed" from="TabContainer/AnimationTracks/MarginContainer/HFlowContainer/Button2" to="." method="add_animation"]

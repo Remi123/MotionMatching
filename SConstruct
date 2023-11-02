@@ -4,20 +4,27 @@ from pathlib import Path
 import fnmatch
 import os
 
-# Initial options inheriting from CLI args
-opts = Variables([], ARGUMENTS)
-# Define options
-opts.Add("Boost_INCLUDE_DIR", "boost library include path", "")
-opts.Add("Boost_LIBRARY_DIRS", "boost library library path", "")
 
+try:
+    env = Environment()
+    print(env.ARGUMENTS)
+except:
+    # Default tools with no platform defaults to gnu toolchain.
+    # We apply platform specific toolchains via our custom tools.
+    env = Environment(tools=["default"], PLATFORM="")
 
 # TODO: Do not copy environment after godot-cpp/test is updated <https://github.com/godotengine/godot-cpp/blob/master/test/SConstruct>.
-env = SConscript("godot-cpp/SConstruct")
+env = SConscript("godot-cpp/SConstruct",'env')
+
+
+# Initial options inheriting from CLI args
+opts = Variables([], ARGUMENTS)
+opts.Add("Boost_INCLUDE_DIR", "boost library include path", "")
+opts.Add("Boost_LIBRARY_DIRS", "boost library library path", "")
 opts.Update(env)
-
-# Add Included files files.
-
 boost_path = Dir(env['Boost_INCLUDE_DIR'])
+
+# Add Included files.
 env.Append(CPPPATH=["src/","thirdparty/",boost_path])
 
 sources = []
@@ -42,17 +49,10 @@ addon_path = "addons/MotionMatching/"
 project_name = "MotionMatching"
 
 # TODO: Cache is disabled currently.
-# scons_cache_path = os.environ.get("SCONS_CACHE")
-# if scons_cache_path != None:
-#     CacheDir(scons_cache_path)
-#     print("Scons cache enabled... (path: '" + scons_cache_path + "')")
-
-# Create the library target (e.g. libexample.linux.debug.x86_64.so).
-debug_or_release = ""
-if env["target"] == "release" or env["target"] == "template_release":
-    debug_or_release = "template_release"
-else:
-    debug_or_release = "template_debug"
+scons_cache_path = os.environ.get("SCONS_CACHE")
+if scons_cache_path != None:
+    CacheDir(scons_cache_path)
+    print("Scons cache enabled... (path: '" + scons_cache_path + "')")
 
 
 if env["platform"] == "macos":
@@ -60,7 +60,7 @@ if env["platform"] == "macos":
         addon_path + "bin/lib{0}.{1}.{2}.framework/{0}.{1}.{2}".format(
             project_name,
             env["platform"],
-            debug_or_release,
+            env["target"],
         ),
         source=sources,
     )
@@ -69,7 +69,7 @@ else:
         addon_path + "bin/lib{}.{}.{}.{}{}".format(
             project_name,
             env["platform"],
-            debug_or_release,
+            env["target"],
             env["arch"],
             env["SHLIBSUFFIX"],
         ),

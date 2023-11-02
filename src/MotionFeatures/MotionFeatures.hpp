@@ -21,6 +21,7 @@
 
 #include <godot_cpp/classes/skeleton3d.hpp>
 #include <godot_cpp/classes/resource.hpp>
+#include <godot_cpp/classes/skeleton_profile.hpp>
 
 #include <godot_cpp/classes/editor_node3d_gizmo.hpp>
 #include <godot_cpp/classes/editor_node3d_gizmo_plugin.hpp>
@@ -42,6 +43,7 @@ struct MotionFeature : public Resource {
     virtual PackedFloat32Array get_weights(){ return {};}
 
     virtual void setup_nodes(Variant main_node, Skeleton3D* skeleton){}
+    virtual void setup_profile(NodePath skeleton_path,Ref<SkeletonProfile> skel_profile){}
 
     virtual void setup_for_animation(Ref<Animation> animation){}
     virtual PackedFloat32Array bake_animation_pose(Ref<Animation> animation,float time){return {};}

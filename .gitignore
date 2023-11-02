@@ -1,3 +1,6 @@
+# Import settings
+*.import
+
 # Prerequisites
 *.d
 
