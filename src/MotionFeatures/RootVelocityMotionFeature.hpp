@@ -83,14 +83,6 @@ struct RootVelocityMotionFeature : public MotionFeature {
         return result;
     }
 
-    virtual PackedFloat32Array broadphase_query_pose(Dictionary blackboard,float delta) override{ 
-        PackedFloat32Array result{};
-        result.push_back(query_velocity.x);
-        result.push_back(query_velocity.y);
-        result.push_back(query_velocity.z);
-        return result;
-    }
-
     PackedFloat32Array serialize_charbody3d(CharacterBody3D * body)
     {
         PackedFloat32Array result{};
@@ -138,9 +130,7 @@ protected:
         
         ClassDB::bind_method( D_METHOD("setup_for_animation","animation"), &RootVelocityMotionFeature::setup_for_animation);
         ClassDB::bind_method( D_METHOD("bake_animation_pose","animation","time"), &RootVelocityMotionFeature::bake_animation_pose);
-
-        ClassDB::bind_method( D_METHOD("broadphase_query_pose","blackboard","delta"), &RootVelocityMotionFeature::broadphase_query_pose);
-
+        
         ClassDB::bind_method( D_METHOD("debug_pose_gizmo","gizmo","data","root_transform"), &RootVelocityMotionFeature::debug_pose_gizmo);
     }
 

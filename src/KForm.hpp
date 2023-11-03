@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cmath>
+#include <numeric>
 
 #include <godot_cpp/variant/utility_functions.hpp>
 #include "godot_cpp/core/math.hpp"
@@ -150,7 +151,7 @@ struct kform
             bone_id = skel->find_bone(bone);
         } while (bone_id != -1);
 
-        *this = std::reduce(locals.rbegin(), locals.rend(), kform{},
+        *this = std::accumulate(locals.rbegin(), locals.rend(), kform{},
                             [](const kform &acc, const kform &i)
                             {
                                 return acc * i;

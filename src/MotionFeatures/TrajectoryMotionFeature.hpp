@@ -184,29 +184,6 @@ public:
     GETSET(PackedVector3Array,future_pos)
     GETSET(PackedFloat32Array,future_dir)
 
-    virtual PackedFloat32Array broadphase_query_pose(Dictionary blackboard,float delta) override{
-        PackedFloat32Array result{};
-
-        bool valid = false;
-        {
-            for(auto elem: history_pos)
-            {
-                result.append(elem.x);
-                result.append(elem.z);
-            }
-            for(auto elem: future_pos)
-            {
-                result.append(elem.x);
-                result.append(elem.z);
-            }
-            for(auto elem: future_dir)
-            {
-                result.append(elem);
-            }
-        }
-        return result;
-    }
-
     PackedFloat32Array serialize_trajectory_local(PackedVector3Array history_pos,PackedVector3Array future_pos,PackedFloat32Array future_dir)
     {
         PackedFloat32Array result{};
@@ -278,8 +255,6 @@ public:
         
         ClassDB::bind_method( D_METHOD("setup_for_animation","animation"), &TrajectoryMotionFeature::setup_for_animation);
         ClassDB::bind_method( D_METHOD("bake_animation_pose","animation","time"), &TrajectoryMotionFeature::bake_animation_pose);
-
-        ClassDB::bind_method( D_METHOD("broadphase_query_pose","blackboard","delta"), &TrajectoryMotionFeature::broadphase_query_pose);
         
         ClassDB::bind_method( D_METHOD("debug_pose_gizmo","gizmo","data","root_transform"), &TrajectoryMotionFeature::debug_pose_gizmo);
     }
