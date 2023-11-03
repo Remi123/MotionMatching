@@ -98,6 +98,7 @@ struct MMAnimationLibrary : public AnimationLibrary {
 
     GETSET(StringName,skeleton_path);
     GETSET(Ref<SkeletonProfile>,skeleton_profile)
+    GETSET(float,time_interval);
 
     // Category tracks
     GETSET(TypedArray<String>,category_track_names)
@@ -253,7 +254,7 @@ struct MMAnimationLibrary : public AnimationLibrary {
             u::prints("Animations setup for",anim_name,"duration",length);
 
             auto counter = 0;
-            for(auto time = 0.1f; time < length; time += 0.1f)
+            for(auto time = time_interval; time < length; time += time_interval)
             {
                 int64_t tmp_category_value = 0;
                 for(const auto& category:category_tracks)
@@ -615,9 +616,14 @@ protected:
         }
         ClassDB::add_property_group(get_class_static(), "Dependancy resources", "");
         {
+            ClassDB::bind_method( D_METHOD("set_time_interval" ,"value"), &MMAnimationLibrary::set_time_interval,DEFVAL(0.1f)); 
+            ClassDB::bind_method( D_METHOD("get_time_interval" ), &MMAnimationLibrary::get_time_interval); 
+            godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT,"time_interval"), "set_time_interval", "get_time_interval");
+
             ClassDB::bind_method(D_METHOD("set_skeleton_path", "value"), &MMAnimationLibrary::set_skeleton_path);
             ClassDB::bind_method(D_METHOD("get_skeleton_path"), &MMAnimationLibrary::get_skeleton_path);
             godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::STRING_NAME, "skeleton_path"), "set_skeleton_path", "get_skeleton_path");
+
             ClassDB::bind_method(D_METHOD("set_skeleton_profile", "value"), &MMAnimationLibrary::set_skeleton_profile);
             ClassDB::bind_method(D_METHOD("get_skeleton_profile"), &MMAnimationLibrary::get_skeleton_profile);
             godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::OBJECT, "skeleton_profile", PROPERTY_HINT_RESOURCE_TYPE, "SkeletonProfile"), "set_skeleton_profile", "get_skeleton_profile");

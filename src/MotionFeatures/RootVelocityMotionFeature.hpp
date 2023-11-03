@@ -48,13 +48,7 @@ struct RootVelocityMotionFeature : public MotionFeature {
 
     int root_track_pos =-1, root_track_quat = -1;//, root_track_scale = -1;
 
-    GETSET(Vector3,query_velocity);
-
     String root_bone_track = "%GeneralSkeleton:Root";
-    void set_root_bone_track(String value){
-        root_bone_track = value;
-    }
-    String get_root_bone_track(){return root_bone_track;}
 
     virtual int get_dimension()override{
         return 3;
@@ -66,8 +60,9 @@ struct RootVelocityMotionFeature : public MotionFeature {
     }
 
     virtual void setup_profile(NodePath skeleton_path,Ref<SkeletonProfile> skeleton_profile) override{
+        ERR_FAIL_COND_EDMSG(skeleton_path.is_empty(),"No Root bone to extract data");
         ERR_FAIL_COND_EDMSG(skeleton_profile->get_root_bone().is_empty(),"No Root bone to extract data");
-        
+        root_bone_track = u::str(skeleton_path) + ":" + skeleton_profile->get_root_bone();        
     }
     virtual void setup_for_animation(Ref<Animation> animation)override{
         root_track_pos = animation->find_track(NodePath(root_bone_track),Animation::TrackType::TYPE_POSITION_3D);
@@ -129,20 +124,11 @@ protected:
 
         ClassDB::add_property_group(get_class_static(), "Nodes & Resources Sources", "");
         {
-            ClassDB::bind_method(D_METHOD("set_root_bone_track", "value"), &RootVelocityMotionFeature::set_root_bone_track, DEFVAL("%GeneralSkeleton:Root"));
-            ClassDB::bind_method(D_METHOD("get_root_bone_track"), &RootVelocityMotionFeature::get_root_bone_track);
-            ADD_PROPERTY(PropertyInfo(Variant::STRING, "Root Bone Track"), "set_root_bone_track", "get_root_bone_track");
-
             ClassDB::bind_method(D_METHOD("set_debug_color", "value"), &RootVelocityMotionFeature::set_debug_color);
             ClassDB::bind_method(D_METHOD("get_debug_color"), &RootVelocityMotionFeature::get_debug_color);
             godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::COLOR, "debug_color"), "set_debug_color", "get_debug_color");
         }
-        ClassDB::add_property_group(get_class_static(), "Query to fills", "query");
-        {
-            ClassDB::bind_method( D_METHOD("set_query_velocity" ,"value"), &RootVelocityMotionFeature::set_query_velocity); 
-            ClassDB::bind_method( D_METHOD("get_query_velocity" ), &RootVelocityMotionFeature::get_query_velocity); 
-            godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::VECTOR3,"query_local_velocity",PROPERTY_HINT_NONE,"",PROPERTY_USAGE_EDITOR), "set_query_velocity", "get_query_velocity");
-        }
+
         ClassDB::add_property_group(get_class_static(), "", "");
 
         ClassDB::bind_method( D_METHOD("get_weights"), &RootVelocityMotionFeature::get_weights);
