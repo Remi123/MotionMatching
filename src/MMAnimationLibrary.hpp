@@ -193,15 +193,19 @@ struct MMAnimationLibrary : public AnimationLibrary {
         ERR_FAIL_COND_EDMSG(skeleton_profile == nullptr,"Skeleton_profile is empty");
         ERR_FAIL_COND_EDMSG(skeleton_profile->get_root_bone().is_empty(),"SkeletonProfile requires a Root Bone");
         u::prints("Preparing Features...");
-        nb_dimensions = 0;
+        size_t tmp_nb_dim = 0;
         for(auto i = 0; i < motion_features.size(); ++i )
         {
             MotionFeature* f = Object::cast_to<MotionFeature>(motion_features[i]);
             ERR_FAIL_NULL_MSG(f,"Features no."+u::str(i) + "is null");
             u::prints("Feature no.",i,f->get_name(),"Dimensions:", f->get_dimension());
-            f->setup_profile(NodePath(skeleton_path),skeleton_profile);
-            nb_dimensions += (int)(f->get_dimension());
+            if (false == f->setup_profile(NodePath(skeleton_path),skeleton_profile) )
+            {
+                ERR_FAIL_EDMSG("Motion Feature failed when setting the profile at index " + u::str(i));
+            }
+            tmp_nb_dim += (int)(f->get_dimension());
         }
+        nb_dimensions = tmp_nb_dim;
         u::prints("Total Dimension", nb_dimensions);
 
         godot::TypedArray<godot::StringName> anim_names = get_animation_list();
@@ -212,7 +216,7 @@ struct MMAnimationLibrary : public AnimationLibrary {
         densities.clear();densities.resize(nb_dimensions); densities.fill(Array::make(0.0,0.0));
 
         PackedFloat32Array data = PackedFloat32Array();
-        MotionData.clear();
+        
 
         db_anim_category.clear();db_anim_index.clear();db_anim_timestamp.clear();
 
@@ -230,6 +234,17 @@ struct MMAnimationLibrary : public AnimationLibrary {
             auto anim_name = anim_names[anim_index];
             auto animation = get_animation(anim_name);
 
+            int should_continue = -1;
+            for(auto features_index = 0; features_index < motion_features.size(); ++features_index )
+            {
+                MotionFeature* f = Object::cast_to<MotionFeature>(motion_features[features_index]);
+                if( false == f->setup_for_animation(animation))
+                {
+                    should_continue = features_index;
+                    break;
+                }
+            }
+            ERR_CONTINUE_EDMSG(should_continue != -1,"Skipping Animation '" + (String)anim_name + "' because of motion feature index :" + u::str(should_continue));
 
             std::vector<int32_t> category_tracks{};
             for(auto i = 0 ; i<category_track_names.size();++i)
@@ -244,11 +259,6 @@ struct MMAnimationLibrary : public AnimationLibrary {
                  u::prints("Checking Category Track",category_track_names[i], "result:",category_track != -1);
             }
 
-            for(auto features_index = 0; features_index < motion_features.size(); ++features_index )
-            {
-                MotionFeature* f = Object::cast_to<MotionFeature>(motion_features[features_index]);
-                f->setup_for_animation(animation);
-            }
             const auto length = animation->get_loop_mode() == Animation::LOOP_NONE ? animation->get_length() - 0.2 : animation->get_length() ;
 
             u::prints("Animations setup for",anim_name,"duration",length);
@@ -299,20 +309,16 @@ struct MMAnimationLibrary : public AnimationLibrary {
         {
             means[i] = mean(data_stats[i]);
             variances[i] = variance(data_stats[i]);
+            if (variances[i] <= std::numeric_limits<float>::epsilon() )
+            {
+                variances[i] = 1.0f;
+            }
             Array arr{};
             for(const auto& d : density(data_stats[i]))
             {
                 arr.append(Array::make(d.first,d.second) ); 
             }
             densities[i] = std::move(arr);
-        }
-
-        for(auto& v : variances )
-        {
-            if (v <= std::numeric_limits<float>::epsilon() )
-            {
-                v = 1.0f;
-            }
         }
         
         // // Normalization
@@ -323,6 +329,7 @@ struct MMAnimationLibrary : public AnimationLibrary {
                 data[pose*nb_dimensions + offset] = (data[pose*nb_dimensions + offset] - means[offset])/variances[offset]; 
             }
         }
+
         u::prints("Data Normalized. Copy data to Motion Data property...");
         MotionData = data.duplicate();
 
@@ -618,7 +625,7 @@ protected:
         {
             ClassDB::bind_method( D_METHOD("set_time_interval" ,"value"), &MMAnimationLibrary::set_time_interval,DEFVAL(0.1f)); 
             ClassDB::bind_method( D_METHOD("get_time_interval" ), &MMAnimationLibrary::get_time_interval); 
-            godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT,"time_interval"), "set_time_interval", "get_time_interval");
+            godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT,"time_interval",PROPERTY_HINT_RANGE,"0.01,2.0,0.01,or_greater"), "set_time_interval", "get_time_interval");
 
             ClassDB::bind_method(D_METHOD("set_skeleton_path", "value"), &MMAnimationLibrary::set_skeleton_path);
             ClassDB::bind_method(D_METHOD("get_skeleton_path"), &MMAnimationLibrary::get_skeleton_path);

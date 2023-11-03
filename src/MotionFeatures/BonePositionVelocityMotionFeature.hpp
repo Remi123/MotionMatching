@@ -70,17 +70,17 @@ struct BonePositionVelocityMotionFeature : public MotionFeature {
         }
         return bone_names.size() * 3 * 2;
     }
-    virtual void setup_nodes(Variant main_node, Skeleton3D* skeleton) override{
 
-    }
-    virtual void setup_for_animation(Ref<Animation> animation)override{
-        return;
+    virtual bool setup_for_animation(Ref<Animation> animation)override{
+        return true;
     }
 
 
     NodePath _skel_path;
 
-    virtual void setup_profile(NodePath skeleton_path,Ref<SkeletonProfile> skeleton_profile) override{
+    virtual bool setup_profile(NodePath skeleton_path,Ref<SkeletonProfile> skeleton_profile) override{
+        ERR_FAIL_COND_V_EDMSG(skeleton_path.is_empty(), false,"SkeletonPath is Empty");
+        ERR_FAIL_COND_V_EDMSG(skeleton_profile == nullptr, false,"SkeletonProfile is null");
         _skel = skeleton_profile;
         _skel_path = skeleton_path;
         bones_id.clear();
@@ -91,9 +91,12 @@ struct BonePositionVelocityMotionFeature : public MotionFeature {
                 const size_t id = _skel->find_bone(bone_names[i]);
                 if (id >= 0)
                     bones_id.push_back(id);
+                else
+                    ERR_FAIL_V_EDMSG(false,"Missing Bone " + bone_names[i] + " in the SkeletonProfile");
             }
-            u::prints("Bones id",bone_names,bones_id);
+            return true;
         }
+        return false;
     }
 
     virtual PackedFloat32Array bake_animation_pose(Ref<Animation> animation,float time)override{
@@ -263,7 +266,6 @@ protected:
 
         ClassDB::bind_method( D_METHOD("get_weights"), &BonePositionVelocityMotionFeature::get_weights);
         ClassDB::bind_method( D_METHOD("get_dimension"), &BonePositionVelocityMotionFeature::get_dimension);
-        ClassDB::bind_method( D_METHOD("setup_nodes","character"), &BonePositionVelocityMotionFeature::setup_nodes);
         ClassDB::bind_method( D_METHOD("setup_profile","skeleton_path","skeleton_profile"), &BonePositionVelocityMotionFeature::setup_profile);
         
         ClassDB::bind_method( D_METHOD("setup_for_animation","animation"), &BonePositionVelocityMotionFeature::setup_for_animation);

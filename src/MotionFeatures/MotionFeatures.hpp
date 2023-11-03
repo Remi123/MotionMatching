@@ -42,10 +42,17 @@ struct MotionFeature : public Resource {
     
     virtual PackedFloat32Array get_weights(){ return {};}
 
-    virtual void setup_nodes(Variant main_node, Skeleton3D* skeleton){}
-    virtual void setup_profile(NodePath skeleton_path,Ref<SkeletonProfile> skel_profile){}
+    virtual bool setup_profile(NodePath skeleton_path,Ref<SkeletonProfile> skel_profile){
+        // returning false will abort the process.
+        // feel free to print more details
+        return true;
+    }
 
-    virtual void setup_for_animation(Ref<Animation> animation){}
+    virtual bool setup_for_animation(Ref<Animation> animation){
+        // returning false will skip this animation and print a warning
+        // feel free to print more details
+        return true;
+    }
     virtual PackedFloat32Array bake_animation_pose(Ref<Animation> animation,float time){return {};}
 
     virtual void debug_pose_gizmo(Ref<EditorNode3DGizmo> gizmo, const PackedFloat32Array data,godot::Transform3D tr = godot::Transform3D{}){return;}
@@ -56,8 +63,8 @@ struct MotionFeature : public Resource {
         ClassDB::bind_method( D_METHOD("get_dimension"), &MotionFeature::get_dimension);
 
         ClassDB::bind_method( D_METHOD("get_weights"), &MotionFeature::get_weights);
-
-        ClassDB::bind_method( D_METHOD("setup_nodes","main_node","skeleton"), &MotionFeature::setup_nodes);
+        
+        ClassDB::bind_method( D_METHOD("setup_profile","skeleton_path","skeleton_profile"), &MotionFeature::setup_profile);
         
         ClassDB::bind_method( D_METHOD("setup_for_animation","animation"), &MotionFeature::setup_for_animation);
         ClassDB::bind_method( D_METHOD("bake_animation_pose","animation","time"), &MotionFeature::bake_animation_pose);

@@ -49,6 +49,7 @@ struct RootVelocityMotionFeature : public MotionFeature {
     int root_track_pos =-1, root_track_quat = -1;//, root_track_scale = -1;
 
     String root_bone_track = "%GeneralSkeleton:Root";
+    Transform3D rest_pose = Transform3D();
 
     virtual int get_dimension()override{
         return 3;
@@ -59,20 +60,33 @@ struct RootVelocityMotionFeature : public MotionFeature {
         return Array::make(weight,weight,weight);
     }
 
-    virtual void setup_profile(NodePath skeleton_path,Ref<SkeletonProfile> skeleton_profile) override{
-        ERR_FAIL_COND_EDMSG(skeleton_path.is_empty(),"No Root bone to extract data");
-        ERR_FAIL_COND_EDMSG(skeleton_profile->get_root_bone().is_empty(),"No Root bone to extract data");
-        root_bone_track = u::str(skeleton_path) + ":" + skeleton_profile->get_root_bone();        
+    virtual bool setup_profile(NodePath skeleton_path,Ref<SkeletonProfile> skeleton_profile) override{
+        ERR_FAIL_COND_V_EDMSG(skeleton_path.is_empty(), false,"SkeletonPath is Empty");
+        ERR_FAIL_COND_V_EDMSG(skeleton_profile == null, false,"SkeletonProfile is null");
+        ERR_FAIL_COND_V_EDMSG(skeleton_profile->get_root_bone().is_empty(),false,"No Root bone to extract data");
+        rest_pose = skeleton_profile->get_reference_pose(skeleton_profile->find_bone(skeleton_profile->get_root_bone()));
+        root_bone_track = u::str(skeleton_path) + ":" + skeleton_profile->get_root_bone();
+        return true;
     }
-    virtual void setup_for_animation(Ref<Animation> animation)override{
+    virtual bool setup_for_animation(Ref<Animation> animation)override{
         root_track_pos = animation->find_track(NodePath(root_bone_track),Animation::TrackType::TYPE_POSITION_3D);
         root_track_quat = animation->find_track(NodePath(root_bone_track),Animation::TrackType::TYPE_ROTATION_3D);
+        return true;
     }
 
     virtual PackedFloat32Array bake_animation_pose(Ref<Animation> animation,float time)override{
-        auto pos = animation->position_track_interpolate(root_track_pos,time + 0.05);
-        auto prev_pos = animation->position_track_interpolate(root_track_pos,time);
-        Quaternion rotation = animation->rotation_track_interpolate(root_track_quat,time).normalized();
+        Vector3 pos, prev_pos;
+        if(root_track_pos >= 0)
+        {
+            pos = animation->position_track_interpolate(root_track_pos,time + 0.05);
+            prev_pos = animation->position_track_interpolate(root_track_pos,time);
+        } else {
+            pos = rest_pose.get_origin();
+            prev_pos = rest_pose.get_origin();
+        }
+
+        Quaternion rotation = root_track_quat >= 0 ? animation->rotation_track_interpolate(root_track_quat,time).normalized() :
+                                                    rest_pose.get_basis().get_rotation_quaternion();
 
         Vector3 vel = rotation.xform_inv(pos-prev_pos) / 0.05;
 
@@ -125,7 +139,7 @@ protected:
 
         ClassDB::bind_method( D_METHOD("get_weights"), &RootVelocityMotionFeature::get_weights);
         ClassDB::bind_method( D_METHOD("get_dimension"), &RootVelocityMotionFeature::get_dimension);
-        ClassDB::bind_method( D_METHOD("setup_nodes","character"), &RootVelocityMotionFeature::setup_nodes);        
+
         ClassDB::bind_method( D_METHOD("setup_profile","skeleton_path","skeleton_profile"), &RootVelocityMotionFeature::setup_profile);
         
         ClassDB::bind_method( D_METHOD("setup_for_animation","animation"), &RootVelocityMotionFeature::setup_for_animation);
