@@ -6,8 +6,7 @@
 #include <godot_cpp/classes/engine.hpp>
 #include <godot_cpp/godot.hpp>
 
-#include "CritSpringDamper.hpp"
-#include <MotionMatcher.hpp>
+#include "Spring.hpp"
 #include "MotionFeatures/MotionFeatures.hpp"
 #include "MotionFeatures/RootVelocityMotionFeature.hpp"
 #include "MotionFeatures/BonePositionVelocityMotionFeature.hpp"
@@ -47,7 +46,7 @@ void gdextension_MM_initialize(ModuleInitializationLevel p_level)
 		ClassDB::register_class<MMAnimationPlayer>();
 		ClassDB::register_class<MMAnimationLibrary>();
 
-		ClassDB::register_class<CritDampSpring>();
+		ClassDB::register_class<Spring>();
 	}
 }
 

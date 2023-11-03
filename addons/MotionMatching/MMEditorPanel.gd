@@ -11,10 +11,6 @@ var plugin_ref : EditorPlugin
 
 @onready var choose_anim :MenuButton= $TabContainer/Data/HBoxContainer/MarginContainer5/ChooseAnimation
 
-# func _ready() -> void:
-# 	print('MMEditorPanel Ready')
-# 	update_info()
-
 @onready var infotext : RichTextLabel = $TabContainer/Info/PanelContainer/InfoText
 
 func update_info()->void:
@@ -170,7 +166,8 @@ func update_shown_pose_data(value: float) -> void:
 @onready var dmax := $TabContainer/Calculation/MarginContainer/HFlowContainer/SpinBox3
 @onready var a := $TabContainer/Calculation/MarginContainer/HFlowContainer/Answer2
 func _max_der_calculate(x):
-	a.text = str(CritDampSpring.maximum_spring_velocity_to_halflife(s.value,e.value,dmax.value))
+	Spring
+	a.text = str(Spring.maximum_spring_velocity_to_halflife(s.value,e.value,dmax.value))
 
 
 func on_recalculate_weights()->void:
@@ -271,15 +268,20 @@ func on_file_selected(filename : String) :
 		fileDialog.queue_free() # Dialog has to be freed in order for the script t
 
 # Note: passing a value for the type parameter causes a crash
-static func get_child_of_type(node: Node, child_type):
+static func get_child_of_type(node: Node, child_type, recursive := false):
 	for i in range(node.get_child_count()):
 		var child = node.get_child(i)
-		if is_instance_of(child,child_type):
+		if is_instance_of(child, child_type):
 			return child
+		if recursive:
+			var child_node = get_child_of_type(child, child_type, recursive)
+			if child_node:
+				return child_node
+
 
 func set_skeleton_to_pose(index:float):
 	# Find skeleton
-	var skeleton :Skeleton3D= get_child_of_type(plugin_ref.get_editor_interface().get_edited_scene_root(),Skeleton3D)
+	var skeleton :Skeleton3D= get_child_of_type(EditorInterface.get_edited_scene_root(),Skeleton3D,true)
 	assert(skeleton != null,"Skeleton not found")
 	var nb_dim := _current.nb_dimensions
 

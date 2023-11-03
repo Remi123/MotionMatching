@@ -50,13 +50,8 @@ using namespace godot;
 struct BonePositionVelocityMotionFeature : public MotionFeature {
     GDCLASS(BonePositionVelocityMotionFeature,MotionFeature)
 
-    virtual ~BonePositionVelocityMotionFeature() = default;
-
     // Skeleton
-    Skeleton3D* _skeleton = nullptr;
     Ref<SkeletonProfile> _skel = nullptr;
-
-
 
     PackedStringArray bone_names{};
     void set_bone_names(PackedStringArray value){
@@ -75,74 +70,17 @@ struct BonePositionVelocityMotionFeature : public MotionFeature {
         }
         return bone_names.size() * 3 * 2;
     }
-    virtual void setup_nodes(Variant main_node, Skeleton3D* skeleton) override{
-        // bones_id.clear();
-        // if(skeleton!=nullptr)
-        // {
-        //     _skeleton = skeleton;
-        //     for(size_t i = 0; i < bone_names.size();++i)
-        //     {
-        //         const size_t id = _skeleton->find_bone(bone_names[i]);
-        //         if (id >= 0)
-        //             bones_id.push_back(id);
-        //     }
-        //     u::prints("Bones id",bone_names,bones_id);
-        // }
-        
-        // last_known_positions.resize(bones_id.size());
-        // last_known_positions.fill({});
-        // last_known_velocities.resize(bones_id.size());
-        // last_known_velocities.fill({});
-        // if (use_inertialization)
-        // {
-        //     last_known_result.resize(bones_id.size() * 3);
-        //     last_known_result.fill({});
-        //     return;
-        // }
-        // last_known_result.resize(bones_id.size() * 2 * 3);
-        // last_known_result.fill({});
-    }
-    virtual void setup_for_animation(Ref<Animation> animation)override{
-        return;
-        _skeleton->reset_bone_poses();
-        bone_tracks.clear();
-        bones_id.clear();
-        for(size_t i = 0; i < bone_names.size();++i)
-        {
-            const size_t id = _skeleton->find_bone(bone_names[i]);
-            if (id >= 0)
-                bones_id.push_back(id);
-        }
-        for (auto bone_id = 0; bone_id < _skeleton->get_bone_count(); ++bone_id)
-        {
-            bone_tracks[bone_id] = Array::make(-1,-1,-1);
-        }
-        for (int track_id = 0; track_id < animation->get_track_count(); ++track_id)
-        {
-            // Easier to find bone with the track name than vice-versa
-            const auto bone_idx = _skeleton->find_bone(animation->track_get_path(track_id).get_subname(0));
-            if (bone_idx == -1)
-                continue;
 
-            if (animation->track_get_type(track_id) == Animation::TYPE_POSITION_3D)
-            {
-                bone_tracks[bone_idx][0] = track_id;
-            }
-            else if (animation->track_get_type(track_id) == Animation::TYPE_ROTATION_3D)
-            {
-                bone_tracks[bone_idx][1] = track_id;
-            }
-            else if (animation->track_get_type(track_id) == Animation::TYPE_SCALE_3D)
-            {
-                bone_tracks[bone_idx][2] = track_id;
-            }
-        }
+    virtual bool setup_for_animation(Ref<Animation> animation)override{
+        return true;
     }
 
 
     NodePath _skel_path;
 
-    virtual void setup_profile(NodePath skeleton_path,Ref<SkeletonProfile> skeleton_profile) override{
+    virtual bool setup_profile(NodePath skeleton_path,Ref<SkeletonProfile> skeleton_profile) override{
+        ERR_FAIL_COND_V_EDMSG(skeleton_path.is_empty(), false,"SkeletonPath is Empty");
+        ERR_FAIL_COND_V_EDMSG(skeleton_profile == nullptr, false,"SkeletonProfile is null");
         _skel = skeleton_profile;
         _skel_path = skeleton_path;
         bones_id.clear();
@@ -153,13 +91,15 @@ struct BonePositionVelocityMotionFeature : public MotionFeature {
                 const size_t id = _skel->find_bone(bone_names[i]);
                 if (id >= 0)
                     bones_id.push_back(id);
+                else
+                    ERR_FAIL_V_EDMSG(false,"Missing Bone " + bone_names[i] + " in the SkeletonProfile");
             }
-            u::prints("Bones id",bone_names,bones_id);
+            return true;
         }
+        return false;
     }
 
     virtual PackedFloat32Array bake_animation_pose(Ref<Animation> animation,float time)override{
-        constexpr float dt = 0.05f;
 
         PackedFloat32Array result{};
         kform kbone{};
@@ -168,8 +108,7 @@ struct BonePositionVelocityMotionFeature : public MotionFeature {
         {
             auto path = u::str(_skel_path)+u::str(":")+bone_names[index];
             kbone = MMAnimationLibrary::sample_bone_rootmotion_kform(animation,time,_skel,path);
-            // kbone = kform(_skel,animation,time,path,kform::Space::Model);
-            
+                        
             // Serialize
             if (use_inertialization)
             {
@@ -195,55 +134,12 @@ struct BonePositionVelocityMotionFeature : public MotionFeature {
 
     Vector3 inertialization_cost_function(Vector3 pos, Vector3 vel, float halflife)
     {
-        const auto halfdamp =  CritDampSpring::halflife_to_damping(halflife) / 2.0;
+        const auto halfdamp =  Spring::halflife_to_damping(halflife) / 2.0;
         return (2*pos) / halfdamp + vel / (halfdamp * halfdamp);
     }
 
     GETSET(PackedVector3Array,bones_pos);
     GETSET(PackedVector3Array,bones_vel);
-
-    GETSET(MMAnimationPlayer*, mm_player);
-
-    virtual PackedFloat32Array broadphase_query_pose(Dictionary blackboard,float delta) override{        
-        ERR_FAIL_NULL_V_MSG(mm_player,{},"animation player not set");
-        bones_pos.resize(bones_id.size());
-        bones_vel.resize(bones_id.size());
-        constexpr size_t size = 3;
-
-        PackedFloat32Array last_known_result{};
-
-
-        if(use_inertialization)
-        {
-            last_known_result.resize(bones_id.size() * 3);
-            for (size_t i = 0; i < bones_id.size(); ++i)
-            {
-                Vector3 pos = bones_pos[i], vel = bones_vel[i];
-                auto cost = inertialization_cost_function(pos, vel, inertialization_halflife);
-                last_known_result[i * size] = cost.x;
-                last_known_result[i * size + 1] = cost.y;
-                last_known_result[i * size + 2] = cost.z;
-            }
-            return last_known_result;
-        }
-
-        last_known_result.resize(bones_id.size()*2*3);
-
-
-        for(size_t i = 0; i < bones_id.size(); ++i)
-        {
-            kform b = mm_player->get_bone_info(bone_names[i],kform::Space::Global);
-            Vector3 pos = b.pos, vel = b.vel;
-
-            last_known_result[i * size * 2] = pos.x;
-            last_known_result[i * size * 2 + 1] = pos.y;
-            last_known_result[i * size * 2 + 2] = pos.z;
-            last_known_result[i * size * 2 + size] = vel.x;
-            last_known_result[i * size * 2 + size + 1] = vel.y;
-            last_known_result[i * size * 2 + size + 2] = vel.z;
-        }
-        return last_known_result;
-    }
 
     float weight_bone_pos{1.0f}; float get_weight_bone_pos(){return weight_bone_pos;} void set_weight_bone_pos(float value){weight_bone_pos = value;}
     float weight_bone_vel{1.0f}; float get_weight_bone_vel(){return weight_bone_vel;} void set_weight_bone_vel(float value){weight_bone_vel = value;}
@@ -271,12 +167,6 @@ struct BonePositionVelocityMotionFeature : public MotionFeature {
         }
         return result;
     }
-
-    String root_bone_name = "Root";
-    void set_root_bone_name(String value){
-        root_bone_name = value;
-    }
-    String get_root_bone_name(){return root_bone_name;}
 
     GETSET(bool,use_inertialization)
     GETSET(float,inertialization_halflife,0.01)
@@ -327,6 +217,10 @@ protected:
             ClassDB::bind_method(D_METHOD("serialize_MMAnimationPlayer", "body"), &BonePositionVelocityMotionFeature::serialize_mmplayer);
         }
 
+        ClassDB::bind_method(D_METHOD("set_bone_names", "value"), &BonePositionVelocityMotionFeature::set_bone_names);
+        ClassDB::bind_method(D_METHOD("get_bone_names"), &BonePositionVelocityMotionFeature::get_bone_names);
+        ADD_PROPERTY(PropertyInfo(Variant::PACKED_STRING_ARRAY, "Bones Names"), "set_bone_names", "get_bone_names");
+
         ClassDB::bind_method(D_METHOD("set_weight_bone_pos", "value"), &BonePositionVelocityMotionFeature::set_weight_bone_pos);
         ClassDB::bind_method(D_METHOD("get_weight_bone_pos"), &BonePositionVelocityMotionFeature::get_weight_bone_pos);
         godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT, "weight_bone_pos"), "set_weight_bone_pos", "get_weight_bone_pos");
@@ -341,21 +235,13 @@ protected:
 
         ClassDB::add_property_group(get_class_static(), "Nodes & Resources Sources", "");
         {
-            ClassDB::bind_method( D_METHOD("set_use_inertialization" ,"value"), &BonePositionVelocityMotionFeature::set_use_inertialization); 
+            ClassDB::bind_method( D_METHOD("set_use_inertialization" ,"value"), &BonePositionVelocityMotionFeature::set_use_inertialization,DEFVAL(false)); 
             ClassDB::bind_method( D_METHOD("get_use_inertialization" ), &BonePositionVelocityMotionFeature::get_use_inertialization); 
             godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::BOOL,"use_inertialization"), "set_use_inertialization", "get_use_inertialization");
 
-            ClassDB::bind_method( D_METHOD("set_inertialization_halflife" ,"value"), &BonePositionVelocityMotionFeature::set_inertialization_halflife); 
+            ClassDB::bind_method( D_METHOD("set_inertialization_halflife" ,"value"), &BonePositionVelocityMotionFeature::set_inertialization_halflife, DEFVAL(0.1f)); 
             ClassDB::bind_method( D_METHOD("get_inertialization_halflife" ), &BonePositionVelocityMotionFeature::get_inertialization_halflife); 
             godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT,"inertialization_halflife"), "set_inertialization_halflife", "get_inertialization_halflife");
-
-            ClassDB::bind_method(D_METHOD("set_root_bone_name", "value"), &BonePositionVelocityMotionFeature::set_root_bone_name, DEFVAL("Root"));
-            ClassDB::bind_method(D_METHOD("get_root_bone_name"), &BonePositionVelocityMotionFeature::get_root_bone_name);
-            ADD_PROPERTY(PropertyInfo(Variant::STRING, "Root Bone"), "set_root_bone_name", "get_root_bone_name");
-
-            ClassDB::bind_method(D_METHOD("set_bone_names", "value"), &BonePositionVelocityMotionFeature::set_bone_names);
-            ClassDB::bind_method(D_METHOD("get_bone_names"), &BonePositionVelocityMotionFeature::get_bone_names);
-            ADD_PROPERTY(PropertyInfo(Variant::PACKED_STRING_ARRAY, "Bones"), "set_bone_names", "get_bone_names");
 
             ClassDB::bind_method(D_METHOD("set_debug_color_position", "value"), &BonePositionVelocityMotionFeature::set_debug_color_position);
             ClassDB::bind_method(D_METHOD("get_debug_color_position"), &BonePositionVelocityMotionFeature::get_debug_color_position);
@@ -364,10 +250,6 @@ protected:
             ClassDB::bind_method(D_METHOD("set_debug_color_velocity", "value"), &BonePositionVelocityMotionFeature::set_debug_color_velocity);
             ClassDB::bind_method(D_METHOD("get_debug_color_velocity"), &BonePositionVelocityMotionFeature::get_debug_color_velocity);
             godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::COLOR, "debug_color_velocity"), "set_debug_color_velocity", "get_debug_color_velocity");
-        }
-        ClassDB::add_property_group(get_class_static(), "Queries to fill", "query");
-        {
-            ClassDB::bind_method(D_METHOD("set_mm_player", "animation_player"), &BonePositionVelocityMotionFeature::set_mm_player);
         }
 
         ClassDB::add_property_group(get_class_static(), "", "");
@@ -384,13 +266,10 @@ protected:
 
         ClassDB::bind_method( D_METHOD("get_weights"), &BonePositionVelocityMotionFeature::get_weights);
         ClassDB::bind_method( D_METHOD("get_dimension"), &BonePositionVelocityMotionFeature::get_dimension);
-        ClassDB::bind_method( D_METHOD("setup_nodes","character"), &BonePositionVelocityMotionFeature::setup_nodes);
         ClassDB::bind_method( D_METHOD("setup_profile","skeleton_path","skeleton_profile"), &BonePositionVelocityMotionFeature::setup_profile);
         
         ClassDB::bind_method( D_METHOD("setup_for_animation","animation"), &BonePositionVelocityMotionFeature::setup_for_animation);
         ClassDB::bind_method( D_METHOD("bake_animation_pose","animation","time"), &BonePositionVelocityMotionFeature::bake_animation_pose);
-
-        ClassDB::bind_method( D_METHOD("broadphase_query_pose","blackboard","delta"), &BonePositionVelocityMotionFeature::broadphase_query_pose);
 
         ClassDB::bind_method( D_METHOD("debug_pose_gizmo","gizmo","data","root_transform"), &BonePositionVelocityMotionFeature::debug_pose_gizmo);
     }

@@ -46,18 +46,10 @@ using u = godot::UtilityFunctions;
 struct RootVelocityMotionFeature : public MotionFeature {
     GDCLASS(RootVelocityMotionFeature,MotionFeature);
 
-
-    virtual ~RootVelocityMotionFeature() = default;
-
     int root_track_pos =-1, root_track_quat = -1;//, root_track_scale = -1;
 
-    GETSET(Vector3,query_velocity);
-
-    String root_bone_name = "%GeneralSkeleton:Root";
-    void set_root_bone_name(String value){
-        root_bone_name = value;
-    }
-    String get_root_bone_name(){return root_bone_name;}
+    String root_bone_track = "%GeneralSkeleton:Root";
+    Transform3D rest_pose = Transform3D();
 
     virtual int get_dimension()override{
         return 3;
@@ -68,18 +60,33 @@ struct RootVelocityMotionFeature : public MotionFeature {
         return Array::make(weight,weight,weight);
     }
 
-    virtual void setup_nodes(Variant main_node, Skeleton3D* skeleton) override{
-
+    virtual bool setup_profile(NodePath skeleton_path,Ref<SkeletonProfile> skeleton_profile) override{
+        ERR_FAIL_COND_V_EDMSG(skeleton_path.is_empty(), false,"SkeletonPath is Empty");
+        ERR_FAIL_COND_V_EDMSG(skeleton_profile == nullptr, false,"SkeletonProfile is null");
+        ERR_FAIL_COND_V_EDMSG(skeleton_profile->get_root_bone().is_empty(),false,"No Root bone to extract data");
+        rest_pose = skeleton_profile->get_reference_pose(skeleton_profile->find_bone(skeleton_profile->get_root_bone()));
+        root_bone_track = u::str(skeleton_path) + ":" + skeleton_profile->get_root_bone();
+        return true;
     }
-    virtual void setup_for_animation(Ref<Animation> animation)override{
-        root_track_pos = animation->find_track(NodePath(root_bone_name),Animation::TrackType::TYPE_POSITION_3D);
-        root_track_quat = animation->find_track(NodePath(root_bone_name),Animation::TrackType::TYPE_ROTATION_3D);
+    virtual bool setup_for_animation(Ref<Animation> animation)override{
+        root_track_pos = animation->find_track(NodePath(root_bone_track),Animation::TrackType::TYPE_POSITION_3D);
+        root_track_quat = animation->find_track(NodePath(root_bone_track),Animation::TrackType::TYPE_ROTATION_3D);
+        return true;
     }
 
     virtual PackedFloat32Array bake_animation_pose(Ref<Animation> animation,float time)override{
-        auto pos = animation->position_track_interpolate(root_track_pos,time + 0.05);
-        auto prev_pos = animation->position_track_interpolate(root_track_pos,time);
-        Quaternion rotation = animation->rotation_track_interpolate(root_track_quat,time).normalized();
+        Vector3 pos, prev_pos;
+        if(root_track_pos >= 0)
+        {
+            pos = animation->position_track_interpolate(root_track_pos,time + 0.05);
+            prev_pos = animation->position_track_interpolate(root_track_pos,time);
+        } else {
+            pos = rest_pose.get_origin();
+            prev_pos = rest_pose.get_origin();
+        }
+
+        Quaternion rotation = root_track_quat >= 0 ? animation->rotation_track_interpolate(root_track_quat,time).normalized() :
+                                                    rest_pose.get_basis().get_rotation_quaternion();
 
         Vector3 vel = rotation.xform_inv(pos-prev_pos) / 0.05;
 
@@ -87,14 +94,6 @@ struct RootVelocityMotionFeature : public MotionFeature {
         result.push_back(vel.x);
         result.push_back(vel.y);
         result.push_back(vel.z);
-        return result;
-    }
-
-    virtual PackedFloat32Array broadphase_query_pose(Dictionary blackboard,float delta) override{ 
-        PackedFloat32Array result{};
-        result.push_back(query_velocity.x);
-        result.push_back(query_velocity.y);
-        result.push_back(query_velocity.z);
         return result;
     }
 
@@ -131,32 +130,21 @@ protected:
 
         ClassDB::add_property_group(get_class_static(), "Nodes & Resources Sources", "");
         {
-            ClassDB::bind_method(D_METHOD("set_root_bone_name", "value"), &RootVelocityMotionFeature::set_root_bone_name, DEFVAL("%GeneralSkeleton:Root"));
-            ClassDB::bind_method(D_METHOD("get_root_bone_name"), &RootVelocityMotionFeature::get_root_bone_name);
-            ADD_PROPERTY(PropertyInfo(Variant::STRING, "Root Bone"), "set_root_bone_name", "get_root_bone_name");
-
             ClassDB::bind_method(D_METHOD("set_debug_color", "value"), &RootVelocityMotionFeature::set_debug_color);
             ClassDB::bind_method(D_METHOD("get_debug_color"), &RootVelocityMotionFeature::get_debug_color);
             godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::COLOR, "debug_color"), "set_debug_color", "get_debug_color");
         }
-        ClassDB::add_property_group(get_class_static(), "Query to fills", "query");
-        {
-            ClassDB::bind_method( D_METHOD("set_query_velocity" ,"value"), &RootVelocityMotionFeature::set_query_velocity); 
-            ClassDB::bind_method( D_METHOD("get_query_velocity" ), &RootVelocityMotionFeature::get_query_velocity); 
-            godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::VECTOR3,"query_local_velocity",PROPERTY_HINT_NONE,"",PROPERTY_USAGE_EDITOR), "set_query_velocity", "get_query_velocity");
-        }
+
         ClassDB::add_property_group(get_class_static(), "", "");
 
         ClassDB::bind_method( D_METHOD("get_weights"), &RootVelocityMotionFeature::get_weights);
         ClassDB::bind_method( D_METHOD("get_dimension"), &RootVelocityMotionFeature::get_dimension);
-        ClassDB::bind_method( D_METHOD("setup_nodes","character"), &RootVelocityMotionFeature::setup_nodes);        
+
         ClassDB::bind_method( D_METHOD("setup_profile","skeleton_path","skeleton_profile"), &RootVelocityMotionFeature::setup_profile);
         
         ClassDB::bind_method( D_METHOD("setup_for_animation","animation"), &RootVelocityMotionFeature::setup_for_animation);
         ClassDB::bind_method( D_METHOD("bake_animation_pose","animation","time"), &RootVelocityMotionFeature::bake_animation_pose);
-
-        ClassDB::bind_method( D_METHOD("broadphase_query_pose","blackboard","delta"), &RootVelocityMotionFeature::broadphase_query_pose);
-
+        
         ClassDB::bind_method( D_METHOD("debug_pose_gizmo","gizmo","data","root_transform"), &RootVelocityMotionFeature::debug_pose_gizmo);
     }
 

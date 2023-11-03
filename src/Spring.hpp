@@ -13,9 +13,9 @@
 
 using namespace godot;
 
-struct CritDampSpring : public RefCounted
+struct Spring : public RefCounted
 {
-    GDCLASS(CritDampSpring,RefCounted)
+    GDCLASS(Spring,RefCounted)
 
     static constexpr float Ln2 = 0.69314718056;
 
@@ -24,12 +24,12 @@ struct CritDampSpring : public RefCounted
     }
 
     static Vector3 damp_adjustment_exact(Vector3 g, float halflife, float dt, float eps=1e-8) {
-        float factor = 1.0 - fast_negexp((CritDampSpring::Ln2 * dt) / (halflife + eps));
+        float factor = 1.0 - fast_negexp((Spring::Ln2 * dt) / (halflife + eps));
         return g * factor;
     }
 
     static Quaternion damp_adjustment_exact_quat(Quaternion g, float halflife, float dt, float eps=1e-8) {
-        float factor = 1.0 - fast_negexp((CritDampSpring::Ln2 * dt) / (halflife + eps));
+        float factor = 1.0 - fast_negexp((Spring::Ln2 * dt) / (halflife + eps));
         return Quaternion().slerp(g, factor).normalized();
     }
     static Variant damper_exponential(Variant variable, Variant goal, float damping, float dt) {
@@ -43,7 +43,7 @@ struct CritDampSpring : public RefCounted
     }
 
     static inline Variant damper_exact(Variant variable, Variant goal, float halflife, float dt, float eps = 1e-5f) {
-        return Math::lerp(variable, goal, 1.0f - fast_negexp((CritDampSpring::Ln2 * dt) / (halflife + eps)));
+        return Math::lerp(variable, goal, 1.0f - fast_negexp((Spring::Ln2 * dt) / (halflife + eps)));
     }
 
     static inline float halflife_to_damping(float halflife, float eps = 1e-5f) {
@@ -422,7 +422,7 @@ struct CritDampSpring : public RefCounted
         const float halflife,
         const float dt)
     {
-        CritDampSpring::_decay_spring_damper_exact(off_x, off_v, halflife, dt);
+        Spring::_decay_spring_damper_exact(off_x, off_v, halflife, dt);
         out_x = in_x + off_x;
         out_v = in_v + off_v;
     }
@@ -435,7 +435,7 @@ struct CritDampSpring : public RefCounted
         const Quaternion dst_x,
         const Vector3 dst_v)
     {
-        off_x = CritDampSpring::quat_abs((off_x * src_x) * dst_x.inverse()).normalized();
+        off_x = Spring::quat_abs((off_x * src_x) * dst_x.inverse()).normalized();
         off_v = (off_v + src_v) - dst_v;
     }
     static inline void inertialize_update(
@@ -448,7 +448,7 @@ struct CritDampSpring : public RefCounted
         const float halflife,
         const float dt)
     {
-        CritDampSpring::_decay_spring_damper_exact(off_x, off_v, halflife, dt);
+        Spring::_decay_spring_damper_exact(off_x, off_v, halflife, dt);
         out_x = (off_x * in_x).normalized();
         out_v = off_v + off_x.xform(in_v);
     }
@@ -459,7 +459,7 @@ struct CritDampSpring : public RefCounted
     }
     static inline Quaternion calculate_offset_quat(const Quaternion src_q,const Quaternion dst_q,const Quaternion off_q = Quaternion())
     {
-        return CritDampSpring::quat_abs((off_q * src_q) * dst_q.inverse());
+        return Spring::quat_abs((off_q * src_q) * dst_q.inverse());
     }
 
 
@@ -480,7 +480,7 @@ struct CritDampSpring : public RefCounted
         Dictionary result;
         result["position_offset"] = (src_x + off_x) - dst_x;
         result["velocity_offset"] = (src_v + off_v) - dst_v;
-        result["rotation_offset"] = CritDampSpring::quat_abs((off_q * src_q) * dst_q.inverse());
+        result["rotation_offset"] = Spring::quat_abs((off_q * src_q) * dst_q.inverse());
         result["angular_offset"] = (off_a + src_a) - dst_a;
         return result;
     }
@@ -491,30 +491,30 @@ protected:
     static void _bind_methods() {
         
 
-        ClassDB::bind_static_method("CritDampSpring", D_METHOD("damper_exponential", "variable", "goal", "damping", "dt"), &CritDampSpring::damper_exponential);
-        ClassDB::bind_static_method("CritDampSpring", D_METHOD("damp_adjustment_exact_quat", "g", "halflife", "dt", "eps"), &CritDampSpring::damp_adjustment_exact_quat, DEFVAL(1e-8f));
-        ClassDB::bind_static_method("CritDampSpring", D_METHOD("damp_adjustment_exact", "g", "halflife", "dt", "eps"), &CritDampSpring::damp_adjustment_exact, DEFVAL(1e-8f));
+        ClassDB::bind_static_method("Spring", D_METHOD("damper_exponential", "variable", "goal", "damping", "dt"), &Spring::damper_exponential);
+        ClassDB::bind_static_method("Spring", D_METHOD("damp_adjustment_exact_quat", "g", "halflife", "dt", "eps"), &Spring::damp_adjustment_exact_quat, DEFVAL(1e-8f));
+        ClassDB::bind_static_method("Spring", D_METHOD("damp_adjustment_exact", "g", "halflife", "dt", "eps"), &Spring::damp_adjustment_exact, DEFVAL(1e-8f));
 
-        ClassDB::bind_static_method("CritDampSpring", D_METHOD("halflife_to_duration", "halflife", "initial_value", "eps"), &CritDampSpring::halflife_to_duration, DEFVAL(1.0f), DEFVAL(1e-5f));
-        ClassDB::bind_static_method("CritDampSpring", D_METHOD("halflife_to_damping", "halflife", "eps"), &CritDampSpring::halflife_to_damping, DEFVAL(1e-5f));
-        ClassDB::bind_static_method("CritDampSpring", D_METHOD("damping_to_halflife", "damping", "eps"), &CritDampSpring::damping_to_halflife, DEFVAL(1e-5f));
-        ClassDB::bind_static_method("CritDampSpring", D_METHOD("frequency_to_stiffness", "frequency"), &CritDampSpring::frequency_to_stiffness);
-        ClassDB::bind_static_method("CritDampSpring", D_METHOD("stiffness_to_frequency", "stiffness"), &CritDampSpring::stiffness_to_frequency);
-        ClassDB::bind_static_method("CritDampSpring", D_METHOD("critical_halflife", "frequency"), &CritDampSpring::critical_halflife);
-        ClassDB::bind_static_method("CritDampSpring", D_METHOD("critical_frequency", "halflife"), &CritDampSpring::critical_frequency);
-        ClassDB::bind_static_method("CritDampSpring", D_METHOD("damping_ratio_to_stiffness", "ratio", "damping"), &CritDampSpring::damping_ratio_to_stiffness);
-        ClassDB::bind_static_method("CritDampSpring", D_METHOD("damping_ratio_to_damping", "ratio", "stiffness"), &CritDampSpring::damping_ratio_to_damping);
+        ClassDB::bind_static_method("Spring", D_METHOD("halflife_to_duration", "halflife", "initial_value", "eps"), &Spring::halflife_to_duration, DEFVAL(1.0f), DEFVAL(1e-5f));
+        ClassDB::bind_static_method("Spring", D_METHOD("halflife_to_damping", "halflife", "eps"), &Spring::halflife_to_damping, DEFVAL(1e-5f));
+        ClassDB::bind_static_method("Spring", D_METHOD("damping_to_halflife", "damping", "eps"), &Spring::damping_to_halflife, DEFVAL(1e-5f));
+        ClassDB::bind_static_method("Spring", D_METHOD("frequency_to_stiffness", "frequency"), &Spring::frequency_to_stiffness);
+        ClassDB::bind_static_method("Spring", D_METHOD("stiffness_to_frequency", "stiffness"), &Spring::stiffness_to_frequency);
+        ClassDB::bind_static_method("Spring", D_METHOD("critical_halflife", "frequency"), &Spring::critical_halflife);
+        ClassDB::bind_static_method("Spring", D_METHOD("critical_frequency", "halflife"), &Spring::critical_frequency);
+        ClassDB::bind_static_method("Spring", D_METHOD("damping_ratio_to_stiffness", "ratio", "damping"), &Spring::damping_ratio_to_stiffness);
+        ClassDB::bind_static_method("Spring", D_METHOD("damping_ratio_to_damping", "ratio", "stiffness"), &Spring::damping_ratio_to_damping);
 
-        ClassDB::bind_static_method("CritDampSpring", D_METHOD("maximum_spring_velocity_to_halflife", "x", "x_goal", "v_max"), &CritDampSpring::maximum_spring_velocity_to_halflife);
+        ClassDB::bind_static_method("Spring", D_METHOD("maximum_spring_velocity_to_halflife", "x", "x_goal", "v_max"), &Spring::maximum_spring_velocity_to_halflife);
 
-        ClassDB::bind_static_method("CritDampSpring", D_METHOD("timed_spring_damper_exact", "x", "v", "xi", "x_goal", "t_goal", "halflife", "dt", "apprehension"), &CritDampSpring::timed_spring_damper_exact, DEFVAL(2.0f));
-        ClassDB::bind_static_method("CritDampSpring", D_METHOD("decay_spring_damper_exact", "pos", "vel", "halflife", "dt"), &CritDampSpring::decay_spring_damper_exact);
-        ClassDB::bind_static_method("CritDampSpring", D_METHOD("simple_spring_damper_exact", "x", "v", "x_goal", "halflife", "dt"), &CritDampSpring::simple_spring_damper_exact);
-        ClassDB::bind_static_method("CritDampSpring", D_METHOD("critical_spring_damper_exact", "x", "v", "x_goal", "v_goal", "halflife", "dt"), &CritDampSpring::critical_spring_damper_exact);
-        // ClassDB::bind_static_method("CritDampSpring", D_METHOD("spring_damper_exact", "x", "v", "x_goal", "v_goal", "damping_ratio", "halflife", "dt", "eps"), &CritDampSpring::spring_damper_exact, DEFVAL(1e-5f));
+        ClassDB::bind_static_method("Spring", D_METHOD("timed_spring_damper_exact", "x", "v", "xi", "x_goal", "t_goal", "halflife", "dt", "apprehension"), &Spring::timed_spring_damper_exact, DEFVAL(2.0f));
+        ClassDB::bind_static_method("Spring", D_METHOD("decay_spring_damper_exact", "pos", "vel", "halflife", "dt"), &Spring::decay_spring_damper_exact);
+        ClassDB::bind_static_method("Spring", D_METHOD("simple_spring_damper_exact", "x", "v", "x_goal", "halflife", "dt"), &Spring::simple_spring_damper_exact);
+        ClassDB::bind_static_method("Spring", D_METHOD("critical_spring_damper_exact", "x", "v", "x_goal", "v_goal", "halflife", "dt"), &Spring::critical_spring_damper_exact);
+        // ClassDB::bind_static_method("Spring", D_METHOD("spring_damper_exact", "x", "v", "x_goal", "v_goal", "damping_ratio", "halflife", "dt", "eps"), &CritDampSpring::spring_damper_exact, DEFVAL(1e-5f));
 
-        ClassDB::bind_static_method("CritDampSpring", D_METHOD("character_update", "pos", "vel", "acc", "quaternion", "angular_velocity", "v_goal", "q_goal", "halflife_vel", "halflife_rot", "dt"), &CritDampSpring::character_update);
-        ClassDB::bind_static_method("CritDampSpring", D_METHOD("character_predict", "x", "v", "a", "q", "angular_v", "v_goal", "q_goal", "halflife_v", "halflife_q", "dts"),&CritDampSpring::character_predict);
+        ClassDB::bind_static_method("Spring", D_METHOD("character_update", "pos", "vel", "acc", "quaternion", "angular_velocity", "v_goal", "q_goal", "halflife_vel", "halflife_rot", "dt"), &Spring::character_update);
+        ClassDB::bind_static_method("Spring", D_METHOD("character_predict", "x", "v", "a", "q", "angular_v", "v_goal", "q_goal", "halflife_v", "halflife_q", "dts"),&Spring::character_predict);
     }
 
 };

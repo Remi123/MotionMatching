@@ -27,8 +27,6 @@
 #include <godot_cpp/classes/standard_material3d.hpp>
 #include <godot_cpp/classes/box_mesh.hpp>
 
-#include <godot_cpp/classes/character_body3d.hpp>
-
 #include <MotionFeatures/MotionFeatures.hpp>
 
 using namespace godot;
@@ -44,7 +42,7 @@ struct TrajectoryMotionFeature : public MotionFeature{
     virtual ~TrajectoryMotionFeature() = default;
 
     Skeleton3D* skeleton{nullptr}; Skeleton3D* get_skeleton(){return skeleton;} void set_skeleton(Skeleton3D* value){skeleton = value;}
-    GETSET(String,root_bone_name,"%GeneralSkeleton:Root")
+    String root_bone_track = "%GeneralSkeleton:Root";
 
     GETSET(NodePath,character_path);
 
@@ -85,22 +83,26 @@ public:
         return past_pos + future_pos + future_rot_angle ;
     }
 
-    CharacterBody3D* body;
-    virtual void setup_nodes(Variant main_node, Skeleton3D* skeleton) override{
-    }
-
     int root_tracks[3] = {0,0,0};
     Vector3 start_pos,start_vel,end_pos,end_vel;
     Quaternion start_rot,end_rot, end_ang_vel;
     float start_time = 0.0f, end_time = 0.0f;
 
-    virtual void setup_for_animation(Ref<Animation> animation) override
+    virtual bool setup_profile(NodePath skeleton_path,Ref<SkeletonProfile> skeleton_profile) override{
+        ERR_FAIL_COND_V_EDMSG(skeleton_path.is_empty(), false,"SkeletonPath is Empty");
+        ERR_FAIL_COND_V_EDMSG(skeleton_profile == nullptr, false,"SkeletonProfile is null");
+        ERR_FAIL_COND_V_EDMSG(skeleton_profile->get_root_bone().is_empty(),false,"No Root bone to extract data");
+        root_bone_track = u::str(skeleton_path) + ":" + skeleton_profile->get_root_bone();
+        return true;
+    };
+
+    virtual bool setup_for_animation(Ref<Animation> animation) override
     {
         start_time = 0.1f;
         end_time = std::floor(animation->get_length() * 10)/10.0f;
-        root_tracks[0] = animation->find_track(root_bone_name, Animation::TrackType::TYPE_POSITION_3D);
-        root_tracks[1] = animation->find_track(root_bone_name, Animation::TrackType::TYPE_ROTATION_3D);
-        root_tracks[2] = animation->find_track(root_bone_name, Animation::TrackType::TYPE_SCALE_3D);
+        root_tracks[0] = animation->find_track(root_bone_track, Animation::TrackType::TYPE_POSITION_3D);
+        root_tracks[1] = animation->find_track(root_bone_track, Animation::TrackType::TYPE_ROTATION_3D);
+        root_tracks[2] = animation->find_track(root_bone_track, Animation::TrackType::TYPE_SCALE_3D);
         {
             start_pos = animation->position_track_interpolate(root_tracks[0], 0.0);
             start_rot = animation->rotation_track_interpolate(root_tracks[1], 0.0);
@@ -113,6 +115,7 @@ public:
 
             end_ang_vel = animation->rotation_track_interpolate(root_tracks[1], animation->get_length() - delta - 0.1).inverse() * animation->rotation_track_interpolate(root_tracks[1], animation->get_length() - delta);
         }
+        return true;
     }
 
     virtual PackedFloat32Array bake_animation_pose(Ref<Animation> animation,float time)override 
@@ -184,29 +187,6 @@ public:
     GETSET(PackedVector3Array,future_pos)
     GETSET(PackedFloat32Array,future_dir)
 
-    virtual PackedFloat32Array broadphase_query_pose(Dictionary blackboard,float delta) override{
-        PackedFloat32Array result{};
-
-        bool valid = false;
-        {
-            for(auto elem: history_pos)
-            {
-                result.append(elem.x);
-                result.append(elem.z);
-            }
-            for(auto elem: future_pos)
-            {
-                result.append(elem.x);
-                result.append(elem.z);
-            }
-            for(auto elem: future_dir)
-            {
-                result.append(elem);
-            }
-        }
-        return result;
-    }
-
     PackedFloat32Array serialize_trajectory_local(PackedVector3Array history_pos,PackedVector3Array future_pos,PackedFloat32Array future_dir)
     {
         PackedFloat32Array result{};
@@ -239,7 +219,6 @@ public:
         {
             PackedFloat32Array m_default{};
             m_default.push_back(0.2);m_default.push_back(0.4);
-            ClassDB::bind_method( D_METHOD("set_root_bone_name","value"), &TrajectoryMotionFeature::set_root_bone_name,("%GeneralSkeleton:Root")); ClassDB::bind_method( D_METHOD("get_root_bone_name"), &TrajectoryMotionFeature::get_root_bone_name); godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::STRING,"root_bone_name"), "set_root_bone_name", "get_root_bone_name");
             ClassDB::bind_method( D_METHOD("set_past_time_dt","value"), &TrajectoryMotionFeature::set_past_time_dt,(m_default)); ClassDB::bind_method( D_METHOD("get_past_time_dt"), &TrajectoryMotionFeature::get_past_time_dt); godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY,"past_time_dt"), "set_past_time_dt", "get_past_time_dt");
             ClassDB::bind_method( D_METHOD("set_future_time_dt","value"), &TrajectoryMotionFeature::set_future_time_dt ); ClassDB::bind_method( D_METHOD("get_future_time_dt"), &TrajectoryMotionFeature::get_future_time_dt); godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY,"future_time_dt"), "set_future_time_dt", "get_future_time_dt");
             
@@ -273,13 +252,9 @@ public:
 
         ClassDB::bind_method( D_METHOD("get_weights"), &TrajectoryMotionFeature::get_weights);
         ClassDB::bind_method( D_METHOD("get_dimension"), &TrajectoryMotionFeature::get_dimension);
-
-        ClassDB::bind_method( D_METHOD("setup_nodes","main_node","skeleton"), &TrajectoryMotionFeature::setup_nodes);
         
         ClassDB::bind_method( D_METHOD("setup_for_animation","animation"), &TrajectoryMotionFeature::setup_for_animation);
         ClassDB::bind_method( D_METHOD("bake_animation_pose","animation","time"), &TrajectoryMotionFeature::bake_animation_pose);
-
-        ClassDB::bind_method( D_METHOD("broadphase_query_pose","blackboard","delta"), &TrajectoryMotionFeature::broadphase_query_pose);
         
         ClassDB::bind_method( D_METHOD("debug_pose_gizmo","gizmo","data","root_transform"), &TrajectoryMotionFeature::debug_pose_gizmo);
     }

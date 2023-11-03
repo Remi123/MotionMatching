@@ -14,7 +14,19 @@ except:
     env = Environment(tools=["default"], PLATFORM="")
 
 # TODO: Do not copy environment after godot-cpp/test is updated <https://github.com/godotengine/godot-cpp/blob/master/test/SConstruct>.
-env = SConscript("godot-cpp/SConstruct",'env')
+env = SConscript("godot-cpp/SConstruct")
+
+# For some reason the 
+print(env["CPPDEFINES"])
+print(env["CXXFLAGS"])
+print(env["disable_exceptions"])
+if env["disable_exceptions"]:
+    if env.get("is_msvc", False):
+        env.Append(CPPDEFINES=[("_HAS_EXCEPTIONS", 0)])
+    else:
+        env.Append(CXXFLAGS=["-fno-exceptions"])
+elif env.get("is_msvc", False):
+    env.Append(CXXFLAGS=["/EHsc"])
 
 
 # Initial options inheriting from CLI args
