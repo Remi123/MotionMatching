@@ -5,7 +5,7 @@
 #include <godot_cpp/variant/utility_functions.hpp>
 #include "godot_cpp/core/math.hpp"
 #include "godot_cpp/variant/vector3.hpp"
-#include <CritSpringDamper.hpp>
+#include <Spring.hpp>
 
 #include <godot_cpp/classes/animation.hpp>
 #include <godot_cpp/classes/animation_library.hpp>
@@ -165,7 +165,7 @@ struct kform
     {
         vel = (input_next.pos - pos) / _dt;
 
-        ang = CritDampSpring::quat_to_scaled_angle_axis(CritDampSpring::quat_abs(
+        ang = Spring::quat_to_scaled_angle_axis(Spring::quat_abs(
                             input_next.rot * rot.inverse())) /
                         _dt;
 
@@ -178,7 +178,7 @@ struct kform
         kform out = input_curr;
         out.vel = (input_next.pos - out.pos) / _dt;
 
-        out.ang = CritDampSpring::quat_to_scaled_angle_axis(CritDampSpring::quat_abs(
+        out.ang = Spring::quat_to_scaled_angle_axis(Spring::quat_abs(
                             input_next.rot * out.rot.inverse())) /
                         _dt;
 

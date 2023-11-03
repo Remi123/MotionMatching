@@ -65,8 +65,9 @@ struct RootVelocityMotionFeature : public MotionFeature {
         return Array::make(weight,weight,weight);
     }
 
-    virtual void setup_nodes(Variant main_node, Skeleton3D* skeleton) override{
-
+    virtual void setup_profile(NodePath skeleton_path,Ref<SkeletonProfile> skeleton_profile) override{
+        ERR_FAIL_COND_EDMSG(skeleton_profile->get_root_bone().is_empty(),"No Root bone to extract data");
+        
     }
     virtual void setup_for_animation(Ref<Animation> animation)override{
         root_track_pos = animation->find_track(NodePath(root_bone_track),Animation::TrackType::TYPE_POSITION_3D);

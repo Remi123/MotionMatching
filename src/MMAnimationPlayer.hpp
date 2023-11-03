@@ -29,7 +29,7 @@
 #include <godot_cpp/classes/animation_root_node.hpp>
 
 #include <KForm.hpp>
-#include <CritSpringDamper.hpp>
+#include <Spring.hpp>
 #include <numeric>
 
 // Macro setup. Mostly there to simplify writing all those
@@ -219,7 +219,7 @@ struct MMAnimationPlayer : godot::AnimationPlayer
                 {
                     desired_rotation = p_animation->rotation_track_interpolate(track_rot, p_time).normalized();
                     Quaternion r1 = p_animation->rotation_track_interpolate(track_rot, future_time).normalized();
-                    desired_angular_vel = CritDampSpring::quat_differentiate_angular_velocity(r1,desired_rotation,abs(future_time - p_time)).normalized();
+                    desired_angular_vel = Spring::quat_differentiate_angular_velocity(r1,desired_rotation,abs(future_time - p_time)).normalized();
                 }
 
 
@@ -234,10 +234,10 @@ struct MMAnimationPlayer : godot::AnimationPlayer
                 //desired_angular_vel doesn't change
             }
             // Offset are calculated Between current pos of the bone and the desired pose
-            CritDampSpring::inertialize_transition(bones_offset.pos[bone_id], bones_offset.vel[bone_id],
+            Spring::inertialize_transition(bones_offset.pos[bone_id], bones_offset.vel[bone_id],
                                         bones_kform.pos[bone_id], bones_kform.vel[bone_id],
                                         desired_position, desired_linear_vel);
-            CritDampSpring::inertialize_transition(bones_offset.rot[bone_id], bones_offset.ang[bone_id], // Offset are calculated...
+            Spring::inertialize_transition(bones_offset.rot[bone_id], bones_offset.ang[bone_id], // Offset are calculated...
                                                     bones_kform.rot[bone_id], bones_kform.ang[bone_id],   // Between current rot of the bone...
                                                     desired_rotation, desired_angular_vel);                          // and the desired pose
         }
@@ -315,19 +315,19 @@ struct MMAnimationPlayer : godot::AnimationPlayer
                     desired.rot = Quaternion();
                 }
 
-                CritDampSpring::_simple_spring_damper_exact(
+                Spring::_simple_spring_damper_exact(
                     bones_kform.pos[bone_id],bones_kform.vel[bone_id]
                     ,desired.pos,halflife,_delta
                 );
-                CritDampSpring::_simple_spring_damper_exact(
+                Spring::_simple_spring_damper_exact(
                     bones_kform.rot[bone_id],bones_kform.ang[bone_id]
                     ,desired.rot,halflife,_delta
                 );
-                CritDampSpring::_decay_spring_damper_exact(
+                Spring::_decay_spring_damper_exact(
                     bones_offset.pos[bone_id],bones_offset.vel[bone_id],
                     halflife,_delta
                 );
-                CritDampSpring::_decay_spring_damper_exact(
+                Spring::_decay_spring_damper_exact(
                     bones_offset.rot[bone_id],bones_offset.ang[bone_id],
                     halflife,_delta
                 );
@@ -350,7 +350,7 @@ struct MMAnimationPlayer : godot::AnimationPlayer
                 if(track_pos != -1)
                 {
                     desired.rot = animation->rotation_track_interpolate(track_rot, current_time);
-                    desired.ang = u::is_zero_approx(delta_diff) ? Vector3() : CritDampSpring::quat_differentiate_angular_velocity( animation->rotation_track_interpolate(track_rot, future_time), desired.rot,delta_diff);
+                    desired.ang = u::is_zero_approx(delta_diff) ? Vector3() : Spring::quat_differentiate_angular_velocity( animation->rotation_track_interpolate(track_rot, future_time), desired.rot,delta_diff);
                 }
  
                 if (bone_path == u::str(get_root_motion_track()))
@@ -360,13 +360,13 @@ struct MMAnimationPlayer : godot::AnimationPlayer
                     desired.pos = Vector3();
                     desired.rot = Quaternion();
                 }
-                CritDampSpring::inertialize_update(
+                Spring::inertialize_update(
                     bones_kform.pos[bone_id], bones_kform.vel[bone_id],   // Current pos of the bone
                     bones_offset.pos[bone_id],bones_offset.vel[bone_id], // Current Offset pos, get reduced every frame
                     desired.pos, desired.vel,                                         // Desired position from the animation
                     halflife,                                                           // Stats on how the offset decay
                     _delta * get_speed_scale());                                         // delta time between frames
-                CritDampSpring::inertialize_update(
+                Spring::inertialize_update(
                     bones_kform.rot[bone_id],bones_kform.ang[bone_id],   // Current rot of the bone
                     bones_offset.rot[bone_id],bones_offset.ang[bone_id], // Current Offset rot, get reduced every frame
                     desired.rot, desired.ang,                                         // Desired rotation from the animation
@@ -517,7 +517,7 @@ struct MMAnimationPlayer : godot::AnimationPlayer
         {
             return {};
         }
-        return CritDampSpring::quat_from_scaled_angle_axis(bones_kform.ang[root_bone_id]*delta*get_playing_speed());
+        return Spring::quat_from_scaled_angle_axis(bones_kform.ang[root_bone_id]*delta*get_playing_speed());
     }
 
 

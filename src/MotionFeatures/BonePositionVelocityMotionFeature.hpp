@@ -195,7 +195,7 @@ struct BonePositionVelocityMotionFeature : public MotionFeature {
 
     Vector3 inertialization_cost_function(Vector3 pos, Vector3 vel, float halflife)
     {
-        const auto halfdamp =  CritDampSpring::halflife_to_damping(halflife) / 2.0;
+        const auto halfdamp =  Spring::halflife_to_damping(halflife) / 2.0;
         return (2*pos) / halfdamp + vel / (halfdamp * halfdamp);
     }
 
