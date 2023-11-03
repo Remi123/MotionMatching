@@ -62,7 +62,7 @@ struct RootVelocityMotionFeature : public MotionFeature {
 
     virtual bool setup_profile(NodePath skeleton_path,Ref<SkeletonProfile> skeleton_profile) override{
         ERR_FAIL_COND_V_EDMSG(skeleton_path.is_empty(), false,"SkeletonPath is Empty");
-        ERR_FAIL_COND_V_EDMSG(skeleton_profile == null, false,"SkeletonProfile is null");
+        ERR_FAIL_COND_V_EDMSG(skeleton_profile == nullptr, false,"SkeletonProfile is null");
         ERR_FAIL_COND_V_EDMSG(skeleton_profile->get_root_bone().is_empty(),false,"No Root bone to extract data");
         rest_pose = skeleton_profile->get_reference_pose(skeleton_profile->find_bone(skeleton_profile->get_root_bone()));
         root_bone_track = u::str(skeleton_path) + ":" + skeleton_profile->get_root_bone();
