@@ -227,8 +227,8 @@ text = "Add All Animations in Folder"
 
 [connection signal="pressed" from="TabContainer/Info/MarginContainer4/HBoxContainer/BakeButton" to="." method="bake_data_current"]
 [connection signal="pressed" from="TabContainer/Info/MarginContainer4/HBoxContainer/WeightButton" to="." method="on_recalculate_weights"]
-[connection signal="value_changed" from="TabContainer/Data/HBoxContainer/MarginContainer2/HBoxContainer/SpinBox" to="." method="update_shown_pose_data"]
 [connection signal="value_changed" from="TabContainer/Data/HBoxContainer/MarginContainer2/HBoxContainer/SpinBox" to="." method="set_skeleton_to_pose"]
+[connection signal="value_changed" from="TabContainer/Data/HBoxContainer/MarginContainer2/HBoxContainer/SpinBox" to="." method="update_shown_pose_data"]
 [connection signal="pressed" from="TabContainer/Data/HBoxContainer/MarginContainer3/Button" to="." method="on_look_for_similar_pressed"]
 [connection signal="value_changed" from="TabContainer/Calculation/MarginContainer/HFlowContainer/SpinBox" to="." method="_max_der_calculate"]
 [connection signal="value_changed" from="TabContainer/Calculation/MarginContainer/HFlowContainer/SpinBox2" to="." method="_max_der_calculate"]
