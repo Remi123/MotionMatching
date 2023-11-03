@@ -190,6 +190,7 @@ struct MMAnimationLibrary : public AnimationLibrary {
     {
         ERR_FAIL_COND_EDMSG(motion_features.is_empty(),"No Motion Features to extract data");
         ERR_FAIL_COND_EDMSG(skeleton_profile == nullptr,"Skeleton_profile is empty");
+        ERR_FAIL_COND_EDMSG(skeleton_profile->get_root_bone().is_empty(),"SkeletonProfile requires a Root Bone");
         u::prints("Preparing Features...");
         nb_dimensions = 0;
         for(auto i = 0; i < motion_features.size(); ++i )

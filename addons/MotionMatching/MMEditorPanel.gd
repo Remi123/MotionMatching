@@ -11,10 +11,6 @@ var plugin_ref : EditorPlugin
 
 @onready var choose_anim :MenuButton= $TabContainer/Data/HBoxContainer/MarginContainer5/ChooseAnimation
 
-# func _ready() -> void:
-# 	print('MMEditorPanel Ready')
-# 	update_info()
-
 @onready var infotext : RichTextLabel = $TabContainer/Info/PanelContainer/InfoText
 
 func update_info()->void:
@@ -170,7 +166,8 @@ func update_shown_pose_data(value: float) -> void:
 @onready var dmax := $TabContainer/Calculation/MarginContainer/HFlowContainer/SpinBox3
 @onready var a := $TabContainer/Calculation/MarginContainer/HFlowContainer/Answer2
 func _max_der_calculate(x):
-	a.text = str(CritDampSpring.maximum_spring_velocity_to_halflife(s.value,e.value,dmax.value))
+	Spring
+	a.text = str(Spring.maximum_spring_velocity_to_halflife(s.value,e.value,dmax.value))
 
 
 func on_recalculate_weights()->void:

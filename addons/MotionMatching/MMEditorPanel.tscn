@@ -199,11 +199,11 @@ text = "="
 [node name="Answer2" type="Label" parent="TabContainer/Calculation/MarginContainer/HFlowContainer"]
 layout_mode = 2
 
-[node name="AnimationTracks" type="HFlowContainer" parent="TabContainer"]
+[node name="Animation" type="HFlowContainer" parent="TabContainer"]
 visible = false
 layout_mode = 2
 
-[node name="MarginContainer" type="MarginContainer" parent="TabContainer/AnimationTracks"]
+[node name="MarginContainer" type="MarginContainer" parent="TabContainer/Animation"]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/margin_left = 10
@@ -211,27 +211,27 @@ theme_override_constants/margin_top = 5
 theme_override_constants/margin_right = 10
 theme_override_constants/margin_bottom = 5
 
-[node name="HFlowContainer" type="HFlowContainer" parent="TabContainer/AnimationTracks/MarginContainer"]
+[node name="HFlowContainer" type="HFlowContainer" parent="TabContainer/Animation/MarginContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="Button" type="Button" parent="TabContainer/AnimationTracks/MarginContainer/HFlowContainer"]
+[node name="Button" type="Button" parent="TabContainer/Animation/MarginContainer/HFlowContainer"]
 layout_mode = 2
 size_flags_horizontal = 2
 text = "Add Category Track"
 
-[node name="Button2" type="Button" parent="TabContainer/AnimationTracks/MarginContainer/HFlowContainer"]
+[node name="Button2" type="Button" parent="TabContainer/Animation/MarginContainer/HFlowContainer"]
 layout_mode = 2
 size_flags_horizontal = 2
-text = "Add All Animations in Folder"
+text = "Select Animations to Add"
 
 [connection signal="pressed" from="TabContainer/Info/MarginContainer4/HBoxContainer/BakeButton" to="." method="bake_data_current"]
 [connection signal="pressed" from="TabContainer/Info/MarginContainer4/HBoxContainer/WeightButton" to="." method="on_recalculate_weights"]
-[connection signal="value_changed" from="TabContainer/Data/HBoxContainer/MarginContainer2/HBoxContainer/SpinBox" to="." method="set_skeleton_to_pose"]
 [connection signal="value_changed" from="TabContainer/Data/HBoxContainer/MarginContainer2/HBoxContainer/SpinBox" to="." method="update_shown_pose_data"]
+[connection signal="value_changed" from="TabContainer/Data/HBoxContainer/MarginContainer2/HBoxContainer/SpinBox" to="." method="set_skeleton_to_pose"]
 [connection signal="pressed" from="TabContainer/Data/HBoxContainer/MarginContainer3/Button" to="." method="on_look_for_similar_pressed"]
 [connection signal="value_changed" from="TabContainer/Calculation/MarginContainer/HFlowContainer/SpinBox" to="." method="_max_der_calculate"]
 [connection signal="value_changed" from="TabContainer/Calculation/MarginContainer/HFlowContainer/SpinBox2" to="." method="_max_der_calculate"]
 [connection signal="value_changed" from="TabContainer/Calculation/MarginContainer/HFlowContainer/SpinBox3" to="." method="_max_der_calculate"]
-[connection signal="pressed" from="TabContainer/AnimationTracks/MarginContainer/HFlowContainer/Button" to="." method="_on_add_category"]
-[connection signal="pressed" from="TabContainer/AnimationTracks/MarginContainer/HFlowContainer/Button2" to="." method="add_animation"]
+[connection signal="pressed" from="TabContainer/Animation/MarginContainer/HFlowContainer/Button" to="." method="_on_add_category"]
+[connection signal="pressed" from="TabContainer/Animation/MarginContainer/HFlowContainer/Button2" to="." method="add_animation"]
