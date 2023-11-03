@@ -46,18 +46,15 @@ using u = godot::UtilityFunctions;
 struct RootVelocityMotionFeature : public MotionFeature {
     GDCLASS(RootVelocityMotionFeature,MotionFeature);
 
-
-    virtual ~RootVelocityMotionFeature() = default;
-
     int root_track_pos =-1, root_track_quat = -1;//, root_track_scale = -1;
 
     GETSET(Vector3,query_velocity);
 
-    String root_bone_name = "%GeneralSkeleton:Root";
-    void set_root_bone_name(String value){
-        root_bone_name = value;
+    String root_bone_track = "%GeneralSkeleton:Root";
+    void set_root_bone_track(String value){
+        root_bone_track = value;
     }
-    String get_root_bone_name(){return root_bone_name;}
+    String get_root_bone_track(){return root_bone_track;}
 
     virtual int get_dimension()override{
         return 3;
@@ -72,8 +69,8 @@ struct RootVelocityMotionFeature : public MotionFeature {
 
     }
     virtual void setup_for_animation(Ref<Animation> animation)override{
-        root_track_pos = animation->find_track(NodePath(root_bone_name),Animation::TrackType::TYPE_POSITION_3D);
-        root_track_quat = animation->find_track(NodePath(root_bone_name),Animation::TrackType::TYPE_ROTATION_3D);
+        root_track_pos = animation->find_track(NodePath(root_bone_track),Animation::TrackType::TYPE_POSITION_3D);
+        root_track_quat = animation->find_track(NodePath(root_bone_track),Animation::TrackType::TYPE_ROTATION_3D);
     }
 
     virtual PackedFloat32Array bake_animation_pose(Ref<Animation> animation,float time)override{
@@ -131,9 +128,9 @@ protected:
 
         ClassDB::add_property_group(get_class_static(), "Nodes & Resources Sources", "");
         {
-            ClassDB::bind_method(D_METHOD("set_root_bone_name", "value"), &RootVelocityMotionFeature::set_root_bone_name, DEFVAL("%GeneralSkeleton:Root"));
-            ClassDB::bind_method(D_METHOD("get_root_bone_name"), &RootVelocityMotionFeature::get_root_bone_name);
-            ADD_PROPERTY(PropertyInfo(Variant::STRING, "Root Bone"), "set_root_bone_name", "get_root_bone_name");
+            ClassDB::bind_method(D_METHOD("set_root_bone_track", "value"), &RootVelocityMotionFeature::set_root_bone_track, DEFVAL("%GeneralSkeleton:Root"));
+            ClassDB::bind_method(D_METHOD("get_root_bone_track"), &RootVelocityMotionFeature::get_root_bone_track);
+            ADD_PROPERTY(PropertyInfo(Variant::STRING, "Root Bone Track"), "set_root_bone_track", "get_root_bone_track");
 
             ClassDB::bind_method(D_METHOD("set_debug_color", "value"), &RootVelocityMotionFeature::set_debug_color);
             ClassDB::bind_method(D_METHOD("get_debug_color"), &RootVelocityMotionFeature::get_debug_color);
