@@ -9,8 +9,10 @@
 //
 
 // MODIFICATION
-// Removed throw to make it pass fno-exceptions. The in case of throw nothing will
+// -- Removed throw to make it pass fno-exceptions. The in case of throw nothing will
 // be done to the current state of the object. This include the constructor
+// -- Added logic to have a custom_weight for a single query. Good for paralellism
+// and let user have custom query.
 
 #include "kdtree.hpp"
 #include <math.h>
@@ -178,7 +180,7 @@ class DistanceL2 : virtual public DistanceMeasure {
 //--------------------------------------------------------------
 KdTree::~KdTree() {
   if (root) delete root;
-  delete distance;
+  delete default_distance;
 }
 // distance_type can be 0 (Maximum), 1 (Manhatten), or 2 (Euklidean [squared])
 KdTree::KdTree(const KdNodeVector* nodes, int distance_type /*=2*/) {
@@ -196,7 +198,7 @@ KdTree::KdTree(const KdNodeVector* nodes, int distance_type /*=2*/) {
   dimension = nodes->begin()->point.size();
   allnodes = *nodes;
   // initialize distance values
-  distance = NULL;
+  default_distance = NULL;
   this->distance_type = -1;
   set_distance(distance_type);
   // compute global bounding box
@@ -216,14 +218,14 @@ KdTree::KdTree(const KdNodeVector* nodes, int distance_type /*=2*/) {
 // distance_type can be 0 (Maximum), 1 (Manhatten), or 2 (Euklidean [squared])
 void KdTree::set_distance(int distance_type,
                           const WeightVector* weights /*=NULL*/) {
-  if (distance) delete distance;
+  if (default_distance) delete default_distance;
   this->distance_type = distance_type;
   if (distance_type == 0) {
-    distance = (DistanceMeasure*)new DistanceL0(weights);
+    default_distance = (DistanceMeasure*)new DistanceL0(weights);
   } else if (distance_type == 1) {
-    distance = (DistanceMeasure*)new DistanceL1(weights);
+    default_distance = (DistanceMeasure*)new DistanceL1(weights);
   } else {
-    distance = (DistanceMeasure*)new DistanceL2(weights);
+    default_distance = (DistanceMeasure*)new DistanceL2(weights);
   }
 }
 
@@ -276,7 +278,8 @@ kdtree_node* KdTree::build_tree(size_t depth, size_t a, size_t b) {
 //--------------------------------------------------------------
 void KdTree::k_nearest_neighbors(const CoordPoint& point, size_t k,
                                  KdNodeVector* result,
-                                 KdNodePredicate* pred /*=NULL*/) {
+                                 KdNodePredicate* pred /*=NULL*/,
+                                 const WeightVector * custom_weight /*NULL*/) {
   size_t i;
   KdNode temp;
   searchpredicate = pred;
@@ -290,6 +293,17 @@ void KdTree::k_nearest_neighbors(const CoordPoint& point, size_t k,
     //     "kdtree");
     return;
   }
+  DistanceMeasure * custom_distance = default_distance;
+  if (custom_weight != nullptr)
+  {
+    if (distance_type == 0) {
+      custom_distance = (DistanceMeasure*)new DistanceL0(custom_weight);
+    } else if (distance_type == 1) {
+      custom_distance = (DistanceMeasure*)new DistanceL1(custom_weight);
+    } else {
+      custom_distance = (DistanceMeasure*)new DistanceL2(custom_weight);
+    }
+  }
 
   // collect result of k values in neighborheap
   //std::priority_queue<nn4heap, std::vector<nn4heap>, compare_nn4heap>*
@@ -301,10 +315,10 @@ void KdTree::k_nearest_neighbors(const CoordPoint& point, size_t k,
     for (i = 0; i < k; i++) {
       if (!(searchpredicate && !(*searchpredicate)(allnodes[i])))
         neighborheap->push(
-            nn4heap(i, distance->distance(allnodes[i].point, point)));
+            nn4heap(i, custom_distance->distance(allnodes[i].point, point)));
     }
   } else {
-    neighbor_search(point, root, k, neighborheap);
+    neighbor_search(point, root, k, neighborheap,custom_distance);
   }
 
   // copy over result sorted by distance
@@ -322,6 +336,10 @@ void KdTree::k_nearest_neighbors(const CoordPoint& point, size_t k,
     (*result)[k - 1 - i] = temp;
   }
   delete neighborheap;
+  if(custom_weight != nullptr && custom_distance != nullptr && default_distance != custom_distance)
+  {
+    delete custom_distance; // ONLY if not the default; 
+  }
 }
 
 //--------------------------------------------------------------
@@ -350,7 +368,7 @@ void KdTree::range_nearest_neighbors(const CoordPoint& point, float r,
 
   // collect result in range_result
   std::vector<size_t> range_result;
-  range_search(point, root, r, &range_result);
+  range_search(point, root, r, &range_result,default_distance);
 
   // copy over result
   for (std::vector<size_t>::iterator i = range_result.begin();
@@ -368,7 +386,7 @@ void KdTree::range_nearest_neighbors(const CoordPoint& point, float r,
 // returns "true" when no nearer neighbor elsewhere possible
 //--------------------------------------------------------------
 bool KdTree::neighbor_search(const CoordPoint& point, kdtree_node* node,
-                             size_t k, SearchQueue* neighborheap) {
+                             size_t k, SearchQueue* neighborheap, DistanceMeasure * distance) {
   float curdist, dist;
 
   curdist = distance->distance(point, node->point);
@@ -383,10 +401,10 @@ bool KdTree::neighbor_search(const CoordPoint& point, kdtree_node* node,
   // first search on side closer to point
   if (point[node->cutdim] < node->point[node->cutdim]) {
     if (node->loson)
-      if (neighbor_search(point, node->loson, k, neighborheap)) return true;
+      if (neighbor_search(point, node->loson, k, neighborheap,distance)) return true;
   } else {
     if (node->hison)
-      if (neighbor_search(point, node->hison, k, neighborheap)) return true;
+      if (neighbor_search(point, node->hison, k, neighborheap,distance)) return true;
   }
   // second search on farther side, if necessary
   if (neighborheap->size() < k) {
@@ -396,10 +414,10 @@ bool KdTree::neighbor_search(const CoordPoint& point, kdtree_node* node,
   }
   if (point[node->cutdim] < node->point[node->cutdim]) {
     if (node->hison && bounds_overlap_ball(point, dist, node->hison))
-      if (neighbor_search(point, node->hison, k, neighborheap)) return true;
+      if (neighbor_search(point, node->hison, k, neighborheap,distance)) return true;
   } else {
     if (node->loson && bounds_overlap_ball(point, dist, node->loson))
-      if (neighbor_search(point, node->loson, k, neighborheap)) return true;
+      if (neighbor_search(point, node->loson, k, neighborheap,distance)) return true;
   }
 
   if (neighborheap->size() == k) dist = neighborheap->top().distance;
@@ -411,7 +429,7 @@ bool KdTree::neighbor_search(const CoordPoint& point, kdtree_node* node,
 // Stores result in *range_result*.
 //--------------------------------------------------------------
 void KdTree::range_search(const CoordPoint& point, kdtree_node* node,
-                          float r, std::vector<size_t>* range_result) {
+                          float r, std::vector<size_t>* range_result,DistanceMeasure* distance) {
   float curdist = distance->distance(point, node->point);
   if (curdist <= r) {
     range_result->push_back(node->dataindex);
@@ -427,7 +445,7 @@ void KdTree::range_search(const CoordPoint& point, kdtree_node* node,
 // returns true when the bounds of *node* overlap with the
 // ball with radius *dist* around *point*
 bool KdTree::bounds_overlap_ball(const CoordPoint& point, float dist,
-                                 kdtree_node* node) {
+                                 kdtree_node* node,DistanceMeasure* distance) {
   float distsum = 0.0;
   size_t i;
   for (i = 0; i < dimension; i++) {
@@ -445,7 +463,7 @@ bool KdTree::bounds_overlap_ball(const CoordPoint& point, float dist,
 // returns true when the bounds of *node* completely contain the
 // ball with radius *dist* around *point*
 bool KdTree::ball_within_bounds(const CoordPoint& point, float dist,
-                                kdtree_node* node) {
+                                kdtree_node* node,DistanceMeasure* distance) {
   size_t i;
   for (i = 0; i < dimension; i++)
     if (distance->coordinate_distance(point[i], node->lobound[i], i) <= dist ||
