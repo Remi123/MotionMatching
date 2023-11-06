@@ -45,46 +45,7 @@
 
 
 
-struct kforms
-{
-    std::vector<Vector3> pos; // Position
-    std::vector<Quaternion> rot;  // Rotation
-    std::vector<Vector3> scl; // Scale
-    std::vector<Vector3> vel; // Linear Velocity
-    std::vector<Vector3> ang; // Angular Velocity
-    std::vector<Vector3> svl; // Scalar Velocity
 
-    kforms(std::size_t N): pos(N,Vector3()),rot(N,Quaternion()),scl(N,Vector3(1,1,1)),vel(N,Vector3()),ang(N,Vector3()),svl(N,Vector3())
-    {}
-
-    Transform3D get_transform(std::size_t N)
-    {
-        return Transform3D(Basis(rot[N],scl[N]),pos[N]);
-    }
-
-    void reserve(std::size_t N){
-        pos.reserve(N); rot.reserve(N); scl.reserve(N);vel.reserve(N); ang.reserve(N); svl.reserve(N);
-    }
-
-    inline const kform operator[](const std::size_t N) noexcept{
-        kform out{};
-        out.pos = pos[N];
-        out.rot = {rot[N]};
-        out.scl = {scl[N]};
-        out.vel = {vel[N]};
-        out.ang = {ang[N]};
-        out.svl = {svl[N]};
-        return out;
-    }
-
-    void reset(const std::size_t N){
-        pos[N] = Vector3() ;rot[N] = Quaternion(); scl[N] = Vector3(1,1,1) ;vel[N] = Vector3();ang[N] = Vector3();svl[N] = Vector3();
-    }
-
-
-
-
-};
 
 /// @brief This animation node is for Motion Matching.
 /// It was made to get request for a pose from the list of animations,
