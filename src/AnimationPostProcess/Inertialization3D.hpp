@@ -47,6 +47,13 @@ struct Inertialization3D : godot::Node
 
     GETSET(float,halflife,0.1f);
     GETSET(float,ratio,1.0f);
+
+    bool active{true}; 
+    bool get_active(){return active;} 
+    void set_active(bool value){
+        active = value;
+        inertialize_reset();
+        }
     
 
     virtual void _ready() override{
@@ -81,7 +88,7 @@ struct Inertialization3D : godot::Node
 
     void advance(double delta)
     {
-        if(skeleton == nullptr) return;
+        if(active == false || skeleton == nullptr) return;
 
         bones.reserve(skeleton->get_bone_count());
         offsets.reserve(skeleton->get_bone_count());
@@ -112,6 +119,11 @@ struct Inertialization3D : godot::Node
     protected:
     static void _bind_methods()
     {
+        ClassDB::bind_method( D_METHOD("set_active" ,"value"), &Inertialization3D::set_active,DEFVAL(true)); 
+        ClassDB::bind_method( D_METHOD("get_active" ), &Inertialization3D::get_active); 
+        godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::BOOL,"active"), "set_active", "get_active");
+
+
         ClassDB::bind_method( D_METHOD("set_halflife" ,"value"), &Inertialization3D::set_halflife); 
         ClassDB::bind_method( D_METHOD("get_halflife" ), &Inertialization3D::get_halflife); 
         godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT,"halflife"

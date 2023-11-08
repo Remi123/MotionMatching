@@ -100,7 +100,7 @@ struct IKTwoBone3D : godot::Node3D
         globals.rot[BONE_PARENT] = skeleton->get_global_transform().get_basis().get_rotation_quaternion() * skeleton->get_bone_global_pose(parent_id).basis.get_rotation_quaternion();
         
         op_two_bone_ik_static(
-            locals,globals,get_global_position(), get_global_basis().get_rotation_quaternion().xform(Vector3(0,0,1))
+            locals,globals,get_global_position(), get_global_basis().get_rotation_quaternion().xform(Vector3(0,0,-1))
         );
         skeleton->set_bone_pose_rotation(bone_A_id,locals.rot[BONE_ROOT]);
         skeleton->set_bone_pose_rotation(bone_B_id,locals.rot[BONE_MIDDLE]);
@@ -125,7 +125,7 @@ struct IKTwoBone3D : godot::Node3D
         }
         
         Vector3 axis_dwn = (global.pos[BONE_REACH] - global.pos[BONE_ROOT]).normalized();
-        Vector3 axis_rot = (axis_dwn.cross(global.rot[BONE_MIDDLE].xform(fwd))).normalized();
+        Vector3 axis_rot = (axis_dwn.cross(fwd)).normalized();
 
         Vector3 a = global.pos[BONE_ROOT];
         Vector3 b = global.pos[BONE_MIDDLE];
