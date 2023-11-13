@@ -267,11 +267,30 @@ struct Spring : public RefCounted
         v = eydt*(v - j1*y*dt);
     }
 
-    static inline PackedFloat32Array simple_spring_damper_exact(float x, float v, float x_goal, float halflife, float dt){
-        _simple_spring_damper_exact(x,v,x_goal,halflife,dt);
-        PackedFloat32Array result;
-        result.append(x);
-        result.append(v);
+    static inline Array simple_spring_damper_exact(Variant x, Variant v, Variant x_goal, float halflife, float dt){
+        Array result;
+        if (x.get_type() == Variant::Type::VECTOR3 && v.get_type() == Variant::Type::VECTOR3 && x_goal.get_type() == Variant::Type::VECTOR3  )
+        {
+            Vector3 pos = (Vector3)x, vel = (Vector3)v, goal = (Vector3) x_goal;
+            _simple_spring_damper_exact(pos,vel,goal,halflife,dt);
+            result.append(pos);
+            result.append(vel);
+        }
+        else if (x.get_type() == Variant::Type::QUATERNION && v.get_type() == Variant::Type::VECTOR3 && x_goal.get_type() == Variant::Type::QUATERNION  )
+        {
+            Quaternion pos = (Quaternion)x; Vector3 vel = (Vector3)v; Quaternion goal = (Quaternion) x_goal;
+            _simple_spring_damper_exact(pos,vel,goal,halflife,dt);
+            result.append(pos);
+            result.append(vel);
+        }
+        else if (x.get_type() == Variant::Type::FLOAT && v.get_type() == Variant::Type::FLOAT && v.get_type() == Variant::Type::FLOAT )
+        {
+            float pos = (float)x; float vel = (float)v, goal = (float)x_goal;
+            _simple_spring_damper_exact(pos,vel,goal,halflife,dt);
+            result.append(pos);
+            result.append(vel);
+        }
+
         return result;
     }
 
@@ -305,11 +324,30 @@ struct Spring : public RefCounted
         x = quat_from_scaled_angle_axis(eydt*(j0 + j1*dt));
         v = eydt*(v - j1*y*dt);
     }
-    static inline PackedFloat32Array decay_spring_damper_exact(float x, float v, float halflife,float dt){
-        PackedFloat32Array result;
-        _decay_spring_damper_exact(x,v,halflife,dt);
-        result.append(x);
-        result.append(v);
+    static inline Array decay_spring_damper_exact(Variant x, Variant v, float halflife,float dt){
+        Array result;
+        if (x.get_type() == Variant::Type::VECTOR3 && v.get_type() == Variant::Type::VECTOR3)
+        {
+            Vector3 pos = (Vector3)x, vel = (Vector3)v;
+            _decay_spring_damper_exact(pos,vel,halflife,dt);
+            result.append(pos);
+            result.append(vel);
+        }
+        else if (x.get_type() == Variant::Type::QUATERNION && v.get_type() == Variant::Type::VECTOR3 )
+        {
+            Quaternion pos = (Quaternion)x; Vector3 vel = (Vector3)v;
+            _decay_spring_damper_exact(pos,vel,halflife,dt);
+            result.append(pos);
+            result.append(vel);
+        }
+        else if (x.get_type() == Variant::Type::FLOAT && v.get_type() == Variant::Type::FLOAT )
+        {
+            float pos = (float)x; float vel = (float)v;
+            _decay_spring_damper_exact(pos,vel,halflife,dt);
+            result.append(pos);
+            result.append(vel);
+        }
+
         return result;
     }
 
@@ -509,7 +547,7 @@ protected:
 
         ClassDB::bind_static_method("Spring", D_METHOD("timed_spring_damper_exact", "x", "v", "xi", "x_goal", "t_goal", "halflife", "dt", "apprehension"), &Spring::timed_spring_damper_exact, DEFVAL(2.0f));
         ClassDB::bind_static_method("Spring", D_METHOD("decay_spring_damper_exact", "pos", "vel", "halflife", "dt"), &Spring::decay_spring_damper_exact);
-        ClassDB::bind_static_method("Spring", D_METHOD("simple_spring_damper_exact", "x", "v", "x_goal", "halflife", "dt"), &Spring::simple_spring_damper_exact);
+        ClassDB::bind_static_method("Spring", D_METHOD("simple_spring_damper_exact", "x", "v", "goal", "halflife", "dt"), &Spring::simple_spring_damper_exact);
         ClassDB::bind_static_method("Spring", D_METHOD("critical_spring_damper_exact", "x", "v", "x_goal", "v_goal", "halflife", "dt"), &Spring::critical_spring_damper_exact);
         // ClassDB::bind_static_method("Spring", D_METHOD("spring_damper_exact", "x", "v", "x_goal", "v_goal", "damping_ratio", "halflife", "dt", "eps"), &CritDampSpring::spring_damper_exact, DEFVAL(1e-5f));
 

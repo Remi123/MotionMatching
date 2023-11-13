@@ -28,6 +28,10 @@
 #include <godot_cpp/classes/standard_material3d.hpp>
 #include <godot_cpp/classes/box_mesh.hpp>
 
+#include <algorithm>
+
+#include <MotionFeatures/MotionFeatures.hpp>
+
 
 // Macro setup. Mostly there to simplify writing all those
 #define GETSET(type,variable,...) type variable{__VA_ARGS__};\
@@ -40,49 +44,114 @@
         ClassDB::bind_method( D_METHOD(STRING_PREFIX(get_,variable) ), &type::get_##variable); \
         ADD_PROPERTY(PropertyInfo(variant_type,#variable,__VA_ARGS__),STRING_PREFIX(set_,variable),STRING_PREFIX(get_,variable));
 
-struct EventMotionFeature : public Resource {
-    GDCLASS(EventMotionFeature,Resource)
+using namespace godot;
+struct EventMotionFeature : public MotionFeature {
+    GDCLASS(EventMotionFeature,MotionFeature)
 
     virtual ~EventMotionFeature() = default;
 
+    GETSET(bool,embed_as_frames);
     GETSET(bool,embed_time_since_last_event);
     GETSET(godot::PackedStringArray,events_tracks);
+    GETSET(godot::PackedStringArray,events_names);
 
     static constexpr float delta = 0.016f;
 
-    virtual int get_dimension()override{return events_tracks.count();}
+    virtual int get_dimension()override{return events_names.size();}
     
     virtual PackedFloat32Array get_weights()override{ return {};}
 
     virtual bool setup_profile(NodePath skeleton_path,Ref<SkeletonProfile> skel_profile)override{
         // returning false will abort the process.
         // feel free to print more details
-        
+
         return true;
     }
 
     virtual bool setup_for_animation(Ref<Animation> animation)override{
         // returning false will skip this animation and print a warning
         // feel free to print more details
+
+
+
+
         return true;
     }
-    virtual PackedFloat32Array bake_animation_pose(Ref<Animation> animation,float time) override {return {};}
+    virtual PackedFloat32Array bake_animation_pose(Ref<Animation> animation,float time) override {
+        PackedFloat32Array result = {};
+        for(auto event_i = 0;event_i < events_names.size(); ++event_i)
+        {
+            String event_name = events_names[event_i];
+            float closest_left = 0.0,closest_right = animation->get_length();
+            for(auto index_track = 0;index_track < events_names.size(); ++index_track)
+            {
+                const auto track_name = events_tracks[index_track];
+                auto track_id = animation->find_track(track_name,Animation::TrackType::TYPE_METHOD);
+                if(track_id == -1) continue;
+
+                for(auto index_key=0;index_key < animation->track_get_key_count(track_id); ++index_key )
+                {
+                    auto method_name = animation->method_track_get_name(track_id,index_key);
+                    auto method_args = animation->method_track_get_params(track_id,index_key);
+                    float method_time = animation->track_get_key_time(track_id,index_key);
+                    if(method_name == event_name)
+                    {
+                        if(method_time < time)
+                        {
+                            closest_left = std::max(closest_left,method_time);
+                        }
+                        else
+                        {
+                            closest_right = std::min(closest_right,method_time);
+                        }
+                    }
+                    else if (method_name == String("emit_signal") && method_args[0] == (StringName)event_name )
+                    {
+                        if(method_time < time)
+                        {
+                            closest_left = std::max(closest_left,method_time);
+                        }
+                        else
+                        {
+                            closest_right = std::min(closest_right,method_time);
+                        }
+                    }
+                }
+
+
+
+            }
+
+            auto time_until = closest_right - time;
+            if(embed_as_frames)
+            {
+
+            }
+            result.append(time_until);
+
+        }
+        return result;
+    }
 
     virtual void debug_pose_gizmo(Ref<EditorNode3DGizmo> gizmo, const PackedFloat32Array data,godot::Transform3D tr = godot::Transform3D{}){return;}
 
     
     static void _bind_methods() {
 
-        ClassDB::bind_method( D_METHOD("get_dimension"), &MotionFeature::get_dimension);
+        ClassDB::bind_method( D_METHOD("set_events_names" ,"value"), &EventMotionFeature::set_events_names); 
+        ClassDB::bind_method( D_METHOD("get_events_names" ), &EventMotionFeature::get_events_names); 
+        godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_STRING_ARRAY,"events_names"), "set_events_names", "get_events_names");
 
-        ClassDB::bind_method( D_METHOD("get_weights"), &MotionFeature::get_weights);
-        
-        ClassDB::bind_method( D_METHOD("setup_profile","skeleton_path","skeleton_profile"), &MotionFeature::setup_profile);
-        
-        ClassDB::bind_method( D_METHOD("setup_for_animation","animation"), &MotionFeature::setup_for_animation);
-        ClassDB::bind_method( D_METHOD("bake_animation_pose","animation","time"), &MotionFeature::bake_animation_pose);
+        ClassDB::bind_method( D_METHOD("get_dimension"), &EventMotionFeature::get_dimension);
 
-        ClassDB::bind_method( D_METHOD("debug_pose_gizmo","gizmo","data","root_transform"), &MotionFeature::debug_pose_gizmo);
+        ClassDB::bind_method( D_METHOD("get_weights"), &EventMotionFeature::get_weights);
+        
+        ClassDB::bind_method( D_METHOD("setup_profile","skeleton_path","skeleton_profile"), &EventMotionFeature::setup_profile);
+        
+        ClassDB::bind_method( D_METHOD("setup_for_animation","animation"), &EventMotionFeature::setup_for_animation);
+        ClassDB::bind_method( D_METHOD("bake_animation_pose","animation","time"), &EventMotionFeature::bake_animation_pose);
+
+        ClassDB::bind_method( D_METHOD("debug_pose_gizmo","gizmo","data","root_transform"), &EventMotionFeature::debug_pose_gizmo);
         
     }
 };

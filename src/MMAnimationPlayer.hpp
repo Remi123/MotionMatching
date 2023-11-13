@@ -194,6 +194,7 @@ struct MMAnimationPlayer : godot::AnimationPlayer
                 desired_rotation = Quaternion();
                 //desired_angular_vel doesn't change
             }
+            
             // Offset are calculated Between current pos of the bone and the desired pose
             Spring::inertialize_transition(bones_offset.pos[bone_id], bones_offset.vel[bone_id],
                                         bones_kform.pos[bone_id], bones_kform.vel[bone_id],
@@ -314,7 +315,7 @@ struct MMAnimationPlayer : godot::AnimationPlayer
                     desired.ang = u::is_zero_approx(delta_diff) ? Vector3() : Spring::quat_differentiate_angular_velocity( animation->rotation_track_interpolate(track_rot, future_time), desired.rot,delta_diff);
                 }
  
-                if (bone_path == u::str(get_root_motion_track()))
+                if (bone_id == root_bone_id)
                 {
                     desired.vel = desired.rot.xform_inv(desired.vel); 
                     // desired_angular = desired_rotation.xform_inv(desired_angular);
@@ -334,8 +335,6 @@ struct MMAnimationPlayer : godot::AnimationPlayer
                     halflife,                                                           // Stats on how the offset decay
                     _delta * get_speed_scale());                                         // delta time between frames
             }
-
-
 
             _skeleton->set_bone_pose_position(bone_id,bones_kform.pos[bone_id]);
             _skeleton->set_bone_pose_rotation(bone_id,bones_kform.rot[bone_id]);
