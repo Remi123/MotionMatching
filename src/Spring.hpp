@@ -17,90 +17,90 @@ struct Spring : public RefCounted
 {
     GDCLASS(Spring,RefCounted)
 
-    static constexpr float Ln2 = 0.69314718056;
+    static constexpr real_t Ln2 = 0.69314718056;
 
-    static float inline square(float x) { 
+    static real_t inline square(real_t x) { 
         return x * x;
     }
 
-    static Vector3 damp_adjustment_exact(Vector3 g, float halflife, float dt, float eps=1e-8) {
-        float factor = 1.0 - fast_negexp((Spring::Ln2 * dt) / (halflife + eps));
+    static Vector3 damp_adjustment_exact(Vector3 g, real_t halflife, real_t dt, real_t eps=1e-8) {
+        real_t factor = 1.0 - fast_negexp((Spring::Ln2 * dt) / (halflife + eps));
         return g * factor;
     }
 
-    static Quaternion damp_adjustment_exact_quat(Quaternion g, float halflife, float dt, float eps=1e-8) {
-        float factor = 1.0 - fast_negexp((Spring::Ln2 * dt) / (halflife + eps));
+    static Quaternion damp_adjustment_exact_quat(Quaternion g, real_t halflife, real_t dt, real_t eps=1e-8) {
+        real_t factor = 1.0 - fast_negexp((Spring::Ln2 * dt) / (halflife + eps));
         return Quaternion().slerp(g, factor).normalized();
     }
-    static Variant damper_exponential(Variant variable, Variant goal, float damping, float dt) {
-        float ft = 1.0f / (float)ProjectSettings::get_singleton()->get("physics/common/physics_ticks_per_second");
-        float factor = 1.0f - pow(1.0f / (1.0f - ft * damping), -dt / ft);
+    static Variant damper_exponential(Variant variable, Variant goal, real_t damping, real_t dt) {
+        real_t ft = 1.0 / (real_t)ProjectSettings::get_singleton()->get("physics/common/physics_ticks_per_second");
+        real_t factor = 1.0 - pow(1.0 / (1.0 - ft * damping), -dt / ft);
         return Math::lerp(variable, goal, factor);
     }
 
-    static inline float fast_negexp(float x) {
-        return 1.0f / (1.0f + x + 0.48f * x * x + 0.235f * x * x * x);
+    static inline real_t fast_negexp(real_t x) {
+        return 1.0 / (1.0 + x + 0.48 * x * x + 0.235 * x * x * x);
     }
 
-    static inline Variant damper_exact(Variant variable, Variant goal, float halflife, float dt, float eps = 1e-5f) {
-        return Math::lerp(variable, goal, 1.0f - fast_negexp((Spring::Ln2 * dt) / (halflife + eps)));
+    static inline Variant damper_exact(Variant variable, Variant goal, real_t halflife, real_t dt, real_t eps = 1e-5) {
+        return Math::lerp(variable, goal, 1.0 - fast_negexp((Spring::Ln2 * dt) / (halflife + eps)));
     }
 
-    static inline float halflife_to_damping(float halflife, float eps = 1e-5f) {
-        return (4.0f * Ln2) / (halflife + eps);
+    static inline real_t halflife_to_damping(real_t halflife, real_t eps = 1e-5) {
+        return (4.0 * Ln2) / (halflife + eps);
     }
 
-    static inline float halflife_to_duration(float halflife, float initial_value = 1.0f, float eps = 1e-5f){
+    static inline real_t halflife_to_duration(real_t halflife, real_t initial_value = 1.0, real_t eps = 1e-5){
         return halflife * (log(eps/initial_value) / log(0.5));
     }
 
-    static inline float damping_to_halflife(float damping, float eps = 1e-5f) {
-        return (4.0f * Ln2) / (damping + eps);
+    static inline real_t damping_to_halflife(real_t damping, real_t eps = 1e-5) {
+        return (4.0 * Ln2) / (damping + eps);
     }
 
-    static inline float frequency_to_stiffness(float frequency) {
-        return square(2.0f * Math_PI * frequency);
+    static inline real_t frequency_to_stiffness(real_t frequency) {
+        return square(2.0 * Math_PI * frequency);
     }
 
-    static inline float stiffness_to_frequency(float stiffness) {
-        return sqrt(stiffness) / (2.0f * Math_PI);
+    static inline real_t stiffness_to_frequency(real_t stiffness) {
+        return sqrt(stiffness) / (2.0 * Math_PI);
     }
 
-    static inline float critical_halflife(float frequency) {
-        return damping_to_halflife(sqrt(frequency_to_stiffness(frequency) * 4.0f));
+    static inline real_t critical_halflife(real_t frequency) {
+        return damping_to_halflife(sqrt(frequency_to_stiffness(frequency) * 4.0));
     }
 
-    static inline float critical_frequency(float halflife) {
-        return stiffness_to_frequency(square(halflife_to_damping(halflife)) / 4.0f);
+    static inline real_t critical_frequency(real_t halflife) {
+        return stiffness_to_frequency(square(halflife_to_damping(halflife)) / 4.0);
     }
 
-    static inline float damping_ratio_to_stiffness(float ratio, float damping) {
-        return square(damping / (ratio * 2.0f));
+    static inline real_t damping_ratio_to_stiffness(real_t ratio, real_t damping) {
+        return square(damping / (ratio * 2.0));
     }
 
-    static inline float damping_ratio_to_damping(float ratio, float stiffness) {
-        return ratio * 2.0f * sqrt(stiffness);
+    static inline real_t damping_ratio_to_damping(real_t ratio, real_t stiffness) {
+        return ratio * 2.0 * sqrt(stiffness);
     }
 
 
-    static inline float maximum_spring_velocity_to_halflife(float x,float x_goal,float v_max){
-        return damping_to_halflife(2.0 * ((v_max / (x_goal - x)) * exp(1.0f)));
+    static inline real_t maximum_spring_velocity_to_halflife(real_t x,real_t x_goal,real_t v_max){
+        return damping_to_halflife(2.0 * ((v_max / (x_goal - x)) * exp(1.0)));
     }
 
-    static inline Quaternion quat_exp(Vector3 v, float eps=1e-8f)
+    static inline Quaternion quat_exp(Vector3 v, real_t eps=1e-8)
     {
-        float halfangle = sqrtf(v.x*v.x + v.y*v.y + v.z*v.z);
+        real_t halfangle = sqrtf(v.x*v.x + v.y*v.y + v.z*v.z);
         
         if (halfangle < eps)
         {
             Quaternion q{};
-            q.w = 1.0f; q.x = v.x; q.y = v.y; q.z = v.z;
+            q.w = 1.0; q.x = v.x; q.y = v.y; q.z = v.z;
             return q.normalized();
         }
         else
         {
-            float c = cosf(halfangle);
-            float s = sinf(halfangle) / halfangle;
+            real_t c = cosf(halfangle);
+            real_t s = sinf(halfangle) / halfangle;
             Quaternion q{};
             q.w = c; q.x = s * v.x; q.y = s * v.y; q.z = s * v.z;
             return q.normalized();
@@ -117,7 +117,7 @@ struct Spring : public RefCounted
         return (q.w < 0.0 ? -q : q).normalized();
     }
 
-    static inline Vector3 quat_log(Quaternion q, float eps=1e-8f){
+    static inline Vector3 quat_log(Quaternion q, real_t eps=1e-8){
         real_t length = sqrt(q.x*q.x + q.y*q.y + q.z*q.z);
         if (length < eps)
         {
@@ -125,71 +125,71 @@ struct Spring : public RefCounted
         }
         else
         {
-            float halfangle = acosf(clampf(q.w, -1.0f, 1.0f));
+            real_t halfangle = acosf(clampf(q.w, real_t(-1.0), real_t(1.0)));
             return halfangle * (Vector3(q.x, q.y, q.z) / length);
         }
     }
 
-    static inline Quaternion quat_from_scaled_angle_axis(Vector3 v, float eps = 1e-8f)
+    static inline Quaternion quat_from_scaled_angle_axis(Vector3 v, real_t eps = 1e-8)
     {
-        return quat_exp(v / 2.0f, eps).normalized();
+        return quat_exp(v / 2.0, eps).normalized();
     }
 
-    static inline Vector3 quat_to_scaled_angle_axis(Quaternion q, float eps = 1e-8f)
+    static inline Vector3 quat_to_scaled_angle_axis(Quaternion q, real_t eps = 1e-8)
     {
-        return 2.0f * quat_log(q, eps);
+        return 2.0 * quat_log(q, eps);
     }
 
-    static inline Vector3 quat_differentiate_angular_velocity(Quaternion next, Quaternion curr, float dt, float eps = 1e-8f)
+    static inline Vector3 quat_differentiate_angular_velocity(Quaternion next, Quaternion curr, real_t dt, real_t eps = 1e-8)
     {
         return quat_to_scaled_angle_axis(quat_abs(next * curr.inverse()), eps) / dt;
     }
 
     static void _spring_damper_exact(
-        float& x,
-        float& v,
-        float x_goal,
-        float v_goal,
-        float damping_ratio,
-        float halflife,
-        float dt,
-        float eps = 1e-5f)
+        real_t& x,
+        real_t& v,
+        real_t x_goal,
+        real_t v_goal,
+        real_t damping_ratio,
+        real_t halflife,
+        real_t dt,
+        real_t eps = 1e-5)
     {
-        float g = x_goal;
-        float q = v_goal;
-        float d = halflife_to_damping(halflife);
-        float s = damping_ratio_to_stiffness(damping_ratio, d);
-        float c = g + (d * q) / (s + eps);
-        float y = d / 2.0;
+        real_t g = x_goal;
+        real_t q = v_goal;
+        real_t d = halflife_to_damping(halflife);
+        real_t s = damping_ratio_to_stiffness(damping_ratio, d);
+        real_t c = g + (d * q) / (s + eps);
+        real_t y = d / 2.0;
 
         if (std::abs(s - (d * d) / 4.0) < eps) { // Critically Damped
-            float j0 = x - c;
-            float j1 = v + j0 * y;
-            float eydt = std::exp(-y * dt);
+            real_t j0 = x - c;
+            real_t j1 = v + j0 * y;
+            real_t eydt = std::exp(-y * dt);
             x = j0 * eydt + dt * j1 * eydt + c;
             v = -y * j0 * eydt - y * dt * j1 * eydt + j1 * eydt;
         }
         else if (s - (d * d) / 4.0 > 0.0) { // Under Damped
-            float w = std::sqrt(s - (d * d) / 4.0f);
-            float j = std::sqrt(std::pow(v + y * (x - c), 2) / (std::pow(w, 2) + eps) + std::pow(x - c, 2));
-            float p = std::atan((v + (x - c) * y) / (-(x - c) * w + eps));
+            real_t w = std::sqrt(s - (d * d) / 4.0);
+            real_t j = std::sqrt(std::pow(v + y * (x - c), 2) / (std::pow(w, 2) + eps) + std::pow(x - c, 2));
+            real_t p = std::atan((v + (x - c) * y) / (-(x - c) * w + eps));
 
             // j = (x - c) > 0.0 ? j : -j;
             j = (x - c) > 0.0 ? j : -j;
 
-            float eydt = std::exp(-y * dt);
+            real_t eydt = std::exp(-y * dt);
 
             x = j * eydt * std::cos(w * dt + p) + c;
             v = -y * j * eydt * std::cos(w * dt + p) - w * j * eydt * std::sin(w * dt + p);
         }
         else if (s - (d * d) / 4.0 < 0.0) { // Over Damped
-            float y0 = (d + std::sqrt(std::pow(d, 2) - 4.0f * s)) / 2.0f;
-            float y1 = (d - std::sqrt(std::pow(d, 2) - 4.0f * s)) / 2.0f;
-            float j1 = (c * y0 - x * y0 - v) / (y1 - y0);
-            float j0 = x - j1 - c;
+            real_t y0 = (d + std::sqrt(std::pow(d, 2) - 4.0 * s)) / 2.0;
+            real_t y1 = (d - std::sqrt(std::pow(d, 2) - 4.0 * s)) / 2.0;
+            real_t j1 = (c * y0 - x * y0 - v) / (y1 - y0);
+            real_t j0 = x - j1 - c;
 
-            float ey0dt = std::exp(-y0 * dt);
-            float ey1dt = std::exp(-y1 * dt);
+            real_t ey0dt = std::exp(-y0 * dt);
+            real_t ey1dt = std::exp(-y1 * dt);
 
             x = j0 * ey0dt + j1 * ey1dt + c;
             v = -y0 * j0 * ey0dt - y1 * j1 * ey1dt;
@@ -197,26 +197,26 @@ struct Spring : public RefCounted
     }
 
     static void _critical_spring_damper_exact(
-        float& x, 
-        float& v, 
-        float x_goal, 
-        float v_goal, 
-        float halflife, 
-        float dt
+        real_t& x, 
+        real_t& v, 
+        real_t x_goal, 
+        real_t v_goal, 
+        real_t halflife, 
+        real_t dt
         ) {
-        float g = x_goal;
-        float q = v_goal;
-        float d = halflife_to_damping(halflife);
-        float c = g + (d * q) / ((d * d) / 4.0f);
-        float y = d / 2.0f;
-        float j0 = x - c;
-        float j1 = v + j0 * y;
-        float eydt = fast_negexp(y * dt);
+        real_t g = x_goal;
+        real_t q = v_goal;
+        real_t d = halflife_to_damping(halflife);
+        real_t c = g + (d * q) / ((d * d) / 4.0);
+        real_t y = d / 2.0;
+        real_t j0 = x - c;
+        real_t j1 = v + j0 * y;
+        real_t eydt = fast_negexp(y * dt);
         x = eydt * (j0 + j1 * dt) + c;
         v = eydt * (v - j1 * y * dt);
     }
 
-    static inline PackedFloat32Array critical_spring_damper_exact(float x, float v, float x_goal,float v_goal,  float halflife, float dt) 
+    static inline PackedFloat32Array critical_spring_damper_exact(real_t x, real_t v, real_t x_goal,real_t v_goal,  real_t halflife, real_t dt) 
     {
         _critical_spring_damper_exact(x,v,x_goal,v_goal,halflife,dt);
         PackedFloat32Array result;
@@ -225,11 +225,11 @@ struct Spring : public RefCounted
         return result;
     }
 
-    static void _simple_spring_damper_exact(float& x, float& v, float x_goal, float halflife, float dt) {
-        float y = halflife_to_damping(halflife) / 2.0f;
-        float j0 = x - x_goal;
-        float j1 = v + j0 * y;
-        float eydt = fast_negexp(y * dt);
+    static void _simple_spring_damper_exact(real_t& x, real_t& v, real_t x_goal, real_t halflife, real_t dt) {
+        real_t y = halflife_to_damping(halflife) / 2.0;
+        real_t j0 = x - x_goal;
+        real_t j1 = v + j0 * y;
+        real_t eydt = fast_negexp(y * dt);
         x = eydt * (j0 + j1 * dt) + x_goal;
         v = eydt * (v - j1 * y * dt);
     }
@@ -237,13 +237,13 @@ struct Spring : public RefCounted
     Vector3& x, 
     Vector3& v, 
     const Vector3 x_goal, 
-    const float halflife, 
-    const float dt)
+    const real_t halflife, 
+    const real_t dt)
     {
-        float y = halflife_to_damping(halflife) / 2.0f; 
+        real_t y = halflife_to_damping(halflife) / 2.0; 
         Vector3 j0 = x - x_goal;
         Vector3 j1 = v + j0*y;
-        float eydt = fast_negexp(y*dt);
+        real_t eydt = fast_negexp(y*dt);
 
         x = eydt*(j0 + j1*dt) + x_goal;
         v = eydt*(v - j1*y*dt);
@@ -253,21 +253,21 @@ struct Spring : public RefCounted
     Quaternion& x, 
     Vector3& v, 
     const Quaternion x_goal, 
-    const float halflife, 
-    const float dt)
+    const real_t halflife, 
+    const real_t dt)
     {
-        float y = halflife_to_damping(halflife) / 2.0f; 
+        real_t y = halflife_to_damping(halflife) / 2.0; 
         
         Vector3 j0 = quat_to_scaled_angle_axis(quat_abs(x *x_goal.inverse()));
         Vector3 j1 = v + j0*y;
         
-        float eydt = fast_negexp(y*dt);
+        real_t eydt = fast_negexp(y*dt);
 
         x = quat_from_scaled_angle_axis(eydt*(j0 + j1*dt)) *  x_goal;
         v = eydt*(v - j1*y*dt);
     }
 
-    static inline Array simple_spring_damper_exact(Variant x, Variant v, Variant x_goal, float halflife, float dt){
+    static inline Array simple_spring_damper_exact(Variant x, Variant v, Variant x_goal, real_t halflife, real_t dt){
         Array result;
         if (x.get_type() == Variant::Type::VECTOR3 && v.get_type() == Variant::Type::VECTOR3 && x_goal.get_type() == Variant::Type::VECTOR3  )
         {
@@ -285,7 +285,7 @@ struct Spring : public RefCounted
         }
         else if (x.get_type() == Variant::Type::FLOAT && v.get_type() == Variant::Type::FLOAT && v.get_type() == Variant::Type::FLOAT )
         {
-            float pos = (float)x; float vel = (float)v, goal = (float)x_goal;
+            real_t pos = (real_t)x; real_t vel = (real_t)v, goal = (real_t)x_goal;
             _simple_spring_damper_exact(pos,vel,goal,halflife,dt);
             result.append(pos);
             result.append(vel);
@@ -294,37 +294,37 @@ struct Spring : public RefCounted
         return result;
     }
 
-    static inline void _decay_spring_damper_exact(float& x,float& v, float halflife, float dt) {
-        float y = halflife_to_damping(halflife) / 2.0f;
-        float j1 = v + x * y;
-        float eydt = fast_negexp(y * dt);
+    static inline void _decay_spring_damper_exact(real_t& x,real_t& v, real_t halflife, real_t dt) {
+        real_t y = halflife_to_damping(halflife) / 2.0;
+        real_t j1 = v + x * y;
+        real_t eydt = fast_negexp(y * dt);
         x = eydt * (x + j1 * dt);
         v = eydt * (v - j1 * y * dt);
     }
-    static inline void _decay_spring_damper_exact(Vector3& x,Vector3& v, float halflife, float dt) {
-        float y = halflife_to_damping(halflife) / 2.0f;
+    static inline void _decay_spring_damper_exact(Vector3& x,Vector3& v, real_t halflife, real_t dt) {
+        real_t y = halflife_to_damping(halflife) / 2.0;
         Vector3 j1 = v + x * y;
-        float eydt = fast_negexp(y * dt);
+        real_t eydt = fast_negexp(y * dt);
         x = eydt * (x + j1 * dt);
         v = eydt * (v - j1 * y * dt);
     }    
     static inline void _decay_spring_damper_exact(
         Quaternion& x, 
         Vector3& v, 
-        const float halflife, 
-        const float dt)
+        const real_t halflife, 
+        const real_t dt)
     {
-        float y = halflife_to_damping(halflife) / 2.0f; 
+        real_t y = halflife_to_damping(halflife) / 2.0; 
         
         Vector3 j0 = quat_to_scaled_angle_axis(x);
         Vector3 j1 = v + j0*y;
         
-        float eydt = fast_negexp(y*dt);
+        real_t eydt = fast_negexp(y*dt);
 
         x = quat_from_scaled_angle_axis(eydt*(j0 + j1*dt));
         v = eydt*(v - j1*y*dt);
     }
-    static inline Array decay_spring_damper_exact(Variant x, Variant v, float halflife,float dt){
+    static inline Array decay_spring_damper_exact(Variant x, Variant v, real_t halflife,real_t dt){
         Array result;
         if (x.get_type() == Variant::Type::VECTOR3 && v.get_type() == Variant::Type::VECTOR3)
         {
@@ -342,7 +342,7 @@ struct Spring : public RefCounted
         }
         else if (x.get_type() == Variant::Type::FLOAT && v.get_type() == Variant::Type::FLOAT )
         {
-            float pos = (float)x; float vel = (float)v;
+            real_t pos = (real_t)x; real_t vel = (real_t)v;
             _decay_spring_damper_exact(pos,vel,halflife,dt);
             result.append(pos);
             result.append(vel);
@@ -355,28 +355,28 @@ struct Spring : public RefCounted
     //	Reach the x_goal at timed t_goal in the future
     //	Apprehension parameter controls how far into the future we try to track the linear interpolation
     static void _timed_spring_damper_exact(
-        float& x, float& v,
-        float& xi,
-        const float x_goal, const float t_goal,
-        const float halflife, const float& dt,
-        float apprehension = 2.0f
+        real_t& x, real_t& v,
+        real_t& xi,
+        const real_t x_goal, const real_t t_goal,
+        const real_t halflife, const real_t& dt,
+        real_t apprehension = 2.0
     )
     {
-        const float min_time = t_goal > dt ? t_goal : dt;
+        const real_t min_time = t_goal > dt ? t_goal : dt;
 
-        const float v_goal = (x_goal - xi) / min_time;
+        const real_t v_goal = (x_goal - xi) / min_time;
 
-        const float t_goal_future = dt + apprehension * halflife;
-        const float x_goal_future = t_goal_future < t_goal ? xi + v_goal * t_goal_future : x_goal;
+        const real_t t_goal_future = dt + apprehension * halflife;
+        const real_t x_goal_future = t_goal_future < t_goal ? xi + v_goal * t_goal_future : x_goal;
 
         _simple_spring_damper_exact(x, v, x_goal_future, halflife, dt);
         xi += v_goal * dt;
     }
-    static inline PackedFloat32Array timed_spring_damper_exact(float x, float v,
-        float xi,
-        const float x_goal, const float t_goal,
-        const float halflife, const float dt,
-        const float apprehension = 2.0f
+    static inline PackedFloat32Array timed_spring_damper_exact(real_t x, real_t v,
+        real_t xi,
+        const real_t x_goal, const real_t t_goal,
+        const real_t halflife, const real_t dt,
+        const real_t apprehension = 2.0
     ){
         PackedFloat32Array result;
         _timed_spring_damper_exact(x,v,xi,x_goal,t_goal,halflife,dt,apprehension);
@@ -394,16 +394,16 @@ struct Spring : public RefCounted
         Vector3 angular_velocity,
         Vector3 v_goal,
         Quaternion q_goal,
-        float halflife_vel,
-        float halflife_rot,
-        float dt
+        real_t halflife_vel,
+        real_t halflife_rot,
+        real_t dt
     ) {
         Dictionary answer;
         {
-            float y = halflife_to_damping(halflife_vel) / 2.0f;
+            real_t y = halflife_to_damping(halflife_vel) / 2.0;
             Vector3 j0 = vel - v_goal;
             Vector3 j1 = acc + j0 * y;
-            float eydt = fast_negexp(y * dt);
+            real_t eydt = fast_negexp(y * dt);
 
             answer["world_position"] = eydt * ((-j1 / (y * y)) + ((-j0 - j1 * dt) / y)) +
                                     (j1 / (y * y)) + j0 / y + v_goal * dt + pos;
@@ -411,10 +411,10 @@ struct Spring : public RefCounted
             answer["acceleration"] = eydt * (acc - j1 * y * dt);
         }
         {
-            float y = halflife_to_damping(halflife_rot) / 2.0f;
+            real_t y = halflife_to_damping(halflife_rot) / 2.0;
             Vector3 j0 = (quaternion * q_goal.inverse()).get_euler();
             Vector3 j1 = angular_velocity + j0 * y;
-            float eydt = fast_negexp(y * dt);
+            real_t eydt = fast_negexp(y * dt);
             answer["quaternion"] = (Quaternion(eydt * (j0 + j1 * dt)) * q_goal).normalized();
             answer["angular_velocity"] = eydt * (angular_velocity - j1 * y * dt);
             answer["delta"] = dt;
@@ -426,11 +426,11 @@ struct Spring : public RefCounted
             Vector3 x, Vector3 v, Vector3 a, 
             Quaternion q, Vector3 angular_v, 
             Vector3 v_goal, Quaternion q_goal, 
-            float halflife_v, float halflife_q,
+            real_t halflife_v, real_t halflife_q,
             const PackedFloat32Array dts) {
         Dictionary answer;
         for (int i = 0; i < dts.size(); i++) {
-            float dt = dts[i];
+            real_t dt = dts[i];
             answer[i] = character_update(x, v, a, q, angular_v, v_goal, q_goal, halflife_v, halflife_q, dt);
         }
         return answer;
@@ -457,8 +457,8 @@ struct Spring : public RefCounted
         Vector3& off_v,
         const Vector3 in_x, 
         const Vector3 in_v,
-        const float halflife,
-        const float dt)
+        const real_t halflife,
+        const real_t dt)
     {
         Spring::_decay_spring_damper_exact(off_x, off_v, halflife, dt);
         out_x = in_x + off_x;
@@ -483,8 +483,8 @@ struct Spring : public RefCounted
         Vector3 &off_v,
         const Quaternion in_x,
         const Vector3 in_v,
-        const float halflife,
-        const float dt)
+        const real_t halflife,
+        const real_t dt)
     {
         Spring::_decay_spring_damper_exact(off_x, off_v, halflife, dt);
         out_x = (off_x * in_x).normalized();
@@ -530,12 +530,12 @@ protected:
         
 
         ClassDB::bind_static_method("Spring", D_METHOD("damper_exponential", "variable", "goal", "damping", "dt"), &Spring::damper_exponential);
-        ClassDB::bind_static_method("Spring", D_METHOD("damp_adjustment_exact_quat", "g", "halflife", "dt", "eps"), &Spring::damp_adjustment_exact_quat, DEFVAL(1e-8f));
-        ClassDB::bind_static_method("Spring", D_METHOD("damp_adjustment_exact", "g", "halflife", "dt", "eps"), &Spring::damp_adjustment_exact, DEFVAL(1e-8f));
+        ClassDB::bind_static_method("Spring", D_METHOD("damp_adjustment_exact_quat", "g", "halflife", "dt", "eps"), &Spring::damp_adjustment_exact_quat, DEFVAL(1e-8));
+        ClassDB::bind_static_method("Spring", D_METHOD("damp_adjustment_exact", "g", "halflife", "dt", "eps"), &Spring::damp_adjustment_exact, DEFVAL(1e-8));
 
-        ClassDB::bind_static_method("Spring", D_METHOD("halflife_to_duration", "halflife", "initial_value", "eps"), &Spring::halflife_to_duration, DEFVAL(1.0f), DEFVAL(1e-5f));
-        ClassDB::bind_static_method("Spring", D_METHOD("halflife_to_damping", "halflife", "eps"), &Spring::halflife_to_damping, DEFVAL(1e-5f));
-        ClassDB::bind_static_method("Spring", D_METHOD("damping_to_halflife", "damping", "eps"), &Spring::damping_to_halflife, DEFVAL(1e-5f));
+        ClassDB::bind_static_method("Spring", D_METHOD("halflife_to_duration", "halflife", "initial_value", "eps"), &Spring::halflife_to_duration, DEFVAL(1.0), DEFVAL(1e-5));
+        ClassDB::bind_static_method("Spring", D_METHOD("halflife_to_damping", "halflife", "eps"), &Spring::halflife_to_damping, DEFVAL(1e-5));
+        ClassDB::bind_static_method("Spring", D_METHOD("damping_to_halflife", "damping", "eps"), &Spring::damping_to_halflife, DEFVAL(1e-5));
         ClassDB::bind_static_method("Spring", D_METHOD("frequency_to_stiffness", "frequency"), &Spring::frequency_to_stiffness);
         ClassDB::bind_static_method("Spring", D_METHOD("stiffness_to_frequency", "stiffness"), &Spring::stiffness_to_frequency);
         ClassDB::bind_static_method("Spring", D_METHOD("critical_halflife", "frequency"), &Spring::critical_halflife);
@@ -545,11 +545,11 @@ protected:
 
         ClassDB::bind_static_method("Spring", D_METHOD("maximum_spring_velocity_to_halflife", "x", "x_goal", "v_max"), &Spring::maximum_spring_velocity_to_halflife);
 
-        ClassDB::bind_static_method("Spring", D_METHOD("timed_spring_damper_exact", "x", "v", "xi", "x_goal", "t_goal", "halflife", "dt", "apprehension"), &Spring::timed_spring_damper_exact, DEFVAL(2.0f));
+        ClassDB::bind_static_method("Spring", D_METHOD("timed_spring_damper_exact", "x", "v", "xi", "x_goal", "t_goal", "halflife", "dt", "apprehension"), &Spring::timed_spring_damper_exact, DEFVAL(2.0));
         ClassDB::bind_static_method("Spring", D_METHOD("decay_spring_damper_exact", "pos", "vel", "halflife", "dt"), &Spring::decay_spring_damper_exact);
         ClassDB::bind_static_method("Spring", D_METHOD("simple_spring_damper_exact", "x", "v", "goal", "halflife", "dt"), &Spring::simple_spring_damper_exact);
         ClassDB::bind_static_method("Spring", D_METHOD("critical_spring_damper_exact", "x", "v", "x_goal", "v_goal", "halflife", "dt"), &Spring::critical_spring_damper_exact);
-        // ClassDB::bind_static_method("Spring", D_METHOD("spring_damper_exact", "x", "v", "x_goal", "v_goal", "damping_ratio", "halflife", "dt", "eps"), &CritDampSpring::spring_damper_exact, DEFVAL(1e-5f));
+        // ClassDB::bind_static_method("Spring", D_METHOD("spring_damper_exact", "x", "v", "x_goal", "v_goal", "damping_ratio", "halflife", "dt", "eps"), &CritDampSpring::spring_damper_exact, DEFVAL(1e-5));
 
         ClassDB::bind_static_method("Spring", D_METHOD("character_update", "pos", "vel", "acc", "quaternion", "angular_velocity", "v_goal", "q_goal", "halflife_vel", "halflife_rot", "dt"), &Spring::character_update);
         ClassDB::bind_static_method("Spring", D_METHOD("character_predict", "x", "v", "a", "q", "angular_v", "v_goal", "q_goal", "halflife_v", "halflife_q", "dts"),&Spring::character_predict);
