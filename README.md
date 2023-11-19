@@ -19,7 +19,9 @@ Here is what you can expect :
   Usage : Change the type of your AnimationPlayer node to MMAnimationPlayer. Use `request_animation` to play your animation and enjoy sweet transitions.
 
 - Post Processing Animations (Node3D)
-  Having an animation player with custom transitions is great, however the elephant in the room is the AnimationTree. Contrary to AnimationPlayer, AnimationTree receive a bunch of instructions to blend animation together in any order, so there is no clear starting point to do proper inertialization. Also, some inverse kinematic are missing. So here are the nodes. All post processing nodes requires you to define which AnimationMixer-inherited node you refer, and which Skeleton you want bones to be modified. Those nodes doesn't work well with MMAnimationPlayer. All those nodes are made to be process after the AnimationMixer-inherited node, so you can either add those nodes as child of AnimationMixer, or set the process priority to an higher value than the mixer. Works also in Editor.
+  Having an animation player with custom transitions is great, however the elephant in the room is the AnimationTree. Contrary to AnimationPlayer, AnimationTree receive a bunch of instructions to blend animation together in any order, so there is no clear starting point to do proper inertialization. Also, some inverse kinematic are missing. So here are the nodes. All post processing nodes requires you to define which AnimationMixer-inherited node you refer, and which Skeleton you want bones to be modified. . All those nodes are made to be process after the AnimationMixer-inherited node, so you can either add those nodes as child of AnimationMixer, or set the process priority to an higher value than the mixer. Works also in Editor. 
+
+  Those nodes doesn't work well with MMAnimationPlayer. Use it with AnimationTree.
 
   - PPIKLookAt3D ( Node3D )
   A simple look at ik. The position of the node is where the bone will orient its rotation. There is no joints limit, so it's on you to manage that. Recommended priority = 1
@@ -31,7 +33,7 @@ Here is what you can expect :
   This is the node that tries to inertialize the AnimationTree. It's technically more of a filter than a true inertialization, but it does the job for simple transition. The bone tries to reach the positions and rotations calculated by the AnimationMixer Please keep the halflife low, something like 0.05. In the AnimationTree, you can set the transition time ( for example in AnimationNodeStateMachineTransition ) to 0 and it will work fine. If you set it to higher, you will technically inertialize the default blending of AnimationTree, which might be interesting in some cases. Fun fact : If you set this node to be processed after my PPIK Nodes, it will inertialize the transition of the bones, faking an animation instead of blending between current position of the animation and desired target. Recommended process priority = Mixer.priority + 2. 
 
 - Spring ( GDScript )
-  This is a small package of functions related to spring as defined by https://theorangeduck.com/page/spring-roll-call. Not all functions are there, and some are missing a quaternion equivalent. The other problem is that I need to use Dictionary as return values in most cases, but this will be solve when Godot add Structure object.
+  This is a small package of functions related to spring as defined by https://theorangeduck.com/page/spring-roll-call. Not all functions are there, and some are missing a quaternion equivalent. The other problem is that I need to use Dictionary as return values in most cases, but this will be solve when Godot add Structure object. Some functions will be added as needed, but change will be documented.
 
 - Circularbuffer ( GDScript )
   A wrapper around `Boost.Circular_buffer<Variant>`. 
@@ -39,6 +41,10 @@ Here is what you can expect :
 ## Status
 
 The project is currently in a working state but still under development. Please note that everything is subject to changes.
+
+Not ready, WIP: MMAnimationLibrary and any MotionFeatures.
+Stable : PPIKs, PPInertialization. CircularBuffer
+Somewhat Stable : Spring, MMAnimationPlayer
 
 ## Documentation
 
