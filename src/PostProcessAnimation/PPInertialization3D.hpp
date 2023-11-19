@@ -34,6 +34,12 @@ struct PPInertialization3D : godot::Node
     GDCLASS(PPInertialization3D,Node);
     using u = godot::UtilityFunctions;
 
+    enum InertializationType {
+		Simple
+	};
+
+    GETSET(InertializationType,type,Simple);
+
     kforms offsets = {0};
     kforms bones = {0};
 
@@ -88,6 +94,14 @@ struct PPInertialization3D : godot::Node
 
     void advance(double delta)
     {
+        if(type == InertializationType::Simple)
+        {
+            _simple(delta);
+        }
+    }
+
+    void _simple(double delta)
+    {
         if(active == false || skeleton == nullptr) return;
 
         bones.reserve(skeleton->get_bone_count());
@@ -119,6 +133,11 @@ struct PPInertialization3D : godot::Node
     protected:
     static void _bind_methods()
     {
+        ClassDB::bind_method( D_METHOD("set_type" ,"value"), &PPInertialization3D::set_type,DEFVAL(InertializationType::Simple)); 
+        ClassDB::bind_method( D_METHOD("get_type" ), &PPInertialization3D::get_type); 
+        ADD_PROPERTY(PropertyInfo(Variant::INT,"type",godot::PROPERTY_HINT_ENUM,"Simple"), "set_type", "get_type");
+
+
         ClassDB::bind_method( D_METHOD("set_active" ,"value"), &PPInertialization3D::set_active,DEFVAL(true)); 
         ClassDB::bind_method( D_METHOD("get_active" ), &PPInertialization3D::get_active); 
         godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::BOOL,"active"), "set_active", "get_active");
@@ -136,5 +155,9 @@ struct PPInertialization3D : godot::Node
         ClassDB::bind_method( D_METHOD("set_skeleton" ,"value"), &PPInertialization3D::set_skeleton); 
         ClassDB::bind_method( D_METHOD("get_skeleton" ), &PPInertialization3D::get_skeleton); 
         godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::OBJECT,"skeleton",PROPERTY_HINT_NODE_TYPE ,"Skeleton3D",PROPERTY_USAGE_SCRIPT_VARIABLE | PROPERTY_USAGE_DEFAULT), "set_skeleton", "get_skeleton");
+    
+        BIND_ENUM_CONSTANT(Simple);
     }
 };
+
+VARIANT_ENUM_CAST(PPInertialization3D::InertializationType);

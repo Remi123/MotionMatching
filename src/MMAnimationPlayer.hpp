@@ -492,10 +492,10 @@ struct MMAnimationPlayer : godot::AnimationPlayer
 
         ClassDB::bind_method(D_METHOD("get_local_bone_info","bone_name"),&MMAnimationPlayer::get_local_bone_info);
         ClassDB::bind_method(D_METHOD("get_model_bone_info","bone_name"),&MMAnimationPlayer::get_model_bone_info);
-        ClassDB::bind_method(D_METHOD("get_global_bone_info","bone_name"),&MMAnimationPlayer::get_global_bone_info);
+        ClassDB::bind_method(D_METHOD("get_raw_bone_info","bone_name"),&MMAnimationPlayer::get_global_bone_info);
 
-        ClassDB::bind_method(D_METHOD("get_root_motion_velocity"), &MMAnimationPlayer::get_root_motion_velocity);
-        ClassDB::bind_method(D_METHOD("get_root_motion_angular","delta_time"),&MMAnimationPlayer::get_root_motion_angular);
+        ClassDB::bind_method(D_METHOD("get_inertialized_root_motion_velocity"), &MMAnimationPlayer::get_root_motion_velocity);
+        ClassDB::bind_method(D_METHOD("get_inertialized_root_motion_angular","delta_time"),&MMAnimationPlayer::get_root_motion_angular);
 
         ClassDB::bind_method( D_METHOD("set_halflife" ,"value"), &MMAnimationPlayer::set_halflife); 
         ClassDB::bind_method( D_METHOD("get_halflife" ), &MMAnimationPlayer::get_halflife); 
