@@ -45,6 +45,16 @@
         ADD_PROPERTY(PropertyInfo(variant_type,#variable,__VA_ARGS__),STRING_PREFIX(set_,variable),STRING_PREFIX(get_,variable));
 
 using namespace godot;
+
+int sec_to_frame(float seconds, int fps = -1)
+{
+    if (fps <= 0 )
+    {
+        fps = Engine::get_singleton()->get_physics_ticks_per_second();
+    }
+    return (int)ceil(seconds * Engine::get_singleton()->get_physics_ticks_per_second());
+}
+
 struct EventMotionFeature : public MotionFeature {
     GDCLASS(EventMotionFeature,MotionFeature)
 
@@ -59,7 +69,7 @@ struct EventMotionFeature : public MotionFeature {
 
     virtual int get_dimension()override{return events_names.size();}
     
-    virtual PackedFloat32Array get_weights()override{ return {};}
+    virtual PackedFloat32Array get_weights()override{ return Array::make(1.0f);}
 
     virtual bool setup_profile(NodePath skeleton_path,Ref<SkeletonProfile> skel_profile)override{
         // returning false will abort the process.
@@ -72,10 +82,20 @@ struct EventMotionFeature : public MotionFeature {
         // returning false will skip this animation and print a warning
         // feel free to print more details
 
+        bool has_tracks = false;
+        for(auto index_track = 0;index_track < events_names.size(); ++index_track)
+        {
+            const auto track_name = events_tracks[index_track];
+            auto track_id = animation->find_track(track_name,Animation::TrackType::TYPE_METHOD);
+            if(track_id == -1) continue;
+            has_tracks = true;
+        }
+        if(has_tracks == false)
+        {
+            u::prints("No tracks found the animation",animation->get_path());
+        }
 
-
-
-        return true;
+        return has_tracks;
     }
     virtual PackedFloat32Array bake_animation_pose(Ref<Animation> animation,float time) override {
         PackedFloat32Array result = {};
@@ -92,40 +112,26 @@ struct EventMotionFeature : public MotionFeature {
                 for(auto index_key=0;index_key < animation->track_get_key_count(track_id); ++index_key )
                 {
                     auto method_name = animation->method_track_get_name(track_id,index_key);
-                    auto method_args = animation->method_track_get_params(track_id,index_key);
-                    float method_time = animation->track_get_key_time(track_id,index_key);
-                    if(method_name == event_name)
+                    auto method_args = animation->method_track_get_params(track_id,index_key); //0.1
+                    float method_time = (float)animation->track_get_key_time(track_id,index_key); // 0.33
+                    if(method_name == event_name || 
+                     (method_name == String("emit_signal") && method_args[0] == (StringName)event_name ))
                     {
-                        if(method_time < time)
+                        if                      (time <= method_time )
+                        {
+                            closest_right = std::min(closest_right,method_time);                                                        
+                        }
+                        else if   (method_time < time)
                         {
                             closest_left = std::max(closest_left,method_time);
-                        }
-                        else
-                        {
-                            closest_right = std::min(closest_right,method_time);
-                        }
-                    }
-                    else if (method_name == String("emit_signal") && method_args[0] == (StringName)event_name )
-                    {
-                        if(method_time < time)
-                        {
-                            closest_left = std::max(closest_left,method_time);
-                        }
-                        else
-                        {
-                            closest_right = std::min(closest_right,method_time);
                         }
                     }
                 }
-
-
-
             }
-
             auto time_until = closest_right - time;
             if(embed_as_frames)
             {
-
+                time_until = sec_to_frame(time_until);
             }
             result.append(time_until);
 
@@ -138,9 +144,21 @@ struct EventMotionFeature : public MotionFeature {
     
     static void _bind_methods() {
 
+        ClassDB::bind_method( D_METHOD("set_events_tracks" ,"value"), &EventMotionFeature::set_events_tracks); 
+        ClassDB::bind_method( D_METHOD("get_events_tracks" ), &EventMotionFeature::get_events_tracks); 
+        godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_STRING_ARRAY,"events_tracks"), "set_events_tracks", "get_events_tracks");
+
         ClassDB::bind_method( D_METHOD("set_events_names" ,"value"), &EventMotionFeature::set_events_names); 
         ClassDB::bind_method( D_METHOD("get_events_names" ), &EventMotionFeature::get_events_names); 
         godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_STRING_ARRAY,"events_names"), "set_events_names", "get_events_names");
+
+        ClassDB::bind_method( D_METHOD("set_embed_as_frames" ,"value"), &EventMotionFeature::set_embed_as_frames); 
+        ClassDB::bind_method( D_METHOD("get_embed_as_frames" ), &EventMotionFeature::get_embed_as_frames); 
+        godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::BOOL,"embed_as_frames"), "set_embed_as_frames", "get_embed_as_frames");
+        
+        ClassDB::bind_method( D_METHOD("set_embed_time_since_last_event" ,"value"), &EventMotionFeature::set_embed_time_since_last_event); 
+        ClassDB::bind_method( D_METHOD("get_embed_time_since_last_event" ), &EventMotionFeature::get_embed_time_since_last_event); 
+        godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::BOOL,"embed_time_since_last_event"), "set_embed_time_since_last_event", "get_embed_time_since_last_event");
 
         ClassDB::bind_method( D_METHOD("get_dimension"), &EventMotionFeature::get_dimension);
 

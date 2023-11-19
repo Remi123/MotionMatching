@@ -29,9 +29,9 @@
 
 using namespace godot;
 
-struct Inertialization3D : godot::Node
+struct PPInertialization3D : godot::Node
 {
-    GDCLASS(Inertialization3D,Node);
+    GDCLASS(PPInertialization3D,Node);
     using u = godot::UtilityFunctions;
 
     kforms offsets = {0};
@@ -119,22 +119,22 @@ struct Inertialization3D : godot::Node
     protected:
     static void _bind_methods()
     {
-        ClassDB::bind_method( D_METHOD("set_active" ,"value"), &Inertialization3D::set_active,DEFVAL(true)); 
-        ClassDB::bind_method( D_METHOD("get_active" ), &Inertialization3D::get_active); 
+        ClassDB::bind_method( D_METHOD("set_active" ,"value"), &PPInertialization3D::set_active,DEFVAL(true)); 
+        ClassDB::bind_method( D_METHOD("get_active" ), &PPInertialization3D::get_active); 
         godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::BOOL,"active"), "set_active", "get_active");
 
 
-        ClassDB::bind_method( D_METHOD("set_halflife" ,"value"), &Inertialization3D::set_halflife); 
-        ClassDB::bind_method( D_METHOD("get_halflife" ), &Inertialization3D::get_halflife); 
+        ClassDB::bind_method( D_METHOD("set_halflife" ,"value"), &PPInertialization3D::set_halflife); 
+        ClassDB::bind_method( D_METHOD("get_halflife" ), &PPInertialization3D::get_halflife); 
         godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT,"halflife"
         , PROPERTY_HINT_RANGE, "0.0,1.0,0.01,or_greater"), "set_halflife", "get_halflife");
 
-        ClassDB::bind_method( D_METHOD("set_mixer" ,"value"), &Inertialization3D::set_mixer); 
-        ClassDB::bind_method( D_METHOD("get_mixer" ), &Inertialization3D::get_mixer); 
+        ClassDB::bind_method( D_METHOD("set_mixer" ,"value"), &PPInertialization3D::set_mixer); 
+        ClassDB::bind_method( D_METHOD("get_mixer" ), &PPInertialization3D::get_mixer); 
         godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::OBJECT,"mixer",PROPERTY_HINT_NODE_TYPE ,"AnimationMixer",PROPERTY_USAGE_SCRIPT_VARIABLE | PROPERTY_USAGE_DEFAULT), "set_mixer", "get_mixer");
     
-        ClassDB::bind_method( D_METHOD("set_skeleton" ,"value"), &Inertialization3D::set_skeleton); 
-        ClassDB::bind_method( D_METHOD("get_skeleton" ), &Inertialization3D::get_skeleton); 
+        ClassDB::bind_method( D_METHOD("set_skeleton" ,"value"), &PPInertialization3D::set_skeleton); 
+        ClassDB::bind_method( D_METHOD("get_skeleton" ), &PPInertialization3D::get_skeleton); 
         godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::OBJECT,"skeleton",PROPERTY_HINT_NODE_TYPE ,"Skeleton3D",PROPERTY_USAGE_SCRIPT_VARIABLE | PROPERTY_USAGE_DEFAULT), "set_skeleton", "get_skeleton");
     }
 };

@@ -16,9 +16,9 @@
 
 #include <MMAnimationLibrary.hpp>
 #include <MMAnimationPlayer.hpp>
-#include <AnimationPostProcess/Inertialization3D.hpp>
-#include <AnimationPostProcess/IKLookAt3D.hpp>
-#include <AnimationPostProcess/IKTwoBone3D.hpp>
+#include <PostProcessAnimation/PPInertialization3D.hpp>
+#include <PostProcessAnimation/PPIKLookAt3D.hpp>
+#include <PostProcessAnimation/PPIKTwoBone3D.hpp>
 #include "CircularBuffer.hpp"
 
 namespace boost
@@ -51,9 +51,9 @@ void gdextension_MM_initialize(ModuleInitializationLevel p_level)
 		ClassDB::register_class<MMAnimationPlayer>();
 		ClassDB::register_class<MMAnimationLibrary>();
 
-		ClassDB::register_class<Inertialization3D>();
-		ClassDB::register_class<IKLookAt3D>();
-		ClassDB::register_class<IKTwoBone3D>();
+		ClassDB::register_class<PPInertialization3D>();
+		ClassDB::register_class<PPIKLookAt3D>();
+		ClassDB::register_class<PPIKTwoBone3D>();
 
 		ClassDB::register_class<Spring>();
 	}
