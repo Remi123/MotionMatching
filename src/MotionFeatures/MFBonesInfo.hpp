@@ -47,8 +47,8 @@ using namespace godot;
         ClassDB::bind_method( D_METHOD(STRING_PREFIX(set_,variable) ,"value"), &type::set_##variable);\
         ClassDB::bind_method( D_METHOD(STRING_PREFIX(get_,variable) ), &type::get_##variable); \
         ADD_PROPERTY(PropertyInfo(variant_type,#variable,__VA_ARGS__),STRING_PREFIX(set_,variable),STRING_PREFIX(get_,variable));
-struct BonePositionVelocityMotionFeature : public MotionFeature {
-    GDCLASS(BonePositionVelocityMotionFeature,MotionFeature)
+struct MFBonesInfo : public MotionFeature {
+    GDCLASS(MFBonesInfo,MotionFeature)
 
     // Skeleton
     Ref<SkeletonProfile> _skel = nullptr;
@@ -214,64 +214,64 @@ protected:
     static void _bind_methods() {
 
         {
-            ClassDB::bind_method(D_METHOD("serialize_MMAnimationPlayer", "body"), &BonePositionVelocityMotionFeature::serialize_mmplayer);
+            ClassDB::bind_method(D_METHOD("serialize_MMAnimationPlayer", "body"), &MFBonesInfo::serialize_mmplayer);
         }
 
-        ClassDB::bind_method(D_METHOD("set_bone_names", "value"), &BonePositionVelocityMotionFeature::set_bone_names);
-        ClassDB::bind_method(D_METHOD("get_bone_names"), &BonePositionVelocityMotionFeature::get_bone_names);
+        ClassDB::bind_method(D_METHOD("set_bone_names", "value"), &MFBonesInfo::set_bone_names);
+        ClassDB::bind_method(D_METHOD("get_bone_names"), &MFBonesInfo::get_bone_names);
         ADD_PROPERTY(PropertyInfo(Variant::PACKED_STRING_ARRAY, "Bones Names"), "set_bone_names", "get_bone_names");
 
-        ClassDB::bind_method(D_METHOD("set_weight_bone_pos", "value"), &BonePositionVelocityMotionFeature::set_weight_bone_pos);
-        ClassDB::bind_method(D_METHOD("get_weight_bone_pos"), &BonePositionVelocityMotionFeature::get_weight_bone_pos);
+        ClassDB::bind_method(D_METHOD("set_weight_bone_pos", "value"), &MFBonesInfo::set_weight_bone_pos);
+        ClassDB::bind_method(D_METHOD("get_weight_bone_pos"), &MFBonesInfo::get_weight_bone_pos);
         godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT, "weight_bone_pos"), "set_weight_bone_pos", "get_weight_bone_pos");
-        ClassDB::bind_method(D_METHOD("set_weight_bone_vel", "value"), &BonePositionVelocityMotionFeature::set_weight_bone_vel);
-        ClassDB::bind_method(D_METHOD("get_weight_bone_vel"), &BonePositionVelocityMotionFeature::get_weight_bone_vel);
+        ClassDB::bind_method(D_METHOD("set_weight_bone_vel", "value"), &MFBonesInfo::set_weight_bone_vel);
+        ClassDB::bind_method(D_METHOD("get_weight_bone_vel"), &MFBonesInfo::get_weight_bone_vel);
         godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT, "weight_bone_vel"), "set_weight_bone_vel", "get_weight_bone_vel");
-        ClassDB::bind_method(D_METHOD("set_weight_inertialization", "value"), &BonePositionVelocityMotionFeature::set_weight_inertialization);
-        ClassDB::bind_method(D_METHOD("get_weight_inertialization"), &BonePositionVelocityMotionFeature::get_weight_inertialization);
+        ClassDB::bind_method(D_METHOD("set_weight_inertialization", "value"), &MFBonesInfo::set_weight_inertialization);
+        ClassDB::bind_method(D_METHOD("get_weight_inertialization"), &MFBonesInfo::get_weight_inertialization);
         godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT, "weight_inertialization"), "set_weight_inertialization", "get_weight_inertialization");
         
 
 
         ClassDB::add_property_group(get_class_static(), "Nodes & Resources Sources", "");
         {
-            ClassDB::bind_method( D_METHOD("set_use_inertialization" ,"value"), &BonePositionVelocityMotionFeature::set_use_inertialization,DEFVAL(false)); 
-            ClassDB::bind_method( D_METHOD("get_use_inertialization" ), &BonePositionVelocityMotionFeature::get_use_inertialization); 
+            ClassDB::bind_method( D_METHOD("set_use_inertialization" ,"value"), &MFBonesInfo::set_use_inertialization,DEFVAL(false)); 
+            ClassDB::bind_method( D_METHOD("get_use_inertialization" ), &MFBonesInfo::get_use_inertialization); 
             godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::BOOL,"use_inertialization"), "set_use_inertialization", "get_use_inertialization");
 
-            ClassDB::bind_method( D_METHOD("set_inertialization_halflife" ,"value"), &BonePositionVelocityMotionFeature::set_inertialization_halflife, DEFVAL(0.1f)); 
-            ClassDB::bind_method( D_METHOD("get_inertialization_halflife" ), &BonePositionVelocityMotionFeature::get_inertialization_halflife); 
+            ClassDB::bind_method( D_METHOD("set_inertialization_halflife" ,"value"), &MFBonesInfo::set_inertialization_halflife, DEFVAL(0.1f)); 
+            ClassDB::bind_method( D_METHOD("get_inertialization_halflife" ), &MFBonesInfo::get_inertialization_halflife); 
             godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT,"inertialization_halflife"), "set_inertialization_halflife", "get_inertialization_halflife");
 
-            ClassDB::bind_method(D_METHOD("set_debug_color_position", "value"), &BonePositionVelocityMotionFeature::set_debug_color_position);
-            ClassDB::bind_method(D_METHOD("get_debug_color_position"), &BonePositionVelocityMotionFeature::get_debug_color_position);
+            ClassDB::bind_method(D_METHOD("set_debug_color_position", "value"), &MFBonesInfo::set_debug_color_position);
+            ClassDB::bind_method(D_METHOD("get_debug_color_position"), &MFBonesInfo::get_debug_color_position);
             godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::COLOR, "debug_color_position"), "set_debug_color_position", "get_debug_color_position");
 
-            ClassDB::bind_method(D_METHOD("set_debug_color_velocity", "value"), &BonePositionVelocityMotionFeature::set_debug_color_velocity);
-            ClassDB::bind_method(D_METHOD("get_debug_color_velocity"), &BonePositionVelocityMotionFeature::get_debug_color_velocity);
+            ClassDB::bind_method(D_METHOD("set_debug_color_velocity", "value"), &MFBonesInfo::set_debug_color_velocity);
+            ClassDB::bind_method(D_METHOD("get_debug_color_velocity"), &MFBonesInfo::get_debug_color_velocity);
             godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::COLOR, "debug_color_velocity"), "set_debug_color_velocity", "get_debug_color_velocity");
         }
 
         ClassDB::add_property_group(get_class_static(), "", "");
 
-        //BINDER_PROPERTY_PARAMS(BonePositionVelocityMotionFeature,Variant::PACKED_VECTOR3_ARRAY,bones_pos,PROPERTY_HINT_NONE,"",PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_READ_ONLY);
-        ClassDB::bind_method( D_METHOD("set_bones_pos" ,"value"), &BonePositionVelocityMotionFeature::set_bones_pos);
-        ClassDB::bind_method( D_METHOD("get_bones_pos" ), &BonePositionVelocityMotionFeature::get_bones_pos);
+        //BINDER_PROPERTY_PARAMS(MFBonesInfo,Variant::PACKED_VECTOR3_ARRAY,bones_pos,PROPERTY_HINT_NONE,"",PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_READ_ONLY);
+        ClassDB::bind_method( D_METHOD("set_bones_pos" ,"value"), &MFBonesInfo::set_bones_pos);
+        ClassDB::bind_method( D_METHOD("get_bones_pos" ), &MFBonesInfo::get_bones_pos);
         godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_VECTOR3_ARRAY,"bones_pos",PROPERTY_HINT_NONE,"",PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_READ_ONLY), "set_bones_pos", "get_bones_pos");
         
-        //BINDER_PROPERTY_PARAMS(BonePositionVelocityMotionFeature,Variant::PACKED_VECTOR3_ARRAY,bones_vel,PROPERTY_HINT_NONE,"",PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_READ_ONLY);
-        ClassDB::bind_method( D_METHOD("set_bones_vel" ,"value"), &BonePositionVelocityMotionFeature::set_bones_vel);
-        ClassDB::bind_method( D_METHOD("get_bones_vel" ), &BonePositionVelocityMotionFeature::get_bones_vel);
+        //BINDER_PROPERTY_PARAMS(MFBonesInfo,Variant::PACKED_VECTOR3_ARRAY,bones_vel,PROPERTY_HINT_NONE,"",PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_READ_ONLY);
+        ClassDB::bind_method( D_METHOD("set_bones_vel" ,"value"), &MFBonesInfo::set_bones_vel);
+        ClassDB::bind_method( D_METHOD("get_bones_vel" ), &MFBonesInfo::get_bones_vel);
         godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_VECTOR3_ARRAY,"bones_vel",PROPERTY_HINT_NONE,"",PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_READ_ONLY), "set_bones_vel", "get_bones_vel");
 
-        ClassDB::bind_method( D_METHOD("get_weights"), &BonePositionVelocityMotionFeature::get_weights);
-        ClassDB::bind_method( D_METHOD("get_dimension"), &BonePositionVelocityMotionFeature::get_dimension);
-        ClassDB::bind_method( D_METHOD("setup_profile","skeleton_path","skeleton_profile"), &BonePositionVelocityMotionFeature::setup_profile);
+        ClassDB::bind_method( D_METHOD("get_weights"), &MFBonesInfo::get_weights);
+        ClassDB::bind_method( D_METHOD("get_dimension"), &MFBonesInfo::get_dimension);
+        ClassDB::bind_method( D_METHOD("setup_profile","skeleton_path","skeleton_profile"), &MFBonesInfo::setup_profile);
         
-        ClassDB::bind_method( D_METHOD("setup_for_animation","animation"), &BonePositionVelocityMotionFeature::setup_for_animation);
-        ClassDB::bind_method( D_METHOD("bake_animation_pose","animation","time"), &BonePositionVelocityMotionFeature::bake_animation_pose);
+        ClassDB::bind_method( D_METHOD("setup_for_animation","animation"), &MFBonesInfo::setup_for_animation);
+        ClassDB::bind_method( D_METHOD("bake_animation_pose","animation","time"), &MFBonesInfo::bake_animation_pose);
 
-        ClassDB::bind_method( D_METHOD("debug_pose_gizmo","gizmo","data","root_transform"), &BonePositionVelocityMotionFeature::debug_pose_gizmo);
+        ClassDB::bind_method( D_METHOD("debug_pose_gizmo","gizmo","data","root_transform"), &MFBonesInfo::debug_pose_gizmo);
     }
 
     GETSET(Color,debug_color_position,godot::Color(1.0f,1.0f,1.0f));

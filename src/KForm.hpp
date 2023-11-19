@@ -164,7 +164,7 @@ struct kform
         return Vector3(std::log(v.x),std::log(v.y),std::log(v.z));
     }
 
-    kform& finite_difference(kform input_next, float _dt)
+    kform& finite_difference(kform input_next, real_t _dt)
     {
         vel = (input_next.pos - pos) / _dt;
 
@@ -176,7 +176,7 @@ struct kform
         return *this;
     }
 
-    static kform finite_difference(const kform& input_curr,const kform& input_next, float _dt)
+    static kform finite_difference(const kform& input_curr,const kform& input_next, real_t _dt)
     {
         kform out = input_curr;
         out.vel = (input_next.pos - out.pos) / _dt;

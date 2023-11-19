@@ -8,10 +8,10 @@
 
 #include "Spring.hpp"
 #include "MotionFeatures/MotionFeatures.hpp"
-#include "MotionFeatures/RootVelocityMotionFeature.hpp"
-#include "MotionFeatures/BonePositionVelocityMotionFeature.hpp"
-#include "MotionFeatures/TrajectoryMotionFeature.hpp"
-#include "MotionFeatures/EventMotionFeature.hpp"
+#include "MotionFeatures/MFRootVelocity.hpp"
+#include "MotionFeatures/MFBonesInfo.hpp"
+#include "MotionFeatures/MFTrajectory.hpp"
+#include "MotionFeatures/MFEvents.hpp"
 
 
 #include <MMAnimationLibrary.hpp>
@@ -43,10 +43,10 @@ void gdextension_MM_initialize(ModuleInitializationLevel p_level)
 		
 		ClassDB::register_class<MotionFeature>(true); // Abstract class
 		
-		ClassDB::register_class<RootVelocityMotionFeature>();
-		ClassDB::register_class<BonePositionVelocityMotionFeature>();
-		ClassDB::register_class<TrajectoryMotionFeature>();
-		ClassDB::register_class<EventMotionFeature>();
+		ClassDB::register_class<MFRootVelocity>();
+		ClassDB::register_class<MFBonesInfo>();
+		ClassDB::register_class<MFTrajectory>();
+		ClassDB::register_class<MFEvents>();
 
 		ClassDB::register_class<MMAnimationPlayer>();
 		ClassDB::register_class<MMAnimationLibrary>();

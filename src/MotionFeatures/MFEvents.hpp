@@ -55,10 +55,10 @@ int sec_to_frame(float seconds, int fps = -1)
     return (int)ceil(seconds * Engine::get_singleton()->get_physics_ticks_per_second());
 }
 
-struct EventMotionFeature : public MotionFeature {
-    GDCLASS(EventMotionFeature,MotionFeature)
+struct MFEvents : public MotionFeature {
+    GDCLASS(MFEvents,MotionFeature)
 
-    virtual ~EventMotionFeature() = default;
+    virtual ~MFEvents() = default;
 
     GETSET(bool,embed_as_frames);
     GETSET(bool,embed_time_since_last_event);
@@ -144,32 +144,32 @@ struct EventMotionFeature : public MotionFeature {
     
     static void _bind_methods() {
 
-        ClassDB::bind_method( D_METHOD("set_events_tracks" ,"value"), &EventMotionFeature::set_events_tracks); 
-        ClassDB::bind_method( D_METHOD("get_events_tracks" ), &EventMotionFeature::get_events_tracks); 
+        ClassDB::bind_method( D_METHOD("set_events_tracks" ,"value"), &MFEvents::set_events_tracks); 
+        ClassDB::bind_method( D_METHOD("get_events_tracks" ), &MFEvents::get_events_tracks); 
         godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_STRING_ARRAY,"events_tracks"), "set_events_tracks", "get_events_tracks");
 
-        ClassDB::bind_method( D_METHOD("set_events_names" ,"value"), &EventMotionFeature::set_events_names); 
-        ClassDB::bind_method( D_METHOD("get_events_names" ), &EventMotionFeature::get_events_names); 
+        ClassDB::bind_method( D_METHOD("set_events_names" ,"value"), &MFEvents::set_events_names); 
+        ClassDB::bind_method( D_METHOD("get_events_names" ), &MFEvents::get_events_names); 
         godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_STRING_ARRAY,"events_names"), "set_events_names", "get_events_names");
 
-        ClassDB::bind_method( D_METHOD("set_embed_as_frames" ,"value"), &EventMotionFeature::set_embed_as_frames); 
-        ClassDB::bind_method( D_METHOD("get_embed_as_frames" ), &EventMotionFeature::get_embed_as_frames); 
+        ClassDB::bind_method( D_METHOD("set_embed_as_frames" ,"value"), &MFEvents::set_embed_as_frames); 
+        ClassDB::bind_method( D_METHOD("get_embed_as_frames" ), &MFEvents::get_embed_as_frames); 
         godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::BOOL,"embed_as_frames"), "set_embed_as_frames", "get_embed_as_frames");
         
-        ClassDB::bind_method( D_METHOD("set_embed_time_since_last_event" ,"value"), &EventMotionFeature::set_embed_time_since_last_event); 
-        ClassDB::bind_method( D_METHOD("get_embed_time_since_last_event" ), &EventMotionFeature::get_embed_time_since_last_event); 
+        ClassDB::bind_method( D_METHOD("set_embed_time_since_last_event" ,"value"), &MFEvents::set_embed_time_since_last_event); 
+        ClassDB::bind_method( D_METHOD("get_embed_time_since_last_event" ), &MFEvents::get_embed_time_since_last_event); 
         godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::BOOL,"embed_time_since_last_event"), "set_embed_time_since_last_event", "get_embed_time_since_last_event");
 
-        ClassDB::bind_method( D_METHOD("get_dimension"), &EventMotionFeature::get_dimension);
+        ClassDB::bind_method( D_METHOD("get_dimension"), &MFEvents::get_dimension);
 
-        ClassDB::bind_method( D_METHOD("get_weights"), &EventMotionFeature::get_weights);
+        ClassDB::bind_method( D_METHOD("get_weights"), &MFEvents::get_weights);
         
-        ClassDB::bind_method( D_METHOD("setup_profile","skeleton_path","skeleton_profile"), &EventMotionFeature::setup_profile);
+        ClassDB::bind_method( D_METHOD("setup_profile","skeleton_path","skeleton_profile"), &MFEvents::setup_profile);
         
-        ClassDB::bind_method( D_METHOD("setup_for_animation","animation"), &EventMotionFeature::setup_for_animation);
-        ClassDB::bind_method( D_METHOD("bake_animation_pose","animation","time"), &EventMotionFeature::bake_animation_pose);
+        ClassDB::bind_method( D_METHOD("setup_for_animation","animation"), &MFEvents::setup_for_animation);
+        ClassDB::bind_method( D_METHOD("bake_animation_pose","animation","time"), &MFEvents::bake_animation_pose);
 
-        ClassDB::bind_method( D_METHOD("debug_pose_gizmo","gizmo","data","root_transform"), &EventMotionFeature::debug_pose_gizmo);
+        ClassDB::bind_method( D_METHOD("debug_pose_gizmo","gizmo","data","root_transform"), &MFEvents::debug_pose_gizmo);
         
     }
 };

@@ -43,8 +43,8 @@ using u = godot::UtilityFunctions;
         ClassDB::bind_method( D_METHOD(STRING_PREFIX(get_,variable) ), &type::get_##variable);\
         ADD_PROPERTY(PropertyInfo(variant_type,#variable,__VA_ARGS__),STRING_PREFIX(set_,variable),STRING_PREFIX(get_,variable));
 
-struct RootVelocityMotionFeature : public MotionFeature {
-    GDCLASS(RootVelocityMotionFeature,MotionFeature);
+struct MFRootVelocity : public MotionFeature {
+    GDCLASS(MFRootVelocity,MotionFeature);
 
     int root_track_pos =-1, root_track_quat = -1;//, root_track_scale = -1;
 
@@ -120,32 +120,32 @@ protected:
     static void _bind_methods() {
 
         {
-            ClassDB::bind_method(D_METHOD("serialize_CharacterBody3d", "body"), &RootVelocityMotionFeature::serialize_charbody3d);
-            ClassDB::bind_method(D_METHOD("serialize_Local_Velocity", "local_velocity"), &RootVelocityMotionFeature::serialize_vec3);
+            ClassDB::bind_method(D_METHOD("serialize_CharacterBody3d", "body"), &MFRootVelocity::serialize_charbody3d);
+            ClassDB::bind_method(D_METHOD("serialize_Local_Velocity", "local_velocity"), &MFRootVelocity::serialize_vec3);
         }
 
-        ClassDB::bind_method(D_METHOD("set_weight", "value"), &RootVelocityMotionFeature::set_weight, DEFVAL(1.0f));
-        ClassDB::bind_method(D_METHOD("get_weight"), &RootVelocityMotionFeature::get_weight);
+        ClassDB::bind_method(D_METHOD("set_weight", "value"), &MFRootVelocity::set_weight, DEFVAL(1.0f));
+        ClassDB::bind_method(D_METHOD("get_weight"), &MFRootVelocity::get_weight);
         godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT, "weight"), "set_weight", "get_weight");
 
         ClassDB::add_property_group(get_class_static(), "Nodes & Resources Sources", "");
         {
-            ClassDB::bind_method(D_METHOD("set_debug_color", "value"), &RootVelocityMotionFeature::set_debug_color);
-            ClassDB::bind_method(D_METHOD("get_debug_color"), &RootVelocityMotionFeature::get_debug_color);
+            ClassDB::bind_method(D_METHOD("set_debug_color", "value"), &MFRootVelocity::set_debug_color);
+            ClassDB::bind_method(D_METHOD("get_debug_color"), &MFRootVelocity::get_debug_color);
             godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::COLOR, "debug_color"), "set_debug_color", "get_debug_color");
         }
 
         ClassDB::add_property_group(get_class_static(), "", "");
 
-        ClassDB::bind_method( D_METHOD("get_weights"), &RootVelocityMotionFeature::get_weights);
-        ClassDB::bind_method( D_METHOD("get_dimension"), &RootVelocityMotionFeature::get_dimension);
+        ClassDB::bind_method( D_METHOD("get_weights"), &MFRootVelocity::get_weights);
+        ClassDB::bind_method( D_METHOD("get_dimension"), &MFRootVelocity::get_dimension);
 
-        ClassDB::bind_method( D_METHOD("setup_profile","skeleton_path","skeleton_profile"), &RootVelocityMotionFeature::setup_profile);
+        ClassDB::bind_method( D_METHOD("setup_profile","skeleton_path","skeleton_profile"), &MFRootVelocity::setup_profile);
         
-        ClassDB::bind_method( D_METHOD("setup_for_animation","animation"), &RootVelocityMotionFeature::setup_for_animation);
-        ClassDB::bind_method( D_METHOD("bake_animation_pose","animation","time"), &RootVelocityMotionFeature::bake_animation_pose);
+        ClassDB::bind_method( D_METHOD("setup_for_animation","animation"), &MFRootVelocity::setup_for_animation);
+        ClassDB::bind_method( D_METHOD("bake_animation_pose","animation","time"), &MFRootVelocity::bake_animation_pose);
         
-        ClassDB::bind_method( D_METHOD("debug_pose_gizmo","gizmo","data","root_transform"), &RootVelocityMotionFeature::debug_pose_gizmo);
+        ClassDB::bind_method( D_METHOD("debug_pose_gizmo","gizmo","data","root_transform"), &MFRootVelocity::debug_pose_gizmo);
     }
 
     GETSET(Color,debug_color,godot::Color(1.0f,1.0f,1.0f));
