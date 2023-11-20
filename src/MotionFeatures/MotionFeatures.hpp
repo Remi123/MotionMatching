@@ -36,8 +36,6 @@ struct MotionFeature : public Resource {
 
     static constexpr float delta = 0.016f;
 
-    virtual void physics_update(double delta){}
-
     virtual int get_dimension(){return 0;}
     
     virtual PackedFloat32Array get_weights(){ return {};}

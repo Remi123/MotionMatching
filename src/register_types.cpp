@@ -8,13 +8,17 @@
 
 #include "Spring.hpp"
 #include "MotionFeatures/MotionFeatures.hpp"
-#include "MotionFeatures/RootVelocityMotionFeature.hpp"
-#include "MotionFeatures/BonePositionVelocityMotionFeature.hpp"
-#include "MotionFeatures/TrajectoryMotionFeature.hpp"
+#include "MotionFeatures/MFRootVelocity.hpp"
+#include "MotionFeatures/MFBonesInfo.hpp"
+#include "MotionFeatures/MFTrajectory.hpp"
+#include "MotionFeatures/MFEvents.hpp"
 
 
 #include <MMAnimationLibrary.hpp>
 #include <MMAnimationPlayer.hpp>
+#include <PostProcessAnimation/PPInertialization3D.hpp>
+#include <PostProcessAnimation/PPIKLookAt3D.hpp>
+#include <PostProcessAnimation/PPIKTwoBone3D.hpp>
 #include "CircularBuffer.hpp"
 
 namespace boost
@@ -39,12 +43,17 @@ void gdextension_MM_initialize(ModuleInitializationLevel p_level)
 		
 		ClassDB::register_class<MotionFeature>(true); // Abstract class
 		
-		ClassDB::register_class<RootVelocityMotionFeature>();
-		ClassDB::register_class<BonePositionVelocityMotionFeature>();
-		ClassDB::register_class<TrajectoryMotionFeature>();
+		ClassDB::register_class<MFRootVelocity>();
+		ClassDB::register_class<MFBonesInfo>();
+		ClassDB::register_class<MFTrajectory>();
+		ClassDB::register_class<MFEvents>();
 
 		ClassDB::register_class<MMAnimationPlayer>();
 		ClassDB::register_class<MMAnimationLibrary>();
+
+		ClassDB::register_class<PPInertialization3D>();
+		ClassDB::register_class<PPIKLookAt3D>();
+		ClassDB::register_class<PPIKTwoBone3D>();
 
 		ClassDB::register_class<Spring>();
 	}

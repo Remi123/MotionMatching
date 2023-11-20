@@ -95,8 +95,8 @@ func update_shown_pose_data(value: float) -> void:
 		return
 
 	var pose := _current.MotionData.slice(pose_index*nb_dim,pose_index*nb_dim+nb_dim)
-	for i in range(pose.size()):
-		pose[i] = pose[i] * _current.variances[i] + _current.means[i]
+	#for i in range(pose.size()):
+		#pose[i] = pose[i] * _current.variances[i] + _current.means[i]
 
 	rd.clear()
 	var animlib :AnimationLibrary= _current as AnimationLibrary
@@ -145,7 +145,7 @@ func update_shown_pose_data(value: float) -> void:
 
 			if x < r.get_dimension():
 				rd.set_cell_border_color(Color.LIGHT_SLATE_GRAY)
-				var showed_value := (pose[offset+x] * _current.variances[offset+x]) + _current.means[offset+x]
+				var showed_value := pose[offset+x]# (pose[offset+x] * _current.variances[offset+x]) + _current.means[offset+x]
 				rd.add_text("%*.*f" % [0,3, showed_value ])
 			else:
 				rd.add_text("")

@@ -3,6 +3,8 @@
 #include <cmath>
 #include <numeric>
 
+#include <boost/container/vector.hpp>
+
 #include <godot_cpp/variant/utility_functions.hpp>
 #include "godot_cpp/core/math.hpp"
 #include "godot_cpp/variant/vector3.hpp"
@@ -162,7 +164,7 @@ struct kform
         return Vector3(std::log(v.x),std::log(v.y),std::log(v.z));
     }
 
-    kform& finite_difference(kform input_next, float _dt)
+    kform& finite_difference(kform input_next, real_t _dt)
     {
         vel = (input_next.pos - pos) / _dt;
 
@@ -174,7 +176,7 @@ struct kform
         return *this;
     }
 
-    static kform finite_difference(const kform& input_curr,const kform& input_next, float _dt)
+    static kform finite_difference(const kform& input_curr,const kform& input_next, real_t _dt)
     {
         kform out = input_curr;
         out.vel = (input_next.pos - out.pos) / _dt;
@@ -214,4 +216,47 @@ struct kform
     kform inverse() const{
         return kform() / (*this);
     }
-}; 
+};
+
+struct kforms
+{
+    template<typename T>
+    using b_vector = std::vector<T>;
+    b_vector<Vector3> pos; // Position
+    b_vector<Quaternion> rot;  // Rotation
+    b_vector<Vector3> scl; // Scale
+    b_vector<Vector3> vel; // Linear Velocity
+    b_vector<Vector3> ang; // Angular Velocity
+    b_vector<Vector3> svl; // Scalar Velocity
+
+    kforms(std::size_t N): pos(N,Vector3()),rot(N,Quaternion()),scl(N,Vector3(1,1,1)),vel(N,Vector3()),ang(N,Vector3()),svl(N,Vector3())
+    {}
+
+    Transform3D get_transform(std::size_t N)
+    {
+        return Transform3D(Basis(rot[N],scl[N]),pos[N]);
+    }
+
+    void reserve(std::size_t N){
+        pos.reserve(N); rot.reserve(N); scl.reserve(N);vel.reserve(N); ang.reserve(N); svl.reserve(N);
+    }
+
+    std::size_t count() const noexcept {
+        return pos.size();
+    }
+
+    inline const kform operator[](const std::size_t N) noexcept{
+        kform out{};
+        out.pos = pos[N];
+        out.rot = rot[N];
+        out.scl = scl[N];
+        out.vel = vel[N];
+        out.ang = ang[N];
+        out.svl = svl[N];
+        return out;
+    }
+
+    void reset(const std::size_t N){
+        pos[N] = Vector3() ;rot[N] = Quaternion(); scl[N] = Vector3(1,1,1) ;vel[N] = Vector3();ang[N] = Vector3();svl[N] = Vector3();
+    }
+};

@@ -45,46 +45,7 @@
 
 
 
-struct kforms
-{
-    std::vector<Vector3> pos; // Position
-    std::vector<Quaternion> rot;  // Rotation
-    std::vector<Vector3> scl; // Scale
-    std::vector<Vector3> vel; // Linear Velocity
-    std::vector<Vector3> ang; // Angular Velocity
-    std::vector<Vector3> svl; // Scalar Velocity
 
-    kforms(std::size_t N): pos(N,Vector3()),rot(N,Quaternion()),scl(N,Vector3(1,1,1)),vel(N,Vector3()),ang(N,Vector3()),svl(N,Vector3())
-    {}
-
-    Transform3D get_transform(std::size_t N)
-    {
-        return Transform3D(Basis(rot[N],scl[N]),pos[N]);
-    }
-
-    void reserve(std::size_t N){
-        pos.reserve(N); rot.reserve(N); scl.reserve(N);vel.reserve(N); ang.reserve(N); svl.reserve(N);
-    }
-
-    inline const kform operator[](const std::size_t N) noexcept{
-        kform out{};
-        out.pos = pos[N];
-        out.rot = {rot[N]};
-        out.scl = {scl[N]};
-        out.vel = {vel[N]};
-        out.ang = {ang[N]};
-        out.svl = {svl[N]};
-        return out;
-    }
-
-    void reset(const std::size_t N){
-        pos[N] = Vector3() ;rot[N] = Quaternion(); scl[N] = Vector3(1,1,1) ;vel[N] = Vector3();ang[N] = Vector3();svl[N] = Vector3();
-    }
-
-
-
-
-};
 
 /// @brief This animation node is for Motion Matching.
 /// It was made to get request for a pose from the list of animations,
@@ -233,6 +194,7 @@ struct MMAnimationPlayer : godot::AnimationPlayer
                 desired_rotation = Quaternion();
                 //desired_angular_vel doesn't change
             }
+            
             // Offset are calculated Between current pos of the bone and the desired pose
             Spring::inertialize_transition(bones_offset.pos[bone_id], bones_offset.vel[bone_id],
                                         bones_kform.pos[bone_id], bones_kform.vel[bone_id],
@@ -353,7 +315,7 @@ struct MMAnimationPlayer : godot::AnimationPlayer
                     desired.ang = u::is_zero_approx(delta_diff) ? Vector3() : Spring::quat_differentiate_angular_velocity( animation->rotation_track_interpolate(track_rot, future_time), desired.rot,delta_diff);
                 }
  
-                if (bone_path == u::str(get_root_motion_track()))
+                if (bone_id == root_bone_id)
                 {
                     desired.vel = desired.rot.xform_inv(desired.vel); 
                     // desired_angular = desired_rotation.xform_inv(desired_angular);
@@ -373,8 +335,6 @@ struct MMAnimationPlayer : godot::AnimationPlayer
                     halflife,                                                           // Stats on how the offset decay
                     _delta * get_speed_scale());                                         // delta time between frames
             }
-
-
 
             _skeleton->set_bone_pose_position(bone_id,bones_kform.pos[bone_id]);
             _skeleton->set_bone_pose_rotation(bone_id,bones_kform.rot[bone_id]);
@@ -532,10 +492,10 @@ struct MMAnimationPlayer : godot::AnimationPlayer
 
         ClassDB::bind_method(D_METHOD("get_local_bone_info","bone_name"),&MMAnimationPlayer::get_local_bone_info);
         ClassDB::bind_method(D_METHOD("get_model_bone_info","bone_name"),&MMAnimationPlayer::get_model_bone_info);
-        ClassDB::bind_method(D_METHOD("get_global_bone_info","bone_name"),&MMAnimationPlayer::get_global_bone_info);
+        ClassDB::bind_method(D_METHOD("get_raw_bone_info","bone_name"),&MMAnimationPlayer::get_global_bone_info);
 
-        ClassDB::bind_method(D_METHOD("get_root_motion_velocity"), &MMAnimationPlayer::get_root_motion_velocity);
-        ClassDB::bind_method(D_METHOD("get_root_motion_angular","delta_time"),&MMAnimationPlayer::get_root_motion_angular);
+        ClassDB::bind_method(D_METHOD("get_inertialized_root_motion_velocity"), &MMAnimationPlayer::get_root_motion_velocity);
+        ClassDB::bind_method(D_METHOD("get_inertialized_root_motion_angular","delta_time"),&MMAnimationPlayer::get_root_motion_angular);
 
         ClassDB::bind_method( D_METHOD("set_halflife" ,"value"), &MMAnimationPlayer::set_halflife); 
         ClassDB::bind_method( D_METHOD("get_halflife" ), &MMAnimationPlayer::get_halflife); 

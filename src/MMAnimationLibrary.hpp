@@ -244,7 +244,12 @@ struct MMAnimationLibrary : public AnimationLibrary {
                     break;
                 }
             }
-            ERR_CONTINUE_EDMSG(should_continue != -1,"Skipping Animation '" + (String)anim_name + "' because of motion feature index :" + u::str(should_continue));
+            if (should_continue != -1)
+            {
+                WARN_PRINT_ED("Skipping Animation '" + (String)anim_name + "' because of motion feature index :" + u::str(should_continue));
+                continue;
+            }
+            // ERR_CONTINUE_EDMSG(should_continue != -1,);
 
             std::vector<int32_t> category_tracks{};
             for(auto i = 0 ; i<category_track_names.size();++i)
@@ -322,13 +327,13 @@ struct MMAnimationLibrary : public AnimationLibrary {
         }
         
         // // Normalization
-        for(size_t pose = 0; pose < data.size()/nb_dimensions; ++pose)
-        {
-            for(int offset = 0; offset<nb_dimensions;++offset)
-            {
-                data[pose*nb_dimensions + offset] = (data[pose*nb_dimensions + offset] - means[offset])/variances[offset]; 
-            }
-        }
+        // for(size_t pose = 0; pose < data.size()/nb_dimensions; ++pose)
+        // {
+        //     for(int offset = 0; offset<nb_dimensions;++offset)
+        //     {
+        //         data[pose*nb_dimensions + offset] = (data[pose*nb_dimensions + offset] - means[offset])/variances[offset]; 
+        //     }
+        // }
 
         u::prints("Data Normalized. Copy data to Motion Data property...");
         MotionData = data.duplicate();
@@ -420,10 +425,10 @@ struct MMAnimationLibrary : public AnimationLibrary {
         _cache_kdtree();
 
         // Normalization
-        for (size_t i = 0; i < means.size();++i)
-        {
-            query[i] = (query[i] - means[i])/variances[i]; 
-        }
+        // for (size_t i = 0; i < means.size();++i)
+        // {
+        //     query[i] = (query[i] - means[i])/variances[i]; 
+        // }
 
         {
             Kdtree::KdNodeVector re{};

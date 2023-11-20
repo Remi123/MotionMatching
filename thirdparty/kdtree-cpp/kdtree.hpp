@@ -12,6 +12,12 @@
 //            (see the file LICENSE for details)
 //
 
+// MODIFICATION
+// -- Removed throw to make it pass fno-exceptions. The in case of throw nothing will
+// be done to the current state of the object. This include the constructor
+// -- Added logic to have a custom_weight for a single query. Good for paralellism
+// and let user have custom query.
+
 #include <cstdlib>
 #include <queue>
 #include <vector>
@@ -79,14 +85,14 @@ class KdTree {
   CoordPoint lobound, upbound;
   // helper variable to check the distance method
   int distance_type;
-  bool neighbor_search(const CoordPoint& point, kdtree_node* node, size_t k, SearchQueue* neighborheap);
-  void range_search(const CoordPoint& point, kdtree_node* node, float r, std::vector<size_t>* range_result);
+  bool neighbor_search(const CoordPoint& point, kdtree_node* node, size_t k, SearchQueue* neighborheap,DistanceMeasure * distance = nullptr);
+  void range_search(const CoordPoint& point, kdtree_node* node, float r, std::vector<size_t>* range_result,DistanceMeasure* distance = nullptr);
   bool bounds_overlap_ball(const CoordPoint& point, float dist,
-                           kdtree_node* node);
+                           kdtree_node* node, DistanceMeasure * distance = nullptr);
   bool ball_within_bounds(const CoordPoint& point, float dist,
-                          kdtree_node* node);
+                          kdtree_node* node, DistanceMeasure * distance = nullptr);
   // class implementing the distance computation
-  DistanceMeasure* distance;
+  DistanceMeasure* default_distance;
   // search predicate in knn searches
   KdNodePredicate* searchpredicate;
 
@@ -99,7 +105,7 @@ class KdTree {
   ~KdTree();
   void set_distance(int distance_type, const WeightVector* weights = NULL);
   void k_nearest_neighbors(const CoordPoint& point, size_t k,
-                           KdNodeVector* result, KdNodePredicate* pred = NULL);
+                           KdNodeVector* result, KdNodePredicate* pred = NULL,const WeightVector * custom_weight = nullptr);
   void range_nearest_neighbors(const CoordPoint& point, float r,
                                KdNodeVector* result);
 };

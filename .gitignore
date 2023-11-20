@@ -10,14 +10,16 @@
 *.o
 *.obj
 
+
 # Precompiled Headers
 *.gch
 *.pch
 
 # Compiled Dynamic libraries
-
 *.dylib
-
+*.pdb
+*.dll
+*.ilk
 *.exp
 
 # Fortran module files
