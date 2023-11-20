@@ -24,57 +24,119 @@ jobs:
           fail-fast: false
           matrix:
             include:
-              - identifier: windows-debug
-                os: windows-latest
-                name: 🏁 Windows Debug
-                target: template_debug
-                platform: windows
-                arch: x86_64
-                toolset: msvc
-                platform_version: 2022
-              - identifier: windows-release
-                os: windows-latest
-                name: 🏁 Windows Release
-                target: template_release
-                platform: windows
-                arch: x86_64
-                toolset: msvc
-                platform_version: 2022
-              - identifier: macos-debug
-                os: macos-latest
-                name: 🍎 macOS (universal) Debug
-                target: template_debug
-                platform: macos
-                arch: universal
-                toolset: clang
-                platform_version: 11
-              - identifier: macos-release
-                os: macos-latest
-                name: 🍎 macOS (universal) Release
-                target: template_release
-                platform: macos
-                arch: universal
-                toolset: clang
-                platform_version: 11
-              - identifier: linux-debug
-                os: ubuntu-latest
-                name: 🐧 Linux Debug
-                runner: ubuntu-22.04
-                target: template_debug
-                platform: linux
-                arch: x86_64
-                toolset: gcc
-                platform_version: 20.04
-              - identifier: linux-release
-                os: ubuntu-latest
-                name: 🐧 Linux Release
-                runner: ubuntu-22.04
-                target: template_release
-                platform: linux
-                arch: x86_64
-                toolset: gcc
-                platform_version: 20.04
-    
+            - identifier: windows-debug-single
+              os: windows-latest
+              name: 🏁 Windows Debug (Single Precision)
+              target: template_debug
+              platform: windows
+              arch: x86_64
+              toolset: msvc
+              platform_version: 2022
+              precision: single
+            - identifier: windows-debug-double
+              os: windows-latest
+              name: 🏁 Windows Debug (Double Precision)
+              target: template_debug
+              platform: windows
+              arch: x86_64
+              toolset: msvc
+              platform_version: 2022
+              precision: double
+            - identifier: windows-release-single
+              os: windows-latest
+              name: 🏁 Windows Release (Single Precision)
+              target: template_release
+              platform: windows
+              arch: x86_64
+              toolset: msvc
+              platform_version: 2022
+              precision: single
+            - identifier: windows-release-double
+              os: windows-latest
+              name: 🏁 Windows Release (Double Precision)
+              target: template_release
+              platform: windows
+              arch: x86_64
+              toolset: msvc
+              platform_version: 2022
+              precision: double
+            - identifier: macos-debug-single
+              os: macos-latest
+              name: 🍎 macOS (universal) Debug (Single Precision)
+              target: template_debug
+              platform: macos
+              arch: universal
+              toolset: clang
+              platform_version: 11
+              precision: single
+            - identifier: macos-debug-double
+              os: macos-latest
+              name: 🍎 macOS (universal) Debug (Double Precision)
+              target: template_debug
+              platform: macos
+              arch: universal
+              toolset: clang
+              platform_version: 11
+              precision: double
+            - identifier: macos-release-single
+              os: macos-latest
+              name: 🍎 macOS (universal) Release (Single Precision)
+              target: template_release
+              platform: macos
+              arch: universal
+              toolset: clang
+              platform_version: 11
+              precision: single
+            - identifier: macos-release-double
+              os: macos-latest
+              name: 🍎 macOS (universal) Release (Double Precision)
+              target: template_release
+              platform: macos
+              arch: universal
+              toolset: clang
+              platform_version: 11
+              precision: double
+            - identifier: linux-debug-single
+              os: ubuntu-latest
+              name: 🐧 Linux Debug (Single Precision)
+              runner: ubuntu-22.04
+              target: template_debug
+              platform: linux
+              arch: x86_64
+              toolset: gcc
+              platform_version: 20.04
+              precision: single
+            - identifier: linux-debug-double
+              os: ubuntu-latest
+              name: 🐧 Linux Debug (Double Precision)
+              runner: ubuntu-22.04
+              target: template_debug
+              platform: linux
+              arch: x86_64
+              toolset: gcc
+              platform_version: 20.04
+              precision: double
+            - identifier: linux-release-single
+              os: ubuntu-latest
+              name: 🐧 Linux Release (Single Precision)
+              runner: ubuntu-22.04
+              target: template_release
+              platform: linux
+              arch: x86_64
+              toolset: gcc
+              platform_version: 20.04
+              precision: single
+            - identifier: linux-release-double
+              os: ubuntu-latest
+              name: 🐧 Linux Release (Double Precision)
+              runner: ubuntu-22.04
+              target: template_release
+              platform: linux
+              arch: x86_64
+              toolset: gcc
+              platform_version: 20.04
+              precision: double   
+                
         steps:
 
             -   name: Checkout project
@@ -150,6 +212,7 @@ jobs:
                         arch=${{ matrix.arch }} 
                         Boost_INCLUDE_DIR=${{steps.install-boost.outputs.BOOST_ROOT}}/include/
                         Boost_LIBRARY_DIRS=${{steps.install-boost.outputs.BOOST_ROOT}}/lib
+                        precision=${{ matrix.precision }} 
                 env:
                     BOOST_ROOT: ${{ steps.install-boost.outputs.BOOST_ROOT }}
         
@@ -171,4 +234,3 @@ jobs:
                     name: ${{ matrix.identifier }}
                     path: ${{ github.workspace }}/${{ env.LIBRARY_PATH }}
                     if-no-files-found: error
-
