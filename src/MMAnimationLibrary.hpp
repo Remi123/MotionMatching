@@ -310,6 +310,8 @@ struct MMAnimationLibrary : public AnimationLibrary {
 
         u::prints("Animation Data Collected. Normalizing... ");
 
+        // // Normalization
+        // First calculate the means and the variance for each dimensions.
         for(auto i = 0; i< nb_dimensions;++i)
         {
             means[i] = mean(data_stats[i]);
@@ -324,16 +326,38 @@ struct MMAnimationLibrary : public AnimationLibrary {
                 arr.append(Array::make(d.first,d.second) ); 
             }
             densities[i] = std::move(arr);
+        }        
+
+        // There is some amount of logic here that must be taking care when baking and querying.
+        // A feature could expect to use the raw values instead of normalizing.
+        // I expect this part to be changed feature type get added.
+        for(size_t features_index = 0,offset = 0; features_index < motion_features.size(); ++features_index )
+        {
+            MotionFeature* f = Object::cast_to<MotionFeature>(motion_features[features_index]);
+            if(MotionFeature::NormalizationType::Standard == f->get_normalization_type())
+            {
+                // Do nothing
+            }
+            else if(MotionFeature::NormalizationType::RawValue == f->get_normalization_type())
+            {
+                auto mbegin = std::next(means.ptrw(),offset);
+                auto mend = std::next(mbegin,f->get_dimension());
+                std::for_each(mbegin,mend,[](float& m){ m = real_t(0);}); // 0 mean no offset
+
+                mbegin = std::next(variances.ptrw(),offset);
+                mend = std::next(mbegin,f->get_dimension());
+                std::for_each(mbegin,mend,[](float& v){ v = real_t(1);}); // dividing by 1 is itself
+            }
+            offset += f->get_dimension();
         }
-        
-        // // Normalization
-        // for(size_t pose = 0; pose < data.size()/nb_dimensions; ++pose)
-        // {
-        //     for(int offset = 0; offset<nb_dimensions;++offset)
-        //     {
-        //         data[pose*nb_dimensions + offset] = (data[pose*nb_dimensions + offset] - means[offset])/variances[offset]; 
-        //     }
-        // }
+        // Apply normalization to data. When using RawValue, means and variance are 0 and 1 respectively.
+        for(size_t pose = 0; pose < data.size()/nb_dimensions; ++pose)
+        {
+            for(int offset = 0; offset<nb_dimensions;++offset)
+            {
+                data[pose*nb_dimensions + offset] = (data[pose*nb_dimensions + offset] - means[offset])/variances[offset]; 
+            }
+        }
 
         u::prints("Data Normalized. Copy data to Motion Data property...");
         MotionData = data.duplicate();
@@ -424,11 +448,11 @@ struct MMAnimationLibrary : public AnimationLibrary {
         // Create three if needs be
         _cache_kdtree();
 
-        // Normalization
-        // for (size_t i = 0; i < means.size();++i)
-        // {
-        //     query[i] = (query[i] - means[i])/variances[i]; 
-        // }
+        // Normalization of the query data. It's expected to not be normalized.
+        for (size_t i = 0; i < means.size();++i)
+        {
+            query[i] = (query[i] - means[i])/variances[i]; 
+        }
 
         {
             Kdtree::KdNodeVector re{};

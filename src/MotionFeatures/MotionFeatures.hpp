@@ -1,5 +1,6 @@
 #pragma once
 
+#include <climits>
 #include <godot_cpp/variant/utility_functions.hpp>
 
 #include <godot_cpp/classes/global_constants.hpp>
@@ -28,9 +29,27 @@
 #include <godot_cpp/classes/standard_material3d.hpp>
 #include <godot_cpp/classes/box_mesh.hpp>
 
+// Macro setup. Mostly there to simplify writing all those
+#define GETSET(type,variable,...) type variable{__VA_ARGS__};\
+    type get_##variable(){return  variable;}  \
+    void set_##variable(type value){variable = value;}
+#define STR(x) #x
+#define STRING_PREFIX(prefix,s) STR(prefix##s)
+#define BINDER_PROPERTY_PARAMS(type,variant_type,variable,...)\
+        ClassDB::bind_method( D_METHOD(STRING_PREFIX(set_,variable) ,"value"), &type::set_##variable);\
+        ClassDB::bind_method( D_METHOD(STRING_PREFIX(get_,variable) ), &type::get_##variable); \
+        ADD_PROPERTY(PropertyInfo(variant_type,#variable,__VA_ARGS__),STRING_PREFIX(set_,variable),STRING_PREFIX(get_,variable));
 
 struct MotionFeature : public Resource {
     GDCLASS(MotionFeature,Resource)
+
+    enum NormalizationType{
+        Standard,
+        RawValue
+    };
+    GETSET(NormalizationType,normalization_type,Standard);
+    GETSET(real_t,norm_clamp_min,std::numeric_limits<float>::min());
+    GETSET(real_t,norm_clamp_max,std::numeric_limits<float>::max());
 
     virtual ~MotionFeature() = default;
 
@@ -58,7 +77,14 @@ struct MotionFeature : public Resource {
     
     static void _bind_methods() {
 
+        BIND_ENUM_CONSTANT(Standard);
+        BIND_ENUM_CONSTANT(RawValue);
+
         ClassDB::bind_method( D_METHOD("get_dimension"), &MotionFeature::get_dimension);
+
+        ClassDB::bind_method( D_METHOD("set_normalization_type" ,"value"), &MotionFeature::set_normalization_type,DEFVAL(NormalizationType::Standard)); 
+        ClassDB::bind_method( D_METHOD("get_normalization_type" ), &MotionFeature::get_normalization_type); 
+        ADD_PROPERTY(PropertyInfo(Variant::INT,"normalization_type",godot::PROPERTY_HINT_ENUM,"Standard,RawValue"), "set_normalization_type", "get_normalization_type");
 
         ClassDB::bind_method( D_METHOD("get_weights"), &MotionFeature::get_weights);
         
@@ -71,3 +97,5 @@ struct MotionFeature : public Resource {
         
     }
 };
+
+VARIANT_ENUM_CAST(MotionFeature::NormalizationType);
