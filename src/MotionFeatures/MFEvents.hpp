@@ -28,6 +28,7 @@
 #include <godot_cpp/classes/standard_material3d.hpp>
 #include <godot_cpp/classes/box_mesh.hpp>
 
+#include <limits>
 #include <algorithm>
 
 #include <MotionFeatures/MotionFeatures.hpp>
@@ -107,7 +108,13 @@ struct MFEvents : public MotionFeature {
             {
                 const auto track_name = events_tracks[index_track];
                 auto track_id = animation->find_track(track_name,Animation::TrackType::TYPE_METHOD);
-                if(track_id == -1) continue;
+
+                // Track not found ? Put to Infinite.
+                if(track_id == -1) 
+                {
+                    result.append(std::numeric_limits<float>::max());
+                    continue;
+                }
 
                 for(auto index_key=0;index_key < animation->track_get_key_count(track_id); ++index_key )
                 {
@@ -117,11 +124,11 @@ struct MFEvents : public MotionFeature {
                     if(method_name == event_name || 
                      (method_name == String("emit_signal") && method_args[0] == (StringName)event_name ))
                     {
-                        if                      (time <= method_time )
+                        if(time <= method_time )
                         {
                             closest_right = std::min(closest_right,method_time);                                                        
                         }
-                        else if   (method_time < time)
+                        else if(method_time < time)
                         {
                             closest_left = std::max(closest_left,method_time);
                         }

@@ -1,3 +1,7 @@
+// Acknowledgement : This file wouldn't be possible without the blog from Daniel Holden, a.k.a TheOrangeDuck
+// https://theorangeduck.com/page/propagating-velocities-through-animation-systems
+// The code has been adapted to work with Godot's Vector3 and Quaternion.
+
 #pragma once
 
 #include <cmath>

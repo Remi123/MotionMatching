@@ -31,6 +31,7 @@ using namespace godot;
 struct PPIKLookAt3D : godot::Node3D
 {
     GDCLASS(PPIKLookAt3D,Node3D);
+    public:
     using u = godot::UtilityFunctions;
 
     GETSET(AnimationMixer*,mixer,nullptr);

@@ -32,6 +32,7 @@ using namespace godot;
 struct PPInertialization3D : godot::Node
 {
     GDCLASS(PPInertialization3D,Node);
+    public:
     using u = godot::UtilityFunctions;
 
     enum InertializationType {

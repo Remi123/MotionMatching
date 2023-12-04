@@ -49,6 +49,7 @@ using namespace godot;
         ADD_PROPERTY(PropertyInfo(variant_type,#variable,__VA_ARGS__),STRING_PREFIX(set_,variable),STRING_PREFIX(get_,variable));
 struct MFBonesInfo : public MotionFeature {
     GDCLASS(MFBonesInfo,MotionFeature)
+    public:
 
     // Skeleton
     Ref<SkeletonProfile> _skel = nullptr;

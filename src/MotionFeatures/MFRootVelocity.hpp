@@ -45,6 +45,7 @@ using u = godot::UtilityFunctions;
 
 struct MFRootVelocity : public MotionFeature {
     GDCLASS(MFRootVelocity,MotionFeature);
+    public:
 
     int root_track_pos =-1, root_track_quat = -1;//, root_track_scale = -1;
 

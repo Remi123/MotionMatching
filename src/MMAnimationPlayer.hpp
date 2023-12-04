@@ -54,6 +54,7 @@
 struct MMAnimationPlayer : godot::AnimationPlayer
 {
     GDCLASS(MMAnimationPlayer,AnimationPlayer);
+    public:
     using u = godot::UtilityFunctions;
 
     kforms bones_kform{0}, bones_offset{0};

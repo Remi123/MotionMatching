@@ -31,6 +31,7 @@ using namespace godot;
 struct PPIKTwoBone3D : godot::Node3D
 {
     GDCLASS(PPIKTwoBone3D,Node3D);
+    public:
     using u = godot::UtilityFunctions;
 
     GETSET(AnimationMixer*,mixer,nullptr);

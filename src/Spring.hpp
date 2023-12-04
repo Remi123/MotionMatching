@@ -16,6 +16,7 @@ using namespace godot;
 struct Spring : public RefCounted
 {
     GDCLASS(Spring,RefCounted)
+    public:
 
     static constexpr real_t Ln2 = 0.69314718056;
 

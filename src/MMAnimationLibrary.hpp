@@ -56,6 +56,8 @@ struct MMAnimationLibrary : public AnimationLibrary {
     using u = godot::UtilityFunctions;
     GDCLASS(MMAnimationLibrary,AnimationLibrary)
 
+    public:
+
     MMAnimationLibrary() : AnimationLibrary()
     {
         u::prints("MMAL", "Constructor",MotionData.size());

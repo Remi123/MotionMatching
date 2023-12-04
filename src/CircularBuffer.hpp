@@ -13,6 +13,7 @@ using namespace godot;
 struct CircularBuffer : public godot::RefCounted
 {
     GDCLASS(CircularBuffer,RefCounted);
+    public:
     using capacity_t = typename boost::circular_buffer_space_optimized<godot::Variant>::capacity_type;
     using value_type = typename boost::circular_buffer_space_optimized<godot::Variant>::value_type;
 

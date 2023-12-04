@@ -41,8 +41,9 @@
         ADD_PROPERTY(PropertyInfo(variant_type,#variable,__VA_ARGS__),STRING_PREFIX(set_,variable),STRING_PREFIX(get_,variable));
 
 struct MotionFeature : public Resource {
+    public:
     GDCLASS(MotionFeature,Resource)
-
+    public:
     enum NormalizationType{
         Standard,
         RawValue
@@ -50,8 +51,6 @@ struct MotionFeature : public Resource {
     GETSET(NormalizationType,normalization_type,Standard);
     GETSET(real_t,norm_clamp_min,std::numeric_limits<float>::min());
     GETSET(real_t,norm_clamp_max,std::numeric_limits<float>::max());
-
-    virtual ~MotionFeature() = default;
 
     static constexpr float delta = 0.016f;
 

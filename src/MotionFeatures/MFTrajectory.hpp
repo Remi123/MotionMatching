@@ -37,6 +37,7 @@ using u = godot::UtilityFunctions;
 
 struct MFTrajectory : public MotionFeature{
     GDCLASS(MFTrajectory,MotionFeature)
+    public:
 
 
     virtual ~MFTrajectory() = default;
