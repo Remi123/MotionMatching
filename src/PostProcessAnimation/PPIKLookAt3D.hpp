@@ -52,7 +52,7 @@ struct PPIKLookAt3D : godot::Node3D
 
     void advance(double delta)
     {
-        if( active == false || bone.is_empty() || skeleton == nullptr) return;
+        if( active == false || bone.is_empty() || skeleton == nullptr || !mixer->is_active()) return;
         int bone_id = skeleton->find_bone(bone);
         if (bone_id == -1) return;
 

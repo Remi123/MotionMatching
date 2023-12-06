@@ -73,6 +73,43 @@ struct MotionFeature : public Resource {
 
     virtual void debug_pose_gizmo(Ref<EditorNode3DGizmo> gizmo, const PackedFloat32Array data,godot::Transform3D tr = godot::Transform3D{}){return;}
 
+    static void embed_variant(Variant& v,PackedFloat32Array& result)
+    {
+        using namespace godot;
+        if(v.get_type() == Variant::BOOL)
+        {
+            result.append((bool)v);
+        }
+        else if(v.get_type() == Variant::INT)
+        {
+            result.append((int)v);
+        }
+        else if(v.get_type() == Variant::FLOAT)
+        {
+            result.append((real_t)v);
+        }
+        else if(v.get_type() == Variant::VECTOR2)
+        {
+            godot::Vector2 v2 = (Vector2)v;
+            result.append(v2.x);
+            result.append(v2.y);
+        }
+        else if(v.get_type() == Variant::VECTOR3)
+        {
+            Vector3 v3 = (Vector3)v;
+            result.append(v3.x);
+            result.append(v3.y);
+            result.append(v3.z);
+        }
+        else if(v.get_type() == Variant::QUATERNION)
+        {
+            Quaternion q = (Quaternion)v;
+            result.append(q.x);
+            result.append(q.y);
+            result.append(q.z);
+            result.append(q.w);
+        }
+    }
     
     static void _bind_methods() {
 

@@ -64,7 +64,7 @@ struct PPIKTwoBone3D : godot::Node3D
 
     void advance(double delta)
     {
-        if(active == false || skeleton == nullptr || mixer == nullptr) return;
+        if(active == false || skeleton == nullptr || mixer == nullptr || !mixer->is_active()) return;
         kforms locals{BONE_COUNT},globals{BONE_COUNT};
         if(bone_A.is_empty() || bone_B.is_empty() || bone_C.is_empty())
         {

@@ -103,7 +103,7 @@ struct PPInertialization3D : godot::Node
 
     void _simple(double delta)
     {
-        if(active == false || skeleton == nullptr) return;
+        if(active == false || skeleton == nullptr || !mixer->is_active()) return;
 
         bones.reserve(skeleton->get_bone_count());
         offsets.reserve(skeleton->get_bone_count());
