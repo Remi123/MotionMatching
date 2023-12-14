@@ -1,0 +1,43 @@
+[gd_scene load_steps=2 format=3 uid="uid://cvfu2yfl33icj"]
+
+[ext_resource type="Script" path="res://addons/MotionMatching/controls/Tags/TracksBar/Scripts/track_bar.gd" id="1_b7x0t"]
+
+[node name="TrackBar" type="Panel"]
+custom_minimum_size = Vector2(0, 30)
+anchors_preset = 10
+anchor_right = 1.0
+grow_horizontal = 2
+size_flags_horizontal = 3
+script = ExtResource("1_b7x0t")
+
+[node name="PopupMenu" type="PopupMenu" parent="."]
+size = Vector2i(263, 305)
+item_count = 10
+item_0/text = "Motion Matching"
+item_0/id = 99
+item_0/disabled = true
+item_0/separator = true
+item_1/text = "Add Category"
+item_1/id = 0
+item_2/text = "Add Timing Feature"
+item_2/id = 1
+item_3/text = "Add Junk"
+item_3/id = 2
+item_4/text = "Events"
+item_4/id = 99
+item_4/disabled = true
+item_4/separator = true
+item_5/text = "Add Motion Warping"
+item_5/id = 11
+item_6/text = "Tracks"
+item_6/id = 99
+item_6/disabled = true
+item_6/separator = true
+item_7/text = "Add Track Below"
+item_7/id = 10
+item_8/text = "Deletion"
+item_8/id = 99
+item_8/disabled = true
+item_8/separator = true
+item_9/text = "[!] Delete this track and events"
+item_9/id = 20

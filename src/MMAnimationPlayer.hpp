@@ -22,6 +22,7 @@
 #include <godot_cpp/classes/skeleton3d.hpp>
 
 #include <godot_cpp/classes/time.hpp>
+#include <godot_cpp/classes/curve3d.hpp>
 
 #include "godot_cpp/core/math.hpp"
 #include "godot_cpp/variant/vector3.hpp"
@@ -45,8 +46,6 @@
 
 
 
-
-
 /// @brief This animation node is for Motion Matching.
 /// It was made to get request for a pose from the list of animations,
 /// make a transition, then play the animation from then.
@@ -56,6 +55,17 @@ struct MMAnimationPlayer : godot::AnimationPlayer
     GDCLASS(MMAnimationPlayer,AnimationPlayer);
     public:
     using u = godot::UtilityFunctions;
+
+    enum Motion_Tags{
+        NoTag = 0,
+        StartUp,
+        Active,
+        Recovery        
+    };
+
+
+    GETSET(Motion_Tags,motion_tag);
+    GETSET(TypedArray<Transform3D>,transforms_queue);
 
     kforms bones_kform{0}, bones_offset{0};
 
@@ -78,6 +88,9 @@ struct MMAnimationPlayer : godot::AnimationPlayer
         {
             return;
         }
+        warpXYZ = Ref<Curve3D>();
+        warpR = Ref<Curve3D>();
+
         default_halflife = halflife;
         skeleton_path = NodePath(get_root_motion_track().get_concatenated_names());
         _skeleton = get_node<Skeleton3D>(NodePath(skeleton_path));
@@ -125,7 +138,102 @@ struct MMAnimationPlayer : godot::AnimationPlayer
         stop();
     }
 
-    virtual bool request_animation(StringName p_animation_name, float p_time = 0.0f,float new_halflife = -1.0f, float time_diff = -1.0f)
+#pragma region  MotionWarping
+    GETSET(Signal,mw_target_update);
+    GETSET(PackedStringArray,section_tracks);
+
+    /* Motion Warping
+    MW is a kind of additive animation, but is mostly applied on the root bone.
+    Look into Esoterica, the goal is to create a series of curves
+    The offset position is calculated from the current position to the target position, relative to a bone (default is the root bone).
+    Step 0: 
+        Verify that Root Track, Root node and other dependancies are ok
+    Step 1: 
+        Calculate Total displacement
+    Step 2:
+        Analyze the animation for sections of time where you can modify the alignment and displacement.
+    */
+
+    bool generate_warping_info(Ref<Animation> anim,real_t start_time, String bone_name , std::vector<godot::Transform3D>& targets)
+    {
+        for(int i = 0; i < section_tracks.size();++i)
+        {
+
+        }
+        trs_warping.clear(); trs_root.clear();
+        trs_warping.reserve(anim->get_length() / anim->get_step());
+        trs_root.reserve(anim->get_length() / anim->get_step());
+
+        for(double t = 0.0; t < anim->get_length(); t += anim->get_step() )
+        {
+            trs_root.push_back((Transform3D)kform(_skeleton,anim,t,bone_name,get_root_motion_track().get_concatenated_subnames()));
+        }
+
+        return true;
+    }
+
+    std::vector<Transform3D> trs_warping{},trs_root{};
+    virtual void request_motion_warping(StringName p_animation_name, real_t start_time = real_t(0.0), String bone_name = "", TypedArray<godot::Transform3D> global_transforms = {}, float new_halflife = -1.0f)
+    {
+        // if global_transforms is empty, this means that we don't create offsets. Just play the anim.
+        if (global_transforms.is_empty())
+        {
+            request_animation(p_animation_name,start_time,new_halflife);
+            return;
+        }
+        // const String mmplayer_path = is_unique_name_in_owner() ? String("%") + get_name() : get_name();
+        // const String mw_path = mmplayer_path + String(":motion_tag");
+        // Step 0
+        auto* root_node = get_node<Node3D>(get_root());
+        _skeleton = get_node<Skeleton3D>(NodePath(skeleton_path));
+        Ref<Animation> p_animation = get_animation(p_animation_name);
+        ERR_FAIL_NULL_MSG(p_animation,"Animation name isn't in the list of animations");
+        ERR_FAIL_NULL_MSG(root_node,"RootNode Not Setup or not a Node3D");
+        ERR_FAIL_NULL_MSG(_skeleton,"Skeleton Not Setup or not a Skeleton3D");
+        const auto motion_scale = _skeleton->get_motion_scale();
+
+        // Step 1
+        // Get root node global position
+        Transform3D const start_tr = root_node->get_global_transform();
+        // Change targets to be relative to the global position of the root node.
+        std::vector<Transform3D> targets{};
+        for(int i = 0; i < global_transforms.size();++i)
+        {
+            targets.push_back(start_tr.inverse() * (Transform3D)global_transforms[i]);
+        }
+
+        if(generate_warping_info(p_animation,start_time,bone_name,targets))
+        {
+
+        }
+        
+
+
+        int const root_id = _skeleton->find_bone(get_root_motion_track().get_concatenated_subnames());
+        Transform3D const bone_rest = _skeleton->get_bone_rest(root_id);
+        Vector3 pos{bone_rest.origin},scl(bone_rest.basis.get_scale()); Quaternion rot{bone_rest.get_basis().get_rotation_quaternion()};       
+
+
+
+        // Get root motion transforms
+        for(double t = 0.0; t < p_animation->get_length(); t += p_animation->get_step() )
+        {
+            Transform3D tr{bone_rest};
+            if(int pos_track=p_animation->find_track(get_root_motion_track(),Animation::TrackType::TYPE_POSITION_3D); pos_track != -1)
+            {
+                tr.origin = p_animation->position_track_interpolate(pos_track,t);
+            }
+            if(int rot_track=p_animation->find_track(get_root_motion_track(),Animation::TrackType::TYPE_ROTATION_3D); rot_track != -1)
+            {
+                tr.basis.set_quaternion(p_animation->rotation_track_interpolate(rot_track,t));
+            }
+            trs_root.emplace_back(std::move(tr));
+        }
+    }
+
+#pragma endregion
+
+    virtual bool request_animation(StringName p_animation_name, float p_time = 0.0f,float new_halflife = -1.0f)
     {
         _skeleton = get_node<Skeleton3D>(NodePath(skeleton_path));
         ERR_FAIL_NULL_V(_skeleton,false);
@@ -135,12 +243,7 @@ struct MMAnimationPlayer : godot::AnimationPlayer
         ERR_FAIL_NULL_V(p_animation,false);
         bones_kform.reserve(_skeleton->get_bone_count());
         bones_offset.reserve(_skeleton->get_bone_count());
-        //
-        if(time_diff > 0.0f && p_animation_name == get_current_animation() && abs(p_time - get_current_animation_position()) < time_diff)
-        {
-            // We are already playing
-            return false;
-        }
+        
         if ( new_halflife > 0.0f)
         {
             set_halflife(new_halflife);
@@ -343,11 +446,11 @@ struct MMAnimationPlayer : godot::AnimationPlayer
         }
     }
 
-   Dictionary get_local_bone_info(StringName bone_name)
-   {
-        ERR_FAIL_COND_V(_skeleton == nullptr,{});
+    Dictionary get_local_bone_info(StringName bone_name)
+    {
+        ERR_FAIL_COND_V(_skeleton == nullptr, {});
         auto id = _skeleton->find_bone(bone_name);
-        ERR_FAIL_COND_V_MSG(id == -1,{},"Bone " +bone_name + " doesn't exist in skeleton");
+        ERR_FAIL_COND_V_MSG(id == -1, {}, "Bone " + bone_name + " doesn't exist in skeleton");
         const auto kin = bones_kform[id];
         Dictionary result = Dictionary{};
         result["position"] = kin.pos;
@@ -357,14 +460,14 @@ struct MMAnimationPlayer : godot::AnimationPlayer
         result["scale"] = kin.scl;
         result["scalar_vel"] = kin.svl;
         return result;
-   }
+    }
 
-   //Assume bone_id is correct
-   kform get_bone_global_kform(int bone_id)
-   {
+    // Assume bone_id is correct
+    kform get_bone_global_kform(int bone_id)
+    {
         std::vector<int> parents_id{bone_id};
         auto tmp_p = bone_id;
-        while( _skeleton->get_bone_parent(tmp_p) != -1)
+        while (_skeleton->get_bone_parent(tmp_p) != -1)
         {
             auto new_parent = _skeleton->get_bone_parent(tmp_p);
             parents_id.push_back(new_parent);
@@ -372,16 +475,16 @@ struct MMAnimationPlayer : godot::AnimationPlayer
         }
         const auto motion_scale = _skeleton->get_motion_scale();
         return std::accumulate(parents_id.rbegin(), parents_id.rend(), kform{},
-                           [this,motion_scale](const kform &acc, int i)
-                           {
-                               auto info = bones_kform[i];
-                            //    info.pos *= motion_scale;
-                               return acc * info;
-                           });
-   }
+                               [this, motion_scale](const kform &acc, int i)
+                               {
+                                   auto info = bones_kform[i];
+                                   //    info.pos *= motion_scale;
+                                   return acc * info;
+                               });
+    }
 
-   kform get_bone_model_kform(int bone_id)
-   {
+    kform get_bone_model_kform(int bone_id)
+    {
         if (bone_id == root_bone_id)
         {
             return kform{};
@@ -397,45 +500,45 @@ struct MMAnimationPlayer : godot::AnimationPlayer
 
         const auto motion_scale = _skeleton->get_motion_scale();
         return std::accumulate(parents_id.rbegin(), parents_id.rend(), kform{},
-                           [this, motion_scale](const kform &acc, int i)
-                           {
-                               auto info = bones_kform[i];
-                            //    info.pos *= motion_scale;
-                               return acc * info;
-                           });
-   }
+                               [this, motion_scale](const kform &acc, int i)
+                               {
+                                   auto info = bones_kform[i];
+                                   //    info.pos *= motion_scale;
+                                   return acc * info;
+                               });
+    }
 
-   kform get_bone_info(StringName bone_name,kform::Space space)
-   {
+    kform get_bone_info(StringName bone_name, kform::Space space)
+    {
         ERR_FAIL_COND_V(_skeleton == nullptr, {});
         auto id = _skeleton->find_bone(bone_name);
-        ERR_FAIL_COND_V_MSG(id == -1,{},"Bone " +bone_name + " doesn't exist in skeleton");
+        ERR_FAIL_COND_V_MSG(id == -1, {}, "Bone " + bone_name + " doesn't exist in skeleton");
         if (space == kform::Space::Local)
         {
             return bones_kform[id];
         }
-        else if(space == kform::Space::Global)
+        else if (space == kform::Space::Global)
         {
             return get_bone_global_kform(id);
         }
-        else if(space == kform::Space::RootMotion)
+        else if (space == kform::Space::RootMotion)
         {
             kform global = get_bone_global_kform(id);
             return bones_kform[root_bone_id] / global;
         }
-        else if(space == kform::Space::Model)
+        else if (space == kform::Space::Model)
         {
             return get_bone_model_kform(id);
         }
         return kform{};
-   }
+    }
 
     Dictionary get_global_bone_info(StringName bone_name)
-   {
+    {
         ERR_FAIL_COND_V(_skeleton == nullptr, {});
         auto id = _skeleton->find_bone(bone_name);
-        ERR_FAIL_COND_V_MSG(id == -1,{},"Bone " +bone_name + " doesn't exist in skeleton");
-        kform global = get_bone_info(bone_name,kform::Space::Global);
+        ERR_FAIL_COND_V_MSG(id == -1, {}, "Bone " + bone_name + " doesn't exist in skeleton");
+        kform global = get_bone_info(bone_name, kform::Space::Global);
 
         Dictionary result = Dictionary{};
         result["position"] = global.pos;
@@ -445,14 +548,14 @@ struct MMAnimationPlayer : godot::AnimationPlayer
         result["scale"] = global.scl;
         result["scalar_vel"] = global.svl;
         return result;
-   }
+    }
 
-   Dictionary get_model_bone_info(StringName bone_name)
-   {
+    Dictionary get_model_bone_info(StringName bone_name)
+    {
         ERR_FAIL_COND_V(_skeleton == nullptr, {});
         auto id = _skeleton->find_bone(bone_name);
-        ERR_FAIL_COND_V_MSG(id == -1,{},"Bone " +bone_name + " doesn't exist in skeleton");
-        kform global = get_bone_info(bone_name,kform::Space::Model);
+        ERR_FAIL_COND_V_MSG(id == -1, {}, "Bone " + bone_name + " doesn't exist in skeleton");
+        kform global = get_bone_info(bone_name, kform::Space::Model);
 
         Dictionary result = Dictionary{};
         result["position"] = global.pos;
@@ -462,7 +565,10 @@ struct MMAnimationPlayer : godot::AnimationPlayer
         result["scale"] = global.scl;
         result["scalar_vel"] = global.svl;
         return result;
-   }
+    }
+
+    Ref<Curve3D> warpXYZ;
+    Ref<Curve3D> warpR; // ScaledAngleAxis
 
     Vector3 get_root_motion_velocity()
     {
@@ -470,7 +576,14 @@ struct MMAnimationPlayer : godot::AnimationPlayer
         {
             return {};
         }
-        return bones_kform.vel[root_bone_id] * get_speed_scale();
+        else if(get_current_animation().is_empty())
+        {
+            return bones_kform.vel[root_bone_id] * get_speed_scale();
+        }
+        auto warp_vel = warpXYZ->sample_baked(get_current_animation_position()/get_current_animation_length() * warpXYZ->get_baked_length())
+        - warpXYZ->sample_baked((get_current_animation_position() - 0.016f)/get_current_animation_length() * warpXYZ->get_baked_length())
+        / 0.016f;
+        return bones_kform.vel[root_bone_id] * get_speed_scale() + warp_vel;
     }
     Quaternion get_root_motion_angular(float delta)
     {
@@ -485,9 +598,18 @@ struct MMAnimationPlayer : godot::AnimationPlayer
     protected:
     static void _bind_methods()
     {
+        BIND_ENUM_CONSTANT(NoTag);
+        BIND_ENUM_CONSTANT(StartUp);
+        BIND_ENUM_CONSTANT(Active);
+        BIND_ENUM_CONSTANT(Recovery);
+        ClassDB::bind_method( D_METHOD("set_motion_tag" ,"value"), &MMAnimationPlayer::set_motion_tag,DEFVAL(MMAnimationPlayer::Motion_Tags::NoTag)); 
+        ClassDB::bind_method( D_METHOD("get_motion_tag" ), &MMAnimationPlayer::get_motion_tag); 
+        ADD_PROPERTY(PropertyInfo(Variant::INT,"motion_tag",godot::PROPERTY_HINT_ENUM,"NoTag,StartUp,Active,Recovery",godot::PROPERTY_USAGE_DEFAULT | godot::PROPERTY_USAGE_ALWAYS_DUPLICATE ), "set_motion_tag", "get_motion_tag");
+
+
         ClassDB::bind_method(D_METHOD("_on_anim_finish","anim"),&MMAnimationPlayer::_on_anim_finish);
 
-        ClassDB::bind_method(D_METHOD("request_animation", "animation", "timestamp", "new_halflife","skip_same_anim_difference"), &MMAnimationPlayer::request_animation, (0.0f),(-1.0f),(-1.0f));
+        ClassDB::bind_method(D_METHOD("request_animation", "animation", "timestamp", "new_halflife"), &MMAnimationPlayer::request_animation, (0.0f),(-1.0f));
         ClassDB::bind_method(D_METHOD("request_pose", "animation", "timestamp", "new_halflife"), &MMAnimationPlayer::request_pose, (0.0f),(-1.0f));
         
 
@@ -505,3 +627,5 @@ struct MMAnimationPlayer : godot::AnimationPlayer
 
     }
 };
+
+VARIANT_ENUM_CAST(MMAnimationPlayer::Motion_Tags);

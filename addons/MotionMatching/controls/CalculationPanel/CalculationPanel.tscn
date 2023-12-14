@@ -1,0 +1,53 @@
+[gd_scene format=3 uid="uid://t1me7mggbgko"]
+
+[node name="Calculation" type="HFlowContainer"]
+visible = false
+
+[node name="MarginContainer" type="MarginContainer" parent="."]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="HFlowContainer" type="HFlowContainer" parent="MarginContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Label2" type="Label" parent="MarginContainer/HFlowContainer"]
+layout_mode = 2
+text = "Discover Halflife from Derivative  -  Start:"
+
+[node name="SpinBox" type="SpinBox" parent="MarginContainer/HFlowContainer"]
+layout_mode = 2
+step = 0.1
+value = 1.0
+allow_greater = true
+allow_lesser = true
+
+[node name="Label3" type="Label" parent="MarginContainer/HFlowContainer"]
+layout_mode = 2
+text = "End
+"
+
+[node name="SpinBox2" type="SpinBox" parent="MarginContainer/HFlowContainer"]
+layout_mode = 2
+step = 0.1
+value = 1.0
+allow_greater = true
+allow_lesser = true
+
+[node name="Label4" type="Label" parent="MarginContainer/HFlowContainer"]
+layout_mode = 2
+text = "Max Derivative"
+
+[node name="SpinBox3" type="SpinBox" parent="MarginContainer/HFlowContainer"]
+layout_mode = 2
+step = 0.1
+value = 1.0
+allow_greater = true
+allow_lesser = true
+
+[node name="equal" type="Label" parent="MarginContainer/HFlowContainer"]
+layout_mode = 2
+text = "="
+
+[node name="Answer2" type="Label" parent="MarginContainer/HFlowContainer"]
+layout_mode = 2

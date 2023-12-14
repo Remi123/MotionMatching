@@ -1,0 +1,36 @@
+[gd_scene load_steps=4 format=3 uid="uid://ws63tatc17cq"]
+
+[ext_resource type="Script" path="res://addons/MotionMatching/controls/Tags/EventBar/Scripts/event_button.gd" id="1_7evyp"]
+[ext_resource type="Theme" uid="uid://c4fn4740sh1k1" path="res://addons/MotionMatching/controls/Tags/EventBar/Themes/Events.tres" id="1_otv65"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_776wk"]
+
+[node name="EventBar" type="PanelContainer"]
+anchors_preset = 9
+anchor_bottom = 1.0
+offset_right = 20.0
+grow_vertical = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_776wk")
+script = ExtResource("1_7evyp")
+
+[node name="MarginContainer" type="MarginContainer" parent="."]
+layout_mode = 2
+mouse_filter = 0
+mouse_default_cursor_shape = 10
+theme_override_constants/margin_left = 3
+theme_override_constants/margin_right = 3
+
+[node name="Button" type="Button" parent="MarginContainer"]
+layout_mode = 2
+theme = ExtResource("1_otv65")
+text = "Event"
+clip_text = true
+
+[node name="PopupMenu" type="PopupMenu" parent="."]
+size = Vector2i(150, 116)
+item_count = 2
+item_0/text = "Duplicate"
+item_0/id = 0
+item_1/text = "Delete"
+item_1/id = 1

@@ -5,6 +5,7 @@
 #include <godot_cpp/classes/global_constants.hpp>
 #include <godot_cpp/classes/node.hpp>
 #include <godot_cpp/variant/node_path.hpp>
+#include <godot_cpp/variant/variant.hpp>
 
 #include <godot_cpp/core/class_db.hpp>
 #include <godot_cpp/core/method_bind.hpp>
@@ -56,13 +57,21 @@ int sec_to_frame(float seconds, int fps = -1)
     return (int)ceil(seconds * Engine::get_singleton()->get_physics_ticks_per_second());
 }
 
+
+
 struct MFEvents : public MotionFeature {
     GDCLASS(MFEvents,MotionFeature)
 
-    virtual ~MFEvents() = default;
+    public:
+    enum EventType{
+        Timing,
+        EmbedValue
+    };
+
+    GETSET(EventType,event_type);
+
 
     GETSET(bool,embed_as_frames);
-    GETSET(bool,embed_time_since_last_event);
     GETSET(godot::PackedStringArray,events_tracks);
     GETSET(godot::PackedStringArray,events_names);
 
@@ -98,6 +107,7 @@ struct MFEvents : public MotionFeature {
 
         return has_tracks;
     }
+
     virtual PackedFloat32Array bake_animation_pose(Ref<Animation> animation,float time) override {
         PackedFloat32Array result = {};
         for(auto event_i = 0;event_i < events_names.size(); ++event_i)
@@ -109,7 +119,7 @@ struct MFEvents : public MotionFeature {
                 const auto track_name = events_tracks[index_track];
                 auto track_id = animation->find_track(track_name,Animation::TrackType::TYPE_METHOD);
 
-                // Track not found ? Put to Infinite.
+                // Track not found ? Put to max.
                 if(track_id == -1) 
                 {
                     result.append(std::numeric_limits<float>::max());
@@ -134,6 +144,9 @@ struct MFEvents : public MotionFeature {
                         }
                     }
                 }
+
+
+
             }
             auto time_until = closest_right - time;
             if(embed_as_frames)
@@ -146,10 +159,39 @@ struct MFEvents : public MotionFeature {
         return result;
     }
 
+    void property_track(int track_id,Ref<Animation> animation,float time,PackedFloat32Array& result)
+    {
+        switch (event_type)
+        {
+            case RawValue:
+            {
+                Variant value = animation->value_track_interpolate(track_id,time);
+                embed_variant(value,result);
+            }
+            case Timing:
+            {
+                
+            }
+            default :
+            {
+
+            }
+        }
+    }
+
+
+
     virtual void debug_pose_gizmo(Ref<EditorNode3DGizmo> gizmo, const PackedFloat32Array data,godot::Transform3D tr = godot::Transform3D{}){return;}
 
     
     static void _bind_methods() {
+
+        BIND_ENUM_CONSTANT(Timing);        
+        BIND_ENUM_CONSTANT(EmbedValue);
+
+        // Override Default Value
+        ClassDB::bind_method( D_METHOD("set_normalization_type" ,"value"), &MFEvents::set_normalization_type,DEFVAL(NormalizationType::RawValue)); 
+        
 
         ClassDB::bind_method( D_METHOD("set_events_tracks" ,"value"), &MFEvents::set_events_tracks); 
         ClassDB::bind_method( D_METHOD("get_events_tracks" ), &MFEvents::get_events_tracks); 
@@ -163,10 +205,6 @@ struct MFEvents : public MotionFeature {
         ClassDB::bind_method( D_METHOD("get_embed_as_frames" ), &MFEvents::get_embed_as_frames); 
         godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::BOOL,"embed_as_frames"), "set_embed_as_frames", "get_embed_as_frames");
         
-        ClassDB::bind_method( D_METHOD("set_embed_time_since_last_event" ,"value"), &MFEvents::set_embed_time_since_last_event); 
-        ClassDB::bind_method( D_METHOD("get_embed_time_since_last_event" ), &MFEvents::get_embed_time_since_last_event); 
-        godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::BOOL,"embed_time_since_last_event"), "set_embed_time_since_last_event", "get_embed_time_since_last_event");
-
         ClassDB::bind_method( D_METHOD("get_dimension"), &MFEvents::get_dimension);
 
         ClassDB::bind_method( D_METHOD("get_weights"), &MFEvents::get_weights);
@@ -180,3 +218,5 @@ struct MFEvents : public MotionFeature {
         
     }
 };
+
+VARIANT_ENUM_CAST(MFEvents::EventType);

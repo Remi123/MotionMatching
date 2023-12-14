@@ -1,0 +1,234 @@
+[gd_scene load_steps=3 format=3 uid="uid://bj4qic5cdef61"]
+
+[ext_resource type="Script" path="res://addons/MotionMatching/controls/Tags/TagsEditor.gd" id="1_gnt8s"]
+[ext_resource type="PackedScene" uid="uid://cvfu2yfl33icj" path="res://addons/MotionMatching/controls/Tags/TracksBar/track_bar.tscn" id="1_wx0r3"]
+
+[node name="VBoxContainer" type="VBoxContainer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+script = ExtResource("1_gnt8s")
+
+[node name="HSplitContainer" type="HBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="PanelContainer" type="PanelContainer" parent="HSplitContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="HSplitContainer" type="HBoxContainer" parent="HSplitContainer/PanelContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="HSplitContainer/PanelContainer/HSplitContainer"]
+layout_mode = 2
+text = "Current Animation :"
+
+[node name="AnimationSelector" type="MenuButton" parent="HSplitContainer/PanelContainer/HSplitContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "001-walk-start-forward_rightfoot"
+item_count = 72
+popup/item_0/text = "001-walk-start-forward_rightfoot"
+popup/item_0/id = 0
+popup/item_1/text = "002-idle_right_foot_front"
+popup/item_1/id = 1
+popup/item_2/text = "002-walk-start-left45-rightFoot"
+popup/item_2/id = 2
+popup/item_3/text = "003-walk-start-left90-rightFoot"
+popup/item_3/id = 3
+popup/item_4/text = "004-walk-start-left135-rightFoot"
+popup/item_4/id = 4
+popup/item_5/text = "005-walk-start-left180-rightFoot"
+popup/item_5/id = 5
+popup/item_6/text = "006-walk-start-right45-rightFoot"
+popup/item_6/id = 6
+popup/item_7/text = "007-walk-start-right90-rightFoot"
+popup/item_7/id = 7
+popup/item_8/text = "008-walk-start-right135-rightFoot"
+popup/item_8/id = 8
+popup/item_9/text = "009-walk-start-right180-rightFoot"
+popup/item_9/id = 9
+popup/item_10/text = "022-walk_loop_leftFoot"
+popup/item_10/id = 10
+popup/item_11/text = "023-walk_loop_leftFoot2"
+popup/item_11/id = 11
+popup/item_12/text = "025-walk_loop_leftFoot3"
+popup/item_12/id = 12
+popup/item_13/text = "029-walk_start_forward"
+popup/item_13/id = 13
+popup/item_14/text = "030-walk-start-left45-leftFoot"
+popup/item_14/id = 14
+popup/item_15/text = "031-walk-start-left90-leftFoot"
+popup/item_15/id = 15
+popup/item_16/text = "032-walk-start-left135-leftFoot"
+popup/item_16/id = 16
+popup/item_17/text = "033-walk-start-left180-leftFoot"
+popup/item_17/id = 17
+popup/item_18/text = "034-walk-start-right45-leftFoot"
+popup/item_18/id = 18
+popup/item_19/text = "035-walk-start-right90-leftFoot"
+popup/item_19/id = 19
+popup/item_20/text = "036-walk-start-right135-leftFoot"
+popup/item_20/id = 20
+popup/item_21/text = "037-walk-start-right180-leftFoot"
+popup/item_21/id = 21
+popup/item_22/text = "038-start_run_leftFoot"
+popup/item_22/id = 22
+popup/item_23/text = "039-start_run_leftFoot-45left"
+popup/item_23/id = 23
+popup/item_24/text = "040-start_run_leftFoot-90left"
+popup/item_24/id = 24
+popup/item_25/text = "041-start_run_leftFoot-135left"
+popup/item_25/id = 25
+popup/item_26/text = "042-start_run_leftFoot-180left"
+popup/item_26/id = 26
+popup/item_27/text = "043-start_run_leftFoot-45right"
+popup/item_27/id = 27
+popup/item_28/text = "044-start_run_leftFoot-90right"
+popup/item_28/id = 28
+popup/item_29/text = "045-start_run_leftFoot-135right"
+popup/item_29/id = 29
+popup/item_30/text = "046-start_run_leftFoot-180right"
+popup/item_30/id = 30
+popup/item_31/text = "047-start_run_rightFoot"
+popup/item_31/id = 31
+popup/item_32/text = "048-start_run_rightFoot-45right"
+popup/item_32/id = 32
+popup/item_33/text = "049-start_run_rightFoot-90right"
+popup/item_33/id = 33
+popup/item_34/text = "050-start_run_rightFoot-135right"
+popup/item_34/id = 34
+popup/item_35/text = "051-start_run_rightFoot-180right"
+popup/item_35/id = 35
+popup/item_36/text = "052-start_run_rightFoot-45left"
+popup/item_36/id = 36
+popup/item_37/text = "053-start_run_rightFoot-90left"
+popup/item_37/id = 37
+popup/item_38/text = "054-start_run_rightFoot-135left"
+popup/item_38/id = 38
+popup/item_39/text = "055-start_run_rightFoot-180left"
+popup/item_39/id = 39
+popup/item_40/text = "056-moveWalkStopRightFoot"
+popup/item_40/id = 40
+popup/item_41/text = "057-moveWalkStopLefttFoot"
+popup/item_41/id = 41
+popup/item_42/text = "058-moveRunStopLeftFoot"
+popup/item_42/id = 42
+popup/item_43/text = "059-moveRunStopRightFoot"
+popup/item_43/id = 43
+popup/item_44/text = "060-snake-wide"
+popup/item_44/id = 44
+popup/item_45/text = "062-snake-tight"
+popup/item_45/id = 45
+popup/item_46/text = "063-acceleration-deceleration-walkRun"
+popup/item_46/id = 46
+popup/item_47/text = "064-acceleration-deceleration-walkRun2"
+popup/item_47/id = 47
+popup/item_48/text = "065-Arc-Left_Wide"
+popup/item_48/id = 48
+popup/item_49/text = "065-Arc-Right_Wide"
+popup/item_49/id = 49
+popup/item_50/text = "066-Arc-Left_Medium"
+popup/item_50/id = 50
+popup/item_51/text = "066-Arc-Right_Medium"
+popup/item_51/id = 51
+popup/item_52/text = "067-Arc-Left_Tight"
+popup/item_52/id = 52
+popup/item_53/text = "067-Arc-Right_Tight"
+popup/item_53/id = 53
+popup/item_54/text = "068-shuffle-leftFoot-Forward"
+popup/item_54/id = 54
+popup/item_55/text = "069-shuffle-leftFoot-45Left"
+popup/item_55/id = 55
+popup/item_56/text = "071-shuffle-leftFoot-90Left"
+popup/item_56/id = 56
+popup/item_57/text = "072-shuffle-leftFoot-135Left"
+popup/item_57/id = 57
+popup/item_58/text = "073-shuffle-leftFoot-180Left"
+popup/item_58/id = 58
+popup/item_59/text = "074-shuffle-leftFoot-45Right"
+popup/item_59/id = 59
+popup/item_60/text = "075-shuffle-leftFoot-90Right"
+popup/item_60/id = 60
+popup/item_61/text = "076-shuffle-leftFoot-135Right"
+popup/item_61/id = 61
+popup/item_62/text = "077-shuffle-leftFoot-180Right"
+popup/item_62/id = 62
+popup/item_63/text = "078-shuffle-rightFoot-forward"
+popup/item_63/id = 63
+popup/item_64/text = "079-shuffle-rightFoot-right45"
+popup/item_64/id = 64
+popup/item_65/text = "080-shuffle-rightFoot-right90"
+popup/item_65/id = 65
+popup/item_66/text = "081-shuffle-rightFoot-right135"
+popup/item_66/id = 66
+popup/item_67/text = "082-shuffle-rightFoot-right180"
+popup/item_67/id = 67
+popup/item_68/text = "083-shuffle-rightFoot-Left45"
+popup/item_68/id = 68
+popup/item_69/text = "084-shuffle-rightFoot-Left90"
+popup/item_69/id = 69
+popup/item_70/text = "085-shuffle-rightFoot-Left135"
+popup/item_70/id = 70
+popup/item_71/text = "086-shuffle-rightFoot-Left180"
+popup/item_71/id = 71
+
+[node name="HSeparator" type="VSeparator" parent="HSplitContainer"]
+layout_mode = 2
+
+[node name="PanelContainer2" type="PanelContainer" parent="HSplitContainer"]
+layout_mode = 2
+size_flags_horizontal = 8
+
+[node name="Zoom" type="HSlider" parent="HSplitContainer/PanelContainer2"]
+unique_name_in_owner = true
+clip_contents = true
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2
+size_flags_vertical = 1
+min_value = 0.05
+max_value = 1.0
+step = 0.05
+value = 1.0
+tick_count = 5
+ticks_on_borders = true
+
+[node name="MarginContainer" type="MarginContainer" parent="."]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/margin_left = 5
+theme_override_constants/margin_right = 5
+
+[node name="ScrollContainer" type="ScrollContainer" parent="MarginContainer"]
+layout_mode = 2
+tooltip_text = "15"
+
+[node name="VBoxContainer" type="VSplitContainer" parent="MarginContainer/ScrollContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+collapsed = true
+
+[node name="Timeline" type="HSlider" parent="MarginContainer/ScrollContainer/VBoxContainer"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(8, 0)
+layout_mode = 2
+size_flags_vertical = 1
+max_value = 2.63333
+step = 0.1
+tick_count = 8
+ticks_on_borders = true
+
+[node name="TrackList" type="VBoxContainer" parent="MarginContainer/ScrollContainer/VBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="TrackBar" parent="MarginContainer/ScrollContainer/VBoxContainer/TrackList" instance=ExtResource("1_wx0r3")]
+layout_mode = 2
+size_flags_horizontal = 1
+animation_length = 2.63333

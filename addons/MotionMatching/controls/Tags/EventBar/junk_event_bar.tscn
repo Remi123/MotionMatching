@@ -1,0 +1,18 @@
+[gd_scene load_steps=5 format=3 uid="uid://b7a6t74o0gurc"]
+
+[ext_resource type="PackedScene" uid="uid://ws63tatc17cq" path="res://addons/MotionMatching/controls/Tags/EventBar/event_bar.tscn" id="1_2n6pj"]
+[ext_resource type="Theme" uid="uid://db83mbwq7mx8q" path="res://addons/MotionMatching/controls/Tags/EventBar/Themes/DoNotUseEventTheme.tres" id="2_0gvd0"]
+
+[sub_resource type="GDScript" id="GDScript_ctb4q"]
+
+[sub_resource type="GDScript" id="GDScript_m6bf6"]
+
+[node name="EventBar" instance=ExtResource("1_2n6pj")]
+
+[node name="MarginContainer" parent="." index="0"]
+script = SubResource("GDScript_ctb4q")
+
+[node name="Button" parent="MarginContainer" index="0"]
+theme = ExtResource("2_0gvd0")
+text = "Junk"
+script = SubResource("GDScript_m6bf6")

@@ -1,0 +1,96 @@
+[gd_scene load_steps=8 format=3 uid="uid://cgx5x8caibsnl"]
+
+[ext_resource type="Script" path="res://addons/MotionMatching/controls/MMEditor.gd" id="1_vgisb"]
+[ext_resource type="PackedScene" uid="uid://ey2osuvm28ql" path="res://addons/MotionMatching/controls/AnimationPanel/AnimationPanel.tscn" id="2_231wr"]
+[ext_resource type="PackedScene" uid="uid://ceb0rxuep0ibs" path="res://addons/MotionMatching/controls/DataViewer/DataPanel.tscn" id="3_urdr0"]
+[ext_resource type="PackedScene" uid="uid://bj4qic5cdef61" path="res://addons/MotionMatching/controls/Tags/TagsEditor.tscn" id="4_ox5eo"]
+[ext_resource type="PackedScene" uid="uid://bhqok5suthh0o" path="res://addons/MotionMatching/controls/Information/infoPanel.tscn" id="5_b42xx"]
+[ext_resource type="PackedScene" uid="uid://t1me7mggbgko" path="res://addons/MotionMatching/controls/CalculationPanel/CalculationPanel.tscn" id="6_f5chu"]
+
+[sub_resource type="LabelSettings" id="LabelSettings_ro7di"]
+
+[node name="MMEditor" type="PanelContainer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+script = ExtResource("1_vgisb")
+
+[node name="MMEditorPanel" type="VBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="DataPanel" type="TabContainer" parent="MMEditorPanel"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Animations" parent="MMEditorPanel/DataPanel" instance=ExtResource("2_231wr")]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="Data" parent="MMEditorPanel/DataPanel" instance=ExtResource("3_urdr0")]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+
+[node name="Tags" parent="MMEditorPanel/DataPanel" instance=ExtResource("4_ox5eo")]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+
+[node name="Stats" parent="MMEditorPanel/DataPanel" instance=ExtResource("5_b42xx")]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+
+[node name="Calculation" parent="MMEditorPanel/DataPanel" instance=ExtResource("6_f5chu")]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="SubPanel" type="PanelContainer" parent="MMEditorPanel"]
+layout_mode = 2
+
+[node name="VBoxContainer" type="HBoxContainer" parent="MMEditorPanel/SubPanel"]
+layout_mode = 2
+alignment = 1
+
+[node name="PanelContainer" type="HBoxContainer" parent="MMEditorPanel/SubPanel/VBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Label" type="Label" parent="MMEditorPanel/SubPanel/VBoxContainer/PanelContainer"]
+layout_mode = 2
+size_flags_vertical = 1
+text = " Path :"
+label_settings = SubResource("LabelSettings_ro7di")
+horizontal_alignment = 1
+vertical_alignment = 1
+uppercase = true
+
+[node name="VSeparator" type="VSeparator" parent="MMEditorPanel/SubPanel/VBoxContainer/PanelContainer"]
+layout_mode = 2
+
+[node name="PathLabel" type="Label" parent="MMEditorPanel/SubPanel/VBoxContainer/PanelContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 1
+text = "No Path
+"
+vertical_alignment = 1
+
+[node name="HBoxContainer" type="HBoxContainer" parent="MMEditorPanel/SubPanel/VBoxContainer"]
+layout_direction = 3
+layout_mode = 2
+
+[node name="BakeButton" type="Button" parent="MMEditorPanel/SubPanel/VBoxContainer/HBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Bake Data"
+
+[node name="WeightButton" type="Button" parent="MMEditorPanel/SubPanel/VBoxContainer/HBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Recalculate Weights"

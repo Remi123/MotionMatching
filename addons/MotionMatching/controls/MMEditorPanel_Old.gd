@@ -1,7 +1,15 @@
 @tool
 class_name MMEditorPanel extends Control
 
-var _current : MMAnimationLibrary = null
+@onready var tags: TagEditor = $TabContainer/Tags
+
+
+var _current : MMAnimationLibrary = null :
+	get:
+		return _current
+	set(value):
+		_current=value
+		update_info()
 
 var plugin_ref : EditorPlugin
 
@@ -16,7 +24,7 @@ var plugin_ref : EditorPlugin
 func update_info()->void:
 	$TabContainer/Info/MarginContainer4/HBoxContainer/PathText.text = _current.resource_path
 
-	if _current:
+	if _current != null:
 
 		var nb_dim = _current.nb_dimensions
 
@@ -25,7 +33,6 @@ func update_info()->void:
 
 		choose_anim.get_popup().clear()
 		for a in _current.get_animation_list():
-			print(a)
 			choose_anim.get_popup().add_item(a)
 		choose_anim.get_popup().id_pressed.connect(_on_choose_animation_pressed)
 

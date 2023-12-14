@@ -2,14 +2,10 @@
 class_name MMPlugin
 extends EditorPlugin
 
-var bottompanel :MMEditorPanel= preload("res://addons/MotionMatching/MMEditorPanel.tscn").instantiate()
-
-# const MMEditorGizmoPlugin :MMEditorGizmoPlugin= preload("res://addons/MotionMatching/MMEditorGizmoPlugin.gd")
-
-# var gizmo_plugin := MMEditorGizmoPlugin.new()
+var BOTTOMPANEL := preload("res://addons/MotionMatching/controls/MMEditorPanel.tscn")
+@onready var bottompanel :MMEditor= BOTTOMPANEL.instantiate()
 
 var last_path := ""
-var al :MMAnimationLibrary
 
 func _enter_tree() -> void:
 	pass
@@ -21,7 +17,6 @@ func _input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.is_released():
 		if last_path != get_editor_interface().get_current_path():
 			last_path = get_editor_interface().get_current_path()
-			remove_control_from_bottom_panel(bottompanel)
 			visibility()
 
 	pass
@@ -35,19 +30,14 @@ func _has_main_screen()->bool:
 	return false
 
 func visibility() -> void:
-
-	var nodes :Array= get_editor_interface().get_selection().get_selected_nodes()
-	#var v = nodes.any(func(x):return x is MotionMatcher)
-	var l = ResourceLoader.load(get_editor_interface().get_current_path())
+	var l = ResourceLoader.load(get_editor_interface().get_current_path()) # Load what is selected in filesystem
 	if l is MMAnimationLibrary:
 		prints("Selected MMAL",l.resource_path)
-		al = l
-		bottompanel._current = al
-		bottompanel.plugin_ref = self
-
+		#bottompanel.plugin_ref = self
+		remove_control_from_bottom_panel(bottompanel)
 		add_control_to_bottom_panel(bottompanel,"MotionMatching")
 		make_bottom_panel_item_visible(bottompanel)
-		bottompanel.update_info()
+		bottompanel.library = l as MMAnimationLibrary
 	else :
 		remove_control_from_bottom_panel(bottompanel)
 

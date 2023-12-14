@@ -33,6 +33,7 @@
 
 #include "kdtree-cpp/kdtree.hpp"
 #include "MotionFeatures/MotionFeatures.hpp"
+#include <AnimTags/AnimTag.hpp>
 
 #include <boost/accumulators/accumulators.hpp>
 #include <boost/accumulators/statistics.hpp>
@@ -101,6 +102,7 @@ struct MMAnimationLibrary : public AnimationLibrary {
     GETSET(StringName,skeleton_path);
     GETSET(Ref<SkeletonProfile>,skeleton_profile)
     GETSET(float,time_interval);
+    GETSET(TypedArray<AnimTag>,tags);
 
     // Category tracks
     GETSET(TypedArray<String>,category_track_names)
@@ -671,6 +673,10 @@ protected:
                 ClassDB::bind_method(D_METHOD("set_category_track_names", "value"), &MMAnimationLibrary::set_category_track_names);
                 ClassDB::bind_method(D_METHOD("get_category_track_names"), &MMAnimationLibrary::get_category_track_names);
                 godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_STRING_ARRAY, "category_track_names", PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_DEFAULT), "set_category_track_names", "get_category_track_names");
+
+                ClassDB::bind_method(D_METHOD("set_tags", "value"), &MMAnimationLibrary::set_tags);
+                ClassDB::bind_method(D_METHOD("get_tags"), &MMAnimationLibrary::get_tags);
+                godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::ARRAY, "tags", godot::PROPERTY_HINT_TYPE_STRING, u::str(Variant::OBJECT) + '/' + u::str(Variant::BASIS) + ":AnimTag", PROPERTY_USAGE_NO_EDITOR ), "set_tags", "get_tags");
 
                 ClassDB::bind_method(D_METHOD("set_motion_features", "value"), &MMAnimationLibrary::set_motion_features);
                 ClassDB::bind_method(D_METHOD("get_motion_features"), &MMAnimationLibrary::get_motion_features);

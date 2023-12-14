@@ -21,6 +21,8 @@
 #include <PostProcessAnimation/PPIKTwoBone3D.hpp>
 #include "CircularBuffer.hpp"
 
+#include <AnimTags/AnimTag.hpp>
+
 namespace boost
 {
 #ifdef BOOST_NO_EXCEPTIONS
@@ -39,23 +41,37 @@ void gdextension_MM_initialize(ModuleInitializationLevel p_level)
 {
 	if (p_level == MODULE_INITIALIZATION_LEVEL_SCENE)
 	{
-		ClassDB::register_class<CircularBuffer>();
 		
-		ClassDB::register_class<MotionFeature>(true); // Abstract class
-		
-		ClassDB::register_class<MFRootVelocity>();
-		ClassDB::register_class<MFBonesInfo>();
-		ClassDB::register_class<MFTrajectory>();
-		ClassDB::register_class<MFEvents>();
-
 		ClassDB::register_class<MMAnimationPlayer>();
 		ClassDB::register_class<MMAnimationLibrary>();
 
-		ClassDB::register_class<PPInertialization3D>();
-		ClassDB::register_class<PPIKLookAt3D>();
-		ClassDB::register_class<PPIKTwoBone3D>();
+		{	// Motion Features Resources
+			ClassDB::register_class<MotionFeature>(true); // Abstract class
+			
+			ClassDB::register_class<MFRootVelocity>();
+			ClassDB::register_class<MFBonesInfo>();
+			ClassDB::register_class<MFTrajectory>();
+			ClassDB::register_class<MFEvents>();
+		}
 
-		ClassDB::register_class<Spring>();
+		{	// Animation Tags
+			ClassDB::register_class<AnimTag>(); // Abstract
+			ClassDB::register_class<MFTimingTag>(); // Abstract
+			ClassDB::register_class<WarpRootTag>();
+		}
+
+
+		{	// PostProcessing Nodes
+			ClassDB::register_class<PPInertialization3D>();
+			ClassDB::register_class<PPIKLookAt3D>();
+			ClassDB::register_class<PPIKTwoBone3D>();
+		}
+
+		
+		{ 	// Various helper
+			ClassDB::register_class<CircularBuffer>();
+			ClassDB::register_class<Spring>();
+		}
 	}
 }
 
