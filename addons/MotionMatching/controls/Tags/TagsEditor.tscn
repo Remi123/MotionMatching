@@ -1,9 +1,43 @@
-[gd_scene load_steps=3 format=3 uid="uid://bj4qic5cdef61"]
+[gd_scene load_steps=8 format=3 uid="uid://bj4qic5cdef61"]
 
 [ext_resource type="Script" path="res://addons/MotionMatching/controls/Tags/TagsEditor.gd" id="1_gnt8s"]
-[ext_resource type="PackedScene" uid="uid://cvfu2yfl33icj" path="res://addons/MotionMatching/controls/Tags/TracksBar/track_bar.tscn" id="1_wx0r3"]
 
-[node name="VBoxContainer" type="VBoxContainer"]
+[sub_resource type="TagCategory" id="TagCategory_mjnud"]
+category = 3
+property_hint_string = &"A,B,D:4"
+tag_name = &"001-walk-start-forward_rightfoot"
+track_id = 1
+timestamp = 1.12552
+duration = 0.175984
+
+[sub_resource type="TagJunk" id="TagJunk_g77lv"]
+tag_name = &"001-walk-start-forward_rightfoot"
+track_id = 1
+timestamp = 1.67403
+duration = 0.740848
+
+[sub_resource type="TagJunk" id="TagJunk_d3apw"]
+tag_name = &"001-walk-start-forward_rightfoot"
+timestamp = 0.985422
+duration = 0.1
+
+[sub_resource type="TagJunk" id="TagJunk_8l5r6"]
+tag_name = &"001-walk-start-forward_rightfoot"
+timestamp = 0.320559
+duration = 0.1
+
+[sub_resource type="TagJunk" id="TagJunk_bq4wc"]
+tag_name = &"001-walk-start-forward_rightfoot"
+track_id = 1
+timestamp = 0.743222
+duration = 0.1
+
+[sub_resource type="TagJunk" id="TagJunk_jm6a4"]
+tag_name = &"002-idle_right_foot_front"
+timestamp = 3.36781
+duration = 1.21912
+
+[node name="TagEditorPanel" type="VBoxContainer"]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -12,6 +46,7 @@ grow_vertical = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 script = ExtResource("1_gnt8s")
+tags = Array[TagInfo]([SubResource("TagCategory_mjnud"), SubResource("TagJunk_g77lv"), SubResource("TagJunk_d3apw"), SubResource("TagJunk_8l5r6"), SubResource("TagJunk_bq4wc"), SubResource("TagJunk_jm6a4")])
 
 [node name="HSplitContainer" type="HBoxContainer" parent="."]
 layout_mode = 2
@@ -30,7 +65,7 @@ text = "Current Animation :"
 [node name="AnimationSelector" type="MenuButton" parent="HSplitContainer/PanelContainer/HSplitContainer"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "001-walk-start-forward_rightfoot"
+text = "Select Animation"
 item_count = 72
 popup/item_0/text = "001-walk-start-forward_rightfoot"
 popup/item_0/id = 0
@@ -180,9 +215,16 @@ popup/item_71/id = 71
 [node name="HSeparator" type="VSeparator" parent="HSplitContainer"]
 layout_mode = 2
 
-[node name="PanelContainer2" type="PanelContainer" parent="HSplitContainer"]
+[node name="PanelContainer2" type="HBoxContainer" parent="HSplitContainer"]
 layout_mode = 2
 size_flags_horizontal = 8
+
+[node name="CategoryFlagEdit" type="LineEdit" parent="HSplitContainer/PanelContainer2"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(300, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "Categories flag string"
 
 [node name="Zoom" type="HSlider" parent="HSplitContainer/PanelContainer2"]
 unique_name_in_owner = true
@@ -228,7 +270,4 @@ unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="TrackBar" parent="MarginContainer/ScrollContainer/VBoxContainer/TrackList" instance=ExtResource("1_wx0r3")]
-layout_mode = 2
-size_flags_horizontal = 1
-animation_length = 2.63333
+[connection signal="text_submitted" from="HSplitContainer/PanelContainer2/CategoryFlagEdit" to="." method="_on_category_flag_edit_text_submitted"]

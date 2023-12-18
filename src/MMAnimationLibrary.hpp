@@ -102,7 +102,24 @@ struct MMAnimationLibrary : public AnimationLibrary {
     GETSET(StringName,skeleton_path);
     GETSET(Ref<SkeletonProfile>,skeleton_profile)
     GETSET(float,time_interval);
-    GETSET(TypedArray<AnimTag>,tags);
+
+    String category_hint_string{}; 
+    String get_category_hint_string(){return category_hint_string;} 
+    void set_category_hint_string(String value){
+        category_hint_string = value;
+        int nb = 0;
+        for(int i = 0; i < tags.size(); ++i)
+        {
+            TagCategory* category = Object::cast_to<TagCategory>(tags[i]);
+            if (category != nullptr)
+            {
+                category->property_hint_string = category_hint_string;
+                ++nb;
+            }
+        }
+        u::prints("Number of TagCategory",nb);
+    }
+    GETSET(TypedArray<TagInfo>,tags);
 
     // Category tracks
     GETSET(TypedArray<String>,category_track_names)
@@ -674,9 +691,14 @@ protected:
                 ClassDB::bind_method(D_METHOD("get_category_track_names"), &MMAnimationLibrary::get_category_track_names);
                 godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_STRING_ARRAY, "category_track_names", PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_DEFAULT), "set_category_track_names", "get_category_track_names");
 
+                // BINDER_PROPERTY_PARAMS(MMAnimationLibrary,Variant::STRING,category_hint_string);
+                ClassDB::bind_method( D_METHOD("set_category_hint_string" ,"value"), &MMAnimationLibrary::set_category_hint_string); 
+                ClassDB::bind_method( D_METHOD("get_category_hint_string" ), &MMAnimationLibrary::get_category_hint_string); 
+                godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::STRING,"category_hint_string",PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_UPDATE_ALL_IF_MODIFIED), "set_category_hint_string", "get_category_hint_string");
+
                 ClassDB::bind_method(D_METHOD("set_tags", "value"), &MMAnimationLibrary::set_tags);
                 ClassDB::bind_method(D_METHOD("get_tags"), &MMAnimationLibrary::get_tags);
-                godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::ARRAY, "tags", godot::PROPERTY_HINT_TYPE_STRING, u::str(Variant::OBJECT) + '/' + u::str(Variant::BASIS) + ":AnimTag", PROPERTY_USAGE_NO_EDITOR ), "set_tags", "get_tags");
+                godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::ARRAY, "tags", godot::PROPERTY_HINT_TYPE_STRING, u::str(Variant::OBJECT) + '/' + u::str(Variant::BASIS) + ":TagInfo", PROPERTY_USAGE_DEFAULT ), "set_tags", "get_tags");
 
                 ClassDB::bind_method(D_METHOD("set_motion_features", "value"), &MMAnimationLibrary::set_motion_features);
                 ClassDB::bind_method(D_METHOD("get_motion_features"), &MMAnimationLibrary::get_motion_features);

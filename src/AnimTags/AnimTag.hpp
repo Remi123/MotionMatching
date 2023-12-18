@@ -3,6 +3,7 @@
 #include <godot_cpp/core/class_db.hpp>
 #include <godot_cpp/core/class_db.hpp>
 #include <godot_cpp/core/method_bind.hpp>
+#include <godot_cpp/variant/dictionary.hpp>
 
 // Macro setup. Mostly there to simplify writing all those
 #define GETSET(type,variable,...) type variable{__VA_ARGS__};\
@@ -15,10 +16,11 @@
         ClassDB::bind_method( D_METHOD(STRING_PREFIX(get_,variable) ), &type::get_##variable); \
         ADD_PROPERTY(PropertyInfo(variant_type,#variable,__VA_ARGS__),STRING_PREFIX(set_,variable),STRING_PREFIX(get_,variable));
 using namespace godot;
+using u = godot::UtilityFunctions;
 // Base Class
-struct AnimTag : godot::Resource
+struct TagInfo : godot::Resource
 {
-    GDCLASS(AnimTag,Resource);
+    GDCLASS(TagInfo,Resource);
 public:
     GETSET(StringName, tag_name);
     GETSET(int,track_id);
@@ -28,27 +30,133 @@ public:
 protected:
     static void _bind_methods()
     {
-        ClassDB::bind_method(D_METHOD("set_tag_name", "value"), &AnimTag::set_tag_name);
-        ClassDB::bind_method(D_METHOD("get_tag_name"), &AnimTag::get_tag_name);
+        ClassDB::bind_method(D_METHOD("set_tag_name", "value"), &TagInfo::set_tag_name);
+        ClassDB::bind_method(D_METHOD("get_tag_name"), &TagInfo::get_tag_name);
         godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::STRING_NAME, "tag_name"), "set_tag_name", "get_tag_name");
         
-        ClassDB::bind_method( D_METHOD("set_track_id" ,"value"), &AnimTag::set_track_id); 
-        ClassDB::bind_method( D_METHOD("get_track_id" ), &AnimTag::get_track_id); 
-        godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::INT,"track_id",godot::PROPERTY_HINT_NONE, "", godot::PROPERTY_USAGE_NO_EDITOR), "set_track_id", "get_track_id");
+        ClassDB::bind_method( D_METHOD("set_track_id" ,"value"), &TagInfo::set_track_id); 
+        ClassDB::bind_method( D_METHOD("get_track_id" ), &TagInfo::get_track_id); 
+        godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::INT,"track_id",godot::PROPERTY_HINT_NONE, "", godot::PROPERTY_USAGE_DEFAULT), "set_track_id", "get_track_id");
         
-        ClassDB::bind_method( D_METHOD("set_timestamp" ,"value"), &AnimTag::set_timestamp);
-        ClassDB::bind_method( D_METHOD("get_timestamp" ), &AnimTag::get_timestamp); 
+        ClassDB::bind_method( D_METHOD("set_timestamp" ,"value"), &TagInfo::set_timestamp);
+        ClassDB::bind_method( D_METHOD("get_timestamp" ), &TagInfo::get_timestamp); 
         godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT,"timestamp"), "set_timestamp", "get_timestamp");
 
-        ClassDB::bind_method(D_METHOD("set_duration", "value"), &AnimTag::set_duration, DEFVAL(real_t(0)));
-        ClassDB::bind_method(D_METHOD("get_duration"), &AnimTag::get_duration);
+        ClassDB::bind_method(D_METHOD("set_duration", "value"), &TagInfo::set_duration, DEFVAL(real_t(0)));
+        ClassDB::bind_method(D_METHOD("get_duration"), &TagInfo::get_duration);
         godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT, "duration"), "set_duration", "get_duration");
     }
 };
 
-struct WarpRootTag : AnimTag
+struct TagMotionMatching : TagInfo
 {
-    GDCLASS(WarpRootTag,AnimTag);
+    GDCLASS(TagMotionMatching,TagInfo);
+public:
+protected:
+    static void _bind_methods()
+    {
+    }
+};
+
+struct TagJunk : TagMotionMatching
+{
+    GDCLASS(TagJunk,TagMotionMatching);
+public:
+protected:
+    static void _bind_methods()
+    {
+    }
+};
+
+struct TagCategory : TagMotionMatching
+{
+    GDCLASS(TagCategory,TagMotionMatching);
+    public:
+
+    GETSET(int,category);
+    GETSET(StringName,property_hint_string,"");
+
+
+protected:
+	 void _get_property_list(List<PropertyInfo> *r_props) const{      // return list of properties
+        PropertyInfo catego{Variant::INT,"category",godot::PROPERTY_HINT_FLAGS,property_hint_string};
+        r_props->push_back(catego);
+
+        PropertyInfo hint{Variant::STRING_NAME,"property_hint_string",godot::PROPERTY_HINT_NONE,"",godot::PROPERTY_USAGE_UPDATE_ALL_IF_MODIFIED | godot::PROPERTY_USAGE_DEFAULT};
+        r_props->push_back(hint);
+    }
+
+    bool _get(const StringName &p_name, Variant &r_ret) const {
+        if (p_name == StringName("category"))
+        {
+            r_ret = category;
+            return true;
+        }
+        else if (p_name == StringName("property_hint_string"))
+        {
+            r_ret = property_hint_string;
+            return true;
+        }
+        else
+        {
+            return TagMotionMatching::_get(p_name,r_ret);
+        }
+        return false;
+    }
+
+    bool _set(const StringName &p_name, const Variant &p_value){
+        if (p_name == StringName("category"))
+        {
+            category = (int)p_value;
+            return true;
+        }
+        else if (p_name == StringName("property_hint_string"))
+        {
+            property_hint_string = (StringName)p_value;
+            return true;
+        }
+        else
+        {
+            return TagMotionMatching::_set(p_name,p_value);
+        }
+        return false;
+    }
+
+protected:
+    static void _bind_methods()
+    {
+    }
+};
+
+struct TagMFEvent : TagMotionMatching
+{
+    GDCLASS(TagMFEvent,TagMotionMatching);
+public:
+    GETSET(real_t, reference_time);
+
+protected:
+    static void _bind_methods()
+    {
+        ClassDB::bind_method( D_METHOD("set_reference_time" ,"value"), &TagMFEvent::set_reference_time); 
+        ClassDB::bind_method( D_METHOD("get_reference_time" ), &TagMFEvent::get_reference_time); 
+        godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT,"reference_time"), "set_reference_time", "get_reference_time");
+    }
+};
+
+struct TagAnimation : TagInfo
+{
+    GDCLASS(TagAnimation,TagInfo);
+public:
+protected:
+    static void _bind_methods()
+    {
+    }
+};
+
+
+struct TagRootWarp : TagAnimation
+{
+    GDCLASS(TagRootWarp,TagAnimation);
     
 public:
     enum warp_rule_t
@@ -80,31 +188,17 @@ protected:
         BIND_ENUM_CONSTANT(XYZ);
         BIND_ENUM_CONSTANT(XYZr);
         BIND_ENUM_CONSTANT(R);
-        ClassDB::bind_method(D_METHOD("set_warp_rule", "value"), &WarpRootTag::set_warp_rule, DEFVAL(XYZr));
-        ClassDB::bind_method(D_METHOD("get_warp_rule"), &WarpRootTag::get_warp_rule);
+        ClassDB::bind_method(D_METHOD("set_warp_rule", "value"), &TagRootWarp::set_warp_rule, DEFVAL(XYZr));
+        ClassDB::bind_method(D_METHOD("get_warp_rule"), &TagRootWarp::get_warp_rule);
         godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::INT, "warp_rule", godot::PROPERTY_HINT_ENUM, "Z,Zr,XY,XYr,XYZ,XYZr,R"), "set_warp_rule", "get_warp_rule");
         BIND_ENUM_CONSTANT(Align);
         BIND_ENUM_CONSTANT(Facing);
-        ClassDB::bind_method(D_METHOD("set_rotation_type", "value"), &WarpRootTag::set_rotation_type, DEFVAL(Align));
-        ClassDB::bind_method(D_METHOD("get_rotation_type"), &WarpRootTag::get_rotation_type);
+        ClassDB::bind_method(D_METHOD("set_rotation_type", "value"), &TagRootWarp::set_rotation_type, DEFVAL(Align));
+        ClassDB::bind_method(D_METHOD("get_rotation_type"), &TagRootWarp::get_rotation_type);
         godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::INT, "rotation_type", godot::PROPERTY_HINT_ENUM, "Align,Facing"), "set_rotation_type", "get_rotation_type");
     }
 };
-VARIANT_ENUM_CAST(WarpRootTag::warp_rule_t);
-VARIANT_ENUM_CAST(WarpRootTag::rotation_type_t);
+VARIANT_ENUM_CAST(TagRootWarp::warp_rule_t);
+VARIANT_ENUM_CAST(TagRootWarp::rotation_type_t);
 
 
-struct MFTimingTag : AnimTag
-{
-    GDCLASS(MFTimingTag,AnimTag);
-public:
-    GETSET(real_t, reference_time);
-
-protected:
-    static void _bind_methods()
-    {
-        ClassDB::bind_method( D_METHOD("set_reference_time" ,"value"), &MFTimingTag::set_reference_time); 
-        ClassDB::bind_method( D_METHOD("get_reference_time" ), &MFTimingTag::get_reference_time); 
-        godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT,"reference_time"), "set_reference_time", "get_reference_time");
-    }
-};

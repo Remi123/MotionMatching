@@ -55,9 +55,15 @@ void gdextension_MM_initialize(ModuleInitializationLevel p_level)
 		}
 
 		{	// Animation Tags
-			ClassDB::register_class<AnimTag>(); // Abstract
-			ClassDB::register_class<MFTimingTag>(); // Abstract
-			ClassDB::register_class<WarpRootTag>();
+			ClassDB::register_class<TagInfo>(true); // Abstract
+
+			ClassDB::register_class<TagMotionMatching>(true); // Abstract
+			ClassDB::register_class<TagJunk>();
+			ClassDB::register_class<TagCategory>();
+			ClassDB::register_class<TagMFEvent>(); 
+			
+			ClassDB::register_class<TagAnimation>(true); // Abstract
+			ClassDB::register_class<TagRootWarp>();
 		}
 
 

@@ -27,6 +27,7 @@ var library : MMAnimationLibrary:
 func _ready() -> void:
 	on_library_change.connect(anim_panel._on_change_al)
 	on_library_change.connect(tags_panel._on_library_selected)
+
 	pass
 
 

@@ -3,7 +3,7 @@ class_name MMPlugin
 extends EditorPlugin
 
 var BOTTOMPANEL := preload("res://addons/MotionMatching/controls/MMEditorPanel.tscn")
-@onready var bottompanel :MMEditor= BOTTOMPANEL.instantiate()
+@onready var bottompanel :MMEditor= BOTTOMPANEL.instantiate(PackedScene.GEN_EDIT_STATE_MAIN_INHERITED)
 
 var last_path := ""
 
@@ -33,7 +33,6 @@ func visibility() -> void:
 	var l = ResourceLoader.load(get_editor_interface().get_current_path()) # Load what is selected in filesystem
 	if l is MMAnimationLibrary:
 		prints("Selected MMAL",l.resource_path)
-		#bottompanel.plugin_ref = self
 		remove_control_from_bottom_panel(bottompanel)
 		add_control_to_bottom_panel(bottompanel,"MotionMatching")
 		make_bottom_panel_item_visible(bottompanel)
