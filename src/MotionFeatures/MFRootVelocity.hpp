@@ -30,6 +30,7 @@
 #include <godot_cpp/classes/character_body3d.hpp>
 
 #include <MotionFeatures/MotionFeatures.hpp>
+#include <MMAnimationLibrary.hpp>
 
 using namespace godot;
 using u = godot::UtilityFunctions;
@@ -61,12 +62,12 @@ struct MFRootVelocity : public MotionFeature {
         return Array::make(weight,weight,weight);
     }
 
-    virtual bool setup_profile(NodePath skeleton_path,Ref<SkeletonProfile> skeleton_profile) override{
-        ERR_FAIL_COND_V_EDMSG(skeleton_path.is_empty(), false,"SkeletonPath is Empty");
-        ERR_FAIL_COND_V_EDMSG(skeleton_profile == nullptr, false,"SkeletonProfile is null");
-        ERR_FAIL_COND_V_EDMSG(skeleton_profile->get_root_bone().is_empty(),false,"No Root bone to extract data");
-        rest_pose = skeleton_profile->get_reference_pose(skeleton_profile->find_bone(skeleton_profile->get_root_bone()));
-        root_bone_track = u::str(skeleton_path) + ":" + skeleton_profile->get_root_bone();
+    virtual bool setup_bake_init(Ref<MMAnimationLibrary> animlib) override{
+        ERR_FAIL_COND_V_EDMSG(animlib->skeleton_path.is_empty(), false,"SkeletonPath is Empty");
+        ERR_FAIL_COND_V_EDMSG(animlib->skeleton_profile == nullptr, false,"SkeletonProfile is null");
+        ERR_FAIL_COND_V_EDMSG(animlib->skeleton_profile->get_root_bone().is_empty(),false,"No Root bone to extract data");
+        rest_pose = animlib->skeleton_profile->get_reference_pose(animlib->skeleton_profile->find_bone(animlib->skeleton_profile->get_root_bone()));
+        root_bone_track = u::str(animlib->skeleton_path) + ":" + animlib->skeleton_profile->get_root_bone();
         return true;
     }
     virtual bool setup_for_animation(Ref<Animation> animation)override{
@@ -116,6 +117,9 @@ struct MFRootVelocity : public MotionFeature {
         return result;
     }
 
+    virtual PackedStringArray get_hints()const override{
+        return Array::make("Vx","Vy","Vz");
+    }
 
 protected:
     static void _bind_methods() {
@@ -124,6 +128,7 @@ protected:
             ClassDB::bind_method(D_METHOD("serialize_CharacterBody3d", "body"), &MFRootVelocity::serialize_charbody3d);
             ClassDB::bind_method(D_METHOD("serialize_Local_Velocity", "local_velocity"), &MFRootVelocity::serialize_vec3);
         }
+        ClassDB::bind_method(D_METHOD("get_hints"), &MFRootVelocity::get_hints);
 
         ClassDB::bind_method(D_METHOD("set_weight", "value"), &MFRootVelocity::set_weight, DEFVAL(1.0f));
         ClassDB::bind_method(D_METHOD("get_weight"), &MFRootVelocity::get_weight);
@@ -141,7 +146,7 @@ protected:
         ClassDB::bind_method( D_METHOD("get_weights"), &MFRootVelocity::get_weights);
         ClassDB::bind_method( D_METHOD("get_dimension"), &MFRootVelocity::get_dimension);
 
-        ClassDB::bind_method( D_METHOD("setup_profile","skeleton_path","skeleton_profile"), &MFRootVelocity::setup_profile);
+        ClassDB::bind_method( D_METHOD("setup_bake_init","mm_animation_library"), &MFRootVelocity::setup_bake_init);
         
         ClassDB::bind_method( D_METHOD("setup_for_animation","animation"), &MFRootVelocity::setup_for_animation);
         ClassDB::bind_method( D_METHOD("bake_animation_pose","animation","time"), &MFRootVelocity::bake_animation_pose);

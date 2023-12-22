@@ -4,7 +4,6 @@ class_name TrackBar extends Panel
 const TRACK_BAR = preload("res://addons/MotionMatching/controls/Tags/TracksBar/track_bar.tscn")
 
 @onready var popup_menu: PopupMenu = $PopupMenu
-@export var animation_length : float = 1.0
 
 var current_library : MMAnimationLibrary = null
 var current_animation :Animation = null
@@ -27,19 +26,20 @@ func _drop_data(at_position: Vector2, data: Variant) -> void:
 	if data is MoveableUI:
 		var ev := (data as MoveableUI).ref
 		ev.reparent(self,false)
-		ev.tag.timestamp = animation_length * at_position.x / size.x
+		var released_pos = (at_position.x + data.offset.x) / size.x
+		ev.tag.timestamp = max(0,current_animation.length * released_pos)
+		ev.tag.duration = min(ev.tag.duration,current_animation.length - ev.tag.timestamp)
 		ev.tag.track_id = get_index()
-		#ev.position.x = at_position.x
 	elif data is ResizeableUI:
 		var old_pos = data.ref.tag.timestamp
 		var old_size = data.ref.tag.duration
 		if data.drag_left:
 			# A    B  C
 			var end_time = data.ref.tag.timestamp + data.ref.tag.duration
-			data.ref.tag.timestamp = animation_length * at_position.x / size.x
+			data.ref.tag.timestamp = current_animation.length * at_position.x / size.x
 			data.ref.tag.duration = (end_time - data.ref.tag.timestamp)
 		elif data.drag_right:
-			var end_time :float= animation_length * at_position.x / size.x
+			var end_time :float= current_animation.length * at_position.x / size.x
 			data.ref.tag.duration = (end_time - data.ref.tag.timestamp)
 			data.ref.tag.timestamp = data.ref.tag.timestamp
 		pass
@@ -56,32 +56,12 @@ func _gui_input(event: InputEvent) -> void:
 
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
-	popup_menu.id_pressed.connect(_on_popup_select)
+	#popup_menu.id_pressed.connect(_on_popup_select)
+	pass
 
 enum {ADDCATEGORY=00, ADDTIMING = 01, ADDJUNK = 02,
 	ADDTRACK = 10,
 	DELETETRACK = 20}
-
-func _on_popup_select(id:int):
-	var index := get_index()
-	match id:
-		ADDTRACK:
-			added_track.emit(index)
-		DELETETRACK:
-			delete_track.emit(index)
-			if index != 0:
-				queue_free()
-		ADDCATEGORY:
-			var new_tag = TagCategory.new()
-			new_tag.timestamp = (last_right_click_pos.x / size.x) * animation_length
-			new_tag.track_id = get_index()
-			populate_tag(new_tag)
-		ADDJUNK:
-			var new_tag = TagJunk.new()
-			new_tag.timestamp = (last_right_click_pos.x / size.x) * animation_length
-			new_tag.track_id = get_index()
-			populate_tag(new_tag)
-	queue_redraw()
 
 func populate_tag(tag:TagInfo,emit:bool = true):
 	var EVB :EventButton
@@ -89,11 +69,16 @@ func populate_tag(tag:TagInfo,emit:bool = true):
 		EVB = JUNK_EVENT_BAR.instantiate()
 	elif tag is TagCategory:
 		EVB = CATEGORY_EVENT_BAR.instantiate()
+	elif tag is TagMFEvent:
+		EVB = EVENT_BAR.instantiate()
 	else:
 		prints("Not implemented",tag.resource_name)
 	EVB.tag = tag
 	EVB.animation = current_animation
 	add_child(EVB)
+	EVB.delete_event.connect(func(tag:TagInfo):
+		current_library.tags.erase(tag)
+		)
 
 	if emit:
 		added_event.emit(tag)
@@ -108,7 +93,6 @@ func _clear_no_delete():
 
 func _draw() -> void:
 	# the size should be set now.
-	prints("Track Transform",get_index(),position,size,get_child_count())
 	for evbutton in get_children():
 		#var evbutton := child as EventButton
 		if evbutton == null or not evbutton is EventButton:
@@ -117,5 +101,33 @@ func _draw() -> void:
 		evbutton.animation = current_animation
 		evbutton.position.x = size.x * evbutton.tag.timestamp / current_animation.length
 		evbutton.size.x = size.x * evbutton.tag.duration / current_animation.length
+
 		evbutton.queue_redraw()
 	pass
+
+
+func _on_popup_menu_id_pressed(id: int) -> void:
+	var index := get_index()
+	match id:
+		ADDTRACK:
+			added_track.emit(index)
+		DELETETRACK:
+			delete_track.emit(index)
+			if index != 0:
+				queue_free()
+		ADDCATEGORY:
+			var new_tag = TagCategory.new()
+			new_tag.timestamp = (last_right_click_pos.x / size.x) * current_animation.length
+			new_tag.track_id = get_index()
+			populate_tag(new_tag)
+		ADDTIMING:
+			var new_tag = TagMFEvent.new()
+			new_tag.timestamp = (last_right_click_pos.x / size.x) * current_animation.length
+			new_tag.track_id = get_index()
+			populate_tag(new_tag)
+		ADDJUNK:
+			var new_tag = TagJunk.new()
+			new_tag.timestamp = (last_right_click_pos.x / size.x) * current_animation.length
+			new_tag.track_id = get_index()
+			populate_tag(new_tag)
+	queue_redraw()

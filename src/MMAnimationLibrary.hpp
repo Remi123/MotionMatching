@@ -37,6 +37,7 @@
 
 #include <boost/accumulators/accumulators.hpp>
 #include <boost/accumulators/statistics.hpp>
+#include <KForm.hpp>
 
 
 using namespace godot;
@@ -51,6 +52,7 @@ using namespace godot;
         ClassDB::bind_method( D_METHOD(STRING_PREFIX(set_,variable) ,"value"), &type::set_##variable);\
         ClassDB::bind_method( D_METHOD(STRING_PREFIX(get_,variable) ), &type::get_##variable); \
         ADD_PROPERTY(PropertyInfo(variant_type,#variable,__VA_ARGS__),STRING_PREFIX(set_,variable),STRING_PREFIX(get_,variable));
+
 
 // TODO : Save the array in a hashed data structure, so that multiple object doesn't add a new array for each schema.
 struct MMAnimationLibrary : public AnimationLibrary {
@@ -220,7 +222,7 @@ struct MMAnimationLibrary : public AnimationLibrary {
             MotionFeature* f = Object::cast_to<MotionFeature>(motion_features[i]);
             ERR_FAIL_NULL_MSG(f,"Features no."+u::str(i) + "is null");
             u::prints("Feature no.",i,f->get_name(),"Dimensions:", f->get_dimension());
-            if (false == f->setup_profile(NodePath(skeleton_path),skeleton_profile) )
+            if (false == f->setup_bake_init(this))
             {
                 ERR_FAIL_EDMSG("Motion Feature failed when setting the profile at index " + u::str(i));
             }
@@ -254,6 +256,17 @@ struct MMAnimationLibrary : public AnimationLibrary {
 
             auto anim_name = anim_names[anim_index];
             auto animation = get_animation(anim_name);
+    
+            auto current_tags = std::vector<TagInfo*>{};
+            for (size_t i = 0; i < tags.size(); i++)
+            {
+                TagInfo* tag = Object::cast_to<TagInfo>(tags[i]);
+                if(tag != nullptr && tag->tag_name == (StringName)anim_name)
+                {
+                    current_tags.push_back(tag);
+                }
+            }
+            u::prints("Found", current_tags.size(),"Tags associated with current animation");
 
             int should_continue = -1;
             for(auto features_index = 0; features_index < motion_features.size(); ++features_index )
@@ -293,15 +306,32 @@ struct MMAnimationLibrary : public AnimationLibrary {
             for(auto time = time_interval; time < length; time += time_interval)
             {
                 int64_t tmp_category_value = 0;
-                for(const auto& category:category_tracks)
-                {
-                    tmp_category_value = tmp_category_value | (int64_t)animation->value_track_interpolate(category,time);
-                }
-                // If the reserved category value contain DONOTUSE (31th bit set to true), then we skip.
-                if (std::bitset<64>(tmp_category_value).test(31))
+
+                // Tags Logic
+                // Get all tags at this timestamp
+                // If one is Junk, continue
+                auto skip = std::find_if(current_tags.begin(),current_tags.end(),
+                [time](TagInfo* tag){
+                    TagJunk* junk = Object::cast_to<TagJunk>(tag);
+                    if(junk != nullptr)
+                    {
+                        return junk->timestamp <= time && time <= junk->timestamp + junk->duration;
+                    }
+                    return false;
+                });
+                if (skip != current_tags.end())
                 {
                     continue;
                 }
+                // If category, OR it
+                std::for_each(current_tags.begin(),current_tags.end(),
+                [&tmp_category_value,time](TagInfo* tag){
+                    TagCategory* category = Object::cast_to<TagCategory>(tag);
+                    if(category != nullptr && category->timestamp <= time && time <= category->timestamp + category->duration)
+                    {
+                        tmp_category_value |= category->category;
+                    }
+                });
 
                 PackedFloat32Array pose_data{};
                 for(size_t features_index = 0; features_index < motion_features.size(); ++features_index )
@@ -387,11 +417,11 @@ struct MMAnimationLibrary : public AnimationLibrary {
         {
             WARN_PRINT_ED("Weights resized to " + u::str(nb_dimensions)+ " and reset to ones.");
             weights.resize(nb_dimensions);
-            weights.fill(1.0);
         }
 
         u::prints("Finished All Animations");
         u::prints("NbDim",nb_dimensions,"NbPoses:",data.size()/nb_dimensions,"Size",data.size());
+        WARN_PRINT_ED("MMAnimationLibrary " + get_name() + " bake operation is finished");
     }
 
     // Calculate the weights using the features get_weights() functions.
@@ -623,6 +653,34 @@ struct MMAnimationLibrary : public AnimationLibrary {
         return result;
     }
 
+    static kform sample_bone_rootmotion_kform(Ref<Animation> animation, double time,Ref<SkeletonProfile> skeleton_profile, NodePath bone_path)
+    {
+        ERR_FAIL_COND_V(skeleton_profile == nullptr, kform{});
+        std::vector<kform> trs{};
+        String _skel = bone_path.get_concatenated_names();
+        String bone = bone_path.get_concatenated_subnames();
+
+        do
+        {
+            trs.emplace_back(kform{skeleton_profile, NodePath(_skel + ":" + bone), animation, time});
+            bone = skeleton_profile->get_bone_parent(skeleton_profile->find_bone(bone));
+        } while (!bone.is_empty() && bone != skeleton_profile->get_root_bone());
+
+        const auto root_path = NodePath(_skel + ":" + skeleton_profile->get_root_bone());
+        
+        kform root{skeleton_profile,root_path, animation,time};
+        root.vel = root.rot.xform_inv(root.vel);
+        root.ang = root.rot.xform_inv(root.ang);
+        root.pos = Vector3();
+        root.rot = Quaternion();
+
+        return std::reduce(trs.rbegin(), trs.rend(), root,
+                                 [](const kform &acc, const kform &i)
+                                 {
+                                     return acc * i;
+                                 });
+    }
+
 protected:
     static void _bind_methods()
     {
@@ -718,33 +776,8 @@ protected:
         }
     }
 public :
-    static kform sample_bone_rootmotion_kform(Ref<Animation> animation, double time,Ref<SkeletonProfile> skeleton_profile, NodePath bone_path)
-    {
-        ERR_FAIL_COND_V(skeleton_profile == nullptr, kform{});
-        std::vector<kform> trs{};
-        String _skel = bone_path.get_concatenated_names();
-        String bone = bone_path.get_concatenated_subnames();
 
-        do
-        {
-            trs.emplace_back(kform{skeleton_profile, NodePath(_skel + ":" + bone), animation, time});
-            bone = skeleton_profile->get_bone_parent(skeleton_profile->find_bone(bone));
-        } while (!bone.is_empty() && bone != skeleton_profile->get_root_bone());
 
-        const auto root_path = NodePath(_skel + ":" + skeleton_profile->get_root_bone());
-        
-        kform root{skeleton_profile,root_path, animation,time};
-        root.vel = root.rot.xform_inv(root.vel);
-        root.ang = root.rot.xform_inv(root.ang);
-        root.pos = Vector3();
-        root.rot = Quaternion();
-
-        return std::reduce(trs.rbegin(), trs.rend(), root,
-                                 [](const kform &acc, const kform &i)
-                                 {
-                                     return acc * i;
-                                 });
-    }
 };
 
 VARIANT_ENUM_CAST(MMAnimationLibrary::Space);

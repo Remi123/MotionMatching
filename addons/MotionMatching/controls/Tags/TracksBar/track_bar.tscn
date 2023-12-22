@@ -43,3 +43,5 @@ item_8/disabled = true
 item_8/separator = true
 item_9/text = "[!] Delete this track and events"
 item_9/id = 20
+
+[connection signal="id_pressed" from="PopupMenu" to="." method="_on_popup_menu_id_pressed"]

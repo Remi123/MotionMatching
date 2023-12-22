@@ -28,6 +28,7 @@
 #include <godot_cpp/classes/box_mesh.hpp>
 
 #include <MotionFeatures/MotionFeatures.hpp>
+#include <MMAnimationLibrary.hpp>
 
 using namespace godot;
 using u = godot::UtilityFunctions;
@@ -89,11 +90,12 @@ public:
     Quaternion start_rot,end_rot, end_ang_vel;
     float start_time = 0.0f, end_time = 0.0f;
 
-    virtual bool setup_profile(NodePath skeleton_path,Ref<SkeletonProfile> skeleton_profile) override{
-        ERR_FAIL_COND_V_EDMSG(skeleton_path.is_empty(), false,"SkeletonPath is Empty");
-        ERR_FAIL_COND_V_EDMSG(skeleton_profile == nullptr, false,"SkeletonProfile is null");
-        ERR_FAIL_COND_V_EDMSG(skeleton_profile->get_root_bone().is_empty(),false,"No Root bone to extract data");
-        root_bone_track = u::str(skeleton_path) + ":" + skeleton_profile->get_root_bone();
+    virtual bool setup_bake_init(Ref<MMAnimationLibrary> animlib) override{
+        
+        ERR_FAIL_COND_V_EDMSG(animlib->get_skeleton_path().is_empty(), false,"SkeletonPath is Empty");
+        ERR_FAIL_COND_V_EDMSG(animlib->get_skeleton_profile() == nullptr, false,"SkeletonProfile is null");
+        ERR_FAIL_COND_V_EDMSG(animlib->get_skeleton_profile()->get_root_bone().is_empty(),false,"No Root bone to extract data");
+        root_bone_track = u::str(animlib->get_skeleton_path()) + ":" + animlib->get_skeleton_profile()->get_root_bone();
         return true;
     };
 
@@ -205,12 +207,33 @@ public:
         return result;
     }
 
+    virtual PackedStringArray get_hints()const override{
+        PackedStringArray result{};
+
+        for(auto elem: past_time_dt)
+        {
+            result.append("HPx");
+            result.append("HPz");
+        }
+        for(auto elem: future_time_dt)
+        {
+            result.append("FPx");
+            result.append("FPz");
+        }
+        for(auto elem: future_time_dt)
+            result.append("FAy");
+
+        return result;
+    }
+
     protected:
     static void _bind_methods() {
 
         {
             ClassDB::bind_method(D_METHOD("serialize_trajectory_local", "history_local_pos","prediction_local_pos","prediction_local_dir_angle"), &MFTrajectory::serialize_trajectory_local);
         }
+
+        ClassDB::bind_method(D_METHOD("get_hints"), &MFTrajectory::get_hints);
 
         ClassDB::bind_method( D_METHOD("set_weight_history_pos","value"), &MFTrajectory::set_weight_history_pos ); ClassDB::bind_method( D_METHOD("get_weight_history_pos"), &MFTrajectory::get_weight_history_pos); godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT,"weight_history_pos"), "set_weight_history_pos", "get_weight_history_pos");
         ClassDB::bind_method( D_METHOD("set_weight_prediction_pos","value"), &MFTrajectory::set_weight_prediction_pos ); ClassDB::bind_method( D_METHOD("get_weight_prediction_pos"), &MFTrajectory::get_weight_prediction_pos); godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT,"weight_prediction_pos"), "set_weight_prediction_pos", "get_weight_prediction_pos");

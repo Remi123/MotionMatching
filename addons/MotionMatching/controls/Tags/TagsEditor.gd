@@ -5,7 +5,9 @@ class_name TagEditor extends Control
 @onready var zoom: HSlider = %Zoom
 @onready var timeline: HSlider = %Timeline
 @onready var track_list: VBoxContainer = %TrackList
+@onready var category_flag_edit: LineEdit = %CategoryFlagEdit
 
+signal request_pose(animation_name:StringName,timestamp)
 
 var current_animlib : MMAnimationLibrary = ResourceLoader.load("res://Resources/AnimationLibrary/MM.tres")
 var current_animation : Animation
@@ -22,14 +24,27 @@ const JUNK_EVENT_BAR = preload("res://addons/MotionMatching/controls/Tags/EventB
 		return [] if current_animlib == null else current_animlib.tags
 	#set(value)
 
-func _on_library_selected(lib:MMAnimationLibrary):
+
+func _on_mm_editor_on_library_change(lib: MMAnimationLibrary) -> void:
+	pass # Replace with function body.
 	current_animlib = lib
 	animation_selector.get_popup().clear(true)
 	for a in current_animlib.get_animation_list():
 		animation_selector.get_popup().add_item(a)
 
 	timeline.value = 0;
+	category_flag_edit.text = lib.category_hint_string
+	_on_anim_selected(0)
 	pass
+
+@onready var time_label: Label = %TimeLabel
+
+func _on_timeline_value_changed(value:float):
+	var animname :StringName= current_animation_name
+	var timestamp := timeline.value
+	time_label.text = "%02.2f" % timestamp
+	time_label.position.x = get_local_mouse_position().x
+	request_pose.emit(animname,timestamp)
 
 func get_length() -> int:
 	return $MarginContainer/ScrollContainer.size.x / zoom.value
@@ -43,7 +58,10 @@ func _ready() -> void:
 	animation_selector.get_popup().clear()
 	for a in current_animlib.get_animation_list():
 		animation_selector.get_popup().add_item(a)
-	animation_selector.get_popup().id_pressed.connect(_on_anim_selected)
+	if !animation_selector.get_popup().id_pressed.is_connected(_on_anim_selected):
+		animation_selector.get_popup().id_pressed.connect(_on_anim_selected)
+	category_flag_edit.text = current_animlib.category_hint_string
+	category_flag_edit.text_submitted.emit(category_flag_edit.text)
 
 var current_tags :Array[TagInfo]= []
 
@@ -63,7 +81,6 @@ func _on_anim_selected(index:int):
 	var max_track := 0
 	if current_tags.size() > 0:
 		max_track = current_tags.reduce( func(max:TagInfo, val:TagInfo):return val if val.track_id >= max.track_id  else max).track_id
-	prints("FOUND",current_tags.size(),"CURRENT TAGS,MAXTRACK=",max_track)
 	# add new empty tracks
 	for t in range(max_track+1):
 		var new_track :TrackBar= TRACK_BAR.instantiate()
@@ -72,7 +89,6 @@ func _on_anim_selected(index:int):
 		new_track.added_track.connect(add_track)
 		new_track.delete_track.connect(on_delete_track)
 		new_track.added_event.connect(on_new_tag)
-		new_track.animation_length = current_animation.length
 		new_track.current_animation = current_animation
 		new_track.current_library = current_animlib
 	prints("Created",track_list.get_child_count(),"tracks")
@@ -88,7 +104,7 @@ func _on_anim_selected(index:int):
 		track.populate_tag(events,false)
 
 
-	timeline.step = current_animation.step
+	timeline.step = 0.016 #current_animation.step
 	timeline.tick_count = 8
 	timeline.max_value = current_animation.length
 	prints("AnimInfo",current_animation.length,current_animation.step,current_animation.length/current_animation.step)
@@ -107,7 +123,6 @@ func _on_zoom_changed(value:float):
 		if track == null:
 			continue
 		track.current_library = current_animlib
-		track.animation_length = current_animation.length
 		track.current_animation = current_animation
 		track.queue_redraw()
 	timeline.queue_redraw()
@@ -125,7 +140,6 @@ func add_track(index:int):
 	new_track.added_track.connect(add_track)
 	new_track.delete_track.connect(on_delete_track)
 	new_track.added_event.connect(on_new_tag)
-	new_track.animation_length = current_animation.length
 	new_track.current_animation = current_animation
 	new_track.current_library = current_animlib
 	queue_redraw()
@@ -150,8 +164,11 @@ func on_new_tag(tag:TagInfo):
 
 
 func _on_category_flag_edit_text_submitted(new_text: String) -> void:
+	current_animlib.category_hint_string = new_text
 	for tag in current_animlib.tags as Array[TagInfo]:
 		if tag is TagCategory:
 			var category_tag := tag as TagCategory
 			category_tag.property_hint_string = new_text
 	pass # Replace with function body.
+
+

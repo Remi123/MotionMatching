@@ -33,6 +33,7 @@
 #include <algorithm>
 
 #include <MotionFeatures/MotionFeatures.hpp>
+#include <MMAnimationLibrary.hpp>
 
 
 // Macro setup. Mostly there to simplify writing all those
@@ -57,8 +58,6 @@ int sec_to_frame(float seconds, int fps = -1)
     return (int)ceil(seconds * Engine::get_singleton()->get_physics_ticks_per_second());
 }
 
-
-
 struct MFEvents : public MotionFeature {
     GDCLASS(MFEvents,MotionFeature)
 
@@ -81,7 +80,7 @@ struct MFEvents : public MotionFeature {
     
     virtual PackedFloat32Array get_weights()override{ return Array::make(1.0f);}
 
-    virtual bool setup_profile(NodePath skeleton_path,Ref<SkeletonProfile> skel_profile)override{
+    virtual bool setup_bake_init(Ref<MMAnimationLibrary> animlib)override{
         // returning false will abort the process.
         // feel free to print more details
 
@@ -89,73 +88,21 @@ struct MFEvents : public MotionFeature {
     }
 
     virtual bool setup_for_animation(Ref<Animation> animation)override{
-        // returning false will skip this animation and print a warning
-        // feel free to print more details
-
-        bool has_tracks = false;
-        for(auto index_track = 0;index_track < events_names.size(); ++index_track)
-        {
-            const auto track_name = events_tracks[index_track];
-            auto track_id = animation->find_track(track_name,Animation::TrackType::TYPE_METHOD);
-            if(track_id == -1) continue;
-            has_tracks = true;
-        }
-        if(has_tracks == false)
-        {
-            u::prints("No tracks found the animation",animation->get_path());
-        }
-
-        return has_tracks;
+        return true;
     }
 
     virtual PackedFloat32Array bake_animation_pose(Ref<Animation> animation,float time) override {
         PackedFloat32Array result = {};
-        for(auto event_i = 0;event_i < events_names.size(); ++event_i)
+        Vector<Ref<TagInfo>> all_tags;
+        // for(auto tag : tags)
         {
-            String event_name = events_names[event_i];
-            float closest_left = 0.0,closest_right = animation->get_length();
-            for(auto index_track = 0;index_track < events_names.size(); ++index_track)
+            // if (auto* event = Object::cast_to<TagMFEvent>(tag); event != nullptr && event->tag_name ==)
             {
-                const auto track_name = events_tracks[index_track];
-                auto track_id = animation->find_track(track_name,Animation::TrackType::TYPE_METHOD);
-
-                // Track not found ? Put to max.
-                if(track_id == -1) 
-                {
-                    result.append(std::numeric_limits<float>::max());
-                    continue;
-                }
-
-                for(auto index_key=0;index_key < animation->track_get_key_count(track_id); ++index_key )
-                {
-                    auto method_name = animation->method_track_get_name(track_id,index_key);
-                    auto method_args = animation->method_track_get_params(track_id,index_key); //0.1
-                    float method_time = (float)animation->track_get_key_time(track_id,index_key); // 0.33
-                    if(method_name == event_name || 
-                     (method_name == String("emit_signal") && method_args[0] == (StringName)event_name ))
-                    {
-                        if(time <= method_time )
-                        {
-                            closest_right = std::min(closest_right,method_time);                                                        
-                        }
-                        else if(method_time < time)
-                        {
-                            closest_left = std::max(closest_left,method_time);
-                        }
-                    }
-                }
-
-
 
             }
-            auto time_until = closest_right - time;
-            if(embed_as_frames)
-            {
-                time_until = sec_to_frame(time_until);
-            }
-            result.append(time_until);
-
         }
+        
+
         return result;
     }
 
@@ -209,7 +156,8 @@ struct MFEvents : public MotionFeature {
 
         ClassDB::bind_method( D_METHOD("get_weights"), &MFEvents::get_weights);
         
-        ClassDB::bind_method( D_METHOD("setup_profile","skeleton_path","skeleton_profile"), &MFEvents::setup_profile);
+        
+        ClassDB::bind_method( D_METHOD("setup_bake_init","mm_animation_library"), &MFEvents::setup_bake_init);
         
         ClassDB::bind_method( D_METHOD("setup_for_animation","animation"), &MFEvents::setup_for_animation);
         ClassDB::bind_method( D_METHOD("bake_animation_pose","animation","time"), &MFEvents::bake_animation_pose);

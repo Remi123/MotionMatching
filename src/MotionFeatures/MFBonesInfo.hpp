@@ -79,11 +79,11 @@ struct MFBonesInfo : public MotionFeature {
 
     NodePath _skel_path;
 
-    virtual bool setup_profile(NodePath skeleton_path,Ref<SkeletonProfile> skeleton_profile) override{
-        ERR_FAIL_COND_V_EDMSG(skeleton_path.is_empty(), false,"SkeletonPath is Empty");
-        ERR_FAIL_COND_V_EDMSG(skeleton_profile == nullptr, false,"SkeletonProfile is null");
-        _skel = skeleton_profile;
-        _skel_path = skeleton_path;
+    virtual bool setup_bake_init(Ref<MMAnimationLibrary> animlib) override{
+        ERR_FAIL_COND_V_EDMSG(animlib->skeleton_path.is_empty(), false,"SkeletonPath is Empty");
+        ERR_FAIL_COND_V_EDMSG(animlib->skeleton_profile == nullptr, false,"SkeletonProfile is null");
+        _skel = animlib->skeleton_profile;
+        _skel_path = NodePath(animlib->skeleton_path);
         bones_id.clear();
         if(_skel!=nullptr)
         {
@@ -211,12 +211,32 @@ struct MFBonesInfo : public MotionFeature {
         return result;
     }
 
+    virtual PackedStringArray get_hints()const override{
+        PackedStringArray result{};
+
+        if (use_inertialization)
+        {
+            for (auto i = 0; i < bone_names.size(); ++i)
+            {
+                result.append_array(Array::make("ixB"+u::str(i),"iyB"+u::str(i),"izB"+u::str(i)));
+            }
+            return result;
+        }
+        for (auto i = 0; i < bone_names.size(); ++i)
+            result.append_array(Array::make("PxB"+u::str(i),"PyB"+u::str(i),"PzB"+u::str(i)));
+        for (auto i = 0; i < bone_names.size(); ++i)
+            result.append_array(Array::make("VxB"+u::str(i),"VyB"+u::str(i),"VzB"+u::str(i)));
+        return result;
+    }
+
 protected:
     static void _bind_methods() {
 
         {
             ClassDB::bind_method(D_METHOD("serialize_MMAnimationPlayer", "body"), &MFBonesInfo::serialize_mmplayer);
         }
+
+        ClassDB::bind_method(D_METHOD("get_hints"), &MFBonesInfo::get_hints);
 
         ClassDB::bind_method(D_METHOD("set_bone_names", "value"), &MFBonesInfo::set_bone_names);
         ClassDB::bind_method(D_METHOD("get_bone_names"), &MFBonesInfo::get_bone_names);
@@ -267,7 +287,8 @@ protected:
 
         ClassDB::bind_method( D_METHOD("get_weights"), &MFBonesInfo::get_weights);
         ClassDB::bind_method( D_METHOD("get_dimension"), &MFBonesInfo::get_dimension);
-        ClassDB::bind_method( D_METHOD("setup_profile","skeleton_path","skeleton_profile"), &MFBonesInfo::setup_profile);
+        
+        ClassDB::bind_method( D_METHOD("setup_bake_init","mm_animation_library"), &MFBonesInfo::setup_bake_init);
         
         ClassDB::bind_method( D_METHOD("setup_for_animation","animation"), &MFBonesInfo::setup_for_animation);
         ClassDB::bind_method( D_METHOD("bake_animation_pose","animation","time"), &MFBonesInfo::bake_animation_pose);

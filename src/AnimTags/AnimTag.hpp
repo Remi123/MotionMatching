@@ -132,11 +132,16 @@ struct TagMFEvent : TagMotionMatching
 {
     GDCLASS(TagMFEvent,TagMotionMatching);
 public:
+    GETSET(StringName,event_name);
     GETSET(real_t, reference_time);
 
 protected:
     static void _bind_methods()
     {
+        ClassDB::bind_method( D_METHOD("set_event_name" ,"value"), &TagMFEvent::set_event_name); 
+        ClassDB::bind_method( D_METHOD("get_event_name" ), &TagMFEvent::get_event_name); 
+        godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::STRING_NAME,"event_name"), "set_event_name", "get_event_name");
+
         ClassDB::bind_method( D_METHOD("set_reference_time" ,"value"), &TagMFEvent::set_reference_time); 
         ClassDB::bind_method( D_METHOD("get_reference_time" ), &TagMFEvent::get_reference_time); 
         godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT,"reference_time"), "set_reference_time", "get_reference_time");

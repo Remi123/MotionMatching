@@ -29,6 +29,7 @@
 #include <godot_cpp/classes/standard_material3d.hpp>
 #include <godot_cpp/classes/box_mesh.hpp>
 
+
 // Macro setup. Mostly there to simplify writing all those
 #define GETSET(type,variable,...) type variable{__VA_ARGS__};\
     type get_##variable(){return  variable;}  \
@@ -40,9 +41,11 @@
         ClassDB::bind_method( D_METHOD(STRING_PREFIX(get_,variable) ), &type::get_##variable); \
         ADD_PROPERTY(PropertyInfo(variant_type,#variable,__VA_ARGS__),STRING_PREFIX(set_,variable),STRING_PREFIX(get_,variable));
 
+class MMAnimationLibrary;
+
 struct MotionFeature : public Resource {
-    public:
     GDCLASS(MotionFeature,Resource)
+    friend class MMAnimationLibrary;
     public:
     enum NormalizationType{
         Standard,
@@ -55,10 +58,12 @@ struct MotionFeature : public Resource {
     static constexpr float delta = 0.016f;
 
     virtual int get_dimension(){return 0;}
+
+    virtual PackedStringArray get_hints()const {return {};}
     
     virtual PackedFloat32Array get_weights(){ return {};}
 
-    virtual bool setup_profile(NodePath skeleton_path,Ref<SkeletonProfile> skel_profile){
+    virtual bool setup_bake_init(Ref<MMAnimationLibrary> mmal){
         // returning false will abort the process.
         // feel free to print more details
         return true;
@@ -72,6 +77,30 @@ struct MotionFeature : public Resource {
     virtual PackedFloat32Array bake_animation_pose(Ref<Animation> animation,float time){return {};}
 
     virtual void debug_pose_gizmo(Ref<EditorNode3DGizmo> gizmo, const PackedFloat32Array data,godot::Transform3D tr = godot::Transform3D{}){return;}
+
+    
+    static void _bind_methods() {
+
+        BIND_ENUM_CONSTANT(Standard);
+        BIND_ENUM_CONSTANT(RawValue);
+
+        ClassDB::bind_method( D_METHOD("get_dimension"), &MotionFeature::get_dimension);
+        ClassDB::bind_method( D_METHOD("get_hints"), &MotionFeature::get_hints);
+
+        ClassDB::bind_method( D_METHOD("set_normalization_type" ,"value"), &MotionFeature::set_normalization_type,DEFVAL(NormalizationType::Standard)); 
+        ClassDB::bind_method( D_METHOD("get_normalization_type" ), &MotionFeature::get_normalization_type); 
+        ADD_PROPERTY(PropertyInfo(Variant::INT,"normalization_type",godot::PROPERTY_HINT_ENUM,"Standard,RawValue"), "set_normalization_type", "get_normalization_type");
+
+        ClassDB::bind_method( D_METHOD("get_weights"), &MotionFeature::get_weights);
+        
+        ClassDB::bind_method( D_METHOD("setup_bake_init","mm_animation_library"), &MotionFeature::setup_bake_init);
+        
+        ClassDB::bind_method( D_METHOD("setup_for_animation","animation"), &MotionFeature::setup_for_animation);
+        ClassDB::bind_method( D_METHOD("bake_animation_pose","animation","time"), &MotionFeature::bake_animation_pose);
+
+        ClassDB::bind_method( D_METHOD("debug_pose_gizmo","gizmo","data","root_transform"), &MotionFeature::debug_pose_gizmo);
+        
+    }
 
     static void embed_variant(Variant& v,PackedFloat32Array& result)
     {
@@ -111,27 +140,6 @@ struct MotionFeature : public Resource {
         }
     }
     
-    static void _bind_methods() {
-
-        BIND_ENUM_CONSTANT(Standard);
-        BIND_ENUM_CONSTANT(RawValue);
-
-        ClassDB::bind_method( D_METHOD("get_dimension"), &MotionFeature::get_dimension);
-
-        ClassDB::bind_method( D_METHOD("set_normalization_type" ,"value"), &MotionFeature::set_normalization_type,DEFVAL(NormalizationType::Standard)); 
-        ClassDB::bind_method( D_METHOD("get_normalization_type" ), &MotionFeature::get_normalization_type); 
-        ADD_PROPERTY(PropertyInfo(Variant::INT,"normalization_type",godot::PROPERTY_HINT_ENUM,"Standard,RawValue"), "set_normalization_type", "get_normalization_type");
-
-        ClassDB::bind_method( D_METHOD("get_weights"), &MotionFeature::get_weights);
-        
-        ClassDB::bind_method( D_METHOD("setup_profile","skeleton_path","skeleton_profile"), &MotionFeature::setup_profile);
-        
-        ClassDB::bind_method( D_METHOD("setup_for_animation","animation"), &MotionFeature::setup_for_animation);
-        ClassDB::bind_method( D_METHOD("bake_animation_pose","animation","time"), &MotionFeature::bake_animation_pose);
-
-        ClassDB::bind_method( D_METHOD("debug_pose_gizmo","gizmo","data","root_transform"), &MotionFeature::debug_pose_gizmo);
-        
-    }
 };
 
 VARIANT_ENUM_CAST(MotionFeature::NormalizationType);

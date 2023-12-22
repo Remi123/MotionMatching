@@ -1,74 +1,65 @@
-[gd_scene format=3 uid="uid://ceb0rxuep0ibs"]
+[gd_scene load_steps=4 format=3 uid="uid://ceb0rxuep0ibs"]
 
-[node name="Data" type="VBoxContainer"]
+[ext_resource type="Script" path="res://addons/MotionMatching/controls/DataViewer/DataPanel.gd" id="1_axpvn"]
 
-[node name="HBoxContainer" type="HBoxContainer" parent="."]
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_yutts"]
+bg_color = Color(0.14902, 0.168627, 0.203922, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_7i2fw"]
+bg_color = Color(0.14902, 0.168627, 0.203922, 1)
+
+[node name="Data" type="HBoxContainer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_axpvn")
+
+[node name="PanelContainer" type="PanelContainer" parent="."]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_yutts")
+
+[node name="Tree" type="Tree" parent="PanelContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/icon_max_width = 10
+hide_root = true
+
+[node name="HBoxContainer" type="VBoxContainer" parent="."]
 layout_mode = 2
 
-[node name="MarginContainer" type="MarginContainer" parent="HBoxContainer"]
-layout_mode = 2
-theme_override_constants/margin_left = 20
-theme_override_constants/margin_top = 20
-theme_override_constants/margin_right = 20
-theme_override_constants/margin_bottom = 20
-
-[node name="MarginContainer2" type="MarginContainer" parent="HBoxContainer"]
-layout_mode = 2
-theme_override_constants/margin_left = 20
-theme_override_constants/margin_top = 20
-theme_override_constants/margin_right = 20
-theme_override_constants/margin_bottom = 20
-
-[node name="HBoxContainer" type="HBoxContainer" parent="HBoxContainer/MarginContainer2"]
+[node name="HBoxContainer" type="HBoxContainer" parent="HBoxContainer"]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="HBoxContainer/MarginContainer2/HBoxContainer"]
+[node name="Label" type="Label" parent="HBoxContainer/HBoxContainer"]
 layout_mode = 2
 text = "Show lign"
 
-[node name="SpinBox" type="SpinBox" parent="HBoxContainer/MarginContainer2/HBoxContainer"]
+[node name="LignSelector" type="SpinBox" parent="HBoxContainer/HBoxContainer"]
+unique_name_in_owner = true
 layout_mode = 2
 rounded = true
 allow_greater = true
 
-[node name="MarginContainer3" type="MarginContainer" parent="HBoxContainer"]
+[node name="PanelContainer" type="PanelContainer" parent="HBoxContainer"]
 layout_mode = 2
-theme_override_constants/margin_left = 20
-theme_override_constants/margin_top = 20
-theme_override_constants/margin_right = 20
-theme_override_constants/margin_bottom = 20
+theme_override_styles/panel = SubResource("StyleBoxFlat_7i2fw")
 
-[node name="Button" type="Button" parent="HBoxContainer/MarginContainer3"]
+[node name="ChooseAnimation" type="MenuButton" parent="HBoxContainer/PanelContainer"]
+unique_name_in_owner = true
+clip_contents = true
 layout_mode = 2
-text = "Look for similar"
-
-[node name="MarginContainer5" type="MarginContainer" parent="HBoxContainer"]
-layout_mode = 2
-theme_override_constants/margin_left = 20
-theme_override_constants/margin_top = 20
-theme_override_constants/margin_right = 20
-theme_override_constants/margin_bottom = 20
-
-[node name="ChooseAnimation" type="MenuButton" parent="HBoxContainer/MarginContainer5"]
-layout_mode = 2
-text = "Animation:"
+toggle_mode = false
+text = "Select Animation"
 flat = false
 
-[node name="ScrollContainer" type="ScrollContainer" parent="."]
+[node name="LookupSimilarButton" type="Button" parent="HBoxContainer"]
+unique_name_in_owner = true
 layout_mode = 2
-size_flags_vertical = 3
+disabled = true
+text = "Look for similar"
 
-[node name="PoseData" type="RichTextLabel" parent="ScrollContainer"]
-clip_contents = false
-custom_minimum_size = Vector2(0, 100)
-layout_mode = 2
-size_flags_horizontal = 3
-focus_mode = 2
-theme_override_colors/font_selected_color = Color(0, 0, 0, 1)
-bbcode_enabled = true
-text = "Select an index"
-fit_content = true
-scroll_following = true
-autowrap_mode = 0
-context_menu_enabled = true
-selection_enabled = true
+[connection signal="item_edited" from="PanelContainer/Tree" to="." method="_on_tree_item_edited"]
+[connection signal="value_changed" from="HBoxContainer/HBoxContainer/LignSelector" to="." method="show_lign"]

@@ -1,41 +1,209 @@
-[gd_scene load_steps=8 format=3 uid="uid://bj4qic5cdef61"]
+[gd_scene load_steps=37 format=3 uid="uid://bj4qic5cdef61"]
 
 [ext_resource type="Script" path="res://addons/MotionMatching/controls/Tags/TagsEditor.gd" id="1_gnt8s"]
 
-[sub_resource type="TagCategory" id="TagCategory_mjnud"]
+[sub_resource type="TagCategory" id="TagCategory_mphpq"]
 category = 3
-property_hint_string = &"A,B,D:4"
+property_hint_string = &"Idle,Walk,Run,Strafe"
+tag_name = &"001-walk-start-forward_rightfoot"
+track_id = 2
+timestamp = 0.0697743
+duration = 2.42143
+
+[sub_resource type="TagJunk" id="TagJunk_el156"]
+tag_name = &"001-walk-start-forward_rightfoot"
+duration = 0.0870523
+
+[sub_resource type="TagJunk" id="TagJunk_dgy60"]
 tag_name = &"001-walk-start-forward_rightfoot"
 track_id = 1
-timestamp = 1.12552
-duration = 0.175984
+timestamp = 2.1139
+duration = 0.516849
 
-[sub_resource type="TagJunk" id="TagJunk_g77lv"]
-tag_name = &"001-walk-start-forward_rightfoot"
-track_id = 1
-timestamp = 1.67403
-duration = 0.740848
-
-[sub_resource type="TagJunk" id="TagJunk_d3apw"]
-tag_name = &"001-walk-start-forward_rightfoot"
-timestamp = 0.985422
-duration = 0.1
-
-[sub_resource type="TagJunk" id="TagJunk_8l5r6"]
-tag_name = &"001-walk-start-forward_rightfoot"
-timestamp = 0.320559
-duration = 0.1
-
-[sub_resource type="TagJunk" id="TagJunk_bq4wc"]
-tag_name = &"001-walk-start-forward_rightfoot"
-track_id = 1
-timestamp = 0.743222
-duration = 0.1
-
-[sub_resource type="TagJunk" id="TagJunk_jm6a4"]
+[sub_resource type="TagJunk" id="TagJunk_36f17"]
 tag_name = &"002-idle_right_foot_front"
-timestamp = 3.36781
-duration = 1.21912
+duration = 0.912169
+
+[sub_resource type="TagJunk" id="TagJunk_rvi2c"]
+tag_name = &"002-idle_right_foot_front"
+timestamp = 15.5566
+duration = 1.59215
+
+[sub_resource type="TagCategory" id="TagCategory_vpn47"]
+category = 1
+property_hint_string = &"Idle,Walk,Run,Strafe"
+tag_name = &"002-idle_right_foot_front"
+track_id = 1
+timestamp = 0.547301
+duration = 15.3908
+
+[sub_resource type="TagCategory" id="TagCategory_nrrgn"]
+category = 2
+property_hint_string = &"Idle,Walk,Run,Strafe"
+tag_name = &"002-walk-start-left45-rightFoot"
+timestamp = 0.106771
+duration = 2.92365
+
+[sub_resource type="TagJunk" id="TagJunk_qmno2"]
+tag_name = &"002-walk-start-left45-rightFoot"
+track_id = 2
+timestamp = 2.92993
+duration = 0.322964
+
+[sub_resource type="TagCategory" id="TagCategory_eee16"]
+category = 1
+property_hint_string = &"Idle,Walk,Run,Strafe"
+tag_name = &"002-walk-start-left45-rightFoot"
+track_id = 1
+timestamp = 0.107
+duration = 0.870863
+
+[sub_resource type="TagJunk" id="TagJunk_6g6lk"]
+tag_name = &"002-walk-start-left45-rightFoot"
+track_id = 2
+duration = 0.157017
+
+[sub_resource type="TagJunk" id="TagJunk_21uj3"]
+tag_name = &"003-walk-start-left90-rightFoot"
+duration = 0.487275
+
+[sub_resource type="TagCategory" id="TagCategory_h4vcu"]
+category = 2
+property_hint_string = &"Idle,Walk,Run,Strafe"
+tag_name = &"003-walk-start-left90-rightFoot"
+track_id = 1
+timestamp = 0.464835
+duration = 2.59346
+
+[sub_resource type="TagJunk" id="TagJunk_jcv2u"]
+tag_name = &"003-walk-start-left90-rightFoot"
+timestamp = 2.97815
+duration = 0.35
+
+[sub_resource type="TagCategory" id="TagCategory_huqhf"]
+category = 1
+property_hint_string = &"Idle,Walk,Run,Strafe"
+tag_name = &"003-walk-start-left90-rightFoot"
+track_id = 2
+timestamp = 0.173111
+duration = 0.775793
+
+[sub_resource type="TagJunk" id="TagJunk_7fsbf"]
+tag_name = &"004-walk-start-left135-rightFoot"
+duration = 0.295406
+
+[sub_resource type="TagJunk" id="TagJunk_7hh67"]
+tag_name = &"004-walk-start-left135-rightFoot"
+timestamp = 19.158
+duration = 0.407699
+
+[sub_resource type="TagJunk" id="TagJunk_0mgwi"]
+tag_name = &"004-walk-start-left135-rightFoot"
+timestamp = 2.44684
+duration = 0.531213
+
+[sub_resource type="TagCategory" id="TagCategory_npatx"]
+category = 2
+property_hint_string = &"Idle,Walk,Run,Strafe"
+tag_name = &"004-walk-start-left135-rightFoot"
+track_id = 1
+timestamp = 0.25332
+duration = 2.23382
+
+[sub_resource type="TagCategory" id="TagCategory_hetm0"]
+category = 2
+property_hint_string = &"Idle,Walk,Run,Strafe"
+tag_name = &"005-walk-start-left180-rightFoot"
+track_id = 1
+timestamp = 0.221786
+duration = 3.33049
+
+[sub_resource type="TagJunk" id="TagJunk_injwi"]
+tag_name = &"005-walk-start-left180-rightFoot"
+duration = 0.251358
+
+[sub_resource type="TagJunk" id="TagJunk_5t30w"]
+tag_name = &"005-walk-start-left180-rightFoot"
+timestamp = 3.5227
+duration = 0.233072
+
+[sub_resource type="TagJunk" id="TagJunk_r70t7"]
+tag_name = &"006-walk-start-right45-rightFoot"
+duration = 0.1
+
+[sub_resource type="TagJunk" id="TagJunk_syf78"]
+tag_name = &"006-walk-start-right45-rightFoot"
+timestamp = 2.78443
+duration = 0.5
+
+[sub_resource type="TagCategory" id="TagCategory_fxd0e"]
+property_hint_string = &"Idle,Walk,Run,Strafe"
+tag_name = &"006-walk-start-right45-rightFoot"
+track_id = 1
+timestamp = 0.0491986
+duration = 2.76742
+
+[sub_resource type="TagJunk" id="TagJunk_2tso8"]
+tag_name = &"007-walk-start-right90-rightFoot"
+duration = 0.176644
+
+[sub_resource type="TagJunk" id="TagJunk_jfhnm"]
+tag_name = &"007-walk-start-right90-rightFoot"
+timestamp = 2.18351
+duration = 0.348381
+
+[sub_resource type="TagCategory" id="TagCategory_w3mdf"]
+category = 2
+property_hint_string = &"Idle,Walk,Run,Strafe"
+tag_name = &"007-walk-start-right90-rightFoot"
+track_id = 1
+timestamp = 0.161923
+duration = 2.03876
+
+[sub_resource type="TagJunk" id="TagJunk_fikwh"]
+tag_name = &"060-snake-wide"
+timestamp = 7.15996
+duration = 0.551914
+
+[sub_resource type="TagCategory" id="TagCategory_7odi3"]
+category = 6
+property_hint_string = &"Idle,Walk,Run,Strafe"
+tag_name = &"060-snake-wide"
+track_id = 1
+duration = 7.22709
+
+[sub_resource type="TagJunk" id="TagJunk_j0cq2"]
+tag_name = &"062-snake-tight"
+timestamp = 9.421
+duration = 0.77527
+
+[sub_resource type="TagCategory" id="TagCategory_v1sj4"]
+category = 6
+property_hint_string = &"Idle,Walk,Run,Strafe"
+tag_name = &"062-snake-tight"
+track_id = 1
+duration = 9.51914
+
+[sub_resource type="TagJunk" id="TagJunk_ab0ub"]
+tag_name = &"008-walk-start-right135-rightFoot"
+duration = 0.1
+
+[sub_resource type="TagJunk" id="TagJunk_q1yeu"]
+tag_name = &"008-walk-start-right135-rightFoot"
+timestamp = 19.6215
+duration = 0.357213
+
+[sub_resource type="TagCategory" id="TagCategory_vjpqj"]
+property_hint_string = &"Idle,Walk,Run,Strafe"
+tag_name = &"008-walk-start-right135-rightFoot"
+track_id = 1
+timestamp = 0.0824338
+duration = 2.48126
+
+[sub_resource type="TagJunk" id="TagJunk_v48jy"]
+tag_name = &"008-walk-start-right135-rightFoot"
+timestamp = 17.8541
+duration = 0.393389
 
 [node name="TagEditorPanel" type="VBoxContainer"]
 anchors_preset = 15
@@ -46,7 +214,7 @@ grow_vertical = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 script = ExtResource("1_gnt8s")
-tags = Array[TagInfo]([SubResource("TagCategory_mjnud"), SubResource("TagJunk_g77lv"), SubResource("TagJunk_d3apw"), SubResource("TagJunk_8l5r6"), SubResource("TagJunk_bq4wc"), SubResource("TagJunk_jm6a4")])
+tags = Array[TagInfo]([SubResource("TagCategory_mphpq"), SubResource("TagJunk_el156"), SubResource("TagJunk_dgy60"), SubResource("TagJunk_36f17"), SubResource("TagJunk_rvi2c"), SubResource("TagCategory_vpn47"), SubResource("TagCategory_nrrgn"), SubResource("TagJunk_qmno2"), SubResource("TagCategory_eee16"), SubResource("TagJunk_6g6lk"), SubResource("TagJunk_21uj3"), SubResource("TagCategory_h4vcu"), SubResource("TagJunk_jcv2u"), SubResource("TagCategory_huqhf"), SubResource("TagJunk_7fsbf"), SubResource("TagJunk_7hh67"), SubResource("TagJunk_0mgwi"), SubResource("TagCategory_npatx"), SubResource("TagCategory_hetm0"), SubResource("TagJunk_injwi"), SubResource("TagJunk_5t30w"), SubResource("TagJunk_r70t7"), SubResource("TagJunk_syf78"), SubResource("TagCategory_fxd0e"), SubResource("TagJunk_2tso8"), SubResource("TagJunk_jfhnm"), SubResource("TagCategory_w3mdf"), SubResource("TagJunk_fikwh"), SubResource("TagCategory_7odi3"), SubResource("TagJunk_j0cq2"), SubResource("TagCategory_v1sj4"), SubResource("TagJunk_ab0ub"), SubResource("TagJunk_q1yeu"), SubResource("TagCategory_vjpqj"), SubResource("TagJunk_v48jy")])
 
 [node name="HSplitContainer" type="HBoxContainer" parent="."]
 layout_mode = 2
@@ -57,10 +225,6 @@ size_flags_horizontal = 3
 
 [node name="HSplitContainer" type="HBoxContainer" parent="HSplitContainer/PanelContainer"]
 layout_mode = 2
-
-[node name="Label" type="Label" parent="HSplitContainer/PanelContainer/HSplitContainer"]
-layout_mode = 2
-text = "Current Animation :"
 
 [node name="AnimationSelector" type="MenuButton" parent="HSplitContainer/PanelContainer/HSplitContainer"]
 unique_name_in_owner = true
@@ -224,6 +388,7 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(300, 0)
 layout_mode = 2
 size_flags_horizontal = 3
+text = "Idle,Walk,Run,Strafe"
 placeholder_text = "Categories flag string"
 
 [node name="Zoom" type="HSlider" parent="HSplitContainer/PanelContainer2"]
@@ -265,9 +430,23 @@ step = 0.1
 tick_count = 8
 ticks_on_borders = true
 
+[node name="TimeLabel" type="Label" parent="MarginContainer/ScrollContainer/VBoxContainer/Timeline"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 4
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_top = -13.0
+offset_right = 41.0
+offset_bottom = 13.0
+grow_vertical = 2
+size_flags_vertical = 1
+text = "Time"
+
 [node name="TrackList" type="VBoxContainer" parent="MarginContainer/ScrollContainer/VBoxContainer"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 3
 
 [connection signal="text_submitted" from="HSplitContainer/PanelContainer2/CategoryFlagEdit" to="." method="_on_category_flag_edit_text_submitted"]
+[connection signal="value_changed" from="MarginContainer/ScrollContainer/VBoxContainer/Timeline" to="." method="_on_timeline_value_changed"]
