@@ -69,7 +69,7 @@ struct MotionFeature : public Resource {
         return true;
     }
 
-    virtual bool setup_for_animation(Ref<Animation> animation){
+    virtual bool setup_bake_animation(Ref<Animation> animation){
         // returning false will skip this animation and print a warning
         // feel free to print more details
         return true;
@@ -93,9 +93,9 @@ struct MotionFeature : public Resource {
 
         ClassDB::bind_method( D_METHOD("get_weights"), &MotionFeature::get_weights);
         
-        ClassDB::bind_method( D_METHOD("setup_bake_init","mm_animation_library"), &MotionFeature::setup_bake_init);
+        ClassDB::bind_method( D_METHOD("setup_bake_init","mm_animation_library"), &MotionFeature::setup_bake_init);        
+        ClassDB::bind_method( D_METHOD("setup_bake_animation","animation"), &MotionFeature::setup_bake_animation);
         
-        ClassDB::bind_method( D_METHOD("setup_for_animation","animation"), &MotionFeature::setup_for_animation);
         ClassDB::bind_method( D_METHOD("bake_animation_pose","animation","time"), &MotionFeature::bake_animation_pose);
 
         ClassDB::bind_method( D_METHOD("debug_pose_gizmo","gizmo","data","root_transform"), &MotionFeature::debug_pose_gizmo);

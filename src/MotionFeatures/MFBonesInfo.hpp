@@ -72,7 +72,7 @@ struct MFBonesInfo : public MotionFeature {
         return bone_names.size() * 3 * 2;
     }
 
-    virtual bool setup_for_animation(Ref<Animation> animation)override{
+    virtual bool setup_bake_animation(Ref<Animation> animation)override{
         return true;
     }
 
@@ -290,7 +290,7 @@ protected:
         
         ClassDB::bind_method( D_METHOD("setup_bake_init","mm_animation_library"), &MFBonesInfo::setup_bake_init);
         
-        ClassDB::bind_method( D_METHOD("setup_for_animation","animation"), &MFBonesInfo::setup_for_animation);
+        ClassDB::bind_method( D_METHOD("setup_bake_animation","animation"), &MFBonesInfo::setup_bake_animation);
         ClassDB::bind_method( D_METHOD("bake_animation_pose","animation","time"), &MFBonesInfo::bake_animation_pose);
 
         ClassDB::bind_method( D_METHOD("debug_pose_gizmo","gizmo","data","root_transform"), &MFBonesInfo::debug_pose_gizmo);

@@ -272,7 +272,7 @@ struct MMAnimationLibrary : public AnimationLibrary {
             for(auto features_index = 0; features_index < motion_features.size(); ++features_index )
             {
                 MotionFeature* f = Object::cast_to<MotionFeature>(motion_features[features_index]);
-                if( false == f->setup_for_animation(animation))
+                if( false == f->setup_bake_animation(animation))
                 {
                     should_continue = features_index;
                     break;

@@ -99,7 +99,7 @@ public:
         return true;
     };
 
-    virtual bool setup_for_animation(Ref<Animation> animation) override
+    virtual bool setup_bake_animation(Ref<Animation> animation) override
     {
         start_time = 0.1f;
         end_time = std::floor(animation->get_length() * 10)/10.0f;
@@ -277,7 +277,7 @@ public:
         ClassDB::bind_method( D_METHOD("get_weights"), &MFTrajectory::get_weights);
         ClassDB::bind_method( D_METHOD("get_dimension"), &MFTrajectory::get_dimension);
         
-        ClassDB::bind_method( D_METHOD("setup_for_animation","animation"), &MFTrajectory::setup_for_animation);
+        ClassDB::bind_method( D_METHOD("setup_bake_animation","animation"), &MFTrajectory::setup_bake_animation);
         ClassDB::bind_method( D_METHOD("bake_animation_pose","animation","time"), &MFTrajectory::bake_animation_pose);
         
         ClassDB::bind_method( D_METHOD("debug_pose_gizmo","gizmo","data","root_transform"), &MFTrajectory::debug_pose_gizmo);

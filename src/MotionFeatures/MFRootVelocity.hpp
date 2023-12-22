@@ -70,7 +70,7 @@ struct MFRootVelocity : public MotionFeature {
         root_bone_track = u::str(animlib->skeleton_path) + ":" + animlib->skeleton_profile->get_root_bone();
         return true;
     }
-    virtual bool setup_for_animation(Ref<Animation> animation)override{
+    virtual bool setup_bake_animation(Ref<Animation> animation)override{
         root_track_pos = animation->find_track(NodePath(root_bone_track),Animation::TrackType::TYPE_POSITION_3D);
         root_track_quat = animation->find_track(NodePath(root_bone_track),Animation::TrackType::TYPE_ROTATION_3D);
         return true;
@@ -146,9 +146,9 @@ protected:
         ClassDB::bind_method( D_METHOD("get_weights"), &MFRootVelocity::get_weights);
         ClassDB::bind_method( D_METHOD("get_dimension"), &MFRootVelocity::get_dimension);
 
-        ClassDB::bind_method( D_METHOD("setup_bake_init","mm_animation_library"), &MFRootVelocity::setup_bake_init);
+        ClassDB::bind_method( D_METHOD("setup_bake_init","mm_animation_library"), &MFRootVelocity::setup_bake_init);        
+        ClassDB::bind_method( D_METHOD("setup_bake_animation","animation"), &MFRootVelocity::setup_bake_animation);
         
-        ClassDB::bind_method( D_METHOD("setup_for_animation","animation"), &MFRootVelocity::setup_for_animation);
         ClassDB::bind_method( D_METHOD("bake_animation_pose","animation","time"), &MFRootVelocity::bake_animation_pose);
         
         ClassDB::bind_method( D_METHOD("debug_pose_gizmo","gizmo","data","root_transform"), &MFRootVelocity::debug_pose_gizmo);

@@ -87,7 +87,7 @@ struct MFEvents : public MotionFeature {
         return true;
     }
 
-    virtual bool setup_for_animation(Ref<Animation> animation)override{
+    virtual bool setup_bake_animation(Ref<Animation> animation)override{
         return true;
     }
 
@@ -157,9 +157,9 @@ struct MFEvents : public MotionFeature {
         ClassDB::bind_method( D_METHOD("get_weights"), &MFEvents::get_weights);
         
         
-        ClassDB::bind_method( D_METHOD("setup_bake_init","mm_animation_library"), &MFEvents::setup_bake_init);
+        ClassDB::bind_method( D_METHOD("setup_bake_init","mm_animation_library"), &MFEvents::setup_bake_init);        
+        ClassDB::bind_method( D_METHOD("setup_bake_animation","animation"), &MFEvents::setup_bake_animation);
         
-        ClassDB::bind_method( D_METHOD("setup_for_animation","animation"), &MFEvents::setup_for_animation);
         ClassDB::bind_method( D_METHOD("bake_animation_pose","animation","time"), &MFEvents::bake_animation_pose);
 
         ClassDB::bind_method( D_METHOD("debug_pose_gizmo","gizmo","data","root_transform"), &MFEvents::debug_pose_gizmo);
