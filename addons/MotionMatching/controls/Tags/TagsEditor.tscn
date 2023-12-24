@@ -426,7 +426,7 @@ custom_minimum_size = Vector2(8, 0)
 layout_mode = 2
 size_flags_vertical = 1
 max_value = 2.63333
-step = 0.1
+step = 0.016
 tick_count = 8
 ticks_on_borders = true
 

@@ -32,8 +32,9 @@
 #include <limits>
 #include <algorithm>
 
-#include <MotionFeatures/MotionFeatures.hpp>
+#include <MotionFeatures/MFEvents.hpp>
 #include <MMAnimationLibrary.hpp>
+
 
 
 // Macro setup. Mostly there to simplify writing all those
@@ -60,18 +61,22 @@ int sec_to_frame(float seconds, int fps = -1)
 
 struct MFEvents : public MotionFeature {
     GDCLASS(MFEvents,MotionFeature)
+    Ref<MMAnimationLibrary> mmlib = nullptr;
+    std::vector<Ref<TagMFEvent>> animation_events{};
 
     public:
     enum EventType{
         Timing,
-        EmbedValue
+        EmbedValue,
+
     };
+
 
     GETSET(EventType,event_type);
 
-
+    GETSET(float,default_value, (1<<31));
     GETSET(bool,embed_as_frames);
-    GETSET(godot::PackedStringArray,events_tracks);
+    GETSET(bool,use_only_start,false);
     GETSET(godot::PackedStringArray,events_names);
 
     static constexpr float delta = 0.016f;
@@ -83,50 +88,66 @@ struct MFEvents : public MotionFeature {
     virtual bool setup_bake_init(Ref<MMAnimationLibrary> animlib)override{
         // returning false will abort the process.
         // feel free to print more details
+        mmlib = animlib;
 
         return true;
     }
+    virtual PackedStringArray get_hints()const {return events_names;}
 
     virtual bool setup_bake_animation(Ref<Animation> animation)override{
+        u::prints("Events",animation->get_name());
+        auto tags = mmlib->tags;
+        animation_events.clear();
+        for(auto i = 0;i < mmlib->tags.size();++i)
+        {
+            if(TagMFEvent* event = Object::cast_to<TagMFEvent>(tags[i]); event != nullptr && event->tag_name == animation->get_name())
+            {
+                animation_events.push_back(event);
+            }
+        }
+
         return true;
     }
 
+    // the current logic is this : Take the first event
     virtual PackedFloat32Array bake_animation_pose(Ref<Animation> animation,float time) override {
         PackedFloat32Array result = {};
-        Vector<Ref<TagInfo>> all_tags;
-        // for(auto tag : tags)
+        std::vector<Ref<TagMFEvent>> current_events{};
+        constexpr float time_offset = 0.016f;
+        // Get current events tags.
+        for(Ref<TagMFEvent> tag : animation_events)
         {
-            // if (auto* event = Object::cast_to<TagMFEvent>(tag); event != nullptr && event->tag_name ==)
+            if(tag->timestamp <= time && time < tag->timestamp + tag->duration + time_offset)
             {
-
+                current_events.push_back(tag);
             }
         }
+
+        for(auto i = 0; i < events_names.size();++i)
+        {
+            const auto event_name = events_names[i];
+            auto it = std::find_if(animation_events.begin(), animation_events.end(),[event_name](Ref<TagMFEvent> event){return event->event_name == event_name;});
+            if(it == animation_events.end())
+            {
+                result.append(default_value);
+                continue;
+            }
+            const auto event = *it;
+            if(time < event->timestamp || time > (event->timestamp + event->duration + time_offset))
+            {
+                result.append(time - event->timestamp);
+            }
+            else if (event->timestamp <= time && time < (event->timestamp + event->duration + time_offset) )
+            {
+                result.append(0.0f);
+            }
+        }
+        
+        
         
 
         return result;
     }
-
-    void property_track(int track_id,Ref<Animation> animation,float time,PackedFloat32Array& result)
-    {
-        switch (event_type)
-        {
-            case RawValue:
-            {
-                Variant value = animation->value_track_interpolate(track_id,time);
-                embed_variant(value,result);
-            }
-            case Timing:
-            {
-                
-            }
-            default :
-            {
-
-            }
-        }
-    }
-
-
 
     virtual void debug_pose_gizmo(Ref<EditorNode3DGizmo> gizmo, const PackedFloat32Array data,godot::Transform3D tr = godot::Transform3D{}){return;}
 
@@ -139,11 +160,6 @@ struct MFEvents : public MotionFeature {
         // Override Default Value
         ClassDB::bind_method( D_METHOD("set_normalization_type" ,"value"), &MFEvents::set_normalization_type,DEFVAL(NormalizationType::RawValue)); 
         
-
-        ClassDB::bind_method( D_METHOD("set_events_tracks" ,"value"), &MFEvents::set_events_tracks); 
-        ClassDB::bind_method( D_METHOD("get_events_tracks" ), &MFEvents::get_events_tracks); 
-        godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_STRING_ARRAY,"events_tracks"), "set_events_tracks", "get_events_tracks");
-
         ClassDB::bind_method( D_METHOD("set_events_names" ,"value"), &MFEvents::set_events_names); 
         ClassDB::bind_method( D_METHOD("get_events_names" ), &MFEvents::get_events_names); 
         godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_STRING_ARRAY,"events_names"), "set_events_names", "get_events_names");
@@ -155,11 +171,13 @@ struct MFEvents : public MotionFeature {
         ClassDB::bind_method( D_METHOD("get_dimension"), &MFEvents::get_dimension);
 
         ClassDB::bind_method( D_METHOD("get_weights"), &MFEvents::get_weights);
+
+        ClassDB::bind_method( D_METHOD("get_hints"), &MFEvents::get_hints);
         
         
         ClassDB::bind_method( D_METHOD("setup_bake_init","mm_animation_library"), &MFEvents::setup_bake_init);        
         ClassDB::bind_method( D_METHOD("setup_bake_animation","animation"), &MFEvents::setup_bake_animation);
-        
+
         ClassDB::bind_method( D_METHOD("bake_animation_pose","animation","time"), &MFEvents::bake_animation_pose);
 
         ClassDB::bind_method( D_METHOD("debug_pose_gizmo","gizmo","data","root_transform"), &MFEvents::debug_pose_gizmo);

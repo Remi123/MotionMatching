@@ -731,9 +731,9 @@ protected:
         }
         ClassDB::add_property_group(get_class_static(), "Dependancy resources", "");
         {
-            ClassDB::bind_method( D_METHOD("set_time_interval" ,"value"), &MMAnimationLibrary::set_time_interval,DEFVAL(0.1f)); 
+            ClassDB::bind_method( D_METHOD("set_time_interval" ,"value"), &MMAnimationLibrary::set_time_interval,DEFVAL(0.016f)); 
             ClassDB::bind_method( D_METHOD("get_time_interval" ), &MMAnimationLibrary::get_time_interval); 
-            godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT,"time_interval",PROPERTY_HINT_RANGE,"0.01,2.0,0.01,or_greater"), "set_time_interval", "get_time_interval");
+            godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT,"time_interval",PROPERTY_HINT_RANGE,"0.016,2.0,0.016,or_greater"), "set_time_interval", "get_time_interval");
 
             ClassDB::bind_method(D_METHOD("set_skeleton_path", "value"), &MMAnimationLibrary::set_skeleton_path);
             ClassDB::bind_method(D_METHOD("get_skeleton_path"), &MMAnimationLibrary::get_skeleton_path);
