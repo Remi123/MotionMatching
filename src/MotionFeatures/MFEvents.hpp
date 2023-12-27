@@ -74,7 +74,7 @@ struct MFEvents : public MotionFeature {
 
     GETSET(EventType,event_type);
 
-    GETSET(float,default_value, (1<<31));
+    GETSET(float,default_value, (1<<30));
     GETSET(bool,embed_as_frames);
     GETSET(bool,use_only_start,false);
     GETSET(godot::PackedStringArray,events_names);
@@ -163,6 +163,10 @@ struct MFEvents : public MotionFeature {
         ClassDB::bind_method( D_METHOD("set_events_names" ,"value"), &MFEvents::set_events_names); 
         ClassDB::bind_method( D_METHOD("get_events_names" ), &MFEvents::get_events_names); 
         godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_STRING_ARRAY,"events_names"), "set_events_names", "get_events_names");
+
+        ClassDB::bind_method( D_METHOD("set_default_value" ,"value"), &MFEvents::set_default_value,DEFVAL(real_t(int32_t(1<<30)))); 
+        ClassDB::bind_method( D_METHOD("get_default_value" ), &MFEvents::get_default_value); 
+        godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT,"default_value"), "set_default_value", "get_default_value");
 
         ClassDB::bind_method( D_METHOD("set_embed_as_frames" ,"value"), &MFEvents::set_embed_as_frames); 
         ClassDB::bind_method( D_METHOD("get_embed_as_frames" ), &MFEvents::get_embed_as_frames); 

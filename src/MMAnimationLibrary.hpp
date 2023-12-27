@@ -103,7 +103,9 @@ struct MMAnimationLibrary : public AnimationLibrary {
 
     GETSET(StringName,skeleton_path);
     GETSET(Ref<SkeletonProfile>,skeleton_profile)
-    GETSET(float,time_interval);
+    float time_interval{}; 
+    float get_time_interval(){return time_interval;} 
+    void set_time_interval(float value){time_interval = std::abs(value);}
 
     String category_hint_string{}; 
     String get_category_hint_string(){return category_hint_string;} 
@@ -119,7 +121,6 @@ struct MMAnimationLibrary : public AnimationLibrary {
                 ++nb;
             }
         }
-        u::prints("Number of TagCategory",nb);
     }
     GETSET(TypedArray<TagInfo>,tags);
 
@@ -282,20 +283,6 @@ struct MMAnimationLibrary : public AnimationLibrary {
             {
                 WARN_PRINT_ED("Skipping Animation '" + (String)anim_name + "' because of motion feature index :" + u::str(should_continue));
                 continue;
-            }
-            // ERR_CONTINUE_EDMSG(should_continue != -1,);
-
-            std::vector<int32_t> category_tracks{};
-            for(auto i = 0 ; i<category_track_names.size();++i)
-            {
-                 auto category_track = animation->find_track((String)category_track_names[i],Animation::TrackType::TYPE_VALUE);
-                 animation->value_track_set_update_mode(category_track,Animation::UpdateMode::UPDATE_DISCRETE);
-                 animation->track_set_interpolation_type(category_track,Animation::InterpolationType::INTERPOLATION_NEAREST);
-                 if (category_track != -1)
-                 {
-                    category_tracks.push_back(category_track);                    
-                 }
-                 u::prints("Checking Category Track",category_track_names[i], "result:",category_track != -1);
             }
 
             const auto length = animation->get_loop_mode() == Animation::LOOP_NONE ? animation->get_length() - 0.2 : animation->get_length() ;
@@ -733,7 +720,7 @@ protected:
         {
             ClassDB::bind_method( D_METHOD("set_time_interval" ,"value"), &MMAnimationLibrary::set_time_interval,DEFVAL(0.016f)); 
             ClassDB::bind_method( D_METHOD("get_time_interval" ), &MMAnimationLibrary::get_time_interval); 
-            godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT,"time_interval",PROPERTY_HINT_RANGE,"0.016,2.0,0.016,or_greater"), "set_time_interval", "get_time_interval");
+            godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT,"time_interval"), "set_time_interval", "get_time_interval");
 
             ClassDB::bind_method(D_METHOD("set_skeleton_path", "value"), &MMAnimationLibrary::set_skeleton_path);
             ClassDB::bind_method(D_METHOD("get_skeleton_path"), &MMAnimationLibrary::get_skeleton_path);
@@ -745,22 +732,22 @@ protected:
         }
         ClassDB::add_property_group(get_class_static(), "Features", "");
         {
-                ClassDB::bind_method(D_METHOD("set_category_track_names", "value"), &MMAnimationLibrary::set_category_track_names);
-                ClassDB::bind_method(D_METHOD("get_category_track_names"), &MMAnimationLibrary::get_category_track_names);
-                godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_STRING_ARRAY, "category_track_names", PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_DEFAULT), "set_category_track_names", "get_category_track_names");
+            ClassDB::bind_method(D_METHOD("set_category_track_names", "value"), &MMAnimationLibrary::set_category_track_names);
+            ClassDB::bind_method(D_METHOD("get_category_track_names"), &MMAnimationLibrary::get_category_track_names);
+            godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_STRING_ARRAY, "category_track_names", PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_DEFAULT), "set_category_track_names", "get_category_track_names");
 
-                // BINDER_PROPERTY_PARAMS(MMAnimationLibrary,Variant::STRING,category_hint_string);
-                ClassDB::bind_method( D_METHOD("set_category_hint_string" ,"value"), &MMAnimationLibrary::set_category_hint_string); 
-                ClassDB::bind_method( D_METHOD("get_category_hint_string" ), &MMAnimationLibrary::get_category_hint_string); 
-                godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::STRING,"category_hint_string",PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_UPDATE_ALL_IF_MODIFIED), "set_category_hint_string", "get_category_hint_string");
+            // BINDER_PROPERTY_PARAMS(MMAnimationLibrary,Variant::STRING,category_hint_string);
+            ClassDB::bind_method( D_METHOD("set_category_hint_string" ,"value"), &MMAnimationLibrary::set_category_hint_string); 
+            ClassDB::bind_method( D_METHOD("get_category_hint_string" ), &MMAnimationLibrary::get_category_hint_string); 
+            godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::STRING,"category_hint_string",PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_UPDATE_ALL_IF_MODIFIED), "set_category_hint_string", "get_category_hint_string");
 
-                ClassDB::bind_method(D_METHOD("set_tags", "value"), &MMAnimationLibrary::set_tags);
-                ClassDB::bind_method(D_METHOD("get_tags"), &MMAnimationLibrary::get_tags);
-                godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::ARRAY, "tags", godot::PROPERTY_HINT_TYPE_STRING, u::str(Variant::OBJECT) + '/' + u::str(Variant::BASIS) + ":TagInfo", PROPERTY_USAGE_DEFAULT ), "set_tags", "get_tags");
+            ClassDB::bind_method(D_METHOD("set_tags", "value"), &MMAnimationLibrary::set_tags);
+            ClassDB::bind_method(D_METHOD("get_tags"), &MMAnimationLibrary::get_tags);
+            godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::ARRAY, "tags", godot::PROPERTY_HINT_TYPE_STRING, u::str(Variant::OBJECT) + '/' + u::str(Variant::BASIS) + ":TagInfo", PROPERTY_USAGE_DEFAULT ), "set_tags", "get_tags");
 
-                ClassDB::bind_method(D_METHOD("set_motion_features", "value"), &MMAnimationLibrary::set_motion_features);
-                ClassDB::bind_method(D_METHOD("get_motion_features"), &MMAnimationLibrary::get_motion_features);
-                godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::ARRAY, "motion_features", godot::PROPERTY_HINT_TYPE_STRING, u::str(Variant::OBJECT) + '/' + u::str(Variant::BASIS) + ":MotionFeature", PROPERTY_USAGE_DEFAULT), "set_motion_features", "get_motion_features");
+            ClassDB::bind_method(D_METHOD("set_motion_features", "value"), &MMAnimationLibrary::set_motion_features);
+            ClassDB::bind_method(D_METHOD("get_motion_features"), &MMAnimationLibrary::get_motion_features);
+            godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::ARRAY, "motion_features", godot::PROPERTY_HINT_TYPE_STRING, u::str(Variant::OBJECT) + '/' + u::str(Variant::BASIS) + ":MotionFeature", PROPERTY_USAGE_DEFAULT), "set_motion_features", "get_motion_features");
         }
         ClassDB::add_property_group(get_class_static(), "Data & KdTree params", "");
         {

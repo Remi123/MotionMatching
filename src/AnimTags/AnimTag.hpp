@@ -22,7 +22,7 @@ struct TagInfo : godot::Resource
 {
     GDCLASS(TagInfo,Resource);
 public:
-    GETSET(StringName, tag_name);
+    GETSET(StringName, animation_name);
     GETSET(int,track_id);
     GETSET(real_t, timestamp);
     GETSET(real_t, duration,real_t(0));
@@ -32,7 +32,7 @@ protected:
     {
         ClassDB::bind_method(D_METHOD("set_tag_name", "value"), &TagInfo::set_tag_name);
         ClassDB::bind_method(D_METHOD("get_tag_name"), &TagInfo::get_tag_name);
-        godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::STRING_NAME, "tag_name"), "set_tag_name", "get_tag_name");
+        godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::STRING_NAME, "animation_name"), "set_tag_name", "get_tag_name");
         
         ClassDB::bind_method( D_METHOD("set_track_id" ,"value"), &TagInfo::set_track_id); 
         ClassDB::bind_method( D_METHOD("get_track_id" ), &TagInfo::get_track_id); 

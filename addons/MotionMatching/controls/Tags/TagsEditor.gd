@@ -73,7 +73,7 @@ func _on_anim_selected(index:int):
 	zoom.value = 1.0
 
 	current_tags = tags.filter(func(tag:TagInfo):
-		return current_animation_name == tag.tag_name)
+		return current_animation_name == tag.animation_name)
 
 	for track in track_list.get_children() as Array[TrackBar]:
 		track.queue_free()
@@ -153,7 +153,7 @@ func on_delete_track(index:int):
 	pass
 
 func on_new_tag(tag:TagInfo):
-	tag.tag_name = current_animation_name
+	tag.animation_name = current_animation_name
 	tag.duration = current_animation.step
 	tags.append(tag)
 	for t in track_list.get_children() as Array[Control]:
