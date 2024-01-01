@@ -31,8 +31,11 @@ func _drop_data(at_position: Vector2, data: Variant) -> void:
 			var diff = (at_position.x)/ data.ref.get_parent().size.x * data.ref.animation.length
 			data.ref.tag.duration -= diff
 			data.ref.tag.timestamp += diff
+			data.ref.tag.duration = max(0,data.ref.tag.duration)
+			data.ref.tag.timestamp = max(0,data.ref.tag.timestamp)
 		elif data.drag_right == true:
 			var diff = (data.ref.size.x - at_position.x)/ data.ref.get_parent().size.x * data.ref.animation.length
 			data.ref.tag.duration -= diff
+			data.ref.tag.duration = max(0,data.ref.tag.duration)
 	data.ref.get_parent().queue_redraw()
 

@@ -85,18 +85,16 @@ struct MotionFeature : public Resource {
         BIND_ENUM_CONSTANT(RawValue);
 
         ClassDB::bind_method( D_METHOD("get_dimension"), &MotionFeature::get_dimension);
+        ClassDB::bind_method( D_METHOD("get_weights"), &MotionFeature::get_weights);
         ClassDB::bind_method( D_METHOD("get_hints"), &MotionFeature::get_hints);
 
         ClassDB::bind_method( D_METHOD("set_normalization_type" ,"value"), &MotionFeature::set_normalization_type,DEFVAL(NormalizationType::Standard)); 
         ClassDB::bind_method( D_METHOD("get_normalization_type" ), &MotionFeature::get_normalization_type); 
         ADD_PROPERTY(PropertyInfo(Variant::INT,"normalization_type",godot::PROPERTY_HINT_ENUM,"Standard,RawValue"), "set_normalization_type", "get_normalization_type");
-
-        ClassDB::bind_method( D_METHOD("get_weights"), &MotionFeature::get_weights);
         
-        ClassDB::bind_method( D_METHOD("setup_bake_init","mm_animation_library"), &MotionFeature::setup_bake_init);        
-        ClassDB::bind_method( D_METHOD("setup_bake_animation","animation"), &MotionFeature::setup_bake_animation);
-        
-        ClassDB::bind_method( D_METHOD("bake_animation_pose","animation","time"), &MotionFeature::bake_animation_pose);
+        ClassDB::bind_method( D_METHOD("setup_bake_init","mm_animation_library"),   &MotionFeature::setup_bake_init);        
+        ClassDB::bind_method( D_METHOD("setup_bake_animation","animation"),         &MotionFeature::setup_bake_animation);        
+        ClassDB::bind_method( D_METHOD("bake_animation_pose","animation","time"),   &MotionFeature::bake_animation_pose);
 
         ClassDB::bind_method( D_METHOD("debug_pose_gizmo","gizmo","data","root_transform"), &MotionFeature::debug_pose_gizmo);
         

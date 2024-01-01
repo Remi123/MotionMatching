@@ -91,10 +91,8 @@ func _on_anim_selected(index:int):
 		new_track.added_event.connect(on_new_tag)
 		new_track.current_animation = current_animation
 		new_track.current_library = current_animlib
-	prints("Created",track_list.get_child_count(),"tracks")
 	for t in track_list.get_children():
 		t.size.y = 30
-		prints("Track#",t.get_index(),t.position,t.size)
 
 
 	for events in current_tags as Array[TagInfo]:
@@ -104,10 +102,9 @@ func _on_anim_selected(index:int):
 		track.populate_tag(events,false)
 
 
-	timeline.step = 0.016 #current_animation.step
+	timeline.step = 0.016
 	timeline.tick_count = 8
 	timeline.max_value = current_animation.length
-	prints("AnimInfo",current_animation.length,current_animation.step,current_animation.length/current_animation.step)
 
 	_on_zoom_changed(zoom.value)
 	pass
@@ -154,7 +151,7 @@ func on_delete_track(index:int):
 
 func on_new_tag(tag:TagInfo):
 	tag.animation_name = current_animation_name
-	tag.duration = current_animation.step
+	#tag.duration = 0.016
 	tags.append(tag)
 	for t in track_list.get_children() as Array[Control]:
 		t.queue_redraw()
@@ -169,6 +166,7 @@ func _on_category_flag_edit_text_submitted(new_text: String) -> void:
 		if tag is TagCategory:
 			var category_tag := tag as TagCategory
 			category_tag.property_hint_string = new_text
+			category_tag.notify_property_list_changed()
 	pass # Replace with function body.
 
 

@@ -60,16 +60,30 @@ struct MFBonesInfo : public MotionFeature {
     }
     PackedStringArray get_bone_names(){return bone_names;}
 
+    enum BoneInfoType{
+        Position
+        ,Velocity
+        ,Rotation
+        ,AngularVel
+
+        , MAX_SIZE
+    };
+
+    std::bitset<BoneInfoType::MAX_SIZE> bone_info_type{};
+    int get_bone_info_type(){return (int)bone_info_type.to_ulong();} 
+    void set_bone_info_type(int value){bone_info_type = value;}
+
+
     PackedInt32Array bones_id{};
 
     HashMap<uint32_t,PackedInt32Array> bone_tracks{};
 
     virtual int get_dimension()override{
-        if(use_inertialization)
-        {
-            return bone_names.size() * 3;
-        }
-        return bone_names.size() * 3 * 2;
+        // if(use_inertialization)
+        // {
+        //     return bone_names.size() * 3;
+        // }
+        return bone_names.size() * 3 * bone_info_type.count();
     }
 
     virtual bool setup_bake_animation(Ref<Animation> animation)override{
@@ -111,21 +125,37 @@ struct MFBonesInfo : public MotionFeature {
             kbone = MMAnimationLibrary::sample_bone_rootmotion_kform(animation,time,_skel,path);
                         
             // Serialize
-            if (use_inertialization)
-            {
-                const auto cost = inertialization_cost_function(kbone.pos, kbone.vel, inertialization_halflife);
-                result.push_back(cost.x);
-                result.push_back(cost.y);
-                result.push_back(cost.z);
-            }
-            else
+            // if (bone_info_type == PositionAndVelocity && use_inertialization)
+            // {
+            //     const auto cost = inertialization_cost_function(kbone.pos, kbone.vel, inertialization_halflife);
+            //     result.push_back(cost.x);
+            //     result.push_back(cost.y);
+            //     result.push_back(cost.z);
+            // }
+            if (bone_info_type.test(Position))
             {
                 result.push_back(kbone.pos.x);
                 result.push_back(kbone.pos.y);
                 result.push_back(kbone.pos.z);
+            }
+            if (bone_info_type.test(Velocity))
+            {
                 result.push_back(kbone.vel.x);
                 result.push_back(kbone.vel.y);
                 result.push_back(kbone.vel.z);
+            }
+            if (bone_info_type.test(Rotation))
+            {
+                Vector3 const dir = kbone.rot.xform(Vector3(0,0,1));
+                result.push_back(dir.x);
+                result.push_back(dir.y);
+                result.push_back(dir.z);
+            }
+            if (bone_info_type.test(AngularVel))
+            {
+                result.push_back(kbone.ang.x);
+                result.push_back(kbone.ang.y);
+                result.push_back(kbone.ang.z);
             }
         }
 
@@ -144,67 +174,96 @@ struct MFBonesInfo : public MotionFeature {
 
     float weight_bone_pos{1.0f}; float get_weight_bone_pos(){return weight_bone_pos;} void set_weight_bone_pos(float value){weight_bone_pos = value;}
     float weight_bone_vel{1.0f}; float get_weight_bone_vel(){return weight_bone_vel;} void set_weight_bone_vel(float value){weight_bone_vel = value;}
+    float weight_bone_rot{1.0f}; float get_weight_bone_rot(){return weight_bone_rot;} void set_weight_bone_rot(float value){weight_bone_rot = value;}
+    float weight_bone_ang{1.0f}; float get_weight_bone_ang(){return weight_bone_ang;} void set_weight_bone_ang(float value){weight_bone_ang = value;}
+    
     float weight_inertialization{1.0f}; float get_weight_inertialization(){return weight_inertialization;} void set_weight_inertialization(float value){weight_inertialization = value;}
     
     virtual PackedFloat32Array get_weights() override{
         PackedFloat32Array result{};
 
-        if (use_inertialization)
-        {
-            for (auto i = 0; i < 3 * bone_names.size(); ++i)
-            {
-                result.append(weight_inertialization);
-            }
-            return result;
-        }
+        // if (use_inertialization)
+        // {
+        //     for (auto i = 0; i < 3 * bone_names.size(); ++i)
+        //     {
+        //         result.append(weight_inertialization);
+        //     }
+        //     return result;
+        // }
 
-        for(auto i =0; i < 3 * bone_names.size(); ++i)
+        for(auto i =0; i < bone_info_type.test(Position) * 3 * bone_names.size(); ++i)
         {
             result.append(weight_bone_pos);
         }
-        for(auto i =0; i < 3 * bone_names.size(); ++i)
+        for(auto i =0; i < bone_info_type.test(Velocity) * 3 * bone_names.size(); ++i)
         {
             result.append(weight_bone_vel);
+        }
+        for(auto i =0; i < bone_info_type.test(Rotation) * 3 * bone_names.size(); ++i)
+        {
+            result.append(weight_bone_rot);
+        }
+        for(auto i =0; i < bone_info_type.test(AngularVel) * 3 * bone_names.size(); ++i)
+        {
+            result.append(weight_bone_ang);
         }
         return result;
     }
 
     GETSET(bool,use_inertialization)
-    GETSET(float,inertialization_halflife,0.01)
+    GETSET(float,inertialization_halflife,0.1);
 
     PackedFloat32Array serialize_mmplayer(MMAnimationPlayer* mm_player){
         ERR_FAIL_NULL_V_MSG(mm_player,{},"MMAnimationPlayer is null");
         constexpr size_t size = 3;
         PackedFloat32Array result{};
-        if (use_inertialization)
+        // if (use_inertialization)
+        // {
+        //     result.resize(bone_names.size() * 3);
+        //     for (size_t i = 0; i < bone_names.size(); ++i)
+        //     {
+        //         // _skel isn't init
+        //         kform b = mm_player->get_bone_global_kform(_skel->find_bone(bone_names[i]));
+        //         Vector3 pos = b.pos, vel = b.vel;
+        //         auto cost = inertialization_cost_function(pos, vel, inertialization_halflife);
+        //         result[i * size] = cost.x;
+        //         result[i * size + 1] = cost.y;
+        //         result[i * size + 2] = cost.z;
+        //     }
+        //     return result;
+        // }
+        // else
         {
-            result.resize(bone_names.size() * 3);
+            // result.resize(bone_names.size() * 3 * std::bitset<10>(bone_info_type).count());
             for (size_t i = 0; i < bone_names.size(); ++i)
             {
-                // _skel isn't init
                 kform b = mm_player->get_bone_global_kform(_skel->find_bone(bone_names[i]));
-                Vector3 pos = b.pos, vel = b.vel;
-                auto cost = inertialization_cost_function(pos, vel, inertialization_halflife);
-                result[i * size] = cost.x;
-                result[i * size + 1] = cost.y;
-                result[i * size + 2] = cost.z;
-            }
-            return result;
-        }
-        else
-        {
-            result.resize(bone_names.size() * 3 * 2);
-            for (size_t i = 0; i < bone_names.size(); ++i)
-            {
-                kform b = mm_player->get_bone_global_kform(_skel->find_bone(bone_names[i]));
-                Vector3 pos = b.pos, vel = b.vel;
+                Vector3 const pos = b.pos, vel = b.vel, dir = b.rot.xform(Vector3(0,0,1)),ang = b.ang;
 
-                result[i * size * 2] = pos.x;
-                result[i * size * 2 + 1] = pos.y;
-                result[i * size * 2 + 2] = pos.z;
-                result[i * size * 2 + size] = vel.x;
-                result[i * size * 2 + size + 1] = vel.y;
-                result[i * size * 2 + size + 2] = vel.z;
+                if (bone_info_type.test(Position))
+                {
+                    result.append(pos.x);
+                    result.append(pos.y);
+                    result.append(pos.z);
+                }
+                if (bone_info_type.test(Velocity))
+                {
+                    result.append(vel.x);
+                    result.append(vel.y);
+                    result.append(vel.z);
+                }
+                if (bone_info_type.test(Rotation))
+                {
+                    result.append(dir.x);
+                    result.append(dir.y);
+                    result.append(dir.z);
+                }
+                if (bone_info_type.test(AngularVel))
+                {
+                    result.append(ang.x);
+                    result.append(ang.y);
+                    result.append(ang.z);
+                }
             }
             return result;
         }
@@ -214,24 +273,51 @@ struct MFBonesInfo : public MotionFeature {
     virtual PackedStringArray get_hints()const override{
         PackedStringArray result{};
 
-        if (use_inertialization)
-        {
-            for (auto i = 0; i < bone_names.size(); ++i)
+        // if (use_inertialization)
+        // {
+        //     for (auto i = 0; i < bone_names.size(); ++i)
+        //     {
+        //         result.append_array(Array::make("ixB"+u::str(i),"iyB"+u::str(i),"izB"+u::str(i)));
+        //     }
+        //     return result;
+        // }
+        for (auto i = 0; i < bone_names.size(); ++i)
+        {            
+            if (bone_info_type.test(Position))
             {
-                result.append_array(Array::make("ixB"+u::str(i),"iyB"+u::str(i),"izB"+u::str(i)));
+                result.append("PxB"+u::str(i));
+                result.append("PyB"+u::str(i));
+                result.append("PzB"+u::str(i));
             }
-            return result;
+            if (bone_info_type.test(Velocity))
+            {
+                result.append("VxB"+u::str(i));
+                result.append("VyB"+u::str(i));
+                result.append("VzB"+u::str(i));
+            }
+            if (bone_info_type.test(Rotation))
+            {
+                result.append("RxB"+u::str(i));
+                result.append("RyB"+u::str(i));
+                result.append("RzB"+u::str(i));
+            }
+            if (bone_info_type.test(AngularVel))
+            {
+                result.append("AxB"+u::str(i));
+                result.append("AyB"+u::str(i));
+                result.append("AzB"+u::str(i));
+            }
         }
-        for (auto i = 0; i < bone_names.size(); ++i)
-            result.append_array(Array::make("PxB"+u::str(i),"PyB"+u::str(i),"PzB"+u::str(i)));
-        for (auto i = 0; i < bone_names.size(); ++i)
-            result.append_array(Array::make("VxB"+u::str(i),"VyB"+u::str(i),"VzB"+u::str(i)));
         return result;
     }
 
 protected:
     static void _bind_methods() {
 
+        ClassDB::bind_method( D_METHOD("set_bone_info_type" ,"value"), &MFBonesInfo::set_bone_info_type,DEFVAL(1)); 
+        ClassDB::bind_method( D_METHOD("get_bone_info_type" ), &MFBonesInfo::get_bone_info_type); 
+        godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::INT,"bone_info_type",godot::PROPERTY_HINT_FLAGS,"Position,Velocity,Rotation,AngularVel", godot::PROPERTY_USAGE_DEFAULT), "set_bone_info_type", "get_bone_info_type");
+        
         {
             ClassDB::bind_method(D_METHOD("serialize_MMAnimationPlayer", "body"), &MFBonesInfo::serialize_mmplayer);
         }
@@ -245,9 +331,15 @@ protected:
         ClassDB::bind_method(D_METHOD("set_weight_bone_pos", "value"), &MFBonesInfo::set_weight_bone_pos);
         ClassDB::bind_method(D_METHOD("get_weight_bone_pos"), &MFBonesInfo::get_weight_bone_pos);
         godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT, "weight_bone_pos"), "set_weight_bone_pos", "get_weight_bone_pos");
+        
         ClassDB::bind_method(D_METHOD("set_weight_bone_vel", "value"), &MFBonesInfo::set_weight_bone_vel);
         ClassDB::bind_method(D_METHOD("get_weight_bone_vel"), &MFBonesInfo::get_weight_bone_vel);
         godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT, "weight_bone_vel"), "set_weight_bone_vel", "get_weight_bone_vel");
+       
+        ClassDB::bind_method( D_METHOD("set_weight_bone_ang" ,"value"), &MFBonesInfo::set_weight_bone_ang); 
+        ClassDB::bind_method( D_METHOD("get_weight_bone_ang" ), &MFBonesInfo::get_weight_bone_ang); 
+        godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT,"weight_bone_ang"), "set_weight_bone_ang", "get_weight_bone_ang");
+        
         ClassDB::bind_method(D_METHOD("set_weight_inertialization", "value"), &MFBonesInfo::set_weight_inertialization);
         ClassDB::bind_method(D_METHOD("get_weight_inertialization"), &MFBonesInfo::get_weight_inertialization);
         godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT, "weight_inertialization"), "set_weight_inertialization", "get_weight_inertialization");
@@ -256,6 +348,7 @@ protected:
 
         ClassDB::add_property_group(get_class_static(), "Nodes & Resources Sources", "");
         {
+            // TODO Change use inertialization setup to only be available when choosing PositionAndVelocity
             ClassDB::bind_method( D_METHOD("set_use_inertialization" ,"value"), &MFBonesInfo::set_use_inertialization,DEFVAL(false)); 
             ClassDB::bind_method( D_METHOD("get_use_inertialization" ), &MFBonesInfo::get_use_inertialization); 
             godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::BOOL,"use_inertialization"), "set_use_inertialization", "get_use_inertialization");
@@ -340,6 +433,8 @@ protected:
         }
     }
 };
+
+// VARIANT_ENUM_CAST(MFBonesInfo::BoneInfoType);
 
 #undef MAKE_RESOURCE_TYPE_HINT
 #undef GETSET

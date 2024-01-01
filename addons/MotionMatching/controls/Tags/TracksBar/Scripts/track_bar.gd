@@ -17,6 +17,7 @@ var last_right_click_pos := Vector2.ZERO
 const CATEGORY_EVENT_BAR = preload("res://addons/MotionMatching/controls/Tags/EventBar/Category_Event_Bar.tscn")
 const EVENT_BAR = preload("res://addons/MotionMatching/controls/Tags/EventBar/event_bar.tscn")
 const JUNK_EVENT_BAR = preload("res://addons/MotionMatching/controls/Tags/EventBar/junk_event_bar.tscn")
+const DISTANCE_EVENT_BAR = preload("res://addons/MotionMatching/controls/Tags/EventBar/Distance_Event_Bar.tscn")
 
 func _can_drop_data(at_position: Vector2, data: Variant) -> bool:
 	return data is MoveableUI or (data is ResizeableUI and data.ref.tag.track_id == get_index())
@@ -38,10 +39,14 @@ func _drop_data(at_position: Vector2, data: Variant) -> void:
 			var end_time = data.ref.tag.timestamp + data.ref.tag.duration
 			data.ref.tag.timestamp = current_animation.length * at_position.x / size.x
 			data.ref.tag.duration = (end_time - data.ref.tag.timestamp)
+			data.ref.tag.duration = max(0,data.ref.tag.duration)
+			data.ref.tag.timestamp = max(0,data.ref.tag.timestamp)
 		elif data.drag_right:
 			var end_time :float= current_animation.length * at_position.x / size.x
 			data.ref.tag.duration = (end_time - data.ref.tag.timestamp)
 			data.ref.tag.timestamp = data.ref.tag.timestamp
+			data.ref.tag.duration = max(0,data.ref.tag.duration)
+			data.ref.tag.timestamp = max(0,data.ref.tag.timestamp)
 		pass
 
 	queue_redraw()
@@ -59,7 +64,7 @@ func _ready() -> void:
 	#popup_menu.id_pressed.connect(_on_popup_select)
 	pass
 
-enum {ADDCATEGORY=00, ADDTIMING = 01, ADDJUNK = 02,
+enum {ADDCATEGORY=00, ADDTIMING = 01, ADDDISTANCE=02 , ADDJUNK = 03,
 	ADDTRACK = 10,
 	DELETETRACK = 20}
 
@@ -71,6 +76,8 @@ func populate_tag(tag:TagInfo,emit:bool = true):
 		EVB = CATEGORY_EVENT_BAR.instantiate()
 	elif tag is TagMFEvent:
 		EVB = EVENT_BAR.instantiate()
+	elif tag is TagMFDistance:
+		EVB = DISTANCE_EVENT_BAR.instantiate()
 	else:
 		prints("Not implemented",tag.resource_name)
 	EVB.tag = tag
@@ -93,7 +100,7 @@ func _clear_no_delete():
 
 func _draw() -> void:
 	# the size should be set now.
-	for evbutton in get_children():
+	for evbutton in get_children() as Array[Control]:
 		#var evbutton := child as EventButton
 		if evbutton == null or not evbutton is EventButton:
 			continue;
@@ -101,7 +108,7 @@ func _draw() -> void:
 		evbutton.animation = current_animation
 		evbutton.position.x = size.x * evbutton.tag.timestamp / current_animation.length
 		evbutton.size.x = size.x * evbutton.tag.duration / current_animation.length
-
+		evbutton.custom_minimum_size.x = current_animation.length * size.x * (1.0 / Engine.physics_ticks_per_second)
 		evbutton.queue_redraw()
 	pass
 
@@ -122,6 +129,11 @@ func _on_popup_menu_id_pressed(id: int) -> void:
 			populate_tag(new_tag)
 		ADDTIMING:
 			var new_tag = TagMFEvent.new()
+			new_tag.timestamp = (last_right_click_pos.x / size.x) * current_animation.length
+			new_tag.track_id = get_index()
+			populate_tag(new_tag)
+		ADDDISTANCE:
+			var new_tag = TagMFDistance.new()
 			new_tag.timestamp = (last_right_click_pos.x / size.x) * current_animation.length
 			new_tag.track_id = get_index()
 			populate_tag(new_tag)

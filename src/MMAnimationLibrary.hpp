@@ -262,7 +262,7 @@ struct MMAnimationLibrary : public AnimationLibrary {
             for (size_t i = 0; i < tags.size(); i++)
             {
                 TagInfo* tag = Object::cast_to<TagInfo>(tags[i]);
-                if(tag != nullptr && tag->tag_name == (StringName)anim_name)
+                if(tag != nullptr && tag->animation_name == (StringName)anim_name)
                 {
                     current_tags.push_back(tag);
                 }
@@ -325,7 +325,7 @@ struct MMAnimationLibrary : public AnimationLibrary {
                 {
                     MotionFeature* f = Object::cast_to<MotionFeature>(motion_features[features_index]);
                     PackedFloat32Array feature_data = f->bake_animation_pose(animation,time);
-                    ERR_FAIL_COND_MSG(feature_data.size() != f->get_dimension(),String("Features no.") + u::str(int(features_index))+"bake_animation_pose didn't return a array of the correct size:");
+                    ERR_FAIL_COND_MSG(feature_data.size() != f->get_dimension(),String("Features no.") + u::str(int(features_index))+"bake_animation_pose didn't return a array of the correct size:" + u::str(feature_data.size()) + '/' + u::str(f->get_dimension()));
                     pose_data.append_array(feature_data);                    
                 }
 

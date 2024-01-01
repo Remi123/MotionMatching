@@ -5,205 +5,146 @@
 [sub_resource type="TagCategory" id="TagCategory_mphpq"]
 category = 3
 property_hint_string = &"Idle,Walk,Run,Strafe"
-tag_name = &"001-walk-start-forward_rightfoot"
 track_id = 2
-timestamp = 0.0697743
-duration = 2.42143
+duration = 0.16
 
 [sub_resource type="TagJunk" id="TagJunk_el156"]
-tag_name = &"001-walk-start-forward_rightfoot"
-duration = 0.0870523
+duration = 0.16
 
 [sub_resource type="TagJunk" id="TagJunk_dgy60"]
-tag_name = &"001-walk-start-forward_rightfoot"
 track_id = 1
-timestamp = 2.1139
-duration = 0.516849
+duration = 0.16
 
 [sub_resource type="TagJunk" id="TagJunk_36f17"]
-tag_name = &"002-idle_right_foot_front"
-duration = 0.912169
+duration = 0.16
 
 [sub_resource type="TagJunk" id="TagJunk_rvi2c"]
-tag_name = &"002-idle_right_foot_front"
-timestamp = 15.5566
-duration = 1.59215
+duration = 0.16
 
 [sub_resource type="TagCategory" id="TagCategory_vpn47"]
 category = 1
 property_hint_string = &"Idle,Walk,Run,Strafe"
-tag_name = &"002-idle_right_foot_front"
 track_id = 1
-timestamp = 0.547301
-duration = 15.3908
+duration = 0.16
 
 [sub_resource type="TagCategory" id="TagCategory_nrrgn"]
 category = 2
 property_hint_string = &"Idle,Walk,Run,Strafe"
-tag_name = &"002-walk-start-left45-rightFoot"
-timestamp = 0.106771
-duration = 2.92365
+duration = 0.16
 
 [sub_resource type="TagJunk" id="TagJunk_qmno2"]
-tag_name = &"002-walk-start-left45-rightFoot"
 track_id = 2
-timestamp = 2.92993
-duration = 0.322964
+duration = 0.16
 
 [sub_resource type="TagCategory" id="TagCategory_eee16"]
 category = 1
 property_hint_string = &"Idle,Walk,Run,Strafe"
-tag_name = &"002-walk-start-left45-rightFoot"
 track_id = 1
-timestamp = 0.107
-duration = 0.870863
+duration = 0.16
 
 [sub_resource type="TagJunk" id="TagJunk_6g6lk"]
-tag_name = &"002-walk-start-left45-rightFoot"
 track_id = 2
-duration = 0.157017
+duration = 0.16
 
 [sub_resource type="TagJunk" id="TagJunk_21uj3"]
-tag_name = &"003-walk-start-left90-rightFoot"
-duration = 0.487275
+duration = 0.16
 
 [sub_resource type="TagCategory" id="TagCategory_h4vcu"]
 category = 2
 property_hint_string = &"Idle,Walk,Run,Strafe"
-tag_name = &"003-walk-start-left90-rightFoot"
 track_id = 1
-timestamp = 0.464835
-duration = 2.59346
+duration = 0.16
 
 [sub_resource type="TagJunk" id="TagJunk_jcv2u"]
-tag_name = &"003-walk-start-left90-rightFoot"
-timestamp = 2.97815
-duration = 0.35
+duration = 0.16
 
 [sub_resource type="TagCategory" id="TagCategory_huqhf"]
 category = 1
 property_hint_string = &"Idle,Walk,Run,Strafe"
-tag_name = &"003-walk-start-left90-rightFoot"
 track_id = 2
-timestamp = 0.173111
-duration = 0.775793
+duration = 0.16
 
 [sub_resource type="TagJunk" id="TagJunk_7fsbf"]
-tag_name = &"004-walk-start-left135-rightFoot"
-duration = 0.295406
+duration = 0.16
 
 [sub_resource type="TagJunk" id="TagJunk_7hh67"]
-tag_name = &"004-walk-start-left135-rightFoot"
-timestamp = 19.158
-duration = 0.407699
+duration = 0.16
 
 [sub_resource type="TagJunk" id="TagJunk_0mgwi"]
-tag_name = &"004-walk-start-left135-rightFoot"
-timestamp = 2.44684
-duration = 0.531213
+duration = 0.16
 
 [sub_resource type="TagCategory" id="TagCategory_npatx"]
 category = 2
 property_hint_string = &"Idle,Walk,Run,Strafe"
-tag_name = &"004-walk-start-left135-rightFoot"
 track_id = 1
-timestamp = 0.25332
-duration = 2.23382
+duration = 0.16
 
 [sub_resource type="TagCategory" id="TagCategory_hetm0"]
 category = 2
 property_hint_string = &"Idle,Walk,Run,Strafe"
-tag_name = &"005-walk-start-left180-rightFoot"
 track_id = 1
-timestamp = 0.221786
-duration = 3.33049
+duration = 0.16
 
 [sub_resource type="TagJunk" id="TagJunk_injwi"]
-tag_name = &"005-walk-start-left180-rightFoot"
-duration = 0.251358
+duration = 0.16
 
 [sub_resource type="TagJunk" id="TagJunk_5t30w"]
-tag_name = &"005-walk-start-left180-rightFoot"
-timestamp = 3.5227
-duration = 0.233072
+duration = 0.16
 
 [sub_resource type="TagJunk" id="TagJunk_r70t7"]
-tag_name = &"006-walk-start-right45-rightFoot"
-duration = 0.1
+duration = 0.16
 
 [sub_resource type="TagJunk" id="TagJunk_syf78"]
-tag_name = &"006-walk-start-right45-rightFoot"
-timestamp = 2.78443
-duration = 0.5
+duration = 0.16
 
 [sub_resource type="TagCategory" id="TagCategory_fxd0e"]
 property_hint_string = &"Idle,Walk,Run,Strafe"
-tag_name = &"006-walk-start-right45-rightFoot"
 track_id = 1
-timestamp = 0.0491986
-duration = 2.76742
+duration = 0.16
 
 [sub_resource type="TagJunk" id="TagJunk_2tso8"]
-tag_name = &"007-walk-start-right90-rightFoot"
-duration = 0.176644
+duration = 0.16
 
 [sub_resource type="TagJunk" id="TagJunk_jfhnm"]
-tag_name = &"007-walk-start-right90-rightFoot"
-timestamp = 2.18351
-duration = 0.348381
+duration = 0.16
 
 [sub_resource type="TagCategory" id="TagCategory_w3mdf"]
 category = 2
 property_hint_string = &"Idle,Walk,Run,Strafe"
-tag_name = &"007-walk-start-right90-rightFoot"
 track_id = 1
-timestamp = 0.161923
-duration = 2.03876
+duration = 0.16
 
 [sub_resource type="TagJunk" id="TagJunk_fikwh"]
-tag_name = &"060-snake-wide"
-timestamp = 7.15996
-duration = 0.551914
+duration = 0.16
 
 [sub_resource type="TagCategory" id="TagCategory_7odi3"]
 category = 6
 property_hint_string = &"Idle,Walk,Run,Strafe"
-tag_name = &"060-snake-wide"
 track_id = 1
-duration = 7.22709
+duration = 0.16
 
 [sub_resource type="TagJunk" id="TagJunk_j0cq2"]
-tag_name = &"062-snake-tight"
-timestamp = 9.421
-duration = 0.77527
+duration = 0.16
 
 [sub_resource type="TagCategory" id="TagCategory_v1sj4"]
 category = 6
 property_hint_string = &"Idle,Walk,Run,Strafe"
-tag_name = &"062-snake-tight"
 track_id = 1
-duration = 9.51914
+duration = 0.16
 
 [sub_resource type="TagJunk" id="TagJunk_ab0ub"]
-tag_name = &"008-walk-start-right135-rightFoot"
-duration = 0.1
+duration = 0.16
 
 [sub_resource type="TagJunk" id="TagJunk_q1yeu"]
-tag_name = &"008-walk-start-right135-rightFoot"
-timestamp = 19.6215
-duration = 0.357213
+duration = 0.16
 
 [sub_resource type="TagCategory" id="TagCategory_vjpqj"]
 property_hint_string = &"Idle,Walk,Run,Strafe"
-tag_name = &"008-walk-start-right135-rightFoot"
 track_id = 1
-timestamp = 0.0824338
-duration = 2.48126
+duration = 0.16
 
 [sub_resource type="TagJunk" id="TagJunk_v48jy"]
-tag_name = &"008-walk-start-right135-rightFoot"
-timestamp = 17.8541
-duration = 0.393389
+duration = 0.16
 
 [node name="TagEditorPanel" type="VBoxContainer"]
 anchors_preset = 15

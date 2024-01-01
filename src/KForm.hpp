@@ -162,7 +162,18 @@ struct kform
         Local,Model,RootMotion,Global
     };
 
-    
+    static inline kform get_global(Ref<SkeletonProfile> skel, Ref<Animation> anim, double time, NodePath bonepath){
+        return kform(skel, anim, time, bonepath,Global);
+    }
+    static inline kform get_model(Ref<SkeletonProfile> skel, Ref<Animation> anim, double time, NodePath bonepath){
+        return kform(skel, anim, time, bonepath,Model);
+    }
+    static inline kform get_root(Ref<SkeletonProfile> skel, Ref<Animation> anim, double time, NodePath bonepath){
+        return kform(skel, anim, time, bonepath,RootMotion);
+    }
+    static inline kform get_local(Ref<SkeletonProfile> skel, Ref<Animation> anim, double time, NodePath bonepath){
+        return kform(skel, anim, time, bonepath,Local);
+    }
 
     kform(Ref<SkeletonProfile> skel, Ref<Animation> anim, double time, NodePath bonepath, Space space)
         : kform(skel->get_reference_pose(skel->find_bone(bonepath.get_concatenated_subnames())))

@@ -71,6 +71,16 @@ struct MFEvents : public MotionFeature {
 
     };
 
+    void _notification(int p_what)
+    {
+        switch (p_what)
+        {
+            case NOTIFICATION_POSTINITIALIZE:
+                normalization_type = RawValue;
+
+        }
+    }
+
 
     GETSET(EventType,event_type);
 
@@ -100,7 +110,7 @@ struct MFEvents : public MotionFeature {
         animation_events.clear();
         for(auto i = 0;i < mmlib->tags.size();++i)
         {
-            if(TagMFEvent* event = Object::cast_to<TagMFEvent>(tags[i]); event != nullptr && event->tag_name == animation->get_name())
+            if(TagMFEvent* event = Object::cast_to<TagMFEvent>(tags[i]); event != nullptr && event->animation_name == animation->get_name())
             {
                 animation_events.push_back(event);
             }
@@ -113,7 +123,7 @@ struct MFEvents : public MotionFeature {
     virtual PackedFloat32Array bake_animation_pose(Ref<Animation> animation,float time) override {
         PackedFloat32Array result = {};
         std::vector<Ref<TagMFEvent>> current_events{};
-        constexpr float time_offset = 0.016f;
+        const float time_offset = 1.0f / Engine::get_singleton()->get_physics_ticks_per_second();
         // Get current events tags.
         for(Ref<TagMFEvent> tag : animation_events)
         {
@@ -133,14 +143,28 @@ struct MFEvents : public MotionFeature {
                 continue;
             }
             const auto event = *it;
-            if(time < event->timestamp || time > (event->timestamp + event->duration + time_offset))
+            float value = 0.0f;
+            if(time < event->timestamp)
             {
-                result.append(time - event->timestamp);
+                value = time - event->timestamp;
+                if (embed_as_frames)
+                {
+                    value = std::ceilf(value / time_offset);
+                }              
             }
-            else if (event->timestamp <= time && time < (event->timestamp + event->duration + time_offset) )
+            else if ((event->timestamp + event->duration) < time)
             {
-                result.append(0.0f);
+                value = time - (event->timestamp + event->duration);
+                if (embed_as_frames)
+                {
+                    value = std::ceilf(value / time_offset);
+                }       
             }
+            else if (event->timestamp <= time && time <= (event->timestamp + event->duration) )
+            {
+                value = 0.0f;
+            }
+            result.append(value);
         }
         
         

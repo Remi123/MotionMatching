@@ -64,7 +64,6 @@ func show_lign(lign:int)->void:
 	var dim := lib.nb_dimensions
 	var data := lib.MotionData.slice(lign*lib.nb_dimensions,lign*lib.nb_dimensions+lib.nb_dimensions)
 
-
 	for f in lib.motion_features as Array[MotionFeature]:
 		if f.get_dimension() > tree.columns:
 			tree.columns = f.get_dimension()
@@ -79,6 +78,11 @@ func show_lign(lign:int)->void:
 	var category_item :TreeItem= tree.create_item(category_folder)
 	category_item.set_text(0, str(lib.db_anim_category[lign]))
 
+	var info_folder := tree.create_item(root,2)
+	info_folder.set_text(0,"TimeStamp")
+	info_folder.set_custom_bg_color(0,Color.WHITE,true)
+	var timestamp_item :TreeItem= tree.create_item(info_folder)
+	timestamp_item.set_text(0, str(lib.db_anim_timestamp[lign]))
 
 	tree.columns += 1
 	tree.set_column_title(0,"Info")
@@ -101,7 +105,6 @@ func show_lign(lign:int)->void:
 		feature_row.set_text(0,f.resource_name if not f.resource_name.is_empty() else f.get_class())
 		feature_row.set_metadata(0,f)
 		#feature_row.set_text_alignment(0,HORIZONTAL_ALIGNMENT_LEFT)
-		prints(EditorInterface.get_editor_theme().get_icon_type_list())
 		var texture := EditorInterface.get_base_control().get_theme_icon("Zoom","EditorIcons")
 
 		feature_row.add_button(0,texture,-1,false,f.resource_name if not f.resource_name.is_empty() else f.get_class())

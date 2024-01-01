@@ -12,6 +12,7 @@
 #include "MotionFeatures/MFBonesInfo.hpp"
 #include "MotionFeatures/MFTrajectory.hpp"
 #include "MotionFeatures/MFEvents.hpp"
+#include "MotionFeatures/MFDistance.hpp"
 
 
 #include <MMAnimationLibrary.hpp>
@@ -52,6 +53,7 @@ void gdextension_MM_initialize(ModuleInitializationLevel p_level)
 			ClassDB::register_class<MFBonesInfo>();
 			ClassDB::register_class<MFTrajectory>();
 			ClassDB::register_class<MFEvents>();
+			ClassDB::register_class<MFDistance>();
 		}
 
 		{	// Animation Tags
@@ -61,6 +63,8 @@ void gdextension_MM_initialize(ModuleInitializationLevel p_level)
 			ClassDB::register_class<TagJunk>();
 			ClassDB::register_class<TagCategory>();
 			ClassDB::register_class<TagMFEvent>(); 
+			ClassDB::register_class<TagMFDistance>(); 
+			
 			
 			ClassDB::register_class<TagAnimation>(true); // Abstract
 			ClassDB::register_class<TagRootWarp>();
