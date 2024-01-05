@@ -100,9 +100,9 @@ struct kform
 
     kform(Ref<SkeletonProfile> skel,Ref<Animation> anim,double time,NodePath bonepath,NodePath relative_to)
     {
-        NodePath const skel_path = bonepath.get_concatenated_names();
+        StringName const skel_path = bonepath.get_concatenated_names();
         ERR_FAIL_COND_MSG(skel_path.is_empty(),"Bonename argument doesn't contain the path to the skeleton." + bonepath);
-        String const bone_name = bonepath.get_concatenated_subnames();
+        StringName const bone_name = bonepath.get_concatenated_subnames();
         ERR_FAIL_COND_MSG(bone_name.is_empty(),"Bonename argument doesn't contain the name of the bone." + bonepath);
         int const relative_bone_id = skel->find_bone((String)relative_to.get_concatenated_subnames());
         int bone_id = skel->find_bone(bone_name);

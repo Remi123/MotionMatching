@@ -5,6 +5,8 @@
 #include <godot_cpp/core/method_bind.hpp>
 #include <godot_cpp/variant/dictionary.hpp>
 
+#include <ranges>
+
 // Macro setup. Mostly there to simplify writing all those
 #define GETSET(type,variable,...) type variable{__VA_ARGS__};\
     type get_##variable(){return  variable;}  \

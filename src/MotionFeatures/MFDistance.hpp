@@ -66,6 +66,7 @@ struct MFDistance : public MotionFeature {
 
         }
     }
+    GETSET(bool,relative_rotation,false);
     enum EmbeddedAxis{
         X,Y,Z
     };
@@ -186,6 +187,10 @@ struct MFDistance : public MotionFeature {
         ClassDB::bind_method( D_METHOD("set_events_names" ,"value"), &MFDistance::set_events_names); 
         ClassDB::bind_method( D_METHOD("get_events_names" ), &MFDistance::get_events_names); 
         godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_STRING_ARRAY,"events_names"), "set_events_names", "get_events_names");
+
+        ClassDB::bind_method( D_METHOD("set_relative_rotation" ,"value"), &MFDistance::set_relative_rotation,DEFVAL(false)); 
+        ClassDB::bind_method( D_METHOD("get_relative_rotation" ), &MFDistance::get_relative_rotation); 
+        godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::BOOL,"relative_rotation"), "set_relative_rotation", "get_relative_rotation");
 
         // auto prop_axis = PropertyInfo(Variant::INT,"embedded_axis"
         //             ,PROPERTY_HINT_ENUM,"Magnitude,X,Y,Z"
