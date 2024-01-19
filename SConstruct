@@ -47,12 +47,9 @@ env.Append(CPPPATH=["src/","thirdparty/",boost_path])
 
 # Require C++20
 if env.get("is_msvc", False):
-    print("HEllo")
-    print(env["CXXFLAGS"])
     wtmp = str(env["CXXFLAGS"])
     wtmp = wtmp.replace("/std:c++17","/std:c++20")
     env.Replace(CXXFLAGS = wtmp)
-    print(env["CXXFLAGS"])
 else:
     env["CXXFLAGS"].replace("-std=c++17","-std=c++20")
 

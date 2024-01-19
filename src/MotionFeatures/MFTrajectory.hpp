@@ -212,16 +212,16 @@ public:
 
         for(auto elem: past_time_dt)
         {
-            result.append("HPx");
-            result.append("HPz");
+            result.append("x-"+u::str(elem));
+            result.append("z-"+u::str(elem));
         }
         for(auto elem: future_time_dt)
         {
-            result.append("FPx");
-            result.append("FPz");
+            result.append("x+"+u::str(elem));
+            result.append("z+"+u::str(elem));
         }
         for(auto elem: future_time_dt)
-            result.append("FAy");
+            result.append("angle-"+u::str(elem));
 
         return result;
     }
@@ -235,20 +235,22 @@ public:
 
         ClassDB::bind_method(D_METHOD("get_hints"), &MFTrajectory::get_hints);
 
+        PackedFloat32Array m_default{};
+        m_default.push_back(0.2);m_default.push_back(0.4);
+        ClassDB::bind_method( D_METHOD("set_past_time_dt","value"), &MFTrajectory::set_past_time_dt,(m_default)); ClassDB::bind_method( D_METHOD("get_past_time_dt"), &MFTrajectory::get_past_time_dt); godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY,"past_time_dt"), "set_past_time_dt", "get_past_time_dt");
+        ClassDB::bind_method( D_METHOD("set_future_time_dt","value"), &MFTrajectory::set_future_time_dt ); ClassDB::bind_method( D_METHOD("get_future_time_dt"), &MFTrajectory::get_future_time_dt); godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY,"future_time_dt"), "set_future_time_dt", "get_future_time_dt");
+        
+        ClassDB::bind_method(D_METHOD("set_debug_color_history", "value"), &MFTrajectory::set_debug_color_history);
+        ClassDB::bind_method(D_METHOD("get_debug_color_history"), &MFTrajectory::get_debug_color_history);
+        godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::COLOR, "debug_color_history"), "set_debug_color_history", "get_debug_color_history");
+
+
         ClassDB::bind_method( D_METHOD("set_weight_history_pos","value"), &MFTrajectory::set_weight_history_pos ); ClassDB::bind_method( D_METHOD("get_weight_history_pos"), &MFTrajectory::get_weight_history_pos); godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT,"weight_history_pos"), "set_weight_history_pos", "get_weight_history_pos");
         ClassDB::bind_method( D_METHOD("set_weight_prediction_pos","value"), &MFTrajectory::set_weight_prediction_pos ); ClassDB::bind_method( D_METHOD("get_weight_prediction_pos"), &MFTrajectory::get_weight_prediction_pos); godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT,"weight_prediction_pos"), "set_weight_prediction_pos", "get_weight_prediction_pos");
         ClassDB::bind_method( D_METHOD("set_weight_prediction_angle","value"), &MFTrajectory::set_weight_prediction_angle ); ClassDB::bind_method( D_METHOD("get_weight_prediction_angle"), &MFTrajectory::get_weight_prediction_angle); godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT,"weight_prediction_angle"), "set_weight_prediction_angle", "get_weight_prediction_angle");
 
         ClassDB::add_property_group(get_class_static(), "Nodes & Resources Sources", "");
         {
-            PackedFloat32Array m_default{};
-            m_default.push_back(0.2);m_default.push_back(0.4);
-            ClassDB::bind_method( D_METHOD("set_past_time_dt","value"), &MFTrajectory::set_past_time_dt,(m_default)); ClassDB::bind_method( D_METHOD("get_past_time_dt"), &MFTrajectory::get_past_time_dt); godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY,"past_time_dt"), "set_past_time_dt", "get_past_time_dt");
-            ClassDB::bind_method( D_METHOD("set_future_time_dt","value"), &MFTrajectory::set_future_time_dt ); ClassDB::bind_method( D_METHOD("get_future_time_dt"), &MFTrajectory::get_future_time_dt); godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY,"future_time_dt"), "set_future_time_dt", "get_future_time_dt");
-            
-            ClassDB::bind_method(D_METHOD("set_debug_color_history", "value"), &MFTrajectory::set_debug_color_history);
-            ClassDB::bind_method(D_METHOD("get_debug_color_history"), &MFTrajectory::get_debug_color_history);
-            godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::COLOR, "debug_color_history"), "set_debug_color_history", "get_debug_color_history");
 
             ClassDB::bind_method(D_METHOD("set_debug_color_future", "value"), &MFTrajectory::set_debug_color_future);
             ClassDB::bind_method(D_METHOD("get_debug_color_future"), &MFTrajectory::get_debug_color_future);
@@ -277,7 +279,9 @@ public:
         ClassDB::bind_method( D_METHOD("get_weights"), &MFTrajectory::get_weights);
         ClassDB::bind_method( D_METHOD("get_dimension"), &MFTrajectory::get_dimension);
         
+        ClassDB::bind_method( D_METHOD("setup_bake_init","mm_animation_library"), &MFTrajectory::setup_bake_init);        
         ClassDB::bind_method( D_METHOD("setup_bake_animation","animation"), &MFTrajectory::setup_bake_animation);
+
         ClassDB::bind_method( D_METHOD("bake_animation_pose","animation","time"), &MFTrajectory::bake_animation_pose);
         
         ClassDB::bind_method( D_METHOD("debug_pose_gizmo","gizmo","data","root_transform"), &MFTrajectory::debug_pose_gizmo);

@@ -6,7 +6,7 @@ class_name DataPanel extends HBoxContainer
 @onready var choose_animation: MenuButton = %ChooseAnimation
 @onready var lookup_similar_button: Button = %LookupSimilarButton
 
-var lib : MMAnimationLibrary = ResourceLoader.load("res://Resources/AnimationLibrary/MM.tres")
+var lib : MMAnimationLibrary
 var current_animation : Animation
 var current_animation_name : StringName
 
@@ -118,7 +118,7 @@ func show_lign(lign:int)->void:
 		dim_row.set_text_alignment(0,HORIZONTAL_ALIGNMENT_RIGHT)
 		weights_row.set_text(0, "Weights(static)")
 		weights_row.set_text_alignment(0,HORIZONTAL_ALIGNMENT_RIGHT)
-		var hints := f.get_hints()
+		var hints :PackedStringArray= f.get_hints()
 		for i in range(f.get_dimension()):
 			data_row.set_text(i+1, "%0.3f" % data[offset+i])
 			data_row.set_text_alignment(i+1,HORIZONTAL_ALIGNMENT_CENTER)

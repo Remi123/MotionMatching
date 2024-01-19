@@ -180,9 +180,6 @@ struct MFDistance : public MotionFeature {
     virtual void debug_pose_gizmo(Ref<EditorNode3DGizmo> gizmo, const PackedFloat32Array data,godot::Transform3D tr = godot::Transform3D{}){return;}
 
     static void _bind_methods() {
-
-        // Override Default Value
-        ClassDB::bind_method( D_METHOD("set_normalization_type" ,"value"), &MFDistance::set_normalization_type,DEFVAL(NormalizationType::RawValue)); 
         
         ClassDB::bind_method( D_METHOD("set_events_names" ,"value"), &MFDistance::set_events_names); 
         ClassDB::bind_method( D_METHOD("get_events_names" ), &MFDistance::get_events_names); 

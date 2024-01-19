@@ -1,3 +1,4 @@
+#pragma once
 
 #include <godot_cpp/variant/utility_functions.hpp>
 

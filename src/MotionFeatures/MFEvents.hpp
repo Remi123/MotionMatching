@@ -33,7 +33,9 @@
 #include <algorithm>
 
 #include <MotionFeatures/MFEvents.hpp>
-#include <MMAnimationLibrary.hpp>
+
+
+struct MMAnimationLibrary;
 
 
 
@@ -180,9 +182,6 @@ struct MFEvents : public MotionFeature {
 
         BIND_ENUM_CONSTANT(Timing);        
         BIND_ENUM_CONSTANT(EmbedValue);
-
-        // Override Default Value
-        ClassDB::bind_method( D_METHOD("set_normalization_type" ,"value"), &MFEvents::set_normalization_type,DEFVAL(NormalizationType::RawValue)); 
         
         ClassDB::bind_method( D_METHOD("set_events_names" ,"value"), &MFEvents::set_events_names); 
         ClassDB::bind_method( D_METHOD("get_events_names" ), &MFEvents::get_events_names); 

@@ -80,7 +80,7 @@ struct MFRootVelocity : public MotionFeature {
         Vector3 pos, prev_pos;
         if(root_track_pos >= 0)
         {
-            pos = animation->position_track_interpolate(root_track_pos,time + 0.05);
+            pos = animation->position_track_interpolate(root_track_pos,time + 0.032);
             prev_pos = animation->position_track_interpolate(root_track_pos,time);
         } else {
             pos = rest_pose.get_origin();
@@ -90,7 +90,7 @@ struct MFRootVelocity : public MotionFeature {
         Quaternion rotation = root_track_quat >= 0 ? animation->rotation_track_interpolate(root_track_quat,time).normalized() :
                                                     rest_pose.get_basis().get_rotation_quaternion();
 
-        Vector3 vel = rotation.xform_inv(pos-prev_pos) / 0.05;
+        Vector3 vel = rotation.xform_inv(pos-prev_pos) / 0.032;
 
         PackedFloat32Array result{};
         result.push_back(vel.x);

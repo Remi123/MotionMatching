@@ -9,7 +9,7 @@ class_name TagEditor extends Control
 
 signal request_pose(animation_name:StringName,timestamp)
 
-var current_animlib : MMAnimationLibrary = ResourceLoader.load("res://Resources/AnimationLibrary/MM.tres")
+var current_animlib : MMAnimationLibrary
 var current_animation : Animation
 var current_animation_name : StringName
 
@@ -21,7 +21,7 @@ const JUNK_EVENT_BAR = preload("res://addons/MotionMatching/controls/Tags/EventB
 
 @export var tags :Array[TagInfo] = [] :
 	get:
-		return [] if current_animlib == null else current_animlib.tags
+		return [] as Array[TagInfo] if current_animlib == null else current_animlib.tags
 	#set(value)
 
 
@@ -31,6 +31,8 @@ func _on_mm_editor_on_library_change(lib: MMAnimationLibrary) -> void:
 	animation_selector.get_popup().clear(true)
 	for a in current_animlib.get_animation_list():
 		animation_selector.get_popup().add_item(a)
+	if !animation_selector.get_popup().id_pressed.is_connected(_on_anim_selected):
+		animation_selector.get_popup().id_pressed.connect(_on_anim_selected)
 
 	timeline.value = 0;
 	category_flag_edit.text = lib.category_hint_string
@@ -53,6 +55,8 @@ func get_length() -> int:
 func _ready() -> void:
 	zoom.value = 1.0
 	zoom.value_changed.connect(_on_zoom_changed)
+	if current_animlib == null:
+		return
 
 	var popup = animation_selector.get_popup()
 	animation_selector.get_popup().clear()

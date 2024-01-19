@@ -54,7 +54,7 @@ struct CircularBuffer : public godot::RefCounted
 
     Variant get(int index)
     {
-        return buffer[godot::Math::posmod(index,get_capacity())];
+        return buffer[godot::Math::posmod(index,buffer.size())];
     }
 
     using iter_t = typename boost::circular_buffer_space_optimized<godot::Variant>::iterator;

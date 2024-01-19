@@ -39,27 +39,28 @@ func _draw() -> void:
 	tree.set_column_title_alignment(Column.Actions,HORIZONTAL_ALIGNMENT_RIGHT)
 
 	var index := 0
-	for animname in al.get_animation_list():
-		var anim := al.get_animation(animname)
-		var animitem := tree.create_item(root)
-		animitem.set_cell_mode(0,TreeItem.CELL_MODE_RANGE)
-		animitem.set_range(Column.Id,index)
-		animitem.set_text(Column.Name,animname)
-		animitem.set_text(Column.Duration,"%0.3f" % anim.length)
-		animitem.set_suffix(Column.Duration,"s")
-		animitem.set_text_alignment(Column.Duration,HORIZONTAL_ALIGNMENT_RIGHT)
+	if al != null:
+		for animname in al.get_animation_list():
+			var anim := al.get_animation(animname)
+			var animitem := tree.create_item(root)
+			animitem.set_cell_mode(0,TreeItem.CELL_MODE_RANGE)
+			animitem.set_range(Column.Id,index)
+			animitem.set_text(Column.Name,animname)
+			animitem.set_text(Column.Duration,"%0.3f" % anim.length)
+			animitem.set_suffix(Column.Duration,"s")
+			animitem.set_text_alignment(Column.Duration,HORIZONTAL_ALIGNMENT_RIGHT)
 
-		var rename_icon := EditorInterface.get_editor_theme().get_icon("Edit","EditorIcons")
-		var delete_icon := EditorInterface.get_editor_theme().get_icon("Remove","EditorIcons")
-		var mirror_icon := EditorInterface.get_editor_theme().get_icon("MirrorX","EditorIcons")
-		animitem.add_button(Column.Actions,rename_icon,Action_ID.Rename,false,"Rename")
-		animitem.add_button(Column.Actions,mirror_icon,Action_ID.MirrorX,false,"Mirror Animation on X Axis")
-		animitem.add_button(Column.Actions,delete_icon,Action_ID.Delete,false,"Delete Animation")
-		animitem.set_text_alignment(Column.Actions,HORIZONTAL_ALIGNMENT_RIGHT)
+			var rename_icon := EditorInterface.get_editor_theme().get_icon("Edit","EditorIcons")
+			var delete_icon := EditorInterface.get_editor_theme().get_icon("Remove","EditorIcons")
+			var mirror_icon := EditorInterface.get_editor_theme().get_icon("MirrorX","EditorIcons")
+			animitem.add_button(Column.Actions,rename_icon,Action_ID.Rename,false,"Rename")
+			animitem.add_button(Column.Actions,mirror_icon,Action_ID.MirrorX,false,"Mirror Animation on X Axis")
+			animitem.add_button(Column.Actions,delete_icon,Action_ID.Delete,false,"Delete Animation")
+			animitem.set_text_alignment(Column.Actions,HORIZONTAL_ALIGNMENT_RIGHT)
 
 
-		animitem.set_text_overrun_behavior(Column.Actions,TextServer.OVERRUN_NO_TRIMMING)
-		index += 1
+			animitem.set_text_overrun_behavior(Column.Actions,TextServer.OVERRUN_NO_TRIMMING)
+			index += 1
 
 	tree.queue_redraw()
 

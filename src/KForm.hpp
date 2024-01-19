@@ -194,7 +194,7 @@ struct kform
             break;
         }
     }
-    static constexpr double dt = 0.016;
+    static constexpr double dt = 0.032;
     //DONE
     void _local(Ref<SkeletonProfile> skel,Ref<Animation> anim,double time,NodePath bonepath){
         *this = skel->get_reference_pose(skel->find_bone(bonepath.get_concatenated_subnames()));

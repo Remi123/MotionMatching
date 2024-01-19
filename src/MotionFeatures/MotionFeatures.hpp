@@ -51,7 +51,7 @@ struct MotionFeature : public Resource {
         Standard,
         RawValue
     };
-    GETSET(NormalizationType,normalization_type,Standard);
+    GETSET(NormalizationType,normalization_type,RawValue);
     GETSET(real_t,norm_clamp_min,std::numeric_limits<float>::min());
     GETSET(real_t,norm_clamp_max,std::numeric_limits<float>::max());
 
@@ -64,6 +64,7 @@ struct MotionFeature : public Resource {
     virtual PackedFloat32Array get_weights(){ return {};}
 
     virtual bool setup_bake_init(Ref<MMAnimationLibrary> mmal){
+        UtilityFunctions::prints("Default init called, probably not what you want");
         // returning false will abort the process.
         // feel free to print more details
         return true;
@@ -74,7 +75,12 @@ struct MotionFeature : public Resource {
         // feel free to print more details
         return true;
     }
-    virtual PackedFloat32Array bake_animation_pose(Ref<Animation> animation,float time){return {};}
+    virtual PackedFloat32Array bake_animation_pose(Ref<Animation> animation,float time){
+        PackedFloat32Array result{};
+        result.resize((size_t)this->call("get_dimension"));
+        result.fill(0.0f);
+        return result;
+    }
 
     virtual void debug_pose_gizmo(Ref<EditorNode3DGizmo> gizmo, const PackedFloat32Array data,godot::Transform3D tr = godot::Transform3D{}){return;}
 
@@ -84,19 +90,27 @@ struct MotionFeature : public Resource {
         BIND_ENUM_CONSTANT(Standard);
         BIND_ENUM_CONSTANT(RawValue);
 
-        ClassDB::bind_method( D_METHOD("get_dimension"), &MotionFeature::get_dimension);
-        ClassDB::bind_method( D_METHOD("get_weights"), &MotionFeature::get_weights);
-        ClassDB::bind_method( D_METHOD("get_hints"), &MotionFeature::get_hints);
+        BIND_VIRTUAL_METHOD(MotionFeature,get_dimension);
+        // ClassDB::bind_method( D_METHOD("get_dimension"), &MotionFeature::get_dimension);
+        BIND_VIRTUAL_METHOD(MotionFeature,get_weights);
+        // ClassDB::bind_method( D_METHOD("get_weights"), &MotionFeature::get_weights);
+        BIND_VIRTUAL_METHOD(MotionFeature,get_hints);
+        // ClassDB::bind_method( D_METHOD("get_hints"), &MotionFeature::get_hints);
 
-        ClassDB::bind_method( D_METHOD("set_normalization_type" ,"value"), &MotionFeature::set_normalization_type,DEFVAL(NormalizationType::Standard)); 
+        ClassDB::bind_method( D_METHOD("set_normalization_type" ,"value"), &MotionFeature::set_normalization_type,DEFVAL(NormalizationType::RawValue)); 
         ClassDB::bind_method( D_METHOD("get_normalization_type" ), &MotionFeature::get_normalization_type); 
         ADD_PROPERTY(PropertyInfo(Variant::INT,"normalization_type",godot::PROPERTY_HINT_ENUM,"Standard,RawValue"), "set_normalization_type", "get_normalization_type");
         
-        ClassDB::bind_method( D_METHOD("setup_bake_init","mm_animation_library"),   &MotionFeature::setup_bake_init);        
-        ClassDB::bind_method( D_METHOD("setup_bake_animation","animation"),         &MotionFeature::setup_bake_animation);        
-        ClassDB::bind_method( D_METHOD("bake_animation_pose","animation","time"),   &MotionFeature::bake_animation_pose);
+        BIND_VIRTUAL_METHOD(MotionFeature,setup_bake_init);
+        // ClassDB::bind_method( D_METHOD("setup_bake_init","mm_animation_library"),   &MotionFeature::setup_bake_init);
+        BIND_VIRTUAL_METHOD(MotionFeature,setup_bake_animation);    
+        // ClassDB::bind_method( D_METHOD("setup_bake_animation","animation"),         &MotionFeature::setup_bake_animation); 
+        BIND_VIRTUAL_METHOD(MotionFeature,bake_animation_pose); 
+        // ClassDB::bind_method( D_METHOD("bake_animation_pose","animation","time"),   &MotionFeature::bake_animation_pose);
+      
 
-        ClassDB::bind_method( D_METHOD("debug_pose_gizmo","gizmo","data","root_transform"), &MotionFeature::debug_pose_gizmo);
+        BIND_VIRTUAL_METHOD(MotionFeature,debug_pose_gizmo);
+        // ClassDB::bind_method( D_METHOD("debug_pose_gizmo","gizmo","data","root_transform"), &MotionFeature::debug_pose_gizmo);
         
     }
 

@@ -81,7 +81,7 @@ struct MMAnimationLibrary : public AnimationLibrary {
         case NOTIFICATION_POSTINITIALIZE: // Constructor
         {
             u::prints("MMAL NOTIFICATION_POSTINITIALIZE", "InEditor:", godot::Engine::get_singleton()->is_editor_hint());
-            if (!Engine::get_singleton()->is_editor_hint())
+            if (!godot::Engine::get_singleton()->is_editor_hint())
             {
                 fill_kdtree();
             }
@@ -213,6 +213,16 @@ struct MMAnimationLibrary : public AnimationLibrary {
 
     void bake_data()
     {
+        for(auto i = 0; i < motion_features.size(); ++i )
+        {
+            MotionFeature* f = Object::cast_to<MotionFeature>(motion_features[i]);
+            ERR_FAIL_COND_EDMSG(!f->has_method("get_dimension"),"Feature # " + u::str(i) + " doesn't have a get_dimension method");
+            ERR_FAIL_COND_EDMSG(!f->has_method("setup_bake_init"),"Feature # " +  u::str(i) + " doesn't have a setup_bake_init method");
+            ERR_FAIL_COND_EDMSG(!f->has_method("setup_bake_animation"),"Feature # " +  u::str(i) + " doesn't have a setup_bake_animation method");
+            ERR_FAIL_COND_EDMSG(!f->has_method("bake_animation_pose"),"Feature # " +  u::str(i) + " doesn't have a bake_animation_pose method");
+        }
+
+        ERR_FAIL_COND_EDMSG(time_interval < 0.016f,"Please choose a time inverval higher than 0.016s");
         ERR_FAIL_COND_EDMSG(motion_features.is_empty(),"No Motion Features to extract data");
         ERR_FAIL_COND_EDMSG(skeleton_profile == nullptr,"Skeleton_profile is empty");
         ERR_FAIL_COND_EDMSG(skeleton_profile->get_root_bone().is_empty(),"SkeletonProfile requires a Root Bone");
@@ -222,12 +232,12 @@ struct MMAnimationLibrary : public AnimationLibrary {
         {
             MotionFeature* f = Object::cast_to<MotionFeature>(motion_features[i]);
             ERR_FAIL_NULL_MSG(f,"Features no."+u::str(i) + "is null");
-            u::prints("Feature no.",i,f->get_name(),"Dimensions:", f->get_dimension());
-            if (false == f->setup_bake_init(this))
+            u::prints("Feature no.",i,f->get_name(),"Dimensions:", (size_t)f->call("get_dimension"));
+            if ((bool)f->call("setup_bake_init",Ref<MMAnimationLibrary>(this)) == false)
             {
                 ERR_FAIL_EDMSG("Motion Feature failed when setting the profile at index " + u::str(i));
             }
-            tmp_nb_dim += (int)(f->get_dimension());
+            tmp_nb_dim += (size_t)f->call("get_dimension");
         }
         nb_dimensions = tmp_nb_dim;
         u::prints("Total Dimension", nb_dimensions);
@@ -273,8 +283,9 @@ struct MMAnimationLibrary : public AnimationLibrary {
             for(auto features_index = 0; features_index < motion_features.size(); ++features_index )
             {
                 MotionFeature* f = Object::cast_to<MotionFeature>(motion_features[features_index]);
-                if( false == f->setup_bake_animation(animation))
+                if ((bool)f->call("setup_bake_animation",animation) == false)
                 {
+                    u::prints((bool)f->call("setup_bake_animation",animation));
                     should_continue = features_index;
                     break;
                 }
@@ -324,8 +335,9 @@ struct MMAnimationLibrary : public AnimationLibrary {
                 for(size_t features_index = 0; features_index < motion_features.size(); ++features_index )
                 {
                     MotionFeature* f = Object::cast_to<MotionFeature>(motion_features[features_index]);
-                    PackedFloat32Array feature_data = f->bake_animation_pose(animation,time);
-                    ERR_FAIL_COND_MSG(feature_data.size() != f->get_dimension(),String("Features no.") + u::str(int(features_index))+"bake_animation_pose didn't return a array of the correct size:" + u::str(feature_data.size()) + '/' + u::str(f->get_dimension()));
+                    size_t const expected_dimension = (size_t)f->call("get_dimension");
+                    PackedFloat32Array feature_data = f->call("bake_animation_pose",animation,time);
+                    ERR_FAIL_COND_MSG(feature_data.size() != expected_dimension,String("Features no.") + u::str(int(features_index))+"bake_animation_pose didn't return a array of the correct size:" + u::str(feature_data.size()) + '/' + u::str(expected_dimension));
                     pose_data.append_array(feature_data);                    
                 }
 
@@ -386,7 +398,7 @@ struct MMAnimationLibrary : public AnimationLibrary {
                 mend = std::next(mbegin,f->get_dimension());
                 std::for_each(mbegin,mend,[](float& v){ v = real_t(1);}); // dividing by 1 is itself
             }
-            offset += f->get_dimension();
+            offset += (size_t)f->call("get_dimension");
         }
         // Apply normalization to data. When using RawValue, means and variance are 0 and 1 respectively.
         for(size_t pose = 0; pose < data.size()/nb_dimensions; ++pose)
@@ -416,15 +428,18 @@ struct MMAnimationLibrary : public AnimationLibrary {
     // The calculation might be reconsidered, but it's the best I found.
     void recalculate_weights()
     {
-        weights.clear();
+        
+        PackedFloat32Array tmp_weight{};
+        
 
         for (auto features_index = 0; features_index < motion_features.size(); ++features_index)
         {   
             MotionFeature *f = Object::cast_to<MotionFeature>(motion_features[features_index]);
-            
-            weights.append_array(f->get_weights() );
-            u::prints(f->get_name(),f->get_weights());
+            ERR_FAIL_COND_EDMSG(!f->has_method("get_weights"),"Feature # " +  u::str(features_index) + " doesn't have a get_weights method");
+            tmp_weight.append_array((PackedFloat32Array)f->call("get_weights") );
         }
+        weights.clear();
+        weights = tmp_weight;
         u::prints("New Weights Values:",weights);
     }
 
@@ -656,8 +671,8 @@ struct MMAnimationLibrary : public AnimationLibrary {
         const auto root_path = NodePath(_skel + ":" + skeleton_profile->get_root_bone());
         
         kform root{skeleton_profile,root_path, animation,time};
-        root.vel = root.rot.xform_inv(root.vel);
-        root.ang = root.rot.xform_inv(root.ang);
+        // root.vel = root.rot.xform_inv(root.vel);
+        // root.ang = root.rot.xform_inv(root.ang);
         root.pos = Vector3();
         root.rot = Quaternion();
 
@@ -668,9 +683,25 @@ struct MMAnimationLibrary : public AnimationLibrary {
                                  });
     }
 
+    void prints_dimensions(){
+
+        for (auto features_index = 0; features_index < motion_features.size(); ++features_index)
+        {   
+            MotionFeature *f = Object::cast_to<MotionFeature>(motion_features[features_index]);
+
+            u::prints("Features #",features_index,"nb dimension",f->call("get_dimension"));
+            u::prints("Features #",features_index,"hints",f->call("get_hints"));
+            u::prints("Features #",features_index,"setup_bake_init",f->call("setup_bake_init",this));
+            u::prints("Features #",features_index,"setup_bake_animation",f->call("setup_bake_animation",nullptr));
+            u::prints("Features #",features_index,"bake",f->has_method("bake_animation_pose") ? (PackedFloat32Array)f->call("bake_animation_pose",nullptr,0.016) : f->bake_animation_pose(nullptr,0.032));
+        }
+
+    }
+
 protected:
     static void _bind_methods()
     {
+        ClassDB::bind_method(D_METHOD("prints_dimensions"), &MMAnimationLibrary::prints_dimensions);
         // Enum
         {
             BIND_ENUM_CONSTANT(Local);

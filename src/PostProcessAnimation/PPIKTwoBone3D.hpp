@@ -1,3 +1,5 @@
+#pragma once
+
 #include <godot_cpp/variant/utility_functions.hpp>
 
 #include <godot_cpp/classes/global_constants.hpp>
