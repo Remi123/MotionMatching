@@ -373,17 +373,74 @@ struct Spring : public RefCounted
         _simple_spring_damper_exact(x, v, x_goal_future, halflife, dt);
         xi += v_goal * dt;
     }
-    static inline PackedFloat32Array timed_spring_damper_exact(real_t x, real_t v,
-        real_t xi,
-        const real_t x_goal, const real_t t_goal,
-        const real_t halflife, const real_t dt,
-        const real_t apprehension = 2.0
-    ){
-        PackedFloat32Array result;
-        _timed_spring_damper_exact(x,v,xi,x_goal,t_goal,halflife,dt,apprehension);
-        result.append(x);
-        result.append(v);
-        result.append(xi);
+    static void _timed_spring_damper_exact(
+        Vector3& x, Vector3& v,
+        Vector3& xi,
+        const Vector3 x_goal, const real_t t_goal,
+        const real_t halflife, const real_t& dt,
+        real_t apprehension = 2.0
+    )
+    {
+        const real_t min_time = t_goal > dt ? t_goal : dt;
+
+        const Vector3 v_goal = (x_goal - xi) / min_time;
+
+        const real_t t_goal_future = dt + apprehension * halflife;
+        const Vector3 x_goal_future = t_goal_future < t_goal ? xi + v_goal * t_goal_future : x_goal;
+
+        _simple_spring_damper_exact(x, v, x_goal_future, halflife, dt);
+        xi += v_goal * dt;
+    }
+    static void _timed_spring_damper_exact(
+        Quaternion& x, Vector3& v,
+        Quaternion& xi,
+        const Quaternion x_goal, const real_t t_goal,
+        const real_t halflife, const real_t& dt,
+        real_t apprehension = 2.0
+    )
+    {
+        const real_t min_time = t_goal > dt ? t_goal : dt;
+
+        const Vector3 v_goal = Spring::quat_to_scaled_angle_axis(Spring::quat_abs(
+                            x_goal * xi.inverse())) /
+                        min_time;
+        
+
+        const real_t t_goal_future = dt + apprehension * halflife;
+        const Quaternion x_goal_future = t_goal_future < t_goal ? xi * Spring::quat_from_scaled_angle_axis(v_goal * t_goal_future) : x_goal;
+
+        _simple_spring_damper_exact(x, v, x_goal_future, halflife, dt);
+        xi *= Spring::quat_from_scaled_angle_axis(v_goal * dt);
+    }
+
+    static inline Array timed_spring_damper_exact(Variant x, Variant v, Variant xi ,Variant x_goal, float t_goal, real_t halflife, real_t dt, real_t apprehension = 2.0){
+        Array result;
+        if (x.get_type() == Variant::Type::VECTOR3 && v.get_type() == Variant::Type::VECTOR3 && x_goal.get_type() == Variant::Type::VECTOR3  )
+        {
+            Vector3 pos = (Vector3)x, vel = (Vector3)v, v3xi = (Vector3)xi, goal = (Vector3) x_goal;
+            _timed_spring_damper_exact(pos,vel,v3xi,goal,t_goal,halflife,dt,apprehension);
+            result.append(pos);
+            result.append(vel);
+            result.append(v3xi);
+        }
+        else if (x.get_type() == Variant::Type::QUATERNION && v.get_type() == Variant::Type::VECTOR3 && x_goal.get_type() == Variant::Type::QUATERNION  )
+        {
+            Vector3 ang = (Vector3)v;
+            Quaternion rot = (Vector3)x, rot_goal = (Quaternion)x_goal , qxi = (Quaternion)xi;
+            _timed_spring_damper_exact(rot,ang,qxi,rot_goal,t_goal,halflife,dt,apprehension);
+            result.append(rot);
+            result.append(ang);
+            result.append(qxi);
+        }
+        else if (x.get_type() == Variant::Type::FLOAT && v.get_type() == Variant::Type::FLOAT && v.get_type() == Variant::Type::FLOAT )
+        {
+            real_t pos = (real_t)x; real_t vel = (real_t)v, fxi = (real_t)xi, goal = (real_t)x_goal;
+            _timed_spring_damper_exact(pos,vel,fxi,goal,t_goal,halflife,dt,apprehension);
+            result.append(pos);
+            result.append(vel);
+            result.append(fxi);
+        }
+
         return result;
     }
 

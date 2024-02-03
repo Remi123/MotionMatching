@@ -31,9 +31,11 @@
 
 #include <limits>
 #include <algorithm>
+#include <ranges>
 
 #include <MotionFeatures/MFEvents.hpp>
 
+namespace views = std::ranges::views;
 
 struct MMAnimationLibrary;
 
@@ -89,6 +91,7 @@ struct MFEvents : public MotionFeature {
     GETSET(float,default_value, (1<<30));
     GETSET(bool,embed_as_frames);
     GETSET(bool,use_only_start,false);
+    GETSET(real_t, max_signed_time, real_t(2.0));
     GETSET(godot::PackedStringArray,events_names);
 
     static constexpr float delta = 0.016f;
@@ -124,54 +127,47 @@ struct MFEvents : public MotionFeature {
     // the current logic is this : Take the first event
     virtual PackedFloat32Array bake_animation_pose(Ref<Animation> animation,float time) override {
         PackedFloat32Array result = {};
-        std::vector<Ref<TagMFEvent>> current_events{};
+        // std::vector<Ref<TagMFEvent>> current_events{};
         const float time_offset = 1.0f / Engine::get_singleton()->get_physics_ticks_per_second();
-        // Get current events tags.
-        for(Ref<TagMFEvent> tag : animation_events)
-        {
-            if(tag->timestamp <= time && time < tag->timestamp + tag->duration + time_offset)
-            {
-                current_events.push_back(tag);
-            }
-        }
+
+        // [  5 4 3 2 1 0 -1 -2 -3 3 2 1 0 0 0 0 -1 -2 2 1 0 -1 ]
+        // 0s are event. positive values are pre-event, negative are post-event
 
         for(auto i = 0; i < events_names.size();++i)
         {
             const auto event_name = events_names[i];
-            auto it = std::find_if(animation_events.begin(), animation_events.end(),[event_name](Ref<TagMFEvent> event){return event->event_name == event_name;});
-            if(it == animation_events.end())
+            auto is_event_name = [event_name](Ref<TagMFEvent> event){return event->event_name == event_name;};
+            std::vector<Ref<TagMFEvent>> current_events{};
+            std::ranges::copy(animation_events | std::ranges::views::filter(is_event_name), std::back_inserter(current_events));
+
+            if(current_events.size() == 0)
             {
-                result.append(default_value);
+                result.append(max_signed_time);
                 continue;
             }
-            const auto event = *it;
-            float value = 0.0f;
-            if(time < event->timestamp)
-            {
-                value = time - event->timestamp;
-                if (embed_as_frames)
-                {
-                    value = std::ceilf(value / time_offset);
-                }              
-            }
-            else if ((event->timestamp + event->duration) < time)
-            {
-                value = time - (event->timestamp + event->duration);
-                if (embed_as_frames)
-                {
-                    value = std::ceilf(value / time_offset);
-                }       
-            }
-            else if (event->timestamp <= time && time <= (event->timestamp + event->duration) )
-            {
-                value = 0.0f;
-            }
-            result.append(value);
-        }
-        
-        
-        
 
+            // Check if event is inside the duration
+            for (auto event : current_events )
+            {
+                if (event->timestamp <= time && time < (event->timestamp + event->duration))
+                {
+                    result.append(0.0f);
+                    continue;
+                }
+            }
+
+            // Get the nearest event, otherwise send max value.
+            auto nearest =  *std::min_element(current_events.begin(),current_events.end(),
+                [time](Ref<TagMFEvent> a, Ref<TagMFEvent> b){
+                    const float A = time < a->timestamp ? abs(time - a->timestamp) : abs(time - (a->timestamp + a->duration));
+                    const float B = time < b->timestamp ? abs(time - b->timestamp) : abs(time - (b->timestamp + b->duration));
+                    return A < B;
+                }
+            );
+            //              0.5     1.0                 1.0                 0.5 :   0.5                                    1.0
+            const float T = time < nearest->timestamp ? nearest->timestamp - time : nearest->timestamp + nearest->duration - time;
+            result.append(u::clampf(T,-max_signed_time,max_signed_time));        
+        }
         return result;
     }
 

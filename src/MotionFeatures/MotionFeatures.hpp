@@ -134,10 +134,31 @@ struct MotionFeature : public Resource {
             godot::Vector2 v2 = (Vector2)v;
             result.append(v2.x);
             result.append(v2.y);
+        }        
+        else if(v.get_type() == Variant::VECTOR2I)
+        {
+            godot::Vector2i v2 = (Vector2i)v;
+            result.append(v2.x);
+            result.append(v2.y);
         }
         else if(v.get_type() == Variant::VECTOR3)
         {
             Vector3 v3 = (Vector3)v;
+            result.append(v3.x);
+            result.append(v3.y);
+            result.append(v3.z);
+        }
+        else if(v.get_type() == Variant::VECTOR3I)
+        {
+            Vector3i v3 = (Vector3i)v;
+            result.append(v3.x);
+            result.append(v3.y);
+            result.append(v3.z);
+        }
+        else if(v.get_type() == Variant::VECTOR4I)
+        {
+            Vector4i v3 = (Vector4i)v;
+            result.append(v3.w);
             result.append(v3.x);
             result.append(v3.y);
             result.append(v3.z);

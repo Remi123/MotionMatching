@@ -83,7 +83,7 @@ struct MMAnimationLibrary : public AnimationLibrary {
             u::prints("MMAL NOTIFICATION_POSTINITIALIZE", "InEditor:", godot::Engine::get_singleton()->is_editor_hint());
             if (!godot::Engine::get_singleton()->is_editor_hint())
             {
-                fill_kdtree();
+                // fill_kdtree();
             }
         }
         break;
@@ -168,6 +168,7 @@ struct MMAnimationLibrary : public AnimationLibrary {
         }
         if(kdt == nullptr)
         {
+            std::cout << "Creating kdtree" << std::endl;
             fill_kdtree();
         }
     }
@@ -460,7 +461,7 @@ struct MMAnimationLibrary : public AnimationLibrary {
 
         u::prints("query Constructed");
 
-        Kdtree::KdNodeVector re{};
+        Kdtree::KdNodeVector re = Kdtree::KdNodeVector{};
         kdt->k_nearest_neighbors(query_data,nb_result,&re);
         u::prints("Results obtained");
         Array result;
@@ -498,10 +499,12 @@ struct MMAnimationLibrary : public AnimationLibrary {
     {
         
         ERR_FAIL_COND_V_MSG(query.size() != nb_dimensions, {}, "Query must the same size as nb_dimensions");
+        
         // Create three if needs be
         _cache_kdtree();
 
         // Normalization of the query data. It's expected to not be normalized.
+
         for (size_t i = 0; i < means.size();++i)
         {
             query[i] = (query[i] - means[i])/variances[i]; 
@@ -702,6 +705,7 @@ protected:
     static void _bind_methods()
     {
         ClassDB::bind_method(D_METHOD("prints_dimensions"), &MMAnimationLibrary::prints_dimensions);
+        ClassDB::bind_method(D_METHOD("fill_kdtree"), &MMAnimationLibrary::fill_kdtree);
         // Enum
         {
             BIND_ENUM_CONSTANT(Local);

@@ -237,7 +237,7 @@ struct MFBonesInfo : public MotionFeature {
             // result.resize(bone_names.size() * 3 * std::bitset<10>(bone_info_type).count());
             for (size_t i = 0; i < bone_names.size(); ++i)
             {
-                kform b = mm_player->get_bone_global_kform(_skel->find_bone(bone_names[i]));
+                kform b = mm_player->get_bone_model_kform(_skel->find_bone(bone_names[i]));
                 Vector3 const pos = b.pos, vel = b.vel, dir = b.rot.xform(Vector3(0,0,1)),ang = b.ang;
 
                 if (bone_info_type.test(Position))

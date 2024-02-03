@@ -413,15 +413,15 @@ bool KdTree::neighbor_search(const CoordPoint& point, kdtree_node* node,
     dist = neighborheap->top().distance;
   }
   if (point[node->cutdim] < node->point[node->cutdim]) {
-    if (node->hison && bounds_overlap_ball(point, dist, node->hison))
+    if (node->hison && bounds_overlap_ball(point, dist, node->hison,distance))
       if (neighbor_search(point, node->hison, k, neighborheap,distance)) return true;
   } else {
-    if (node->loson && bounds_overlap_ball(point, dist, node->loson))
+    if (node->loson && bounds_overlap_ball(point, dist, node->loson,distance))
       if (neighbor_search(point, node->loson, k, neighborheap,distance)) return true;
   }
 
   if (neighborheap->size() == k) dist = neighborheap->top().distance;
-  return ball_within_bounds(point, dist, node);
+  return ball_within_bounds(point, dist, node,distance);
 }
 
 //--------------------------------------------------------------
@@ -434,10 +434,10 @@ void KdTree::range_search(const CoordPoint& point, kdtree_node* node,
   if (curdist <= r) {
     range_result->push_back(node->dataindex);
   }
-  if (node->loson != NULL && this->bounds_overlap_ball(point, r, node->loson)) {
+  if (node->loson != NULL && this->bounds_overlap_ball(point, r, node->loson,distance)) {
     range_search(point, node->loson, r, range_result);
   }
-  if (node->hison != NULL && this->bounds_overlap_ball(point, r, node->hison)) {
+  if (node->hison != NULL && this->bounds_overlap_ball(point, r, node->hison,distance)) {
     range_search(point, node->hison, r, range_result);
   }
 }

@@ -130,7 +130,7 @@ func show_lign(lign:int)->void:
 			hint_row.set_text_alignment(i+1,HORIZONTAL_ALIGNMENT_CENTER)
 
 			weights_row.set_cell_mode(i+1,TreeItem.CELL_MODE_RANGE)
-			weights_row.set_range_config(i+1,-1000,1000,0.25,true)
+			weights_row.set_range_config(i+1,0.001,1000,0.1,true)
 			weights_row.set_editable(i+1,true)
 			weights_row.set_selectable(i+1,true)
 			weights_row.set_range(i+1,lib.weights[offset+i])
