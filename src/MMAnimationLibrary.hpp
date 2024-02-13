@@ -527,6 +527,12 @@ struct MMAnimationLibrary : public AnimationLibrary {
             
             float duration = float(std::chrono::duration_cast <std::chrono::microseconds> (clock_end - clock_start).count());
 
+            PackedFloat32Array data_result{};
+            for(auto d : re[0].point)
+            {
+                data_result.append(d);
+            }
+
 
 
 
@@ -535,8 +541,10 @@ struct MMAnimationLibrary : public AnimationLibrary {
             const StringName anim_name = get_animation_list()[db_anim_index[re[0].index]];
             const float anim_time = db_anim_timestamp[re[0].index];
 
+
             results["animation"] = anim_name;
             results["timestamp"] = std::move(anim_time);
+            results["data"] = data_result;
 
             return results;
         }

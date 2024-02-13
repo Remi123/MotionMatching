@@ -57,15 +57,6 @@ struct MFDistance : public MotionFeature {
 
     public:
 
-    void _notification(int p_what)
-    {
-        switch (p_what)
-        {
-            case NOTIFICATION_POSTINITIALIZE:
-                normalization_type = RawValue;
-
-        }
-    }
     GETSET(bool,relative_rotation,false);
     enum EmbeddedAxis{
         X,Y,Z
@@ -81,9 +72,9 @@ struct MFDistance : public MotionFeature {
 
     static constexpr float delta = 0.016f;
 
-    virtual int get_dimension()override{return events_names.size();}
+    virtual int get_dimension()override{return events_names.size() * 3;}
     
-    virtual PackedFloat32Array get_weights()override{ return Array::make(1.0f);}
+    virtual PackedFloat32Array get_weights()override{ return Array::make(1.0f,1.0f,1.0f);}
 
     String root_bone_track = "";
     Transform3D rest_pose = Transform3D();
@@ -98,7 +89,15 @@ struct MFDistance : public MotionFeature {
         rest_pose = animlib->skeleton_profile->get_reference_pose(animlib->skeleton_profile->find_bone(animlib->skeleton_profile->get_root_bone()));
         return true;
     }
-    virtual PackedStringArray get_hints()const {return events_names;}
+    virtual PackedStringArray get_hints()const {
+        PackedStringArray hints = {};
+        for(auto e : events_names)
+        {
+            hints.append(e + ":x");
+            hints.append(e + ":y");
+            hints.append(e + ":z");
+        }
+        return hints;}
 
     int root_track_pos = -1;
     int root_track_quat = -1;
@@ -142,16 +141,23 @@ struct MFDistance : public MotionFeature {
                 continue;
             }
             const auto event = *it;
-            float value = 0.0f;
+            Vector3 value{};
 
             // Find distance from Root bone to the point depending on the tag.
             Vector3 root_pos{},anchor_pos{};
+            Quaternion root_rot{};
             // Step 1 : Get root bone pos
             if(root_track_pos >= 0)
             {
                 root_pos = animation->position_track_interpolate(root_track_pos,time);
             } else {
                 root_pos = rest_pose.get_origin();
+            }
+            if(root_track_quat >= 0)
+            {
+                root_rot = animation->rotation_track_interpolate(root_track_quat,time);
+            } else {
+                root_rot = rest_pose.get_basis().get_rotation_quaternion();
             }
             // Step 2 : Get anchor point pos
             if (event->anchor_point_strategy == TagMFDistance::Strategy::RootPos)
@@ -169,9 +175,11 @@ struct MFDistance : public MotionFeature {
                 anchor_pos = anchor_bone.pos;
             }
 
-            value = root_pos.distance_to(anchor_pos);
+            value = root_pos - (anchor_pos);
 
-            result.append(value);
+            result.append(value.x);
+            result.append(value.y);
+            result.append(value.z);
         }
 
         return result;

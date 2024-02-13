@@ -183,6 +183,11 @@ public:
                     ,PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_UPDATE_ALL_IF_MODIFIED);
         r_props->push_back(strat);
 
+        auto ref_point = PropertyInfo(Variant::VECTOR3,"anchor_point"
+        ,PROPERTY_HINT_NONE,""
+        ,anchor_point_strategy == AnchorPoint ? PROPERTY_USAGE_DEFAULT : PROPERTY_USAGE_STORAGE);
+        r_props->push_back(ref_point);
+
         auto ref_bone = PropertyInfo(Variant::STRING_NAME,"bone_name"
         ,PROPERTY_HINT_NONE,""
         ,anchor_point_strategy == AnchorBone ? PROPERTY_USAGE_DEFAULT : PROPERTY_USAGE_STORAGE);

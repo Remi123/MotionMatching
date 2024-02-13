@@ -485,6 +485,7 @@ struct MMAnimationPlayer : godot::AnimationPlayer
 
     kform get_bone_model_kform(int bone_id)
     {
+        ERR_FAIL_COND_V(_skeleton == nullptr, {});
         if (bone_id == root_bone_id)
         {
             return kform{};
