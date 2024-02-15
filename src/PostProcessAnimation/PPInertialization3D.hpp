@@ -37,7 +37,8 @@ struct PPInertialization3D : godot::Node
     using u = godot::UtilityFunctions;
 
     enum InertializationType {
-		Simple
+		Simple,
+        OffsetDecay
 	};
 
     GETSET(InertializationType,type,Simple);
@@ -94,12 +95,17 @@ struct PPInertialization3D : godot::Node
             advance(delta);
     }
 
-    void advance(double delta)
-    {
-        if(type == InertializationType::Simple)
-        {
-            _simple(delta);
-        }
+    void advance(double delta) {
+      switch (type) {
+      case InertializationType::Simple: {
+        _simple(delta);
+        break;
+      }
+      case InertializationType::OffsetDecay: {
+        _decay(delta);
+        break;
+      }
+      }
     }
 
     void _simple(double delta)
@@ -132,12 +138,57 @@ struct PPInertialization3D : godot::Node
         
     }
 
+    void _decay(double delta)
+    {
+        if(active == false || skeleton == nullptr || !mixer->is_active()) return;
+
+        bones.reserve(skeleton->get_bone_count());
+        offsets.reserve(skeleton->get_bone_count());
+
+        for(auto bone_id = 0; bone_id < skeleton->get_bone_count();++bone_id)
+        {
+            kform desired {};
+            desired.pos = skeleton->get_bone_pose_position(bone_id);
+            desired.rot = skeleton->get_bone_pose_rotation(bone_id);
+
+            // Calculate offset
+            kform offset {};
+            Spring::inertialize_transition(
+                offset.pos,offset.vel,
+                bones.pos[bone_id],bones.vel[bone_id],
+                desired.pos,desired.vel);
+            Spring::inertialize_transition(
+                offset.rot,offset.ang,
+                bones.rot[bone_id],bones.ang[bone_id],
+                desired.rot,desired.ang);
+
+            // Reduce Offset
+            Spring::inertialize_update(
+                bones.pos[bone_id],bones.vel[bone_id],
+                offset.pos,offset.vel,
+                desired.pos,desired.vel,
+                halflife,
+                delta
+            );
+            Spring::inertialize_update(
+                bones.rot[bone_id],bones.ang[bone_id],
+                offset.rot,offset.ang,
+                desired.rot,desired.ang,
+                halflife,
+                delta
+            );
+
+            skeleton->set_bone_pose_position(bone_id,bones.pos[bone_id]);
+            skeleton->set_bone_pose_rotation(bone_id,bones.rot[bone_id]);
+        }
+    }
+
     protected:
     static void _bind_methods()
     {
         ClassDB::bind_method( D_METHOD("set_type" ,"value"), &PPInertialization3D::set_type,DEFVAL(InertializationType::Simple)); 
         ClassDB::bind_method( D_METHOD("get_type" ), &PPInertialization3D::get_type); 
-        ADD_PROPERTY(PropertyInfo(Variant::INT,"type",godot::PROPERTY_HINT_ENUM,"Simple"), "set_type", "get_type");
+        ADD_PROPERTY(PropertyInfo(Variant::INT,"type",godot::PROPERTY_HINT_ENUM,"Simple,OffsetDecay"), "set_type", "get_type");
 
 
         ClassDB::bind_method( D_METHOD("set_active" ,"value"), &PPInertialization3D::set_active,DEFVAL(true)); 
@@ -159,6 +210,7 @@ struct PPInertialization3D : godot::Node
         godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::OBJECT,"skeleton",PROPERTY_HINT_NODE_TYPE ,"Skeleton3D",PROPERTY_USAGE_SCRIPT_VARIABLE | PROPERTY_USAGE_DEFAULT), "set_skeleton", "get_skeleton");
     
         BIND_ENUM_CONSTANT(Simple);
+        BIND_ENUM_CONSTANT(OffsetDecay);
     }
 };
 
