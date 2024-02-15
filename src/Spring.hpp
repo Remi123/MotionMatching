@@ -55,6 +55,10 @@ struct Spring : public RefCounted
         return halflife * (log(eps/initial_value) / log(0.5));
     }
 
+    static inline real_t duration_to_halflife(real_t duration,real_t precision_percent = 0.01){
+        return - duration / std::log2(precision_percent);
+    }
+
     static inline real_t damping_to_halflife(real_t damping, real_t eps = 1e-5) {
         return (4.0 * Ln2) / (damping + eps);
     }
@@ -592,6 +596,7 @@ protected:
         ClassDB::bind_static_method("Spring", D_METHOD("damp_adjustment_exact", "g", "halflife", "dt", "eps"), &Spring::damp_adjustment_exact, DEFVAL(1e-8));
 
         ClassDB::bind_static_method("Spring", D_METHOD("halflife_to_duration", "halflife", "initial_value", "eps"), &Spring::halflife_to_duration, DEFVAL(1.0), DEFVAL(1e-5));
+        ClassDB::bind_static_method("Spring", D_METHOD("duration_to_halflife", "duration", "precision_percentage"), &Spring::duration_to_halflife, DEFVAL(0.01));
         ClassDB::bind_static_method("Spring", D_METHOD("halflife_to_damping", "halflife", "eps"), &Spring::halflife_to_damping, DEFVAL(1e-5));
         ClassDB::bind_static_method("Spring", D_METHOD("damping_to_halflife", "damping", "eps"), &Spring::damping_to_halflife, DEFVAL(1e-5));
         ClassDB::bind_static_method("Spring", D_METHOD("frequency_to_stiffness", "frequency"), &Spring::frequency_to_stiffness);
