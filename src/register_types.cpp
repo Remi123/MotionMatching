@@ -13,7 +13,6 @@
 #include "MotionFeatures/MFTrajectory.hpp"
 #include "MotionFeatures/MFEvents.hpp"
 #include "MotionFeatures/MFDistance.hpp"
-#include "MotionFeatures/MFCustom.hpp"
 
 
 #include <MMAnimationLibrary.hpp>
@@ -55,7 +54,6 @@ void gdextension_MM_initialize(ModuleInitializationLevel p_level)
 			ClassDB::register_class<MFTrajectory>();
 			ClassDB::register_class<MFEvents>();
 			ClassDB::register_class<MFDistance>();
-			ClassDB::register_class<MFCustom>();
 		}
 
 		{	// Animation Tags
