@@ -191,21 +191,19 @@ struct MFBonesInfo : public MotionFeature {
         //     return result;
         // }
 
-        for(auto i =0; i < bone_info_type.test(Position) * 3 * bone_names.size(); ++i)
-        {
-            result.append(weight_bone_pos);
-        }
-        for(auto i =0; i < bone_info_type.test(Velocity) * 3 * bone_names.size(); ++i)
-        {
-            result.append(weight_bone_vel);
-        }
-        for(auto i =0; i < bone_info_type.test(Rotation) * 3 * bone_names.size(); ++i)
-        {
-            result.append(weight_bone_rot);
-        }
-        for(auto i =0; i < bone_info_type.test(AngularVel) * 3 * bone_names.size(); ++i)
-        {
-            result.append(weight_bone_ang);
+        for (auto i = 0; i < bone_names.size(); ++i) {
+          if (bone_info_type.test(Position))
+            for (auto i = 0; i < 3; ++i)
+              result.append(weight_bone_pos);
+          if (bone_info_type.test(Velocity))
+            for (auto i = 0; i < 3; ++i)
+              result.append(weight_bone_vel);
+          if (bone_info_type.test(Rotation))
+            for (auto i = 0; i < 3; ++i)
+              result.append(weight_bone_rot);
+          if (bone_info_type.test(AngularVel))
+            for (auto i = 0; i < 3; ++i)
+              result.append(weight_bone_ang);
         }
         return result;
     }

@@ -80,7 +80,7 @@ struct MMAnimationLibrary : public AnimationLibrary {
         {
         case NOTIFICATION_POSTINITIALIZE: // Constructor
         {
-            u::prints("MMAL NOTIFICATION_POSTINITIALIZE", "InEditor:", godot::Engine::get_singleton()->is_editor_hint());
+            u::prints("MMAL NOTIFICATION_POSTINITIALIZE", "InEditor:", godot::Engine::get_singleton()->is_editor_hint(),MotionData.size());
             if (!godot::Engine::get_singleton()->is_editor_hint())
             {
                 // fill_kdtree();
@@ -89,7 +89,7 @@ struct MMAnimationLibrary : public AnimationLibrary {
         break;
         case NOTIFICATION_PREDELETE: // Destructor
         {
-            u::prints("MMAL NOTIFICATION_PREDELETE", "InEditor:", godot::Engine::get_singleton()->is_editor_hint());
+            u::prints("MMAL NOTIFICATION_PREDELETE", "InEditor:", godot::Engine::get_singleton()->is_editor_hint(),MotionData.size());
             if (kdt != nullptr)
             {
                 delete kdt;
@@ -365,11 +365,10 @@ struct MMAnimationLibrary : public AnimationLibrary {
         // First calculate the means and the variance for each dimensions.
         for(auto i = 0; i< nb_dimensions;++i)
         {
-            means[i] = mean(data_stats[i]);
-            variances[i] = variance(data_stats[i]);
-            if (variances[i] <= std::numeric_limits<float>::epsilon() )
-            {
-                variances[i] = 1.0f;
+        //   means[i] = mean(data_stats[i]);
+          variances[i] = std::sqrt(variance(data_stats[i]) ) ;
+          if (variances[i] <= std::numeric_limits<float>::epsilon()) {
+            variances[i] = 1.0f;
             }
             Array arr{};
             for(const auto& d : density(data_stats[i]))

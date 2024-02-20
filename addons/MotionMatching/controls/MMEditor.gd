@@ -69,10 +69,12 @@ func set_skeleton_to_pose(anim_name:StringName,timestamp:float):
 func _on_bake_button_pressed() -> void:
 	library.bake_data()
 	on_bake.emit()
+	ResourceSaver.save(library,library.resource_path)
 	pass # Replace with function body.
 
 
 func _on_weight_button_pressed() -> void:
 	library.recalculate_weights()
 	on_weights.emit()
+	ResourceSaver.save(library,library.resource_path)
 	pass # Replace with function body.
