@@ -36,18 +36,6 @@
 #include <MMAnimationLibrary.hpp>
 
 
-
-// Macro setup. Mostly there to simplify writing all those
-#define GETSET(type,variable,...) type variable{__VA_ARGS__};\
-    type get_##variable(){return  variable;}  \
-    void set_##variable(type value){variable = value;}
-#define STR(x) #x
-#define STRING_PREFIX(prefix,s) STR(prefix##s)
-#define BINDER_PROPERTY_PARAMS(type,variant_type,variable,...)\
-        ClassDB::bind_method( D_METHOD(STRING_PREFIX(set_,variable) ,"value"), &type::set_##variable);\
-        ClassDB::bind_method( D_METHOD(STRING_PREFIX(get_,variable) ), &type::get_##variable); \
-        ADD_PROPERTY(PropertyInfo(variant_type,#variable,__VA_ARGS__),STRING_PREFIX(set_,variable),STRING_PREFIX(get_,variable));
-
 using namespace godot;
 
 struct MFDistance : public MotionFeature {

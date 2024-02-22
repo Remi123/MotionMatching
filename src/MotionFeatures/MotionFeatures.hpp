@@ -22,12 +22,14 @@
 
 #include <godot_cpp/classes/skeleton3d.hpp>
 #include <godot_cpp/classes/resource.hpp>
-#include <godot_cpp/classes/skeleton_profile.hpp>
 
 #include <godot_cpp/classes/editor_node3d_gizmo.hpp>
 #include <godot_cpp/classes/editor_node3d_gizmo_plugin.hpp>
 #include <godot_cpp/classes/standard_material3d.hpp>
 #include <godot_cpp/classes/box_mesh.hpp>
+
+#include <godot_cpp/classes/character_body3d.hpp>
+#include <MMAnimationPlayer.hpp>
 
 
 // Macro setup. Mostly there to simplify writing all those

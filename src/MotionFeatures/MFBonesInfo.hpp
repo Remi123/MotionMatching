@@ -1,35 +1,5 @@
 #pragma once
 
-#include <godot_cpp/variant/utility_functions.hpp>
-
-#include <godot_cpp/classes/global_constants.hpp>
-#include <godot_cpp/classes/node.hpp>
-#include <godot_cpp/variant/node_path.hpp>
-
-#include <godot_cpp/core/class_db.hpp>
-#include <godot_cpp/core/method_bind.hpp>
-#include <godot_cpp/templates/vector.hpp>
-#include <godot_cpp/templates/hash_map.hpp>
-#include <godot_cpp/templates/local_vector.hpp>
-#include <godot_cpp/classes/editor_plugin.hpp>
-
-#include <godot_cpp/classes/time.hpp>
-
-#include <godot_cpp/classes/animation.hpp>
-#include <godot_cpp/classes/animation_library.hpp>
-#include <godot_cpp/classes/animation_player.hpp>
-
-#include <godot_cpp/classes/skeleton3d.hpp>
-#include <godot_cpp/classes/resource.hpp>
-
-#include <godot_cpp/classes/editor_node3d_gizmo.hpp>
-#include <godot_cpp/classes/editor_node3d_gizmo_plugin.hpp>
-#include <godot_cpp/classes/standard_material3d.hpp>
-#include <godot_cpp/classes/box_mesh.hpp>
-
-#include <godot_cpp/classes/character_body3d.hpp>
-#include <MMAnimationPlayer.hpp>
-
 #include <MotionFeatures/MotionFeatures.hpp>
 #include <KForm.hpp>
 #include <MMAnimationLibrary.hpp>

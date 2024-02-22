@@ -12,8 +12,8 @@
 #include <godot_cpp/variant/utility_functions.hpp>
 #include "godot_cpp/core/math.hpp"
 #include "godot_cpp/variant/vector3.hpp"
-#include <Spring.hpp>
 
+#include <godot_cpp/variant/utility_functions.hpp>
 #include <godot_cpp/classes/animation.hpp>
 #include <godot_cpp/classes/animation_library.hpp>
 #include <godot_cpp/classes/animation_player.hpp>
@@ -23,7 +23,12 @@
 #include <godot_cpp/classes/skeleton3d.hpp>
 #include <godot_cpp/classes/skeleton_profile.hpp>
 
+#include <Spring.hpp>
+
+
 using namespace godot;
+
+using u = godot::UtilityFunctions;
 
 struct kform
 {

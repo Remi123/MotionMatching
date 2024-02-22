@@ -39,53 +39,43 @@ using u = godot::UtilityFunctions;
 struct MFTrajectory : public MotionFeature{
     GDCLASS(MFTrajectory,MotionFeature)
     public:
+		virtual ~MFTrajectory() = default;
 
+		Skeleton3D *skeleton{ nullptr };
+		Skeleton3D *get_skeleton() { return skeleton; }
+		void set_skeleton(Skeleton3D *value) { skeleton = value; }
+		String root_bone_track = "%GeneralSkeleton:Root";
 
-    virtual ~MFTrajectory() = default;
+		GETSET(PackedFloat32Array, past_time_dt);
+		GETSET(PackedFloat32Array, future_time_dt);
 
-    Skeleton3D* skeleton{nullptr}; Skeleton3D* get_skeleton(){return skeleton;} void set_skeleton(Skeleton3D* value){skeleton = value;}
-    String root_bone_track = "%GeneralSkeleton:Root";
+		GETSET(float, weight_history_pos, 1.0f);
+		GETSET(float, weight_prediction_pos, 1.0f);
+		GETSET(float, weight_prediction_angle, 1.0f);
+		virtual PackedFloat32Array get_weights() override {
+			PackedFloat32Array result{};
+			for (auto i = 0; i < 2 * past_time_dt.size(); ++i) {
+				result.append(weight_history_pos);
+			}
+			for (auto i = 0; i < 2 * future_time_dt.size(); ++i) {
+				result.append(weight_prediction_pos);
+			}
+			for (auto i = 0; i < 2 * future_time_dt.size(); ++i) {
+				result.append(weight_prediction_angle);
+			}
+			return result;
+		}
 
-    GETSET(NodePath,character_path);
+	public:
+		virtual int get_dimension() override {
+			// Offset for each
+			const size_t past_pos = 2 * past_time_dt.size();
+			const size_t future_pos = 2 * future_time_dt.size();
+			const size_t future_rot_angle = 2 * future_time_dt.size();
+			return past_pos + future_pos + future_rot_angle;
+		}
 
-    GETSET(float,halflife_velocity,0.2);
-    GETSET(float,halflife_angular_velocity,0.13);
-
-    GETSET(PackedFloat32Array,past_time_dt);
-    GETSET(PackedFloat32Array,future_time_dt);
-
-    GETSET(float,weight_history_pos,1.0f);
-    GETSET(float,weight_prediction_pos,1.0f);
-    GETSET(float,weight_prediction_angle,1.0f);
-    virtual PackedFloat32Array get_weights() override{
-        PackedFloat32Array result{};
-        for(auto i =0; i < 2 * past_time_dt.size(); ++i)
-        {
-            result.append(weight_history_pos);
-        }
-        for(auto i =0; i < 2 * future_time_dt.size(); ++i)
-        {
-            result.append(weight_prediction_pos);
-        }
-        for(auto i =0; i < 2 * future_time_dt.size(); ++i)
-        {
-            result.append(weight_prediction_angle);
-        }
-        return result;
-    }
-
-
-public:
-    virtual int get_dimension() override
-    {
-        // Offset for each
-        const size_t past_pos =  2 * past_time_dt.size();
-        const size_t future_pos = 2 * future_time_dt.size();
-        const size_t future_rot_angle = 2 * future_time_dt.size();
-        return past_pos + future_pos + future_rot_angle ;
-    }
-
-    int root_tracks[3] = {0,0,0};
+	int root_tracks[3] = {0,0,0};
     Vector3 start_pos,start_vel,end_pos,end_vel;
     Quaternion start_rot,end_rot, end_ang_vel;
     float start_time = 0.0f, end_time = 0.0f;
@@ -193,20 +183,20 @@ public:
     GETSET(PackedVector3Array,future_pos)
     GETSET(PackedFloat32Array,future_dir)
 
-    PackedFloat32Array serialize_trajectory_local(PackedVector3Array history_pos,PackedVector3Array future_pos,PackedVector3Array future_dir)
+    PackedFloat32Array serialize_trajectory_local(PackedVector3Array p_history_pos,PackedVector3Array p_future_pos,PackedVector3Array p_future_dir)
     {
         PackedFloat32Array result{};
-        for(auto elem: history_pos)
+        for(auto elem: p_history_pos)
         {
             result.append(elem.x);
             result.append(elem.z);
         }
-        for(auto elem: future_pos)
+        for(auto elem: p_future_pos)
         {
             result.append(elem.x);
             result.append(elem.z);
         }
-        for(auto elem: future_dir)
+        for(auto elem: p_future_dir)
         {
             result.append(elem.x);
             result.append(elem.z);

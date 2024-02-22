@@ -33,7 +33,7 @@
 #include <algorithm>
 #include <ranges>
 
-#include <MotionFeatures/MFEvents.hpp>
+#include <MotionFeatures/MotionFeatures.hpp>
 
 namespace views = std::ranges::views;
 
@@ -88,7 +88,6 @@ struct MFEvents : public MotionFeature {
 
     GETSET(EventType,event_type);
 
-    GETSET(float,default_value, (1<<30));
     GETSET(bool,embed_as_frames);
     GETSET(bool,use_only_start,false);
     GETSET(real_t, max_signed_time, real_t(2.0));
@@ -183,13 +182,13 @@ struct MFEvents : public MotionFeature {
         ClassDB::bind_method( D_METHOD("get_events_names" ), &MFEvents::get_events_names); 
         godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_STRING_ARRAY,"events_names"), "set_events_names", "get_events_names");
 
-        ClassDB::bind_method( D_METHOD("set_default_value" ,"value"), &MFEvents::set_default_value,DEFVAL(real_t(int32_t(1<<30)))); 
-        ClassDB::bind_method( D_METHOD("get_default_value" ), &MFEvents::get_default_value); 
-        godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT,"default_value"), "set_default_value", "get_default_value");
+        ClassDB::bind_method( D_METHOD("set_max_signed_time" ,"value"), &MFEvents::set_max_signed_time); 
+        ClassDB::bind_method( D_METHOD("get_max_signed_time" ), &MFEvents::get_max_signed_time); 
+        godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT,"max_signed_time"), "set_max_signed_time", "get_max_signed_time");
 
-        ClassDB::bind_method( D_METHOD("set_embed_as_frames" ,"value"), &MFEvents::set_embed_as_frames); 
-        ClassDB::bind_method( D_METHOD("get_embed_as_frames" ), &MFEvents::get_embed_as_frames); 
-        godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::BOOL,"embed_as_frames"), "set_embed_as_frames", "get_embed_as_frames");
+        // ClassDB::bind_method( D_METHOD("set_embed_as_frames" ,"value"), &MFEvents::set_embed_as_frames); 
+        // ClassDB::bind_method( D_METHOD("get_embed_as_frames" ), &MFEvents::get_embed_as_frames); 
+        // godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::BOOL,"embed_as_frames"), "set_embed_as_frames", "get_embed_as_frames");
         
         ClassDB::bind_method( D_METHOD("get_dimension"), &MFEvents::get_dimension);
 
