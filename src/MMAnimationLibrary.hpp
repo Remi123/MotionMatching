@@ -135,8 +135,11 @@ struct MMAnimationLibrary : public AnimationLibrary {
     GETSET(int,nb_dimensions)
     GETSET(PackedFloat32Array,weights)
     GETSET(PackedFloat32Array,means)
-    GETSET(PackedFloat32Array,variances)
+    GETSET(PackedFloat32Array,stddev)
     GETSET(Array,densities) 
+
+    GETSET(PackedFloat32Array,feature_offset);
+    GETSET(PackedFloat32Array,feature_scale);
 
     // Database. A pose is just the index of a row in the kdtree.
     // Usage : db_anim_*[result.index] = 
@@ -247,7 +250,7 @@ struct MMAnimationLibrary : public AnimationLibrary {
         u::prints("Detecting",anim_names.size(),"animations. Preparing...");
         
         means.clear(); means.resize(nb_dimensions); means.fill(0.0f);
-        variances.clear();variances.resize(nb_dimensions); variances.fill(0.0f);
+        stddev.clear();stddev.resize(nb_dimensions); stddev.fill(0.0f);
         densities.clear();densities.resize(nb_dimensions); densities.fill(Array::make(0.0,0.0));
 
         PackedFloat32Array data = PackedFloat32Array();
@@ -361,22 +364,27 @@ struct MMAnimationLibrary : public AnimationLibrary {
 
         u::prints("Animation Data Collected. Normalizing... ");
 
+        feature_offset.clear();
+        feature_scale.clear();
+        feature_offset.resize(nb_dimensions);
+        feature_scale.resize(nb_dimensions);
+        feature_offset.fill(0.0f);
+        feature_scale.fill(1.0f);
+
         // // Normalization
         // First calculate the means and the variance for each dimensions.
-        for(auto i = 0; i< nb_dimensions;++i)
-        {
-        //   means[i] = mean(data_stats[i]);
-          variances[i] = std::sqrt(variance(data_stats[i]) ) ;
-          if (variances[i] <= std::numeric_limits<float>::epsilon()) {
-            variances[i] = 1.0f;
-            }
-            Array arr{};
-            for(const auto& d : density(data_stats[i]))
-            {
-                arr.append(Array::make(d.first,d.second) ); 
-            }
-            densities[i] = std::move(arr);
-        }        
+        for (auto i = 0; i < nb_dimensions; ++i) {
+          means[i] = mean(data_stats[i]);
+          stddev[i] = std::sqrtf(variance(data_stats[i]));
+          if (stddev[i] <= std::numeric_limits<float>::epsilon()) {
+            stddev[i] = 1.0f;
+          }
+          Array arr{};
+          for (const auto &d : density(data_stats[i])) {
+            arr.append(Array::make(d.first, d.second));
+          }
+          densities[i] = std::move(arr);
+        }
 
         // There is some amount of logic here that must be taking care when baking and querying.
         // A feature could expect to use the raw values instead of normalizing.
@@ -386,17 +394,23 @@ struct MMAnimationLibrary : public AnimationLibrary {
             MotionFeature* f = Object::cast_to<MotionFeature>(motion_features[features_index]);
             if(MotionFeature::NormalizationType::Standard == f->get_normalization_type())
             {
-                // Do nothing
+                for(auto i = offset; i < f->get_dimension(); ++i)
+                {
+                    // feature_offset[offset + i] = mean(data_stats[offset + i]);
+                    feature_scale[offset + i] = std::sqrtf(variance(data_stats[offset + i]));
+                    if (feature_scale[offset+i] < std::numeric_limits<float>::epsilon())
+                    {
+                        feature_scale[offset+i] = 1.0f;
+                    }
+                }
             }
             else if(MotionFeature::NormalizationType::RawValue == f->get_normalization_type())
             {
-                auto mbegin = std::next(means.ptrw(),offset);
-                auto mend = std::next(mbegin,f->get_dimension());
-                std::for_each(mbegin,mend,[](float& m){ m = real_t(0);}); // 0 mean no offset
-
-                mbegin = std::next(variances.ptrw(),offset);
-                mend = std::next(mbegin,f->get_dimension());
-                std::for_each(mbegin,mend,[](float& v){ v = real_t(1);}); // dividing by 1 is itself
+                for(auto i = offset; i < f->get_dimension(); ++i)
+                {
+                    feature_offset[offset + i] = 0.0f;
+                    feature_scale[offset + i] = 1.0f;
+                }
             }
             offset += (size_t)f->call("get_dimension");
         }
@@ -405,7 +419,7 @@ struct MMAnimationLibrary : public AnimationLibrary {
         {
             for(int offset = 0; offset<nb_dimensions;++offset)
             {
-                data[pose*nb_dimensions + offset] = (data[pose*nb_dimensions + offset] - means[offset])/variances[offset]; 
+                data[pose*nb_dimensions + offset] = (data[pose*nb_dimensions + offset] - feature_offset[offset])/feature_scale[offset]; 
             }
         }
 
@@ -493,20 +507,20 @@ struct MMAnimationLibrary : public AnimationLibrary {
     };
 
 
-
     Dictionary query_pose(PackedFloat32Array query,int64_t included_category = std::numeric_limits<int64_t>::max(), int64_t excluded_category = 0)
     {
         
         ERR_FAIL_COND_V_MSG(query.size() != nb_dimensions, {}, "Query must the same size as nb_dimensions");
+        ERR_FAIL_COND_V_MSG(feature_offset.size() != nb_dimensions, {}, "Feature Offset must the same size as nb_dimensions");
+        ERR_FAIL_COND_V_MSG(feature_scale.size() != nb_dimensions, {}, "Feature Scale must the same size as nb_dimensions");
         
         // Create three if needs be
         _cache_kdtree();
 
         // Normalization of the query data. It's expected to not be normalized.
-
         for (size_t i = 0; i < means.size();++i)
         {
-            query[i] = (query[i] - means[i])/variances[i]; 
+            query[i] = (query[i] - feature_offset[i])/feature_scale[i]; 
         }
 
         {
@@ -514,7 +528,7 @@ struct MMAnimationLibrary : public AnimationLibrary {
 
             auto query_data = Kdtree::CoordPoint(query.ptr(),std::next(query.ptr(),kdt->dimension));
             auto clock_start = std::chrono::system_clock::now();
-            if(included_category == std::numeric_limits<int64_t>::max())
+            if(included_category == std::numeric_limits<int64_t>::max() && excluded_category == 0)
                 kdt->k_nearest_neighbors(query_data,1,&re);
             else
             {
@@ -737,13 +751,12 @@ protected:
             ClassDB::bind_method(D_METHOD("set_means", "value"), &MMAnimationLibrary::set_means);
             ClassDB::bind_method(D_METHOD("get_means"), &MMAnimationLibrary::get_means);
             godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "means", PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_READ_ONLY), "set_means", "get_means");
-            ClassDB::bind_method(D_METHOD("set_variances", "value"), &MMAnimationLibrary::set_variances);
-            ClassDB::bind_method(D_METHOD("get_variances"), &MMAnimationLibrary::get_variances);
-            godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "variances", PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_READ_ONLY), "set_variances", "get_variances");
+            ClassDB::bind_method(D_METHOD("set_stddev", "value"), &MMAnimationLibrary::set_stddev);
+            ClassDB::bind_method(D_METHOD("get_stddev"), &MMAnimationLibrary::get_stddev);
+            godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "stddev", PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_READ_ONLY), "set_stddev", "get_stddev");
             ClassDB::bind_method(D_METHOD("set_densities", "value"), &MMAnimationLibrary::set_densities);
             ClassDB::bind_method(D_METHOD("get_densities"), &MMAnimationLibrary::get_densities);
             godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::ARRAY, "densities", PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_READ_ONLY), "set_densities", "get_densities");
-
 
             ClassDB::bind_method(D_METHOD("set_nb_dimensions", "value"), &MMAnimationLibrary::set_nb_dimensions);
             ClassDB::bind_method(D_METHOD("get_nb_dimensions"), &MMAnimationLibrary::get_nb_dimensions);
@@ -802,6 +815,14 @@ protected:
             ClassDB::bind_method(D_METHOD("set_weights", "value"), &MMAnimationLibrary::set_weights);
             ClassDB::bind_method(D_METHOD("get_weights"), &MMAnimationLibrary::get_weights);
             godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "weights"), "set_weights", "get_weights");
+        
+            ClassDB::bind_method( D_METHOD("set_feature_offset" ,"value"), &MMAnimationLibrary::set_feature_offset); 
+            ClassDB::bind_method( D_METHOD("get_feature_offset" ), &MMAnimationLibrary::get_feature_offset); 
+            godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY,"feature_offset"), "set_feature_offset", "get_feature_offset");
+            ClassDB::bind_method( D_METHOD("set_feature_scale" ,"value"), &MMAnimationLibrary::set_feature_scale); 
+            ClassDB::bind_method( D_METHOD("get_feature_scale" ), &MMAnimationLibrary::get_feature_scale); 
+            godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY,"feature_scale"), "set_feature_scale", "get_feature_scale");
+
         }
     }
 public :
