@@ -67,7 +67,7 @@ struct MFTrajectory : public MotionFeature{
         {
             result.append(weight_prediction_pos);
         }
-        for(auto i =0; i < 1 * future_time_dt.size(); ++i)
+        for(auto i =0; i < 2 * future_time_dt.size(); ++i)
         {
             result.append(weight_prediction_angle);
         }
@@ -81,7 +81,7 @@ public:
         // Offset for each
         const size_t past_pos =  2 * past_time_dt.size();
         const size_t future_pos = 2 * future_time_dt.size();
-        const size_t future_rot_angle = future_time_dt.size();
+        const size_t future_rot_angle = 2 * future_time_dt.size();
         return past_pos + future_pos + future_rot_angle ;
     }
 
@@ -180,8 +180,11 @@ public:
             { // The offset must be calculated using the end velocity and extrapoling
                 rot = animation->rotation_track_interpolate(root_tracks[1], animation->get_length() - delta) * curr_rot.inverse();
             }
+
+            Vector3 direction = rot.xform(Vector3(0,0,1));
             
-            result.push_back(rot.get_euler_xyz().y);
+            result.push_back(direction.x);
+            result.push_back(direction.z);
         }
         return result;
     }
@@ -190,7 +193,7 @@ public:
     GETSET(PackedVector3Array,future_pos)
     GETSET(PackedFloat32Array,future_dir)
 
-    PackedFloat32Array serialize_trajectory_local(PackedVector3Array history_pos,PackedVector3Array future_pos,PackedFloat32Array future_dir)
+    PackedFloat32Array serialize_trajectory_local(PackedVector3Array history_pos,PackedVector3Array future_pos,PackedVector3Array future_dir)
     {
         PackedFloat32Array result{};
         for(auto elem: history_pos)
@@ -203,7 +206,11 @@ public:
             result.append(elem.x);
             result.append(elem.z);
         }
-        result.append_array(future_dir);
+        for(auto elem: future_dir)
+        {
+            result.append(elem.x);
+            result.append(elem.z);
+        }
         return result;
     }
 
@@ -212,16 +219,19 @@ public:
 
         for(auto elem: past_time_dt)
         {
-            result.append("x-"+u::str(elem));
-            result.append("z-"+u::str(elem));
+            result.append("Px-" + u::str(std::format("{:.2f}", elem).c_str()));
+            result.append("Pz-" + u::str(std::format("{:.2f}", elem).c_str()));
         }
         for(auto elem: future_time_dt)
         {
-            result.append("x+"+u::str(elem));
-            result.append("z+"+u::str(elem));
+            result.append("Px+" + u::str(std::format("{:.2f}", elem).c_str()));
+            result.append("Pz+" + u::str(std::format("{:.2f}", elem).c_str()));
         }
         for(auto elem: future_time_dt)
-            result.append("angle-"+u::str(elem));
+        {
+            result.append("Dx+" + u::str(std::format("{:.2f}", elem).c_str()));
+            result.append("Dz+" + u::str(std::format("{:.2f}", elem).c_str()));
+        }
 
         return result;
     }
@@ -230,7 +240,7 @@ public:
     static void _bind_methods() {
 
         {
-            ClassDB::bind_method(D_METHOD("serialize_trajectory_local", "history_local_pos","prediction_local_pos","prediction_local_dir_angle"), &MFTrajectory::serialize_trajectory_local);
+            ClassDB::bind_method(D_METHOD("serialize_trajectory_local", "history_local_pos","prediction_local_pos","prediction_local_direction"), &MFTrajectory::serialize_trajectory_local);
         }
 
         ClassDB::bind_method(D_METHOD("get_hints"), &MFTrajectory::get_hints);
