@@ -5,6 +5,8 @@
 #include <MotionFeatures/MotionFeatures.hpp>
 #include <algorithm>
 
+// Friends
+#include <PostProcessAnimation/PPInertialization3D.hpp>
 
 using namespace godot;
 
@@ -181,6 +183,36 @@ public:
 	GETSET(bool, use_inertialization)
 	GETSET(float, inertialization_halflife, 0.1);
 
+	PackedFloat32Array serialize_ppinertialization3d(PPInertialization3D* node) {
+		PackedFloat32Array result{};
+		for (size_t i = 0; i < bone_names.size(); ++i) {
+			kform b = node->bones[_skel->find_bone(bone_names[i])];
+			Vector3 const pos = b.pos, vel = b.vel, dir = b.rot.xform(Vector3(0, 0, 1)), ang = b.ang;
+
+			if (bone_info_type.test(Position)) {
+				result.append(pos.x);
+				result.append(pos.y);
+				result.append(pos.z);
+			}
+			if (bone_info_type.test(Velocity)) {
+				result.append(vel.x);
+				result.append(vel.y);
+				result.append(vel.z);
+			}
+			if (bone_info_type.test(Rotation)) {
+				result.append(dir.x);
+				result.append(dir.y);
+				result.append(dir.z);
+			}
+			if (bone_info_type.test(AngularVel)) {
+				result.append(ang.x);
+				result.append(ang.y);
+				result.append(ang.z);
+			}
+		}
+		return result;
+	}
+
 	PackedFloat32Array serialize_mmplayer(MMAnimationPlayer *mm_player) {
 		ERR_FAIL_NULL_V_MSG(mm_player, {}, "MMAnimationPlayer is null");
 		constexpr size_t size = 3;
@@ -277,6 +309,7 @@ protected:
 
 		{
 			ClassDB::bind_method(D_METHOD("serialize_MMAnimationPlayer", "body"), &MFBonesInfo::serialize_mmplayer);
+            ClassDB::bind_method(D_METHOD("serialize_PPInertialization3D", "body"), &MFBonesInfo::serialize_ppinertialization3d);
 		}
 
 		ClassDB::bind_method(D_METHOD("get_hints"), &MFBonesInfo::get_hints);

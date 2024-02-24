@@ -20,6 +20,8 @@
 
 #include <KForm.hpp>
 
+#include <MotionFeatures/MFBonesInfo.hpp>
+
 #define GETSET(type, variable, ...)            \
 	type variable{ __VA_ARGS__ };              \
 	type get_##variable() { return variable; } \
