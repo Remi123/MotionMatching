@@ -27,6 +27,8 @@ public:
 	// Skeleton
 	Ref<SkeletonProfile> _skel = nullptr;
 
+	GETSET(String, relative_to_bone, "");
+
 	PackedStringArray bone_names{};
 	void set_bone_names(PackedStringArray value) {
 		bone_names = value;
@@ -37,9 +39,8 @@ public:
 		Position,
 		Velocity,
 		Rotation,
-		AngularVel
+		AngularVel,
 
-		,
 		MAX_SIZE
 	};
 
@@ -68,6 +69,7 @@ public:
 	virtual bool setup_bake_init(Ref<MMAnimationLibrary> animlib) override {
 		ERR_FAIL_COND_V_EDMSG(animlib->skeleton_path.is_empty(), false, "SkeletonPath is Empty");
 		ERR_FAIL_COND_V_EDMSG(animlib->skeleton_profile == nullptr, false, "SkeletonProfile is null");
+		ERR_FAIL_COND_V_EDMSG(relative_to_bone != "" && animlib->skeleton_profile->find_bone(relative_to_bone) == -1, false, "SkeletonProfile doesn't contain the relative bone ( Empty for global)");
 		_skel = animlib->skeleton_profile;
 		_skel_path = NodePath(animlib->skeleton_path);
 		bones_id.clear();
@@ -87,10 +89,13 @@ public:
 	virtual PackedFloat32Array bake_animation_pose(Ref<Animation> animation, float time) override {
 		PackedFloat32Array result{};
 		kform kbone{};
-
+		auto relative_to_bone_path = u::str(_skel_path) + u::str(":") + relative_to_bone;
 		for (size_t index = 0; index < bone_names.size(); ++index) {
-			auto path = u::str(_skel_path) + u::str(":") + bone_names[index];
-			kbone = MMAnimationLibrary::sample_bone_rootmotion_kform(animation, time, _skel, path);
+			auto bone_path = u::str(_skel_path) + u::str(":") + bone_names[index];
+			auto bone = bone_names[index];
+
+			// kbone = MMAnimationLibrary::sample_bone_rootmotion_kform(animation, time, _skel, path);
+			kbone = _get_bone_kform(bone,animation,time);
 
 			// Serialize
 			// if (bone_info_type == PositionAndVelocity && use_inertialization)
@@ -125,6 +130,28 @@ public:
 
 		return result;
 	}
+
+private:
+	kform _get_bone_kform(String bone,Ref<Animation> animation, float time) {
+		std::vector<kform> trs{};
+		do {
+			trs.emplace_back(kform{ _skel, u::str(_skel_path) + u::str(":") + bone, animation, time });
+			if (bone == _skel->get_root_bone() || bone == relative_to_bone) {
+				break;
+			}
+			bone = _skel->get_bone_parent(_skel->find_bone(bone)); // Now bone is its parent
+			if (bone == relative_to_bone) {
+				break;
+			}
+		} while (!bone.is_empty());
+
+		return std::reduce(trs.rbegin(), trs.rend(), kform{},
+				[](const kform &acc, const kform &i) {
+					return acc * i;
+				});
+	}
+
+	public :
 
 	Vector3 inertialization_cost_function(Vector3 pos, Vector3 vel, float halflife) {
 		const auto halfdamp = Spring::halflife_to_damping(halflife) / 2.0;
@@ -183,10 +210,27 @@ public:
 	GETSET(bool, use_inertialization)
 	GETSET(float, inertialization_halflife, 0.1);
 
-	PackedFloat32Array serialize_ppinertialization3d(PPInertialization3D* node) {
+	PackedFloat32Array serialize_ppinertialization3d(PPInertialization3D *node) {
 		PackedFloat32Array result{};
 		for (size_t i = 0; i < bone_names.size(); ++i) {
-			kform b = node->bones[_skel->find_bone(bone_names[i])];
+			String bone = bone_names[i];
+			std::vector<kform> trs{};
+			do {
+				trs.push_back(node->bones[_skel->find_bone(bone)]);
+				if (bone == _skel->get_root_bone() || bone == relative_to_bone) {
+					break;
+				} 
+				bone = _skel->get_bone_parent(_skel->find_bone(bone));
+				if (bone == relative_to_bone){
+					break;
+				}
+			} while (!bone.is_empty());
+
+
+			kform b = std::reduce(trs.rbegin(), trs.rend(), kform{},
+					[](const kform &acc, const kform &i) {
+						return acc * i;
+					});
 			Vector3 const pos = b.pos, vel = b.vel, dir = b.rot.xform(Vector3(0, 0, 1)), ang = b.ang;
 
 			if (bone_info_type.test(Position)) {
@@ -236,7 +280,24 @@ public:
 		{
 			// result.resize(bone_names.size() * 3 * std::bitset<10>(bone_info_type).count());
 			for (size_t i = 0; i < bone_names.size(); ++i) {
-				kform b = mm_player->get_bone_model_kform(_skel->find_bone(bone_names[i]));
+				String bone = bone_names[i];
+				std::vector<kform> trs{};
+				do {
+					trs.push_back(mm_player->bones_kform[_skel->find_bone(bone)]);
+					if (bone == _skel->get_root_bone() || bone == relative_to_bone) {
+						break;
+					}
+					bone = _skel->get_bone_parent(_skel->find_bone(bone));
+					if (bone == relative_to_bone) {
+						break;
+					}
+				} while (!bone.is_empty());
+
+				kform b = std::reduce(trs.rbegin(), trs.rend(), kform{},
+						[](const kform &acc, const kform &i) {
+							return acc * i;
+						});
+
 				Vector3 const pos = b.pos, vel = b.vel, dir = b.rot.xform(Vector3(0, 0, 1)), ang = b.ang;
 
 				if (bone_info_type.test(Position)) {
@@ -309,10 +370,14 @@ protected:
 
 		{
 			ClassDB::bind_method(D_METHOD("serialize_MMAnimationPlayer", "body"), &MFBonesInfo::serialize_mmplayer);
-            ClassDB::bind_method(D_METHOD("serialize_PPInertialization3D", "body"), &MFBonesInfo::serialize_ppinertialization3d);
+			ClassDB::bind_method(D_METHOD("serialize_PPInertialization3D", "body"), &MFBonesInfo::serialize_ppinertialization3d);
 		}
 
 		ClassDB::bind_method(D_METHOD("get_hints"), &MFBonesInfo::get_hints);
+
+		ClassDB::bind_method(D_METHOD("set_relative_to_bone", "value"), &MFBonesInfo::set_relative_to_bone);
+		ClassDB::bind_method(D_METHOD("get_relative_to_bone"), &MFBonesInfo::get_relative_to_bone);
+		godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::STRING, "relative_to_bone"), "set_relative_to_bone", "get_relative_to_bone");
 
 		ClassDB::bind_method(D_METHOD("set_bone_names", "value"), &MFBonesInfo::set_bone_names);
 		ClassDB::bind_method(D_METHOD("get_bone_names"), &MFBonesInfo::get_bone_names);
