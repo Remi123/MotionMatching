@@ -330,7 +330,7 @@ struct kforms {
 		return pos.size();
 	}
 
-	inline const kform operator[](const std::size_t N) noexcept {
+	inline const kform operator[](const std::size_t N) const noexcept {
 		kform out{};
 		out.pos = pos[N];
 		out.rot = rot[N];

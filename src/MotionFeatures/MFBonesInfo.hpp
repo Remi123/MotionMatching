@@ -95,7 +95,8 @@ public:
 			auto bone = bone_names[index];
 
 			// kbone = MMAnimationLibrary::sample_bone_rootmotion_kform(animation, time, _skel, path);
-			kbone = _get_bone_kform(bone,animation,time);
+			kbone = _get_bone_kform_global(bone, animation, time);
+			kbone = _get_bone_kform_global(relative_to_bone, animation, time).inverse() * kbone;
 
 			// Serialize
 			// if (bone_info_type == PositionAndVelocity && use_inertialization)
@@ -132,17 +133,20 @@ public:
 	}
 
 private:
-	kform _get_bone_kform(String bone,Ref<Animation> animation, float time) {
+	kform _get_bone_kform_global(String bone, Ref<Animation> animation, float time) {
+		if (bone.is_empty())
+			return kform{};
 		std::vector<kform> trs{};
 		do {
 			trs.emplace_back(kform{ _skel, u::str(_skel_path) + u::str(":") + bone, animation, time });
-			if (bone == _skel->get_root_bone() || bone == relative_to_bone) {
+			// if (bone == _skel->get_root_bone() || bone == relative_to_bone) {
+			if (bone == _skel->get_root_bone()) {
 				break;
 			}
 			bone = _skel->get_bone_parent(_skel->find_bone(bone)); // Now bone is its parent
-			if (bone == relative_to_bone) {
-				break;
-			}
+			// if (bone == relative_to_bone) {
+			// 	break;
+			// }
 		} while (!bone.is_empty());
 
 		return std::reduce(trs.rbegin(), trs.rend(), kform{},
@@ -151,8 +155,29 @@ private:
 				});
 	}
 
-	public :
+	kform _get_bone_kform_global(const kforms const &bones, String bone) {
+		if (bone.is_empty())
+			return kform{};
+		std::vector<kform> trs{};
+		do {
+			trs.push_back(bones[_skel->find_bone(u::str(_skel_path) + u::str(":") + bone)]);
+			// if (bone == _skel->get_root_bone() || bone == relative_to_bone) {
+			if (bone == _skel->get_root_bone()) {
+				break;
+			}
+			bone = _skel->get_bone_parent(_skel->find_bone(bone)); // Now bone is its parent
+			// if (bone == relative_to_bone) {
+			// 	break;
+			// }
+		} while (!bone.is_empty());
 
+		return std::reduce(trs.crbegin(), trs.crend(), kform{},
+				[](const kform &acc, const kform &i) {
+					return acc * i;
+				});
+	}
+
+public:
 	Vector3 inertialization_cost_function(Vector3 pos, Vector3 vel, float halflife) {
 		const auto halfdamp = Spring::halflife_to_damping(halflife) / 2.0;
 		return (2 * pos) / halfdamp + vel / (halfdamp * halfdamp);
@@ -214,24 +239,11 @@ private:
 		PackedFloat32Array result{};
 		for (size_t i = 0; i < bone_names.size(); ++i) {
 			String bone = bone_names[i];
-			std::vector<kform> trs{};
-			do {
-				trs.push_back(node->bones[_skel->find_bone(bone)]);
-				if (bone == _skel->get_root_bone() || bone == relative_to_bone) {
-					break;
-				} 
-				bone = _skel->get_bone_parent(_skel->find_bone(bone));
-				if (bone == relative_to_bone){
-					break;
-				}
-			} while (!bone.is_empty());
 
-
-			kform b = std::reduce(trs.rbegin(), trs.rend(), kform{},
-					[](const kform &acc, const kform &i) {
-						return acc * i;
-					});
-			Vector3 const pos = b.pos, vel = b.vel, dir = b.rot.xform(Vector3(0, 0, 1)), ang = b.ang;
+			kform kbone = _get_bone_kform_global(node->bones,bone);
+			if (bone != relative_to_bone)
+				kbone = _get_bone_kform_global(node->bones,relative_to_bone).inverse() * kbone;
+			Vector3 const pos = kbone.pos, vel = kbone.vel, dir = kbone.rot.xform(Vector3(0, 0, 1)), ang = kbone.ang;
 
 			if (bone_info_type.test(Position)) {
 				result.append(pos.x);
@@ -280,25 +292,12 @@ private:
 		{
 			// result.resize(bone_names.size() * 3 * std::bitset<10>(bone_info_type).count());
 			for (size_t i = 0; i < bone_names.size(); ++i) {
-				String bone = bone_names[i];
-				std::vector<kform> trs{};
-				do {
-					trs.push_back(mm_player->bones_kform[_skel->find_bone(bone)]);
-					if (bone == _skel->get_root_bone() || bone == relative_to_bone) {
-						break;
-					}
-					bone = _skel->get_bone_parent(_skel->find_bone(bone));
-					if (bone == relative_to_bone) {
-						break;
-					}
-				} while (!bone.is_empty());
+			String bone = bone_names[i];
 
-				kform b = std::reduce(trs.rbegin(), trs.rend(), kform{},
-						[](const kform &acc, const kform &i) {
-							return acc * i;
-						});
-
-				Vector3 const pos = b.pos, vel = b.vel, dir = b.rot.xform(Vector3(0, 0, 1)), ang = b.ang;
+			kform kbone = _get_bone_kform_global(mm_player->bones_kform,bone);
+			if (bone != relative_to_bone)
+				kbone = _get_bone_kform_global(mm_player->bones_kform,relative_to_bone).inverse() * kbone;
+			Vector3 const pos = kbone.pos, vel = kbone.vel, dir = kbone.rot.xform(Vector3(0, 0, 1)), ang = kbone.ang;
 
 				if (bone_info_type.test(Position)) {
 					result.append(pos.x);
