@@ -155,12 +155,12 @@ private:
 				});
 	}
 
-	kform _get_bone_kform_global(const kforms const &bones, String bone) {
+	kform _get_bone_kform_global(const kforms &bones, String bone) {
 		if (bone.is_empty())
 			return kform{};
 		std::vector<kform> trs{};
 		do {
-			trs.push_back(bones[_skel->find_bone(u::str(_skel_path) + u::str(":") + bone)]);
+			trs.push_back(bones[_skel->find_bone(bone)]);
 			// if (bone == _skel->get_root_bone() || bone == relative_to_bone) {
 			if (bone == _skel->get_root_bone()) {
 				break;
@@ -240,9 +240,9 @@ public:
 		for (size_t i = 0; i < bone_names.size(); ++i) {
 			String bone = bone_names[i];
 
-			kform kbone = _get_bone_kform_global(node->bones,bone);
+			kform kbone = _get_bone_kform_global(node->bones, bone);
 			if (bone != relative_to_bone)
-				kbone = _get_bone_kform_global(node->bones,relative_to_bone).inverse() * kbone;
+				kbone = _get_bone_kform_global(node->bones, relative_to_bone).inverse() * kbone;
 			Vector3 const pos = kbone.pos, vel = kbone.vel, dir = kbone.rot.xform(Vector3(0, 0, 1)), ang = kbone.ang;
 
 			if (bone_info_type.test(Position)) {
@@ -292,12 +292,12 @@ public:
 		{
 			// result.resize(bone_names.size() * 3 * std::bitset<10>(bone_info_type).count());
 			for (size_t i = 0; i < bone_names.size(); ++i) {
-			String bone = bone_names[i];
+				String bone = bone_names[i];
 
-			kform kbone = _get_bone_kform_global(mm_player->bones_kform,bone);
-			if (bone != relative_to_bone)
-				kbone = _get_bone_kform_global(mm_player->bones_kform,relative_to_bone).inverse() * kbone;
-			Vector3 const pos = kbone.pos, vel = kbone.vel, dir = kbone.rot.xform(Vector3(0, 0, 1)), ang = kbone.ang;
+				kform kbone = _get_bone_kform_global(mm_player->bones_kform, bone);
+				if (bone != relative_to_bone)
+					kbone = _get_bone_kform_global(mm_player->bones_kform, relative_to_bone).inverse() * kbone;
+				Vector3 const pos = kbone.pos, vel = kbone.vel, dir = kbone.rot.xform(Vector3(0, 0, 1)), ang = kbone.ang;
 
 				if (bone_info_type.test(Position)) {
 					result.append(pos.x);
