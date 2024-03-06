@@ -11,7 +11,6 @@
 #include <godot_cpp/variant/dictionary.hpp>
 #include <godot_cpp/variant/variant.hpp>
 
-
 using namespace godot;
 
 struct Spring : public RefCounted {
@@ -142,6 +141,10 @@ public:
 
 	static inline Vector3 quat_differentiate_angular_velocity(Quaternion next, Quaternion curr, real_t dt, real_t eps = 1e-8) {
 		return quat_to_scaled_angle_axis(quat_abs(next * curr.inverse()), eps) / dt;
+	}
+	static inline Quaternion quat_integrate_angular_velocity(
+			Vector3 vel, Quaternion curr, float dt, float eps = 1e-8f) {
+		return quat_from_scaled_angle_axis(vel * dt, eps) * curr;
 	}
 
 	static void _spring_damper_exact(

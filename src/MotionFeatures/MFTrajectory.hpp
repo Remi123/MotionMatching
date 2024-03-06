@@ -13,7 +13,6 @@
 #include <godot_cpp/templates/local_vector.hpp>
 #include <godot_cpp/templates/vector.hpp>
 
-
 #include <godot_cpp/classes/time.hpp>
 
 #include <godot_cpp/classes/animation.hpp>
@@ -23,16 +22,16 @@
 #include <godot_cpp/classes/resource.hpp>
 #include <godot_cpp/classes/skeleton3d.hpp>
 
-
 #include <godot_cpp/classes/box_mesh.hpp>
 #include <godot_cpp/classes/editor_node3d_gizmo.hpp>
 #include <godot_cpp/classes/editor_node3d_gizmo_plugin.hpp>
 #include <godot_cpp/classes/standard_material3d.hpp>
 
-
+#include <KForm.hpp>
 #include <MMAnimationLibrary.hpp>
 #include <MotionFeatures/MotionFeatures.hpp>
 
+#include <format>
 
 using namespace godot;
 using u = godot::UtilityFunctions;
@@ -83,6 +82,7 @@ public:
 	}
 
 	int root_tracks[3] = { 0, 0, 0 };
+	kform first_kform{}, last_kform{};
 	Vector3 start_pos, start_vel, end_pos, end_vel;
 	Quaternion start_rot, end_rot, end_ang_vel;
 	float start_time = 0.0f, end_time = 0.0f;
@@ -96,30 +96,60 @@ public:
 	};
 
 	virtual bool setup_bake_animation(Ref<Animation> animation) override {
+		if (animation->get_loop_mode() == Animation::LOOP_PINGPONG)
+		{
+			WARN_PRINT(std::format("animation is loop type Ping Pong, which isn't supported for now. ").c_str());
+		}
+		const float delta_diff = 0.05;
 		start_time = 0.1f;
 		end_time = std::floor(animation->get_length() * 10) / 10.0f;
 		root_tracks[0] = animation->find_track(root_bone_track, Animation::TrackType::TYPE_POSITION_3D);
 		root_tracks[1] = animation->find_track(root_bone_track, Animation::TrackType::TYPE_ROTATION_3D);
 		root_tracks[2] = animation->find_track(root_bone_track, Animation::TrackType::TYPE_SCALE_3D);
 		{
-			start_pos = animation->position_track_interpolate(root_tracks[0], 0.0);
-			start_rot = animation->rotation_track_interpolate(root_tracks[1], 0.0);
-			start_vel = (animation->position_track_interpolate(root_tracks[0], 0.1) - start_pos) / 0.1;
+			first_kform = kform{
+				animation->position_track_interpolate(root_tracks[0], 0.0),
+				animation->rotation_track_interpolate(root_tracks[1], 0.0)
+			};
+			const kform starting_diff = kform{
+				animation->position_track_interpolate(root_tracks[0], delta_diff),
+				animation->rotation_track_interpolate(root_tracks[1], delta_diff)
+			};
+			first_kform.finite_difference(starting_diff, delta_diff);
+
+			// start_pos = animation->position_track_interpolate(root_tracks[0], 0.0);
+			// start_rot = animation->rotation_track_interpolate(root_tracks[1], 0.0);
+			// start_vel = (animation->position_track_interpolate(root_tracks[0], 0.1) - start_pos) / 0.1;
 		}
 		{
-			end_pos = animation->position_track_interpolate(root_tracks[0], end_time);
-			end_rot = animation->rotation_track_interpolate(root_tracks[1], end_time);
-			end_vel = (end_pos - animation->position_track_interpolate(root_tracks[0], end_time - 0.1)) / 0.1;
+			const float anim_duration = animation->get_length();
+			kform ending_diff = kform{
+				animation->position_track_interpolate(root_tracks[0], anim_duration - delta_diff),
+				animation->rotation_track_interpolate(root_tracks[1], anim_duration - delta_diff)
+			};
+			last_kform = kform{
+				animation->position_track_interpolate(root_tracks[0], anim_duration),
+				animation->rotation_track_interpolate(root_tracks[1], anim_duration)
+			};
+			last_kform = kform::finite_difference(ending_diff, last_kform, delta_diff);
 
-			end_ang_vel = animation->rotation_track_interpolate(root_tracks[1], animation->get_length() - delta - 0.1).inverse() * animation->rotation_track_interpolate(root_tracks[1], animation->get_length() - delta);
+			// end_pos = animation->position_track_interpolate(root_tracks[0], end_time);
+			// end_rot = animation->rotation_track_interpolate(root_tracks[1], end_time);
+			// end_vel = (end_pos - animation->position_track_interpolate(root_tracks[0], end_time - 0.1)) / 0.1;
+
+			// end_ang_vel = animation->rotation_track_interpolate(root_tracks[1], animation->get_length() - delta - 0.1).inverse() * animation->rotation_track_interpolate(root_tracks[1], animation->get_length() - delta);
 		}
+		u::prints("Start Vel", first_kform.vel,"End Vel",last_kform.vel);
 		return true;
 	}
 
 	virtual PackedFloat32Array bake_animation_pose(Ref<Animation> animation, float time) override {
 		PackedFloat32Array result{};
+		kform current_kform{};
 		Vector3 curr_pos = animation->position_track_interpolate(root_tracks[0], time);
 		Quaternion curr_rot = animation->rotation_track_interpolate(root_tracks[1], time);
+		current_kform.pos = curr_pos;
+		current_kform.rot = curr_rot;
 
 		for (size_t index = 0; index < past_time_dt.size(); ++index) {
 			const float t = time - abs(past_time_dt[index]);
@@ -138,15 +168,40 @@ public:
 		}
 		for (size_t index = 0; index < future_time_dt.size(); ++index) {
 			const float t = time + abs(future_time_dt[index]);
+			const float safe_t = std::fmodf(t, animation->get_length());
 			Vector3 pos{};
 			Quaternion rot{};
 			if (t <= end_time) { // The offset can be accessed through the anim data
-				pos = animation->position_track_interpolate(root_tracks[0], t) - curr_pos;
-				rot = animation->rotation_track_interpolate(root_tracks[1], t);
-				pos = curr_rot.xform_inv(pos);
+				kform post_t{};
+				post_t.pos = animation->position_track_interpolate(root_tracks[0], t);
+				post_t.rot = animation->rotation_track_interpolate(root_tracks[1], t);
+				post_t = current_kform / post_t;
+				pos = post_t.pos;
+				rot = post_t.rot;
 			} else { // The offset must be calculated using the end velocity and extrapoling
-				pos = end_pos + end_vel * (t - end_time) - curr_pos;
-				pos = curr_rot.xform_inv(pos);
+				// pos = end_pos + end_vel * (t - end_time) - curr_pos;
+				// pos = curr_rot.xform_inv(pos);
+				if (animation->get_loop_mode() == Animation::LOOP_LINEAR) {
+					kform k = first_kform;
+					const kform entire_k = first_kform.inverse() * last_kform;
+					for (uint64_t i = 0; i < uint64_t(t / end_time); ++i) {
+						k = k * entire_k;
+					}
+					kform safe_t_kform = kform{ 
+						animation->position_track_interpolate(root_tracks[0], safe_t),
+						animation->rotation_track_interpolate(root_tracks[1], safe_t) };
+
+					safe_t_kform = current_kform.inverse() * k * first_kform.inverse() * safe_t_kform;
+					pos = safe_t_kform.pos;
+					rot = safe_t_kform.rot;
+				} else if (animation->get_loop_mode() == Animation::LOOP_NONE) {
+					kform post_t = last_kform;
+					post_t.pos = post_t.pos + post_t.vel * (t - end_time);
+					post_t.rot =  Spring::quat_integrate_angular_velocity(post_t.ang,post_t.rot,(t - end_time));
+					post_t = current_kform / post_t;
+					pos = post_t.pos;
+					rot = post_t.rot;
+				}
 			}
 
 			result.push_back(pos.x);

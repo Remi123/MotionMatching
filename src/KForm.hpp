@@ -245,7 +245,7 @@ struct kform {
 		return Vector3(std::log(v.x), std::log(v.y), std::log(v.z));
 	}
 
-	kform &finite_difference(kform input_next, real_t _dt) {
+	kform &finite_difference(const kform input_next, real_t _dt) {
 		vel = (input_next.pos - pos) / _dt;
 
 		ang = Spring::quat_to_scaled_angle_axis(Spring::quat_abs(
@@ -296,7 +296,7 @@ struct kform {
 		return out;
 	}
 	kform inverse() const {
-		return kform() / (*this);
+		return *this / kform{};
 	}
 };
 
