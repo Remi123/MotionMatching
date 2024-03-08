@@ -86,7 +86,12 @@ public:
 	}
 
 	virtual float calculate_cost(PackedFloat32Array query, PackedFloat32Array data) const{
-		ERR_FAIL_V_MSG(std::numeric_limits<float>::max(),"Method calculate_cost not implemented");
+		ERR_FAIL_V_MSG(query.size() != data.size(),"Query and Data not the same size");
+		float cost = 0.0f;
+		for(size_t i = 0; i < query.size(); ++i){
+			cost += std::fabs(query[i] - data[i]);
+		}
+		return cost;
 	}
 
 	virtual void debug_pose_gizmo(Ref<EditorNode3DGizmo> gizmo, const PackedFloat32Array data, godot::Transform3D tr = godot::Transform3D{}) { return; }

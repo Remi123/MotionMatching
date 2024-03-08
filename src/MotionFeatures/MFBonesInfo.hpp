@@ -289,7 +289,7 @@ public:
 			if (bone_info_type.test(Rotation)) {
 				Vector3 p_query = Vector3(query[offset + 0], query[offset + 1], query[offset + 2]);
 				Vector3 p_data = Vector3(data[offset + 0], data[offset + 1], data[offset + 2]);
-				float dot = p_query[i].dot(p_data[i]);
+				float dot = p_query.dot(p_data);
 				result += std::fabs(2.0f - (1.0f + dot)) * 0.5f * weight_bone_rot;
 				offset += 3;
 			}
