@@ -269,6 +269,39 @@ public:
 		return result;
 	}
 
+	virtual float calculate_cost(PackedFloat32Array query, PackedFloat32Array data) const override {
+		float result = 0.0f;
+		for (size_t i = 0; i < bone_names.size(); ++i) {
+			unsigned int offset = i * bone_info_type.count() * 3;
+			String bone = bone_names[i];
+			if (bone_info_type.test(Position)) {
+				Vector3 p_query = Vector3(query[offset + 0], query[offset + 1], query[offset + 2]);
+				Vector3 p_data = Vector3(data[offset + 0], data[offset + 1], data[offset + 2]);
+				result += p_query.distance_to(p_data) * weight_bone_pos;
+				offset += 3;
+			}
+			if (bone_info_type.test(Velocity)) {
+				Vector3 p_query = Vector3(query[offset + 0], query[offset + 1], query[offset + 2]);
+				Vector3 p_data = Vector3(data[offset + 0], data[offset + 1], data[offset + 2]);
+				result += p_query.distance_to(p_data) * weight_bone_vel;
+				offset += 3;
+			}
+			if (bone_info_type.test(Rotation)) {
+				Vector3 p_query = Vector3(query[offset + 0], query[offset + 1], query[offset + 2]);
+				Vector3 p_data = Vector3(data[offset + 0], data[offset + 1], data[offset + 2]);
+				result += p_query.distance_to(p_data) * weight_bone_rot;
+				offset += 3;
+			}
+			if (bone_info_type.test(AngularVel)) {
+				Vector3 p_query = Vector3(query[offset + 0], query[offset + 1], query[offset + 2]);
+				Vector3 p_data = Vector3(data[offset + 0], data[offset + 1], data[offset + 2]);
+				result += p_query.distance_to(p_data) * weight_bone_ang;
+				offset += 3;
+			}
+		}
+		return result;
+	}
+
 	PackedFloat32Array serialize_mmplayer(MMAnimationPlayer *mm_player) {
 		ERR_FAIL_NULL_V_MSG(mm_player, {}, "MMAnimationPlayer is null");
 		constexpr size_t size = 3;

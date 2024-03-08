@@ -459,7 +459,7 @@ public:
 		}
 	};
 
-	Dictionary query_pose(PackedFloat32Array query, int64_t included_category = std::numeric_limits<int64_t>::max(), int64_t excluded_category = 0) {
+	TypedArray<Dictionary> query_pose(PackedFloat32Array query,unsigned int nb_result = 1, int64_t included_category = std::numeric_limits<int64_t>::max(), int64_t excluded_category = 0) {
 		ERR_FAIL_COND_V_MSG(query.size() != nb_dimensions, {}, "Query must the same size as nb_dimensions");
 		ERR_FAIL_COND_V_MSG(feature_offset.size() != nb_dimensions, {}, "Feature Offset must the same size as nb_dimensions");
 		ERR_FAIL_COND_V_MSG(feature_scale.size() != nb_dimensions, {}, "Feature Scale must the same size as nb_dimensions");
@@ -478,29 +478,34 @@ public:
 			auto query_data = Kdtree::CoordPoint(query.ptr(), std::next(query.ptr(), kdt->dimension));
 			auto clock_start = std::chrono::system_clock::now();
 			if (included_category == std::numeric_limits<int64_t>::max() && excluded_category == 0)
-				kdt->k_nearest_neighbors(query_data, 1, &re);
+				kdt->k_nearest_neighbors(query_data, nb_result, &re);
 			else {
 				auto pred = Category_Pred(included_category, excluded_category);
-				kdt->k_nearest_neighbors(query_data, 1, &re, &pred);
+				kdt->k_nearest_neighbors(query_data, nb_result, &re, &pred);
 			}
 
 			auto clock_end = std::chrono::system_clock::now();
 
 			float duration = float(std::chrono::duration_cast<std::chrono::microseconds>(clock_end - clock_start).count());
 
-			PackedFloat32Array data_result{};
-			for (auto d : re[0].point) {
-				data_result.append(d);
+			// PackedFloat32Array data_result{};
+			// for (auto d : re[0].point) {
+			// 	data_result.append(d);
+			// }
+
+			TypedArray<Dictionary> results = {};
+
+			for(int i = 0; i < re.size(); ++i)
+			{
+				Dictionary data{};
+				const StringName anim_name = get_animation_list()[db_anim_index[re[i].index]];
+				const float anim_time = db_anim_timestamp[re[i].index];
+
+				data["animation"] = anim_name;
+				data["timestamp"] = std::move(anim_time);
+				// data["data"] = data_result;
+				results.append(data);
 			}
-
-			Dictionary results = {};
-
-			const StringName anim_name = get_animation_list()[db_anim_index[re[0].index]];
-			const float anim_time = db_anim_timestamp[re[0].index];
-
-			results["animation"] = anim_name;
-			results["timestamp"] = std::move(anim_time);
-			results["data"] = data_result;
 
 			return results;
 		}
@@ -667,7 +672,7 @@ protected:
 			ClassDB::bind_method(D_METHOD("bake_data"), &MMAnimationLibrary::bake_data);
 			ClassDB::bind_method(D_METHOD("recalculate_weights"), &MMAnimationLibrary::recalculate_weights);
 			ClassDB::bind_method(D_METHOD("check_query_results", "Query", "Result count"), &MMAnimationLibrary::check_query_results);
-			ClassDB::bind_method(D_METHOD("query_pose", "serialized_query", "include_category", "exclude_category"), &MMAnimationLibrary::query_pose, DEFVAL(std::numeric_limits<int64_t>::max()), DEFVAL(0));
+			ClassDB::bind_method(D_METHOD("query_pose", "serialized_query", "number_result", "include_category", "exclude_category"), &MMAnimationLibrary::query_pose, DEFVAL(1), DEFVAL(std::numeric_limits<int64_t>::max()), DEFVAL(0));
 		}
 		// Internal properties
 		{

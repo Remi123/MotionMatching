@@ -13,13 +13,11 @@
 #include "godot_cpp/variant/vector3.hpp"
 #include <godot_cpp/variant/utility_functions.hpp>
 
-
 #include <godot_cpp/classes/animation.hpp>
 #include <godot_cpp/classes/animation_library.hpp>
 #include <godot_cpp/classes/animation_player.hpp>
 #include <godot_cpp/classes/bone_map.hpp>
 #include <godot_cpp/variant/utility_functions.hpp>
-
 
 #include <godot_cpp/classes/character_body3d.hpp>
 #include <godot_cpp/classes/skeleton3d.hpp>
@@ -296,7 +294,14 @@ struct kform {
 		return out;
 	}
 	kform inverse() const {
-		return *this / kform{};
+		kform out;
+		out.pos = rot.xform_inv(-pos);
+		out.rot = rot.inverse();
+		out.scl = Vector3(1.0f, 1.0f, 1.0f) / scl;
+		out.vel = rot.xform_inv(-vel - ang.cross(rot.xform(out.pos * scl))) - rot.xform(out.pos * scl * svl);
+		out.ang = rot.xform_inv(-ang);
+		out.svl = -svl;
+		return out;
 	}
 };
 

@@ -108,6 +108,12 @@ public:
 		return result;
 	}
 
+	virtual float calculate_cost(PackedFloat32Array query,PackedFloat32Array data) const override{
+		Vector3 v_query = Vector3(query[0],query[1],query[2]);
+		Vector3 v_data = Vector3(data[0],data[1],data[2]);
+		return v_query.distance_to(v_data) * weight;
+	}
+
 	virtual PackedStringArray get_hints() const override {
 		return Array::make("Vx", "Vy", "Vz");
 	}

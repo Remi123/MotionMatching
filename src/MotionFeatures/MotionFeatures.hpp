@@ -85,6 +85,10 @@ public:
 		return result;
 	}
 
+	virtual float calculate_cost(PackedFloat32Array query, PackedFloat32Array data) const{
+		ERR_FAIL_V_MSG(std::numeric_limits<float>::max(),"Method calculate_cost not implemented");
+	}
+
 	virtual void debug_pose_gizmo(Ref<EditorNode3DGizmo> gizmo, const PackedFloat32Array data, godot::Transform3D tr = godot::Transform3D{}) { return; }
 
 	static void _bind_methods() {
@@ -108,12 +112,13 @@ public:
 		// ClassDB::bind_method( D_METHOD("setup_bake_animation","animation"),         &MotionFeature::setup_bake_animation);
 		BIND_VIRTUAL_METHOD(MotionFeature, bake_animation_pose);
 		// ClassDB::bind_method( D_METHOD("bake_animation_pose","animation","time"),   &MotionFeature::bake_animation_pose);
+		BIND_VIRTUAL_METHOD(MotionFeature, calculate_cost);
 
 		BIND_VIRTUAL_METHOD(MotionFeature, debug_pose_gizmo);
 		// ClassDB::bind_method( D_METHOD("debug_pose_gizmo","gizmo","data","root_transform"), &MotionFeature::debug_pose_gizmo);
 	}
 
-	static void embed_variant(Variant &v, PackedFloat32Array &result) {
+	static void serialize_variant(Variant &v, PackedFloat32Array &result) {
 		using namespace godot;
 		if (v.get_type() == Variant::BOOL) {
 			result.append((bool)v);

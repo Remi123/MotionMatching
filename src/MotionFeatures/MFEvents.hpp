@@ -43,7 +43,6 @@ namespace views = std::ranges::views;
 
 struct MMAnimationLibrary;
 
-// Macro setup. Mostly there to simplify writing all those
 #define GETSET(type, variable, ...)            \
 	type variable{ __VA_ARGS__ };              \
 	type get_##variable() { return variable; } \
@@ -54,6 +53,7 @@ struct MMAnimationLibrary;
 	ClassDB::bind_method(D_METHOD(STRING_PREFIX(set_, variable), "value"), &type::set_##variable); \
 	ClassDB::bind_method(D_METHOD(STRING_PREFIX(get_, variable)), &type::get_##variable);          \
 	ADD_PROPERTY(PropertyInfo(variant_type, #variable, __VA_ARGS__), STRING_PREFIX(set_, variable), STRING_PREFIX(get_, variable));
+
 
 using namespace godot;
 
