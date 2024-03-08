@@ -31,7 +31,9 @@
 #include <MMAnimationLibrary.hpp>
 #include <MotionFeatures/MotionFeatures.hpp>
 
+#include <cmath>
 #include <format>
+
 
 using namespace godot;
 using u = godot::UtilityFunctions;
@@ -185,9 +187,7 @@ public:
 			Vector3 pos{};
 			Quaternion rot{};
 			if (t <= end_time) { // The offset can be accessed through the anim data
-				kform post_t =  current_kform.inverse() * kform{
-					animation->position_track_interpolate(root_tracks[0], t), animation->rotation_track_interpolate(root_tracks[1], t)
-				};
+				kform post_t = current_kform.inverse() * kform{ animation->position_track_interpolate(root_tracks[0], t), animation->rotation_track_interpolate(root_tracks[1], t) };
 				future_kform.emplace_back(std::move(post_t));
 			} else { // The offset must be calculated using the end velocity and extrapoling
 				if (animation->get_loop_mode() == Animation::LOOP_LINEAR) {
@@ -232,6 +232,65 @@ public:
 		}
 
 		return result;
+	}
+
+	virtual float calculate_cost(PackedFloat32Array query, PackedFloat32Array data) const override {
+		float cost = 0.0f;
+		const size_t dim_size = use_y_coordinate ? 3 : 2;
+		const size_t past_pos_offset = 0,
+					 fut_pos_offset = past_time_dt.size() * dim_size,
+					 fut_dir_offset = (past_time_dt.size() + future_time_dt.size()) * dim_size;
+
+		std::vector<Vector3> query_past(past_time_dt.size()), data_past(past_time_dt.size());
+		std::vector<Vector3> query_pos_future(future_time_dt.size()), data_pos_future(past_time_dt.size());
+		std::vector<Vector3> query_dir_future(future_time_dt.size()), data_dir_future(past_time_dt.size());
+		// Past Cost
+		const size_t x_offset = 0, y_offset = 1, z_offset = use_y_coordinate ? 2 : 1;
+		for (size_t i = 0; i < past_time_dt.size(); ++i) {
+			query_past[i].x = query[past_pos_offset + i * dim_size + x_offset];
+			if (use_y_coordinate)
+				query_past[i].y = query[past_pos_offset + i * dim_size + y_offset];
+			query_past[i].z = query[past_pos_offset + i * dim_size + z_offset];
+
+			data_past[i].x = data[past_pos_offset + i * dim_size + x_offset];
+			if (use_y_coordinate)
+				data_past[i].y = data[past_pos_offset + i * dim_size + y_offset];
+			data_past[i].z = data[past_pos_offset + i * dim_size + z_offset];
+
+			cost += query_past[i].distance_to(data_past[i]);
+		}
+		// Future Post Cost
+		for (size_t i = 0; i < future_time_dt.size(); ++i) {
+			query_pos_future[i].x = query[fut_pos_offset + i * dim_size + x_offset];
+			if (use_y_coordinate)
+				query_pos_future[i].y = query[fut_pos_offset + i * dim_size + y_offset];
+			query_pos_future[i].z = query[fut_pos_offset + i * dim_size + z_offset];
+
+			data_pos_future[i].x = data[fut_pos_offset + i * dim_size + x_offset];
+			if (use_y_coordinate)
+				data_pos_future[i].y = data[fut_pos_offset + i * dim_size + y_offset];
+			data_pos_future[i].z = data[fut_pos_offset + i * dim_size + z_offset];
+
+			cost += query_pos_future[i].distance_to(data_pos_future[i]);
+		}
+
+		// Future Post Cost
+		for (size_t i = 0; i < future_time_dt.size(); ++i) {
+			query_dir_future[i].x = query[fut_dir_offset + i * dim_size + x_offset];
+			if (use_y_coordinate)
+				query_dir_future[i].y = query[fut_dir_offset + i * dim_size + y_offset];
+			query_dir_future[i].z = query[fut_dir_offset + i * dim_size + z_offset];
+
+			data_dir_future[i].x = data[fut_dir_offset + i * dim_size + x_offset];
+			if (use_y_coordinate)
+				data_dir_future[i].y = data[fut_dir_offset + i * dim_size + y_offset];
+			data_dir_future[i].z = data[fut_dir_offset + i * dim_size + z_offset];
+
+			float dot = query_dir_future[i].dot(data_dir_future[i]);
+			cost += std::fabs(2.0f - (1.0f + dot)) * 0.5f;
+		}
+
+		return cost;
 	}
 
 	GETSET(PackedVector3Array, history_pos)
