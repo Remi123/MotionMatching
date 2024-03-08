@@ -274,7 +274,7 @@ public:
 			cost += query_pos_future[i].distance_to(data_pos_future[i]);
 		}
 
-		// Future Post Cost
+		// Future Dir Cost
 		for (size_t i = 0; i < future_time_dt.size(); ++i) {
 			query_dir_future[i].x = query[fut_dir_offset + i * dim_size + x_offset];
 			if (use_y_coordinate)
