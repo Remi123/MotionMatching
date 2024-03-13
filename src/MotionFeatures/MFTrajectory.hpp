@@ -241,53 +241,57 @@ public:
 					 fut_pos_offset = past_time_dt.size() * dim_size,
 					 fut_dir_offset = (past_time_dt.size() + future_time_dt.size()) * dim_size;
 
-		std::vector<Vector3> query_past(past_time_dt.size()), data_past(past_time_dt.size());
-		std::vector<Vector3> query_pos_future(future_time_dt.size()), data_pos_future(past_time_dt.size());
-		std::vector<Vector3> query_dir_future(future_time_dt.size()), data_dir_future(past_time_dt.size());
+		// std::vector<Vector3> query_past(past_time_dt.size(),Vector3{}), data_past(past_time_dt.size(),Vector3{});
+		// std::vector<Vector3> query_pos_future(future_time_dt.size(),Vector3{}), data_pos_future(past_time_dt.size(),Vector3{});
+		// std::vector<Vector3> query_dir_future(future_time_dt.size(),Vector3{}), data_dir_future(past_time_dt.size(),Vector3{});
 		// Past Cost
 		const size_t x_offset = 0, y_offset = 1, z_offset = use_y_coordinate ? 2 : 1;
-		for (size_t i = 0; i < past_time_dt.size(); ++i) {
-			query_past[i].x = query[past_pos_offset + i * dim_size + x_offset];
+		const size_t past_size = past_time_dt.size();
+		for (size_t i = 0; i < past_size; ++i) {
+			Vector3 query_past{},data_past{};
+			query_past.x = query[past_pos_offset + i * dim_size + x_offset];
 			if (use_y_coordinate)
-				query_past[i].y = query[past_pos_offset + i * dim_size + y_offset];
-			query_past[i].z = query[past_pos_offset + i * dim_size + z_offset];
+				query_past.y = query[past_pos_offset + i * dim_size + y_offset];
+			query_past.z = query[past_pos_offset + i * dim_size + z_offset];
 
-			data_past[i].x = data[past_pos_offset + i * dim_size + x_offset];
+			data_past.x = data[past_pos_offset + i * dim_size + x_offset];
 			if (use_y_coordinate)
-				data_past[i].y = data[past_pos_offset + i * dim_size + y_offset];
-			data_past[i].z = data[past_pos_offset + i * dim_size + z_offset];
+				data_past.y = data[past_pos_offset + i * dim_size + y_offset];
+			data_past.z = data[past_pos_offset + i * dim_size + z_offset];
 
-			cost += query_past[i].distance_to(data_past[i]);
+			cost += query_past.distance_to(data_past) * weight_history_pos;
 		}
 		// Future Post Cost
 		for (size_t i = 0; i < future_time_dt.size(); ++i) {
-			query_pos_future[i].x = query[fut_pos_offset + i * dim_size + x_offset];
+			Vector3 query_pos_future{},data_pos_future{};
+			query_pos_future.x = query[fut_pos_offset + i * dim_size + x_offset];
 			if (use_y_coordinate)
-				query_pos_future[i].y = query[fut_pos_offset + i * dim_size + y_offset];
-			query_pos_future[i].z = query[fut_pos_offset + i * dim_size + z_offset];
+				query_pos_future.y = query[fut_pos_offset + i * dim_size + y_offset];
+			query_pos_future.z = query[fut_pos_offset + i * dim_size + z_offset];
 
-			data_pos_future[i].x = data[fut_pos_offset + i * dim_size + x_offset];
+			data_pos_future.x = data[fut_pos_offset + i * dim_size + x_offset];
 			if (use_y_coordinate)
-				data_pos_future[i].y = data[fut_pos_offset + i * dim_size + y_offset];
-			data_pos_future[i].z = data[fut_pos_offset + i * dim_size + z_offset];
+				data_pos_future.y = data[fut_pos_offset + i * dim_size + y_offset];
+			data_pos_future.z = data[fut_pos_offset + i * dim_size + z_offset];
 
-			cost += query_pos_future[i].distance_to(data_pos_future[i]);
+			cost += query_pos_future.distance_to(data_pos_future) * weight_prediction_pos;
 		}
 
 		// Future Dir Cost
 		for (size_t i = 0; i < future_time_dt.size(); ++i) {
-			query_dir_future[i].x = query[fut_dir_offset + i * dim_size + x_offset];
+			Vector3 query_dir_future{},data_dir_future{};
+			query_dir_future.x = query[fut_dir_offset + i * dim_size + x_offset];
 			if (use_y_coordinate)
-				query_dir_future[i].y = query[fut_dir_offset + i * dim_size + y_offset];
-			query_dir_future[i].z = query[fut_dir_offset + i * dim_size + z_offset];
+				query_dir_future.y = query[fut_dir_offset + i * dim_size + y_offset];
+			query_dir_future.z = query[fut_dir_offset + i * dim_size + z_offset];
 
-			data_dir_future[i].x = data[fut_dir_offset + i * dim_size + x_offset];
+			data_dir_future.x = data[fut_dir_offset + i * dim_size + x_offset];
 			if (use_y_coordinate)
-				data_dir_future[i].y = data[fut_dir_offset + i * dim_size + y_offset];
-			data_dir_future[i].z = data[fut_dir_offset + i * dim_size + z_offset];
+				data_dir_future.y = data[fut_dir_offset + i * dim_size + y_offset];
+			data_dir_future.z = data[fut_dir_offset + i * dim_size + z_offset];
 
-			float dot = query_dir_future[i].dot(data_dir_future[i]);
-			cost += std::fabs(2.0f - (1.0f + dot)) * 0.5f;
+			float dot = query_dir_future.dot(data_dir_future);
+			cost += std::fabs(2.0f - (1.0f + dot)) * 0.5f * weight_prediction_angle;
 		}
 
 		return cost;
@@ -413,6 +417,8 @@ protected:
 		ClassDB::bind_method(D_METHOD("setup_bake_animation", "animation"), &MFTrajectory::setup_bake_animation);
 
 		ClassDB::bind_method(D_METHOD("bake_animation_pose", "animation", "time"), &MFTrajectory::bake_animation_pose);
+
+		ClassDB::bind_method(D_METHOD("calculate_cost", "query", "data"), &MFTrajectory::calculate_cost);
 
 		ClassDB::bind_method(D_METHOD("debug_pose_gizmo", "gizmo", "data", "root_transform"), &MFTrajectory::debug_pose_gizmo);
 	}

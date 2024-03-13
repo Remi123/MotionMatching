@@ -94,9 +94,14 @@ public:
 			auto bone_path = u::str(_skel_path) + u::str(":") + bone_names[index];
 			auto bone = bone_names[index];
 
-			// kbone = MMAnimationLibrary::sample_bone_rootmotion_kform(animation, time, _skel, path);
 			kbone = _get_bone_kform_global(bone, animation, time);
-			kbone = _get_bone_kform_global(relative_to_bone, animation, time).inverse() * kbone;
+			// if(relative_to_bone != _skel->get_root_bone())
+			// {
+			// 	kbone = _get_bone_kform_global(relative_to_bone, animation, time).inverse() * kbone;
+			// }
+
+
+
 
 			// Serialize
 			// if (bone_info_type == PositionAndVelocity && use_inertialization)
@@ -139,14 +144,14 @@ private:
 		std::vector<kform> trs{};
 		do {
 			trs.emplace_back(kform{ _skel, u::str(_skel_path) + u::str(":") + bone, animation, time });
-			// if (bone == _skel->get_root_bone() || bone == relative_to_bone) {
 			if (bone == _skel->get_root_bone()) {
+				kform& root = trs.back();
+				root.vel = root.rot.xform_inv(root.vel);
+				root.pos = Vector3{};
+				root.rot = Quaternion(); 
 				break;
 			}
 			bone = _skel->get_bone_parent(_skel->find_bone(bone)); // Now bone is its parent
-			// if (bone == relative_to_bone) {
-			// 	break;
-			// }
 		} while (!bone.is_empty());
 
 		return std::reduce(trs.rbegin(), trs.rend(), kform{},
@@ -324,13 +329,11 @@ public:
 		// }
 		// else
 		{
-			// result.resize(bone_names.size() * 3 * std::bitset<10>(bone_info_type).count());
 			for (size_t i = 0; i < bone_names.size(); ++i) {
 				String bone = bone_names[i];
 
-				kform kbone = _get_bone_kform_global(mm_player->bones_kform, bone);
-				if (bone != relative_to_bone)
-					kbone = _get_bone_kform_global(mm_player->bones_kform, relative_to_bone).inverse() * kbone;
+				kform kbone;// = _get_bone_kform_global(mm_player->bones_model, bone);
+				kbone = mm_player->bones_model[_skel->find_bone(bone)];
 				Vector3 const pos = kbone.pos, vel = kbone.vel, dir = kbone.rot.xform(Vector3(0, 0, 1)), ang = kbone.ang;
 
 				if (bone_info_type.test(Position)) {
@@ -471,6 +474,8 @@ protected:
 
 		ClassDB::bind_method(D_METHOD("setup_bake_animation", "animation"), &MFBonesInfo::setup_bake_animation);
 		ClassDB::bind_method(D_METHOD("bake_animation_pose", "animation", "time"), &MFBonesInfo::bake_animation_pose);
+
+		ClassDB::bind_method(D_METHOD("calculate_cost", "query", "data"), &MFBonesInfo::calculate_cost);
 
 		ClassDB::bind_method(D_METHOD("debug_pose_gizmo", "gizmo", "data", "root_transform"), &MFBonesInfo::debug_pose_gizmo);
 	}

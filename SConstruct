@@ -51,7 +51,7 @@ if env.get("is_msvc", False):
     wtmp = wtmp.replace("/std:c++17","/std:c++20")
     env.Replace(CXXFLAGS = wtmp)
 else:
-    env["CXXFLAGS"].replace("-std=c++17","-std=c++20")
+    env["CXXFLAGS"].Replace("-std=c++17","-std=c++20")
 
 sources = []
 for root,dirnames,filenames in os.walk("./src/"):

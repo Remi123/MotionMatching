@@ -147,6 +147,8 @@ protected:
 
 		ClassDB::bind_method(D_METHOD("bake_animation_pose", "animation", "time"), &MFRootVelocity::bake_animation_pose);
 
+		ClassDB::bind_method(D_METHOD("calculate_cost", "query", "data"), &MFRootVelocity::calculate_cost);
+
 		ClassDB::bind_method(D_METHOD("debug_pose_gizmo", "gizmo", "data", "root_transform"), &MFRootVelocity::debug_pose_gizmo);
 	}
 

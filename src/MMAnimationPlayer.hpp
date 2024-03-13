@@ -64,7 +64,8 @@ public:
 	GETSET(Motion_Tags, motion_tag);
 	GETSET(TypedArray<Transform3D>, transforms_queue);
 
-	kforms bones_kform{ 0 }, bones_offset{ 0 };
+	kforms bones_local{ 0 }, bones_offset{ 0 }, bones_model{ 0 };
+	PackedInt32Array bone_parent{};
 
 	float default_halflife = 0.1f;
 	GETSET(float, halflife, 0.1f);
@@ -89,6 +90,15 @@ public:
 		_skeleton = get_node<Skeleton3D>(NodePath(skeleton_path));
 		ERR_FAIL_NULL(_skeleton);
 
+		bone_parent.resize(_skeleton->get_bone_count());
+		bone_parent.fill(-1);
+
+		bones_model.reserve(_skeleton->get_bone_count());
+
+		for (auto i = 0; i < _skeleton->get_bone_count(); ++i) {
+			bone_parent[i] = _skeleton->get_bone_parent(i);
+		}
+
 		_skeleton->reset_bone_poses();
 		inertialize_reset();
 		root_bone_id = _skeleton->find_bone(get_root_motion_track().get_concatenated_subnames());
@@ -102,13 +112,13 @@ public:
 		}
 
 		const auto bone_count = _skeleton->get_bone_count();
-		bones_kform.reserve(bone_count);
+		bones_local.reserve(bone_count);
 		bones_offset.reserve(bone_count);
 		for (int b = 0; b < bone_count; ++b) {
-			bones_kform.reset(b);
-			bones_kform.pos[b] = _skeleton->get_bone_pose_position(b);
-			bones_kform.rot[b] = _skeleton->get_bone_pose_rotation(b);
-			bones_kform.scl[b] = _skeleton->get_bone_pose_scale(b);
+			bones_local.reset(b);
+			bones_local.pos[b] = _skeleton->get_bone_pose_position(b);
+			bones_local.rot[b] = _skeleton->get_bone_pose_rotation(b);
+			bones_local.scl[b] = _skeleton->get_bone_pose_scale(b);
 
 			bones_offset.reset(b);
 		}
@@ -132,7 +142,7 @@ public:
 		auto p_animation = get_animation(p_animation_name);
 
 		ERR_FAIL_NULL_V(p_animation, false);
-		bones_kform.reserve(_skeleton->get_bone_count());
+		bones_local.reserve(_skeleton->get_bone_count());
 		bones_offset.reserve(_skeleton->get_bone_count());
 
 		if (new_halflife > 0.0f) {
@@ -157,16 +167,16 @@ public:
 			auto track_rot = p_animation->find_track(bone_path, Animation::TrackType::TYPE_ROTATION_3D);
 
 			//POSITION 3D
-			Vector3 desired_position = bones_kform.pos[bone_id], // _skeleton->get_bone_pose_position(bone_id),
-					desired_linear_vel = bones_kform.vel[bone_id]; // Vector3();
+			Vector3 desired_position = bones_local.pos[bone_id], // _skeleton->get_bone_pose_position(bone_id),
+					desired_linear_vel = bones_local.vel[bone_id]; // Vector3();
 			if (track_pos != -1) {
 				desired_position = p_animation->position_track_interpolate(track_pos, p_time) * motion_scale;
 				desired_linear_vel = ((p_animation->position_track_interpolate(track_pos, future_time) * motion_scale) - desired_position) / abs(future_time - p_time);
 			}
 
 			//ROTATION 3D
-			Quaternion desired_rotation = bones_kform.rot[bone_id]; //_skeleton->get_bone_pose_rotation(bone_id);
-			Vector3 desired_angular_vel = bones_kform.ang[bone_id]; //Vector3{};
+			Quaternion desired_rotation = bones_local.rot[bone_id]; //_skeleton->get_bone_pose_rotation(bone_id);
+			Vector3 desired_angular_vel = bones_local.ang[bone_id]; //Vector3{};
 			if (track_rot != -1) {
 				desired_rotation = p_animation->rotation_track_interpolate(track_rot, p_time).normalized();
 				Quaternion r1 = p_animation->rotation_track_interpolate(track_rot, future_time).normalized();
@@ -185,10 +195,10 @@ public:
 
 			// Offset are calculated Between current pos of the bone and the desired pose
 			Spring::inertialize_transition(bones_offset.pos[bone_id], bones_offset.vel[bone_id],
-					bones_kform.pos[bone_id], bones_kform.vel[bone_id],
+					bones_local.pos[bone_id], bones_local.vel[bone_id],
 					desired_position, desired_linear_vel);
 			Spring::inertialize_transition(bones_offset.rot[bone_id], bones_offset.ang[bone_id], // Offset are calculated...
-					bones_kform.rot[bone_id], bones_kform.ang[bone_id], // Between current rot of the bone...
+					bones_local.rot[bone_id], bones_local.ang[bone_id], // Between current rot of the bone...
 					desired_rotation, desired_angular_vel); // and the desired pose
 		}
 
@@ -235,7 +245,7 @@ public:
 			if (get_current_animation().is_empty()) {
 				animation = get_animation(last_anim);
 
-				desired = bones_kform[bone_id];
+				desired = bones_local[bone_id];
 
 				const Transform3D bone_rest = _skeleton->get_bone_rest(bone_id).scaled_local(Vector3(1, 1, 1) * motion_scale);
 				const String bone_path = u::str(skeleton_path) + String(":") + _skeleton->get_bone_name(bone_id);
@@ -255,9 +265,9 @@ public:
 				}
 
 				Spring::_simple_spring_damper_exact(
-						bones_kform.pos[bone_id], bones_kform.vel[bone_id], desired.pos, halflife, _delta);
+						bones_local.pos[bone_id], bones_local.vel[bone_id], desired.pos, halflife, _delta);
 				Spring::_simple_spring_damper_exact(
-						bones_kform.rot[bone_id], bones_kform.ang[bone_id], desired.rot, halflife, _delta);
+						bones_local.rot[bone_id], bones_local.ang[bone_id], desired.rot, halflife, _delta);
 				Spring::_decay_spring_damper_exact(
 						bones_offset.pos[bone_id], bones_offset.vel[bone_id],
 						halflife, _delta);
@@ -288,21 +298,46 @@ public:
 					desired.rot = Quaternion();
 				}
 				Spring::inertialize_update(
-						bones_kform.pos[bone_id], bones_kform.vel[bone_id], // Current pos of the bone
+						bones_local.pos[bone_id], bones_local.vel[bone_id], // Current pos of the bone
 						bones_offset.pos[bone_id], bones_offset.vel[bone_id], // Current Offset pos, get reduced every frame
 						desired.pos, desired.vel, // Desired position from the animation
 						halflife, // Stats on how the offset decay
 						_delta * get_speed_scale()); // delta time between frames
 				Spring::inertialize_update(
-						bones_kform.rot[bone_id], bones_kform.ang[bone_id], // Current rot of the bone
+						bones_local.rot[bone_id], bones_local.ang[bone_id], // Current rot of the bone
 						bones_offset.rot[bone_id], bones_offset.ang[bone_id], // Current Offset rot, get reduced every frame
 						desired.rot, desired.ang, // Desired rotation from the animation
 						halflife, // Stats on how the offset decay
 						_delta * get_speed_scale()); // delta time between frames
 			}
 
-			_skeleton->set_bone_pose_position(bone_id, bones_kform.pos[bone_id]);
-			_skeleton->set_bone_pose_rotation(bone_id, bones_kform.rot[bone_id]);
+			if (bone_id == root_bone_id) {
+				_skeleton->set_bone_pose_position(root_bone_id, Vector3{});
+				_skeleton->set_bone_pose_rotation(root_bone_id, Quaternion{});
+			} else {
+				_skeleton->set_bone_pose_position(bone_id, bones_local.pos[bone_id]);
+				_skeleton->set_bone_pose_rotation(bone_id, bones_local.rot[bone_id]);
+			}
+		}
+
+		for (auto i = 0; i < bone_parent.size(); ++i) {
+			if (bone_parent[i] == -1) {
+				bones_model.pos[i] = bones_local.pos[i];
+				bones_model.vel[i] = bones_local.vel[i];
+				bones_model.rot[i] = bones_local.rot[i];
+				bones_model.ang[i] = bones_local.ang[i];
+				bones_model.scl[i] = bones_local.scl[i];
+				bones_model.svl[i] = bones_local.svl[i];
+			} else {
+				kform parent = bones_model[bone_parent[i]];
+				kform result = parent * bones_local[i];
+				bones_model.pos[i] = result.pos;
+				bones_model.vel[i] = result.vel;
+				bones_model.rot[i] = result.rot;
+				bones_model.ang[i] = result.ang;
+				bones_model.scl[i] = result.scl;
+				bones_model.svl[i] = result.svl;
+			}
 		}
 	}
 
@@ -310,7 +345,7 @@ public:
 		ERR_FAIL_COND_V(_skeleton == nullptr, {});
 		auto id = _skeleton->find_bone(bone_name);
 		ERR_FAIL_COND_V_MSG(id == -1, {}, "Bone " + bone_name + " doesn't exist in skeleton");
-		const auto kin = bones_kform[id];
+		const auto kin = bones_local[id];
 		Dictionary result = Dictionary{};
 		result["position"] = kin.pos;
 		result["linear_vel"] = kin.vel;
@@ -333,7 +368,7 @@ public:
 		const auto motion_scale = _skeleton->get_motion_scale();
 		return std::accumulate(parents_id.rbegin(), parents_id.rend(), kform{},
 				[this, motion_scale](const kform &acc, int i) {
-					auto info = bones_kform[i];
+					auto info = bones_local[i];
 					//    info.pos *= motion_scale;
 					return acc * info;
 				});
@@ -355,7 +390,7 @@ public:
 		const auto motion_scale = _skeleton->get_motion_scale();
 		return std::accumulate(parents_id.rbegin(), parents_id.rend(), kform{},
 				[this, motion_scale](const kform &acc, int i) {
-					auto info = bones_kform[i];
+					auto info = bones_local[i];
 					//    info.pos *= motion_scale;
 					return acc * info;
 				});
@@ -366,12 +401,16 @@ public:
 		auto id = _skeleton->find_bone(bone_name);
 		ERR_FAIL_COND_V_MSG(id == -1, {}, "Bone " + bone_name + " doesn't exist in skeleton");
 		if (space == kform::Space::Local) {
-			return bones_kform[id];
+			return bones_local[id];
 		} else if (space == kform::Space::Global) {
 			return get_bone_global_kform(id);
 		} else if (space == kform::Space::RootMotion) {
 			kform global = get_bone_global_kform(id);
-			return bones_kform[root_bone_id] / global;
+			// kform root = bones_kform[root_bone_id];
+			// global.vel -= root.vel;
+			return global;
+
+			return bones_local[root_bone_id].inverse() * global;
 		} else if (space == kform::Space::Model) {
 			return get_bone_model_kform(id);
 		}
@@ -398,7 +437,20 @@ public:
 		ERR_FAIL_COND_V(_skeleton == nullptr, {});
 		auto id = _skeleton->find_bone(bone_name);
 		ERR_FAIL_COND_V_MSG(id == -1, {}, "Bone " + bone_name + " doesn't exist in skeleton");
-		kform global = get_bone_info(bone_name, kform::Space::Model);
+		// kform global = get_bone_info(bone_name, kform::Space::RootMotion);
+		if (id == root_bone_id) {
+			Dictionary result = Dictionary{};
+			kform global = bones_local[root_bone_id];
+			result["position"] = global.pos;
+			result["linear_vel"] = global.vel;
+			result["rotation"] = global.rot;
+			result["angular_vel"] = global.ang;
+			result["scale"] = global.scl;
+			result["scalar_vel"] = global.svl;
+			return result;
+		}
+
+		kform global = bones_model[id];
 
 		Dictionary result = Dictionary{};
 		result["position"] = global.pos;
@@ -414,13 +466,13 @@ public:
 		if (root_bone_id < 0) {
 			return {};
 		}
-		return bones_kform.vel[root_bone_id] * get_speed_scale();
+		return bones_local.vel[root_bone_id] * get_speed_scale();
 	}
 	Quaternion get_root_motion_angular(float delta) {
 		if (root_bone_id < 0) {
 			return {};
 		}
-		return Spring::quat_from_scaled_angle_axis(bones_kform.ang[root_bone_id] * delta * get_playing_speed());
+		return Spring::quat_from_scaled_angle_axis(bones_local.ang[root_bone_id] * delta * get_playing_speed());
 	}
 
 protected:
@@ -435,6 +487,7 @@ protected:
 
 		ClassDB::bind_method(D_METHOD("_on_anim_finish", "anim"), &MMAnimationPlayer::_on_anim_finish);
 
+		ClassDB::bind_method(D_METHOD("inertialize_reset", "reset_bones"), &MMAnimationPlayer::inertialize_reset, DEFVAL(false));
 		ClassDB::bind_method(D_METHOD("request_animation", "animation", "timestamp", "new_halflife"), &MMAnimationPlayer::request_animation, (0.0f), (-1.0f));
 		ClassDB::bind_method(D_METHOD("request_pose", "animation", "timestamp", "new_halflife"), &MMAnimationPlayer::request_pose, (0.0f), (-1.0f));
 

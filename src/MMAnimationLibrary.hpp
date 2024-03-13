@@ -12,7 +12,6 @@
 #include <godot_cpp/templates/hash_map.hpp>
 #include <godot_cpp/templates/vector.hpp>
 
-
 #include <godot_cpp/classes/v_box_container.hpp>
 
 #include <godot_cpp/classes/animation.hpp>
@@ -35,7 +34,6 @@
 #include "MotionFeatures/MotionFeatures.hpp"
 #include "kdtree-cpp/kdtree.hpp"
 #include <AnimTags/AnimTag.hpp>
-
 
 #include <KForm.hpp>
 #include <boost/accumulators/accumulators.hpp>
@@ -459,7 +457,7 @@ public:
 		}
 	};
 
-	TypedArray<Dictionary> query_pose(PackedFloat32Array query,unsigned int nb_result = 1, int64_t included_category = std::numeric_limits<int64_t>::max(), int64_t excluded_category = 0) {
+	TypedArray<Dictionary> query_pose(PackedFloat32Array query, unsigned int nb_result = 1, int64_t included_category = std::numeric_limits<int64_t>::max(), int64_t excluded_category = 0) {
 		ERR_FAIL_COND_V_MSG(query.size() != nb_dimensions, {}, "Query must the same size as nb_dimensions");
 		ERR_FAIL_COND_V_MSG(feature_offset.size() != nb_dimensions, {}, "Feature Offset must the same size as nb_dimensions");
 		ERR_FAIL_COND_V_MSG(feature_scale.size() != nb_dimensions, {}, "Feature Scale must the same size as nb_dimensions");
@@ -488,22 +486,25 @@ public:
 
 			float duration = float(std::chrono::duration_cast<std::chrono::microseconds>(clock_end - clock_start).count());
 
-			// PackedFloat32Array data_result{};
-			// for (auto d : re[0].point) {
-			// 	data_result.append(d);
-			// }
-
 			TypedArray<Dictionary> results = {};
 
-			for(int i = 0; i < re.size(); ++i)
-			{
+			for (int i = 0; i < re.size(); ++i) {
 				Dictionary data{};
 				const StringName anim_name = get_animation_list()[db_anim_index[re[i].index]];
 				const float anim_time = db_anim_timestamp[re[i].index];
-
+				PackedFloat32Array data_result{};
+				for (auto d : re[i].point) {
+					data_result.append(d);
+				}
+				for(auto i = 0; i < data_result.size();++i)
+				{
+					data_result[i] *= feature_scale[i];
+					data_result[i] += feature_offset[i];
+				}
+				data["index"] = re[i].index;
 				data["animation"] = anim_name;
 				data["timestamp"] = std::move(anim_time);
-				// data["data"] = data_result;
+				data["data"] = data_result;
 				results.append(data);
 			}
 
