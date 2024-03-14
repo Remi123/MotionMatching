@@ -247,12 +247,19 @@ public:
 		std::vector<accumulator_set<float, acc_stats>> data_stats(nb_dimensions, default_acc);
 
 		u::prints("Starting animation baking...");
-
+		Rng_Start.resize(anim_names.size());
+		Rng_Start.fill(-1);
+		Rng_Stop.resize(anim_names.size());
+		Rng_Stop.fill(-1);
+		size_t range_counter = 0;
 		for (auto anim_index = 0; anim_index < anim_names.size(); ++anim_index) {
 			auto clock_start = std::chrono::system_clock::now();
 
 			auto anim_name = anim_names[anim_index];
 			auto animation = get_animation(anim_name);
+
+			Rng_Start[anim_index] = range_counter;
+			Rng_Stop[anim_index] = range_counter;
 
 			auto current_tags = std::vector<TagInfo *>{};
 			for (size_t i = 0; i < tags.size(); i++) {
@@ -326,6 +333,8 @@ public:
 				db_anim_category.append(tmp_category_value);
 
 				++counter;
+				Rng_Stop[anim_index] = range_counter;
+				++range_counter;
 			}
 			auto clock_end = std::chrono::system_clock::now();
 			float duration = float(std::chrono::duration_cast<std::chrono::milliseconds>(clock_end - clock_start).count());
@@ -392,6 +401,8 @@ public:
 			weights.resize(nb_dimensions);
 		}
 
+		build_bounds();
+
 		u::prints("Finished All Animations");
 		u::prints("NbDim", nb_dimensions, "NbPoses:", data.size() / nb_dimensions, "Size", data.size());
 		WARN_PRINT_ED("MMAnimationLibrary " + get_name() + " bake operation is finished");
@@ -412,6 +423,176 @@ public:
 		weights = tmp_weight;
 		u::prints("New Weights Values:", weights);
 	}
+
+	/// AABB
+	GETSET(PackedInt32Array, Rng_Start);
+	GETSET(PackedInt32Array, Rng_Stop);
+	GETSET(PackedFloat32Array, SM_MIN);
+	GETSET(PackedFloat32Array, SM_MAX);
+	GETSET(PackedFloat32Array, LR_MIN);
+	GETSET(PackedFloat32Array, LR_MAX);
+	GETSET(int, BOUND_SM_SIZE);
+	GETSET(int, BOUND_LR_SIZE);
+
+	// TODO : Weight are embedded into the normalization process.
+	void build_bounds() {
+		// Compute array size
+		const size_t nframe = MotionData.size() / nb_dimensions;
+		const size_t nbound_sm = ((nframe + BOUND_SM_SIZE - 1) / BOUND_SM_SIZE);
+		const size_t nbound_lr = ((nframe + BOUND_LR_SIZE - 1) / BOUND_LR_SIZE);
+		SM_MAX.resize(nbound_sm * nb_dimensions);
+		SM_MAX.fill(std::numeric_limits<float>::max());
+		SM_MIN.resize(nbound_sm * nb_dimensions);
+		SM_MIN.fill(std::numeric_limits<float>::min());
+		LR_MAX.resize(nbound_lr * nb_dimensions);
+		LR_MAX.fill(std::numeric_limits<float>::max());
+		LR_MIN.resize(nbound_lr * nb_dimensions);
+		LR_MIN.fill(std::numeric_limits<float>::min());
+
+		for (size_t i = 0; i < nframe; ++i) {
+			int i_sm = i / BOUND_SM_SIZE;
+			int i_lr = i / BOUND_LR_SIZE;
+			for (size_t j = 0; j < nb_dimensions; ++j) {
+				const size_t small_index = i_sm * nb_dimensions + j;
+				const size_t large_index = i_lr * nb_dimensions + j;
+				const size_t db_index = i * nb_dimensions + j;
+				SM_MIN[small_index] = fminf(SM_MIN[small_index], MotionData[db_index]);
+				SM_MAX[small_index] = fmaxf(SM_MAX[small_index], MotionData[db_index]);
+				LR_MIN[large_index] = fminf(LR_MIN[large_index], MotionData[db_index]);
+				LR_MAX[large_index] = fmaxf(LR_MAX[large_index], MotionData[db_index]);
+			}
+		}
+	}
+
+	static inline float squaref(float x) {
+		return x * x;
+	}
+	static inline float clampf(float x, float min, float max) {
+		return x > max ? max : x < min ? min
+									   : x;
+	}
+
+	// TODO : The categories need to be supported.
+	// Boxes could contains all the categories inside. This help with included
+	// excluded could be finicky.
+	TypedArray<Dictionary> query_pose_aabb(PackedFloat32Array query, int best_index = -1, int64_t included_category = std::numeric_limits<int64_t>::max(), int64_t excluded_category = 0) {
+		constexpr size_t ignore_range_end = 20, ignore_surrounding = 20;
+		constexpr float transition_cost = 0.0f;
+		size_t nfeatures = nb_dimensions;
+		size_t nranges = Rng_Start.size();
+		float best_cost = 0.0f;
+		int curr_index = best_index;
+
+		for (size_t i = 0; i < means.size(); ++i) {
+			query[i] = (query[i] - feature_offset[i]) / feature_scale[i];
+		}
+
+		auto query_normalized = [&query](size_t i) { return query[i]; };
+		auto features = [&](size_t i, size_t j) { return MotionData[i * nb_dimensions + j]; };
+		auto range_starts = [&](size_t i) { return Rng_Start[i]; };
+		auto range_stops = [&](size_t i) { return Rng_Stop[i]; };
+		auto bound_lr_min = [&](size_t i, size_t j) { return LR_MIN[i * nb_dimensions + j]; };
+		auto bound_lr_max = [&](size_t i, size_t j) { return LR_MAX[i * nb_dimensions + j]; };
+		auto bound_sm_min = [&](size_t i, size_t j) { return SM_MIN[i * nb_dimensions + j]; };
+		auto bound_sm_max = [&](size_t i, size_t j) { return SM_MAX[i * nb_dimensions + j]; };
+
+		if (best_index != -1) {
+			best_cost = 0.0;
+			for (int i = 0; i < nfeatures; i++) {
+				best_cost += squaref(query_normalized(i) - features(best_index, i));
+			}
+		}
+
+		float curr_cost = 0.0f;
+
+		// Search rest of database
+		for (int r = 0; r < nranges; r++) {
+			// Exclude end of ranges from search
+			int i = range_starts(r);
+			int range_end = range_stops(r) - ignore_range_end;
+
+			while (i < range_end) {
+				// Find index of current and next large box
+				int i_lr = i / BOUND_LR_SIZE;
+				int i_lr_next = (i_lr + 1) * BOUND_LR_SIZE;
+
+				// Find distance to box
+				curr_cost = transition_cost;
+				for (int j = 0; j < nfeatures; j++) {
+					curr_cost += squaref(query_normalized(j) - clampf(query_normalized(j), bound_lr_min(i_lr, j), bound_lr_max(i_lr, j)));
+
+					if (curr_cost >= best_cost) {
+						break;
+					}
+				}
+
+				// If distance is greater than current best jump to next box
+				if (curr_cost >= best_cost) {
+					i = i_lr_next;
+					continue;
+				}
+
+				// Check against small box
+				while (i < i_lr_next && i < range_end) {
+					// Find index of current and next small box
+					int i_sm = i / BOUND_SM_SIZE;
+					int i_sm_next = (i_sm + 1) * BOUND_SM_SIZE;
+
+					// Find distance to box
+					curr_cost = transition_cost;
+					for (int j = 0; j < nfeatures; j++) {
+						curr_cost += squaref(query_normalized(j) - clampf(query_normalized(j), bound_sm_min(i_sm, j), bound_sm_max(i_sm, j)));
+
+						if (curr_cost >= best_cost) {
+							break;
+						}
+					}
+
+					// If distance is greater than current best jump to next box
+					if (curr_cost >= best_cost) {
+						i = i_sm_next;
+						continue;
+					}
+
+					// Search inside small box
+					while (i < i_sm_next && i < range_end) {
+						// Skip surrounding frames
+						if (curr_index != -1 && abs(i - curr_index) < ignore_surrounding) {
+							i++;
+							continue;
+						}
+
+						// Check against each frame inside small box
+						curr_cost = transition_cost;
+						for (int j = 0; j < nfeatures; j++) {
+							curr_cost += squaref(query_normalized(j) - features(i, j));
+							if (curr_cost >= best_cost) {
+								break;
+							}
+						}
+
+						// If cost is lower than current best then update best
+						if (curr_cost < best_cost) {
+							best_index = i;
+							best_cost = curr_cost;
+						}
+
+						i++;
+					}
+				}
+			}
+		}
+		TypedArray<Dictionary> result{};
+		Dictionary data{};
+		const StringName anim_name = get_animation_list()[db_anim_index[best_index]];
+		const float anim_time = db_anim_timestamp[best_index];
+		data["index"] = best_index;
+		data["animation"] = anim_name;
+		data["timestamp"] = std::move(anim_time);
+		result.append(data);
+		return result;
+	}
+	/// AABB
 
 	// Bypass the feature query, and ask directly which poses is the most similar.
 	// The query must be of the correct dimension.
@@ -496,8 +677,7 @@ public:
 				for (auto d : re[i].point) {
 					data_result.append(d);
 				}
-				for(auto i = 0; i < data_result.size();++i)
-				{
+				for (auto i = 0; i < data_result.size(); ++i) {
 					data_result[i] *= feature_scale[i];
 					data_result[i] += feature_offset[i];
 				}
@@ -674,6 +854,7 @@ protected:
 			ClassDB::bind_method(D_METHOD("recalculate_weights"), &MMAnimationLibrary::recalculate_weights);
 			ClassDB::bind_method(D_METHOD("check_query_results", "Query", "Result count"), &MMAnimationLibrary::check_query_results);
 			ClassDB::bind_method(D_METHOD("query_pose", "serialized_query", "number_result", "include_category", "exclude_category"), &MMAnimationLibrary::query_pose, DEFVAL(1), DEFVAL(std::numeric_limits<int64_t>::max()), DEFVAL(0));
+			ClassDB::bind_method(D_METHOD("query_pose_aabb", "serialized_query", "best_index", "include_category", "exclude_category"), &MMAnimationLibrary::query_pose_aabb, DEFVAL(-1), DEFVAL(std::numeric_limits<int64_t>::max()), DEFVAL(0));
 		}
 		// Internal properties
 		{
@@ -704,7 +885,7 @@ protected:
 		{
 			ClassDB::bind_method(D_METHOD("set_time_interval", "value"), &MMAnimationLibrary::set_time_interval, DEFVAL(0.016f));
 			ClassDB::bind_method(D_METHOD("get_time_interval"), &MMAnimationLibrary::get_time_interval);
-			godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT, "time_interval"), "set_time_interval", "get_time_interval");
+			godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT, "time_interval", PROPERTY_HINT_RANGE, "0.016, 1, 0.016, or_greater"), "set_time_interval", "get_time_interval");
 
 			ClassDB::bind_method(D_METHOD("set_skeleton_path", "value"), &MMAnimationLibrary::set_skeleton_path);
 			ClassDB::bind_method(D_METHOD("get_skeleton_path"), &MMAnimationLibrary::get_skeleton_path);
@@ -733,14 +914,11 @@ protected:
 			ClassDB::bind_method(D_METHOD("get_motion_features"), &MMAnimationLibrary::get_motion_features);
 			godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::ARRAY, "motion_features", godot::PROPERTY_HINT_TYPE_STRING, u::str(Variant::OBJECT) + '/' + u::str(Variant::BASIS) + ":MotionFeature", PROPERTY_USAGE_DEFAULT), "set_motion_features", "get_motion_features");
 		}
-		ClassDB::add_property_group(get_class_static(), "Data & KdTree params", "");
+		ClassDB::add_property_group(get_class_static(), "Database", "");
 		{
 			ClassDB::bind_method(D_METHOD("set_MotionData", "value"), &MMAnimationLibrary::set_MotionData);
 			ClassDB::bind_method(D_METHOD("get_MotionData"), &MMAnimationLibrary::get_MotionData);
 			godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "MotionData"), "set_MotionData", "get_MotionData");
-			ClassDB::bind_method(D_METHOD("set_distance_type", "value"), &MMAnimationLibrary::set_distance_type);
-			ClassDB::bind_method(D_METHOD("get_distance_type"), &MMAnimationLibrary::get_distance_type);
-			godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::INT, "distance_type", PROPERTY_HINT_ENUM, "Manhattan:1,EuclidianSquared:2,Maximum:0"), "set_distance_type", "get_distance_type");
 			ClassDB::bind_method(D_METHOD("set_weights", "value"), &MMAnimationLibrary::set_weights);
 			ClassDB::bind_method(D_METHOD("get_weights"), &MMAnimationLibrary::get_weights);
 			godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "weights"), "set_weights", "get_weights");
@@ -751,6 +929,41 @@ protected:
 			ClassDB::bind_method(D_METHOD("set_feature_scale", "value"), &MMAnimationLibrary::set_feature_scale);
 			ClassDB::bind_method(D_METHOD("get_feature_scale"), &MMAnimationLibrary::get_feature_scale);
 			godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "feature_scale"), "set_feature_scale", "get_feature_scale");
+		}
+
+		ClassDB::add_property_group(get_class_static(), "KDTree", "");
+		{
+			ClassDB::bind_method(D_METHOD("set_distance_type", "value"), &MMAnimationLibrary::set_distance_type);
+			ClassDB::bind_method(D_METHOD("get_distance_type"), &MMAnimationLibrary::get_distance_type);
+			godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::INT, "distance_type", PROPERTY_HINT_ENUM, "Manhattan:1,EuclidianSquared:2,Maximum:0"), "set_distance_type", "get_distance_type");
+		}
+		ClassDB::add_property_group(get_class_static(), "AABB Bounding box", "");
+		{
+			ClassDB::bind_method(D_METHOD("set_BOUND_LR_SIZE", "value"), &MMAnimationLibrary::set_BOUND_LR_SIZE, DEFVAL(64));
+			ClassDB::bind_method(D_METHOD("get_BOUND_LR_SIZE"), &MMAnimationLibrary::get_BOUND_LR_SIZE);
+			godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::INT, "BOUND_LR_SIZE", PROPERTY_HINT_RANGE, "1, 100, 1, or_greater"), "set_BOUND_LR_SIZE", "get_BOUND_LR_SIZE");
+			ClassDB::bind_method(D_METHOD("set_BOUND_SM_SIZE", "value"), &MMAnimationLibrary::set_BOUND_SM_SIZE, DEFVAL(16));
+			ClassDB::bind_method(D_METHOD("get_BOUND_SM_SIZE"), &MMAnimationLibrary::get_BOUND_SM_SIZE);
+			godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::INT, "BOUND_SM_SIZE", PROPERTY_HINT_RANGE, "1, 100, 1, or_greater"), "set_BOUND_SM_SIZE", "get_BOUND_SM_SIZE");
+
+			ClassDB::bind_method(D_METHOD("set_LR_MAX", "value"), &MMAnimationLibrary::set_LR_MAX);
+			ClassDB::bind_method(D_METHOD("get_LR_MAX"), &MMAnimationLibrary::get_LR_MAX);
+			godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "LR_MAX",PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_READ_ONLY), "set_LR_MAX", "get_LR_MAX");
+			ClassDB::bind_method(D_METHOD("set_LR_MIN", "value"), &MMAnimationLibrary::set_LR_MIN);
+			ClassDB::bind_method(D_METHOD("get_LR_MIN"), &MMAnimationLibrary::get_LR_MIN);
+			godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "LR_MIN",PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_READ_ONLY), "set_LR_MIN", "get_LR_MIN");
+			ClassDB::bind_method(D_METHOD("set_SM_MAX", "value"), &MMAnimationLibrary::set_SM_MAX);
+			ClassDB::bind_method(D_METHOD("get_SM_MAX"), &MMAnimationLibrary::get_SM_MAX);
+			godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "SM_MAX",PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_READ_ONLY), "set_SM_MAX", "get_SM_MAX");
+			ClassDB::bind_method(D_METHOD("set_SM_MIN", "value"), &MMAnimationLibrary::set_SM_MIN);
+			ClassDB::bind_method(D_METHOD("get_SM_MIN"), &MMAnimationLibrary::get_SM_MIN);
+			godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "SM_MIN",PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_READ_ONLY), "set_SM_MIN", "get_SM_MIN");
+			ClassDB::bind_method(D_METHOD("set_Rng_Start", "value"), &MMAnimationLibrary::set_Rng_Start);
+			ClassDB::bind_method(D_METHOD("get_Rng_Start"), &MMAnimationLibrary::get_Rng_Start);
+			godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "Rng_Start",PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_READ_ONLY), "set_Rng_Start", "get_Rng_Start");
+			ClassDB::bind_method(D_METHOD("set_Rng_Stop", "value"), &MMAnimationLibrary::set_Rng_Stop);
+			ClassDB::bind_method(D_METHOD("get_Rng_Stop"), &MMAnimationLibrary::get_Rng_Stop);
+			godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "Rng_Stop",PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_READ_ONLY), "set_Rng_Stop", "get_Rng_Stop");
 		}
 	}
 
