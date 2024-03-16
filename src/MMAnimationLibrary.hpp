@@ -434,6 +434,7 @@ public:
 	GETSET(int, BOUND_SM_SIZE);
 	GETSET(int, BOUND_LR_SIZE);
 
+
 	// TODO : Weight are embedded into the normalization process.
 	void build_bounds() {
 		// Compute array size
@@ -472,9 +473,9 @@ public:
 									   : x;
 	}
 
-	// TODO : The categories need to be supported.
-	// Boxes could contains all the categories inside. This help with included
-	// excluded could be finicky.
+	// TODO : The categories need to be supported..
+	// The logic is range-based. So it's better to find all the Tags that include the category, and remove the unwanted.
+	// This require a whole rework of Tags.
 	TypedArray<Dictionary> query_pose_aabb(PackedFloat32Array query, int best_index = -1, int64_t included_category = std::numeric_limits<int64_t>::max(), int64_t excluded_category = 0) {
 		constexpr size_t ignore_range_end = 20, ignore_surrounding = 20;
 		constexpr float transition_cost = 0.0f;
@@ -941,10 +942,10 @@ protected:
 		{
 			ClassDB::bind_method(D_METHOD("set_BOUND_LR_SIZE", "value"), &MMAnimationLibrary::set_BOUND_LR_SIZE, DEFVAL(64));
 			ClassDB::bind_method(D_METHOD("get_BOUND_LR_SIZE"), &MMAnimationLibrary::get_BOUND_LR_SIZE);
-			godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::INT, "BOUND_LR_SIZE", PROPERTY_HINT_RANGE, "1, 100, 1, or_greater"), "set_BOUND_LR_SIZE", "get_BOUND_LR_SIZE");
+			godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::INT, "BOUND_LR_SIZE", PROPERTY_HINT_RANGE, "2, 100, 1, or_greater"), "set_BOUND_LR_SIZE", "get_BOUND_LR_SIZE");
 			ClassDB::bind_method(D_METHOD("set_BOUND_SM_SIZE", "value"), &MMAnimationLibrary::set_BOUND_SM_SIZE, DEFVAL(16));
 			ClassDB::bind_method(D_METHOD("get_BOUND_SM_SIZE"), &MMAnimationLibrary::get_BOUND_SM_SIZE);
-			godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::INT, "BOUND_SM_SIZE", PROPERTY_HINT_RANGE, "1, 100, 1, or_greater"), "set_BOUND_SM_SIZE", "get_BOUND_SM_SIZE");
+			godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::INT, "BOUND_SM_SIZE", PROPERTY_HINT_RANGE, "2, 100, 1, or_greater"), "set_BOUND_SM_SIZE", "get_BOUND_SM_SIZE");
 
 			ClassDB::bind_method(D_METHOD("set_LR_MAX", "value"), &MMAnimationLibrary::set_LR_MAX);
 			ClassDB::bind_method(D_METHOD("get_LR_MAX"), &MMAnimationLibrary::get_LR_MAX);
