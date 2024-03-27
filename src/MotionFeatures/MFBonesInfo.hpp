@@ -27,13 +27,19 @@ public:
 	// Skeleton
 	Ref<SkeletonProfile> _skel = nullptr;
 
-	GETSET(String, relative_to_bone, "");
+	GETSET(Color, debug_color_position, godot::Color(1.0f, 1.0f, 1.0f));
+	GETSET(Color, debug_color_velocity, godot::Color(0.0f, 0.0f, 0.0f));
 
-	PackedStringArray bone_names{};
-	void set_bone_names(PackedStringArray value) {
-		bone_names = value;
-	}
-	PackedStringArray get_bone_names() { return bone_names; }
+	GETSET(real_t, weight_bone_pos);
+	GETSET(real_t, weight_bone_vel);
+	GETSET(real_t, weight_bone_rot);
+	GETSET(real_t, weight_bone_ang);
+	GETSET(real_t, weight_inertialization);
+
+	GETSET(bool, use_inertialization,false)
+	GETSET(String, relative_to_bone, "");
+	GETSET(float, inertialization_halflife, 0.1);
+	GETSET(PackedStringArray, bone_names);
 
 	enum BoneInfoType {
 		Position,
@@ -47,10 +53,6 @@ public:
 	std::bitset<BoneInfoType::MAX_SIZE> bone_info_type{};
 	int get_bone_info_type() { return (int)bone_info_type.to_ulong(); }
 	void set_bone_info_type(int value) { bone_info_type = value; }
-
-	PackedInt32Array bones_id{};
-
-	HashMap<uint32_t, PackedInt32Array> bone_tracks{};
 
 	virtual int get_dimension() override {
 		// if(use_inertialization)
@@ -72,13 +74,10 @@ public:
 		ERR_FAIL_COND_V_EDMSG(relative_to_bone != "" && animlib->skeleton_profile->find_bone(relative_to_bone) == -1, false, "SkeletonProfile doesn't contain the relative bone ( Empty for global)");
 		_skel = animlib->skeleton_profile;
 		_skel_path = NodePath(animlib->skeleton_path);
-		bones_id.clear();
 		if (_skel != nullptr) {
 			for (size_t i = 0; i < bone_names.size(); ++i) {
 				const size_t id = _skel->find_bone(bone_names[i]);
-				if (id >= 0)
-					bones_id.push_back(id);
-				else
+				if (id == -1)
 					ERR_FAIL_V_EDMSG(false, "Missing Bone " + bone_names[i] + " in the SkeletonProfile");
 			}
 			return true;
@@ -94,14 +93,10 @@ public:
 			auto bone_path = u::str(_skel_path) + u::str(":") + bone_names[index];
 			auto bone = bone_names[index];
 
-			kbone = _get_bone_kform_global(bone, animation, time);
-			// if(relative_to_bone != _skel->get_root_bone())
-			// {
-			// 	kbone = _get_bone_kform_global(relative_to_bone, animation, time).inverse() * kbone;
-			// }
-
-
-
+			kbone = _get_bone_kform_model_with_root_vel(bone, animation, time);
+			if (relative_to_bone != _skel->get_root_bone()) {
+				kbone = _get_bone_kform_model_with_root_vel(relative_to_bone, animation, time).inverse() * kbone;
+			}
 
 			// Serialize
 			// if (bone_info_type == PositionAndVelocity && use_inertialization)
@@ -138,17 +133,16 @@ public:
 	}
 
 private:
-	kform _get_bone_kform_global(String bone, Ref<Animation> animation, float time) {
+	kform _get_bone_kform_model_with_root_vel(String bone, Ref<Animation> animation, float time) {
 		if (bone.is_empty())
 			return kform{};
 		std::vector<kform> trs{};
 		do {
-			trs.emplace_back(kform{ _skel, u::str(_skel_path) + u::str(":") + bone, animation, time });
+			auto back = trs.emplace_back(kform{ _skel, u::str(_skel_path) + u::str(":") + bone, animation, time });
 			if (bone == _skel->get_root_bone()) {
-				kform& root = trs.back();
-				root.vel = root.rot.xform_inv(root.vel);
-				root.pos = Vector3{};
-				root.rot = Quaternion(); 
+				back.vel = back.rot.xform_inv(back.vel);
+				back.pos = Vector3{};
+				back.rot = Quaternion();
 				break;
 			}
 			bone = _skel->get_bone_parent(_skel->find_bone(bone)); // Now bone is its parent
@@ -166,14 +160,14 @@ private:
 		std::vector<kform> trs{};
 		do {
 			trs.push_back(bones[_skel->find_bone(bone)]);
-			// if (bone == _skel->get_root_bone() || bone == relative_to_bone) {
 			if (bone == _skel->get_root_bone()) {
+				auto back = trs.back();
+				back.vel = back.rot.xform_inv(back.vel);
+				back.pos = Vector3{};
+				back.rot = Quaternion();
 				break;
 			}
 			bone = _skel->get_bone_parent(_skel->find_bone(bone)); // Now bone is its parent
-			// if (bone == relative_to_bone) {
-			// 	break;
-			// }
 		} while (!bone.is_empty());
 
 		return std::reduce(trs.crbegin(), trs.crend(), kform{},
@@ -187,26 +181,6 @@ public:
 		const auto halfdamp = Spring::halflife_to_damping(halflife) / 2.0;
 		return (2 * pos) / halfdamp + vel / (halfdamp * halfdamp);
 	}
-
-	GETSET(PackedVector3Array, bones_pos);
-	GETSET(PackedVector3Array, bones_vel);
-
-	float weight_bone_pos{ 1.0f };
-	float get_weight_bone_pos() { return weight_bone_pos; }
-	void set_weight_bone_pos(float value) { weight_bone_pos = value; }
-	float weight_bone_vel{ 1.0f };
-	float get_weight_bone_vel() { return weight_bone_vel; }
-	void set_weight_bone_vel(float value) { weight_bone_vel = value; }
-	float weight_bone_rot{ 1.0f };
-	float get_weight_bone_rot() { return weight_bone_rot; }
-	void set_weight_bone_rot(float value) { weight_bone_rot = value; }
-	float weight_bone_ang{ 1.0f };
-	float get_weight_bone_ang() { return weight_bone_ang; }
-	void set_weight_bone_ang(float value) { weight_bone_ang = value; }
-
-	float weight_inertialization{ 1.0f };
-	float get_weight_inertialization() { return weight_inertialization; }
-	void set_weight_inertialization(float value) { weight_inertialization = value; }
 
 	virtual PackedFloat32Array get_weights() override {
 		PackedFloat32Array result{};
@@ -233,43 +207,6 @@ public:
 			if (bone_info_type.test(AngularVel))
 				for (auto i = 0; i < 3; ++i)
 					result.append(weight_bone_ang);
-		}
-		return result;
-	}
-
-	GETSET(bool, use_inertialization)
-	GETSET(float, inertialization_halflife, 0.1);
-
-	PackedFloat32Array serialize_ppinertialization3d(PPInertialization3D *node) {
-		PackedFloat32Array result{};
-		for (size_t i = 0; i < bone_names.size(); ++i) {
-			String bone = bone_names[i];
-
-			kform kbone = _get_bone_kform_global(node->bones, bone);
-			if (bone != relative_to_bone)
-				kbone = _get_bone_kform_global(node->bones, relative_to_bone).inverse() * kbone;
-			Vector3 const pos = kbone.pos, vel = kbone.vel, dir = kbone.rot.xform(Vector3(0, 0, 1)), ang = kbone.ang;
-
-			if (bone_info_type.test(Position)) {
-				result.append(pos.x);
-				result.append(pos.y);
-				result.append(pos.z);
-			}
-			if (bone_info_type.test(Velocity)) {
-				result.append(vel.x);
-				result.append(vel.y);
-				result.append(vel.z);
-			}
-			if (bone_info_type.test(Rotation)) {
-				result.append(dir.x);
-				result.append(dir.y);
-				result.append(dir.z);
-			}
-			if (bone_info_type.test(AngularVel)) {
-				result.append(ang.x);
-				result.append(ang.y);
-				result.append(ang.z);
-			}
 		}
 		return result;
 	}
@@ -308,6 +245,40 @@ public:
 		return result;
 	}
 
+	PackedFloat32Array serialize_ppinertialization3d(PPInertialization3D *node) {
+		PackedFloat32Array result{};
+		for (size_t i = 0; i < bone_names.size(); ++i) {
+			String bone = bone_names[i];
+
+			kform kbone = _get_bone_kform_global(node->bones, bone);
+			if (relative_to_bone != _skel->get_root_bone() && bone != relative_to_bone)
+				kbone = _get_bone_kform_global(node->bones, relative_to_bone).inverse() * kbone;
+			Vector3 const pos = kbone.pos, vel = kbone.vel, dir = kbone.rot.xform(Vector3(0, 0, 1)), ang = kbone.ang;
+
+			if (bone_info_type.test(Position)) {
+				result.append(pos.x);
+				result.append(pos.y);
+				result.append(pos.z);
+			}
+			if (bone_info_type.test(Velocity)) {
+				result.append(vel.x);
+				result.append(vel.y);
+				result.append(vel.z);
+			}
+			if (bone_info_type.test(Rotation)) {
+				result.append(dir.x);
+				result.append(dir.y);
+				result.append(dir.z);
+			}
+			if (bone_info_type.test(AngularVel)) {
+				result.append(ang.x);
+				result.append(ang.y);
+				result.append(ang.z);
+			}
+		}
+		return result;
+	}
+
 	PackedFloat32Array serialize_mmplayer(MMAnimationPlayer *mm_player) {
 		ERR_FAIL_NULL_V_MSG(mm_player, {}, "MMAnimationPlayer is null");
 		constexpr size_t size = 3;
@@ -332,7 +303,7 @@ public:
 			for (size_t i = 0; i < bone_names.size(); ++i) {
 				String bone = bone_names[i];
 
-				kform kbone;// = _get_bone_kform_global(mm_player->bones_model, bone);
+				kform kbone; // = _get_bone_kform_global(mm_player->bones_model, bone);
 				kbone = mm_player->bones_model[_skel->find_bone(bone)];
 				Vector3 const pos = kbone.pos, vel = kbone.vel, dir = kbone.rot.xform(Vector3(0, 0, 1)), ang = kbone.ang;
 
@@ -411,7 +382,7 @@ protected:
 
 		ClassDB::bind_method(D_METHOD("get_hints"), &MFBonesInfo::get_hints);
 
-		ClassDB::bind_method(D_METHOD("set_relative_to_bone", "value"), &MFBonesInfo::set_relative_to_bone);
+		ClassDB::bind_method(D_METHOD("set_relative_to_bone", "value"), &MFBonesInfo::set_relative_to_bone, DEFVAL("Root"));
 		ClassDB::bind_method(D_METHOD("get_relative_to_bone"), &MFBonesInfo::get_relative_to_bone);
 		godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::STRING, "relative_to_bone"), "set_relative_to_bone", "get_relative_to_bone");
 
@@ -419,32 +390,32 @@ protected:
 		ClassDB::bind_method(D_METHOD("get_bone_names"), &MFBonesInfo::get_bone_names);
 		ADD_PROPERTY(PropertyInfo(Variant::PACKED_STRING_ARRAY, "Bones Names"), "set_bone_names", "get_bone_names");
 
-		ClassDB::bind_method(D_METHOD("set_weight_bone_pos", "value"), &MFBonesInfo::set_weight_bone_pos);
+		ClassDB::bind_method(D_METHOD("set_weight_bone_pos", "value"), &MFBonesInfo::set_weight_bone_pos, DEFVAL(real_t{ 1.0 }));
 		ClassDB::bind_method(D_METHOD("get_weight_bone_pos"), &MFBonesInfo::get_weight_bone_pos);
 		godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT, "weight_bone_pos"), "set_weight_bone_pos", "get_weight_bone_pos");
 
-		ClassDB::bind_method(D_METHOD("set_weight_bone_vel", "value"), &MFBonesInfo::set_weight_bone_vel);
+		ClassDB::bind_method(D_METHOD("set_weight_bone_vel", "value"), &MFBonesInfo::set_weight_bone_vel, DEFVAL(real_t{ 1.0 }));
 		ClassDB::bind_method(D_METHOD("get_weight_bone_vel"), &MFBonesInfo::get_weight_bone_vel);
 		godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT, "weight_bone_vel"), "set_weight_bone_vel", "get_weight_bone_vel");
 
-		ClassDB::bind_method(D_METHOD("set_weight_bone_ang", "value"), &MFBonesInfo::set_weight_bone_ang);
+		ClassDB::bind_method(D_METHOD("set_weight_bone_ang", "value"), &MFBonesInfo::set_weight_bone_ang, DEFVAL(real_t{ 1.0 }));
 		ClassDB::bind_method(D_METHOD("get_weight_bone_ang"), &MFBonesInfo::get_weight_bone_ang);
 		godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT, "weight_bone_ang"), "set_weight_bone_ang", "get_weight_bone_ang");
 
-		ClassDB::bind_method(D_METHOD("set_weight_inertialization", "value"), &MFBonesInfo::set_weight_inertialization);
-		ClassDB::bind_method(D_METHOD("get_weight_inertialization"), &MFBonesInfo::get_weight_inertialization);
-		godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT, "weight_inertialization"), "set_weight_inertialization", "get_weight_inertialization");
+		// ClassDB::bind_method(D_METHOD("set_weight_inertialization", "value"), &MFBonesInfo::set_weight_inertialization,DEFVAL(real_t{1.0}));
+		// ClassDB::bind_method(D_METHOD("get_weight_inertialization"), &MFBonesInfo::get_weight_inertialization);
+		// godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT, "weight_inertialization"), "set_weight_inertialization", "get_weight_inertialization");
 
 		ClassDB::add_property_group(get_class_static(), "Nodes & Resources Sources", "");
 		{
 			// TODO Change use inertialization setup to only be available when choosing PositionAndVelocity
-			ClassDB::bind_method(D_METHOD("set_use_inertialization", "value"), &MFBonesInfo::set_use_inertialization, DEFVAL(false));
-			ClassDB::bind_method(D_METHOD("get_use_inertialization"), &MFBonesInfo::get_use_inertialization);
-			godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::BOOL, "use_inertialization"), "set_use_inertialization", "get_use_inertialization");
+			// ClassDB::bind_method(D_METHOD("set_use_inertialization", "value"), &MFBonesInfo::set_use_inertialization, DEFVAL(false));
+			// ClassDB::bind_method(D_METHOD("get_use_inertialization"), &MFBonesInfo::get_use_inertialization);
+			// godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::BOOL, "use_inertialization"), "set_use_inertialization", "get_use_inertialization");
 
-			ClassDB::bind_method(D_METHOD("set_inertialization_halflife", "value"), &MFBonesInfo::set_inertialization_halflife, DEFVAL(0.1f));
-			ClassDB::bind_method(D_METHOD("get_inertialization_halflife"), &MFBonesInfo::get_inertialization_halflife);
-			godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT, "inertialization_halflife"), "set_inertialization_halflife", "get_inertialization_halflife");
+			// ClassDB::bind_method(D_METHOD("set_inertialization_halflife", "value"), &MFBonesInfo::set_inertialization_halflife, DEFVAL(0.1f));
+			// ClassDB::bind_method(D_METHOD("get_inertialization_halflife"), &MFBonesInfo::get_inertialization_halflife);
+			// godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT, "inertialization_halflife"), "set_inertialization_halflife", "get_inertialization_halflife");
 
 			ClassDB::bind_method(D_METHOD("set_debug_color_position", "value"), &MFBonesInfo::set_debug_color_position);
 			ClassDB::bind_method(D_METHOD("get_debug_color_position"), &MFBonesInfo::get_debug_color_position);
@@ -456,16 +427,6 @@ protected:
 		}
 
 		ClassDB::add_property_group(get_class_static(), "", "");
-
-		//BINDER_PROPERTY_PARAMS(MFBonesInfo,Variant::PACKED_VECTOR3_ARRAY,bones_pos,PROPERTY_HINT_NONE,"",PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_READ_ONLY);
-		ClassDB::bind_method(D_METHOD("set_bones_pos", "value"), &MFBonesInfo::set_bones_pos);
-		ClassDB::bind_method(D_METHOD("get_bones_pos"), &MFBonesInfo::get_bones_pos);
-		godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_VECTOR3_ARRAY, "bones_pos", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_READ_ONLY), "set_bones_pos", "get_bones_pos");
-
-		//BINDER_PROPERTY_PARAMS(MFBonesInfo,Variant::PACKED_VECTOR3_ARRAY,bones_vel,PROPERTY_HINT_NONE,"",PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_READ_ONLY);
-		ClassDB::bind_method(D_METHOD("set_bones_vel", "value"), &MFBonesInfo::set_bones_vel);
-		ClassDB::bind_method(D_METHOD("get_bones_vel"), &MFBonesInfo::get_bones_vel);
-		godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_VECTOR3_ARRAY, "bones_vel", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_READ_ONLY), "set_bones_vel", "get_bones_vel");
 
 		ClassDB::bind_method(D_METHOD("get_weights"), &MFBonesInfo::get_weights);
 		ClassDB::bind_method(D_METHOD("get_dimension"), &MFBonesInfo::get_dimension);
@@ -479,9 +440,6 @@ protected:
 
 		ClassDB::bind_method(D_METHOD("debug_pose_gizmo", "gizmo", "data", "root_transform"), &MFBonesInfo::debug_pose_gizmo);
 	}
-
-	GETSET(Color, debug_color_position, godot::Color(1.0f, 1.0f, 1.0f));
-	GETSET(Color, debug_color_velocity, godot::Color(0.0f, 0.0f, 0.0f));
 
 	virtual void debug_pose_gizmo(Ref<EditorNode3DGizmo> gizmo, const PackedFloat32Array data, godot::Transform3D tr = godot::Transform3D{}) override {
 		const auto mat_name_pos = "pos" + get_path();

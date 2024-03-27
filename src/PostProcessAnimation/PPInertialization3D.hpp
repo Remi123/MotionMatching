@@ -37,7 +37,7 @@ using namespace godot;
 
 struct PPInertialization3D : godot::Node {
 	GDCLASS(PPInertialization3D, Node);
-
+	friend class MFBonesInfo;
 public:
 	using u = godot::UtilityFunctions;
 
