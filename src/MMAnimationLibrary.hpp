@@ -590,6 +590,7 @@ public:
 		data["index"] = best_index;
 		data["animation"] = anim_name;
 		data["timestamp"] = std::move(anim_time);
+		data["cost"] = best_cost;
 		result.append(data);
 		return result;
 	}
