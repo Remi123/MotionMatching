@@ -6,7 +6,7 @@
 #include <algorithm>
 
 // Friends
-#include <PostProcessAnimation/PPInertialization3D.hpp>
+#include <PostProcessAnimation/MMInertialization3D.hpp>
 
 using namespace godot;
 
@@ -245,7 +245,7 @@ public:
 		return result;
 	}
 
-	PackedFloat32Array serialize_ppinertialization3d(PPInertialization3D *node) {
+	PackedFloat32Array serialize_mminertialization3d(MMInertialization3D *node) {
 		PackedFloat32Array result{};
 		for (size_t i = 0; i < bone_names.size(); ++i) {
 			String bone = bone_names[i];
@@ -377,7 +377,7 @@ protected:
 
 		{
 			ClassDB::bind_method(D_METHOD("serialize_MMAnimationPlayer", "body"), &MFBonesInfo::serialize_mmplayer);
-			ClassDB::bind_method(D_METHOD("serialize_PPInertialization3D", "body"), &MFBonesInfo::serialize_ppinertialization3d);
+			ClassDB::bind_method(D_METHOD("serialize_MMInertialization3D", "body"), &MFBonesInfo::serialize_mminertialization3d);
 		}
 
 		ClassDB::bind_method(D_METHOD("get_hints"), &MFBonesInfo::get_hints);

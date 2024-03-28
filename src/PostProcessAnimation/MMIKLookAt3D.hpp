@@ -33,8 +33,8 @@
 
 using namespace godot;
 
-struct PPIKLookAt3D : godot::Node3D {
-	GDCLASS(PPIKLookAt3D, Node3D);
+struct MMIKLookAt3D : godot::Node3D {
+	GDCLASS(MMIKLookAt3D, Node3D);
 
 public:
 	using u = godot::UtilityFunctions;
@@ -77,20 +77,20 @@ public:
 
 protected:
 	static void _bind_methods() {
-		ClassDB::bind_method(D_METHOD("set_active", "value"), &PPIKLookAt3D::set_active);
-		ClassDB::bind_method(D_METHOD("get_active"), &PPIKLookAt3D::get_active);
+		ClassDB::bind_method(D_METHOD("set_active", "value"), &MMIKLookAt3D::set_active);
+		ClassDB::bind_method(D_METHOD("get_active"), &MMIKLookAt3D::get_active);
 		godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::BOOL, "active"), "set_active", "get_active");
 
-		ClassDB::bind_method(D_METHOD("set_bone", "value"), &PPIKLookAt3D::set_bone);
-		ClassDB::bind_method(D_METHOD("get_bone"), &PPIKLookAt3D::get_bone);
+		ClassDB::bind_method(D_METHOD("set_bone", "value"), &MMIKLookAt3D::set_bone);
+		ClassDB::bind_method(D_METHOD("get_bone"), &MMIKLookAt3D::get_bone);
 		godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::STRING, "bone"), "set_bone", "get_bone");
 
-		ClassDB::bind_method(D_METHOD("set_mixer", "value"), &PPIKLookAt3D::set_mixer);
-		ClassDB::bind_method(D_METHOD("get_mixer"), &PPIKLookAt3D::get_mixer);
+		ClassDB::bind_method(D_METHOD("set_mixer", "value"), &MMIKLookAt3D::set_mixer);
+		ClassDB::bind_method(D_METHOD("get_mixer"), &MMIKLookAt3D::get_mixer);
 		godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::OBJECT, "mixer", PROPERTY_HINT_NODE_TYPE, "AnimationMixer", PROPERTY_USAGE_SCRIPT_VARIABLE | PROPERTY_USAGE_DEFAULT), "set_mixer", "get_mixer");
 
-		ClassDB::bind_method(D_METHOD("set_skeleton", "value"), &PPIKLookAt3D::set_skeleton);
-		ClassDB::bind_method(D_METHOD("get_skeleton"), &PPIKLookAt3D::get_skeleton);
+		ClassDB::bind_method(D_METHOD("set_skeleton", "value"), &MMIKLookAt3D::set_skeleton);
+		ClassDB::bind_method(D_METHOD("get_skeleton"), &MMIKLookAt3D::get_skeleton);
 		godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::OBJECT, "skeleton", PROPERTY_HINT_NODE_TYPE, "Skeleton3D", PROPERTY_USAGE_SCRIPT_VARIABLE | PROPERTY_USAGE_DEFAULT), "set_skeleton", "get_skeleton");
 	}
 };

@@ -18,9 +18,9 @@
 #include "CircularBuffer.hpp"
 #include <MMAnimationLibrary.hpp>
 #include <MMAnimationPlayer.hpp>
-#include <PostProcessAnimation/PPIKLookAt3D.hpp>
-#include <PostProcessAnimation/PPIKTwoBone3D.hpp>
-#include <PostProcessAnimation/PPInertialization3D.hpp>
+#include <PostProcessAnimation/MMIKLookAt3D.hpp>
+#include <PostProcessAnimation/MMIKTwoBone3D.hpp>
+#include <PostProcessAnimation/MMInertialization3D.hpp>
 
 
 #include <AnimTags/AnimTag.hpp>
@@ -66,9 +66,9 @@ void gdextension_MM_initialize(ModuleInitializationLevel p_level) {
 		}
 
 		{ // PostProcessing Nodes
-			ClassDB::register_class<PPInertialization3D>();
-			ClassDB::register_class<PPIKLookAt3D>();
-			ClassDB::register_class<PPIKTwoBone3D>();
+			ClassDB::register_class<MMInertialization3D>();
+			ClassDB::register_class<MMIKLookAt3D>();
+			ClassDB::register_class<MMIKTwoBone3D>();
 		}
 
 		{ // Various helper

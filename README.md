@@ -21,16 +21,16 @@ Here is what you can expect :
 - Post Processing Animations (Node3D)
   Having an animation player with custom transitions is great, however the elephant in the room is the AnimationTree. Contrary to AnimationPlayer, AnimationTree receive a bunch of instructions to blend animation together in any order, so there is no clear starting point to do proper inertialization. Also, some inverse kinematic are missing. So here are the nodes. All post processing nodes requires you to define which AnimationMixer-inherited node you refer, and which Skeleton you want bones to be modified. . All those nodes are made to be process after the AnimationMixer-inherited node, so you can either add those nodes as child of AnimationMixer, or set the process priority to an higher value than the mixer. Works also in Editor. 
 
-  Those nodes doesn't work well with MMAnimationPlayer. Use it with AnimationTree.
+  Those nodes doesn't work well with MMAnimationPlayer. Use it with AnimationTree or AnimationPlayer.
 
-  - PPIKLookAt3D ( Node3D )
-  A simple look at ik. The position of the node is where the bone will orient its rotation. There is no joints limit, so it's on you to manage that. Recommended priority = 1
+  - MMIKLookAt3D ( Node3D )
+  A simple look at ik. The position of the node is where the bone will orient its rotation. There is no joints limit, so it's on you to manage that. Recommended process priority = Mixer.priority + 1
 
-  - PPIKTwoBone3D ( Node3D )
+  - MMIKTwoBone3D ( Node3D )
   A simple two bone ik logic. Doesn't handle bones inbetween the two defined bones. The position of the node define where two the bone will reach, and the rotation of the node will adjust the orientation. Recommended process priority = Mixer.priority + 1
 
-  - PPInertialization ( Node3D)
-  This is the node that tries to inertialize the AnimationTree. It's technically more of a filter than a true inertialization, but it does the job for simple transition. The bone tries to reach the positions and rotations calculated by the AnimationMixer Please keep the halflife low, something like 0.05. In the AnimationTree, you can set the transition time ( for example in AnimationNodeStateMachineTransition ) to 0 and it will work fine. If you set it to higher, you will technically inertialize the default blending of AnimationTree, which might be interesting in some cases. Fun fact : If you set this node to be processed after my PPIK Nodes, it will inertialize the transition of the bones, faking an animation instead of blending between current position of the animation and desired target. Recommended process priority = Mixer.priority + 2. 
+  - MMInertialization ( Node3D)
+  This is the node that tries to inertialize the AnimationTree. It's technically more of a filter than a true inertialization, but it does the job for simple transition. The bone tries to reach the positions and rotations calculated by the AnimationMixer. Please keep the halflife low, something like 0.05. In the AnimationTree, you can set the transition time ( for example in AnimationNodeStateMachineTransition ) to 0 and it will work fine. If you set it to higher, you will technically inertialize the default blending of AnimationTree, which might be interesting in some cases. Fun fact : If you set this node to be processed after my MMIK Nodes, it will inertialize the transition of the bones, faking an animation instead of blending between current position of the animation and desired target. Recommended process priority = Mixer.priority + 2. 
 
 - Spring ( GDScript )
   This is a small package of functions related to spring as defined by https://theorangeduck.com/page/spring-roll-call. Not all functions are there, and some are missing a quaternion equivalent. The other problem is that I need to use Dictionary as return values in most cases, but this will be solve when Godot add Structure object. Some functions will be added as needed, but change will be documented.
@@ -92,10 +92,6 @@ TODO : MFEvents needs more work and options.
 TODO : MFRootVelocity is good enough since it's a simple features.
 TODO : MFTrajectory is good but I need to find a way to serialize and unserialize better.
 TODO : Add MFCustomScript.
-
-### Animation PostProcess
-
-TODO : Change the initials and stick to MM.
 
 
 

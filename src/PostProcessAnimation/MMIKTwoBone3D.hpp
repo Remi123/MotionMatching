@@ -33,8 +33,8 @@
 
 using namespace godot;
 
-struct PPIKTwoBone3D : godot::Node3D {
-	GDCLASS(PPIKTwoBone3D, Node3D);
+struct MMIKTwoBone3D : godot::Node3D {
+	GDCLASS(MMIKTwoBone3D, Node3D);
 
 public:
 	using u = godot::UtilityFunctions;
@@ -162,26 +162,26 @@ public:
 
 protected:
 	static void _bind_methods() {
-		ClassDB::bind_method(D_METHOD("set_active", "value"), &PPIKTwoBone3D::set_active);
-		ClassDB::bind_method(D_METHOD("get_active"), &PPIKTwoBone3D::get_active);
+		ClassDB::bind_method(D_METHOD("set_active", "value"), &MMIKTwoBone3D::set_active);
+		ClassDB::bind_method(D_METHOD("get_active"), &MMIKTwoBone3D::get_active);
 		godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::BOOL, "active"), "set_active", "get_active");
 
-		ClassDB::bind_method(D_METHOD("set_bone_A", "value"), &PPIKTwoBone3D::set_bone_A);
-		ClassDB::bind_method(D_METHOD("get_bone_A"), &PPIKTwoBone3D::get_bone_A);
+		ClassDB::bind_method(D_METHOD("set_bone_A", "value"), &MMIKTwoBone3D::set_bone_A);
+		ClassDB::bind_method(D_METHOD("get_bone_A"), &MMIKTwoBone3D::get_bone_A);
 		godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::STRING, "bone_A"), "set_bone_A", "get_bone_A");
-		ClassDB::bind_method(D_METHOD("set_bone_B", "value"), &PPIKTwoBone3D::set_bone_B);
-		ClassDB::bind_method(D_METHOD("get_bone_B"), &PPIKTwoBone3D::get_bone_B);
+		ClassDB::bind_method(D_METHOD("set_bone_B", "value"), &MMIKTwoBone3D::set_bone_B);
+		ClassDB::bind_method(D_METHOD("get_bone_B"), &MMIKTwoBone3D::get_bone_B);
 		godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::STRING, "bone_B"), "set_bone_B", "get_bone_B");
-		ClassDB::bind_method(D_METHOD("set_bone_C", "value"), &PPIKTwoBone3D::set_bone_C);
-		ClassDB::bind_method(D_METHOD("get_bone_C"), &PPIKTwoBone3D::get_bone_C);
+		ClassDB::bind_method(D_METHOD("set_bone_C", "value"), &MMIKTwoBone3D::set_bone_C);
+		ClassDB::bind_method(D_METHOD("get_bone_C"), &MMIKTwoBone3D::get_bone_C);
 		godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::STRING, "bone_C"), "set_bone_C", "get_bone_C");
 
-		ClassDB::bind_method(D_METHOD("set_mixer", "value"), &PPIKTwoBone3D::set_mixer);
-		ClassDB::bind_method(D_METHOD("get_mixer"), &PPIKTwoBone3D::get_mixer);
+		ClassDB::bind_method(D_METHOD("set_mixer", "value"), &MMIKTwoBone3D::set_mixer);
+		ClassDB::bind_method(D_METHOD("get_mixer"), &MMIKTwoBone3D::get_mixer);
 		godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::OBJECT, "mixer", PROPERTY_HINT_NODE_TYPE, "AnimationMixer", PROPERTY_USAGE_SCRIPT_VARIABLE | PROPERTY_USAGE_DEFAULT), "set_mixer", "get_mixer");
 
-		ClassDB::bind_method(D_METHOD("set_skeleton", "value"), &PPIKTwoBone3D::set_skeleton);
-		ClassDB::bind_method(D_METHOD("get_skeleton"), &PPIKTwoBone3D::get_skeleton);
+		ClassDB::bind_method(D_METHOD("set_skeleton", "value"), &MMIKTwoBone3D::set_skeleton);
+		ClassDB::bind_method(D_METHOD("get_skeleton"), &MMIKTwoBone3D::get_skeleton);
 		godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::OBJECT, "skeleton", PROPERTY_HINT_NODE_TYPE, "Skeleton3D", PROPERTY_USAGE_SCRIPT_VARIABLE | PROPERTY_USAGE_DEFAULT), "set_skeleton", "get_skeleton");
 	}
 };
