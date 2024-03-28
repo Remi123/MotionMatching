@@ -23,6 +23,8 @@
 #include <godot_cpp/classes/skeleton3d.hpp>
 #include <godot_cpp/classes/skeleton_profile.hpp>
 
+#include <godot_cpp/variant/dictionary.hpp>
+
 #include <Spring.hpp>
 
 using namespace godot;
@@ -269,6 +271,16 @@ struct kform {
 	inline operator Transform3D() const {
 		return Transform3D(Basis(rot, scl), pos);
 	}
+	inline explicit operator Dictionary() const {
+		Dictionary result{};
+		result["position"] = pos;
+		result["velocity_linear"] = vel;
+		result["rotation"] = rot;
+		result["velocity.angular"] = ang;
+		result["scale"] = scl;
+		result["velocity_scalar"] = svl;
+		return result;
+	}
 
 	friend kform operator*(const kform parent, const kform w) {
 		kform out;
@@ -355,3 +367,93 @@ struct kforms {
 		svl[N] = Vector3();
 	}
 };
+
+static kform get_local_kform(Ref<SkeletonProfile> skel, Ref<Animation> anim, double time, NodePath bonepath) {
+	static constexpr double dt = 0.032;
+	kform out = skel->get_reference_pose(skel->find_bone(bonepath.get_concatenated_subnames()));
+	auto tpos = anim->find_track(bonepath, Animation::TrackType::TYPE_POSITION_3D);
+	auto trot = anim->find_track(bonepath, Animation::TrackType::TYPE_ROTATION_3D);
+	auto tscl = anim->find_track(bonepath, Animation::TrackType::TYPE_SCALE_3D);
+	kform s1 = out;
+	if (tpos != -1) {
+		out.pos = anim->position_track_interpolate(tpos, time);
+		s1.pos = anim->position_track_interpolate(tpos, time + dt);
+	}
+	if (trot != -1) {
+		out.rot = anim->rotation_track_interpolate(trot, time);
+		s1.rot = anim->rotation_track_interpolate(trot, time + dt);
+	}
+	if (tscl != -1) {
+		out.scl = anim->scale_track_interpolate(tscl, time);
+		s1.scl = anim->scale_track_interpolate(tscl, time + dt);
+	}
+	out.finite_difference(s1, dt);
+	return out;
+}
+
+static kform get_root_model_kform(Ref<SkeletonProfile> skel, Ref<Animation> anim, double time, NodePath bonepath) {
+	if (bonepath.is_empty())
+		return kform{};
+	const StringName _skel_path = bonepath.get_concatenated_names();
+	StringName bone = bonepath.get_concatenated_subnames();
+	std::vector<kform> trs{};
+	do {
+		kform _local = get_local_kform(skel,anim,time,NodePath{u::str(_skel_path) + u::str(":") + bone});
+		kform& back = trs.emplace_back(std::move(_local));
+		if (bone == skel->get_root_bone()) {
+			back.vel = back.rot.xform_inv(back.vel);
+			back.pos = Vector3{};
+			back.rot = Quaternion();
+			break;
+		}
+		bone = skel->get_bone_parent(skel->find_bone(bone)); // Now bone is its parent
+	} while (!bone.is_empty());
+
+	return std::reduce(trs.rbegin(), trs.rend(), kform{},
+			[](const kform &acc, const kform &i) {
+				return acc * i;
+			});
+}
+
+static kform get_model_kform(Ref<SkeletonProfile> skel, Ref<Animation> anim, double time, NodePath bonepath) {
+	if (bonepath.is_empty())
+		return kform{};
+	const StringName _skel_path = bonepath.get_concatenated_names();
+	StringName bone = bonepath.get_concatenated_subnames();
+	std::vector<kform> trs{};
+	do {
+		kform _local = get_local_kform(skel,anim,time,NodePath{u::str(_skel_path) + u::str(":") + bone});
+		kform& back = trs.emplace_back(std::move(_local));
+		if (bone == skel->get_root_bone()) {
+			back = {};
+			break;
+		}
+		bone = skel->get_bone_parent(skel->find_bone(bone)); // Now bone is its parent
+	} while (!bone.is_empty());
+
+	return std::reduce(trs.rbegin(), trs.rend(), kform{},
+			[](const kform &acc, const kform &i) {
+				return acc * i;
+			});
+}
+
+static kform get_global_kform(Ref<SkeletonProfile> skel, Ref<Animation> anim, double time, NodePath bonepath) {
+	if (bonepath.is_empty())
+		return kform{};
+	const StringName _skel_path = bonepath.get_concatenated_names();
+	StringName bone = bonepath.get_concatenated_subnames();
+	std::vector<kform> trs{};
+	do {
+		kform _local = get_local_kform(skel,anim,time,NodePath{u::str(_skel_path) + u::str(":") + bone});
+		trs.emplace_back(std::move(_local));
+		if (bone == skel->get_root_bone()) {
+			break;
+		}
+		bone = skel->get_bone_parent(skel->find_bone(bone)); // Now bone is its parent
+	} while (!bone.is_empty());
+
+	return std::reduce(trs.rbegin(), trs.rend(), kform{},
+			[](const kform &acc, const kform &i) {
+				return acc * i;
+			});
+}
