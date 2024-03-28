@@ -70,6 +70,7 @@ To learn more about Motion Matching, you can refer to the following resources:
    - [Spring algorithm and controller](https://theorangeduck.com/page/spring-roll-call)
    - [Motion Matching implementation](https://theorangeduck.com/page/code-vs-data-driven-displacement)
    - [Fitting Motion with Animation](https://theorangeduck.com/page/fitting-code-driven-displacement)
+   - [Paper Basic Motion Matching](https://theorangeduck.com/media/uploads/other_stuff/Learned_Motion_Matching.pdf)
 4. [UFC 3 Geoff Harrower Talk about events](https://www.gdcvault.com/play/1025228/Real-Player-Motion-Tech-in)
 
 ## WORK IN PROGRESS
