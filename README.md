@@ -94,5 +94,9 @@ TODO : MFRootVelocity is good enough since it's a simple features.
 TODO : MFTrajectory is good but I need to find a way to serialize and unserialize better.
 TODO : Add MFCustomScript.
 
+### Spring
+
+TODO : _spring_damper_exact with Damping Ratios should be available to Vector3 and Quaternion
+
 
 

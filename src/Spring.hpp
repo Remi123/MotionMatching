@@ -174,7 +174,6 @@ public:
 			real_t j = std::sqrt(std::pow(v + y * (x - c), 2) / (std::pow(w, 2) + eps) + std::pow(x - c, 2));
 			real_t p = std::atan((v + (x - c) * y) / (-(x - c) * w + eps));
 
-			// j = (x - c) > 0.0 ? j : -j;
 			j = (x - c) > 0.0 ? j : -j;
 
 			real_t eydt = std::exp(-y * dt);
