@@ -72,26 +72,30 @@ To learn more about Motion Matching, you can refer to the following resources:
    - [Fitting Motion with Animation](https://theorangeduck.com/page/fitting-code-driven-displacement)
 4. [UFC 3 Geoff Harrower Talk about events](https://www.gdcvault.com/play/1025228/Real-Player-Motion-Tech-in)
 
-## TODOs
+## WORK IN PROGRESS
 
 ### MMAnimationLibrary
-The user should be able to select which acceleration structure to use ( KDTree,AABBTree and no acceleration ). This would save memory.
+TODO : The user should be able to select which acceleration structure to use ( KDTree,AABBTree and no acceleration ). This would save memory.
 
-AABBTree doesn't support categories for now, and while index_range_set is very tempting, the integration in GDScript is taking too much time. For now an easy solution would be to add a penality when the category isn't respected.
+TODO : AABBTree doesn't support categories for now, and while index_range_set is very tempting, the integration in GDScript is taking too much time. For now an easy solution would be to add a penality when the category isn't respected.
 
-Since Godot 4.3, GDScript's virtual binding is available, but it require to be called explicitly, meaning I wasn't successful at integrating both C++ and GDScript in a single list. My current approach would be this : Create a MFCustomScript class that overriden correctly each important function, and call the correct functions in gdscript when appropriate.
+TODO : Since Godot 4.3, GDScript's virtual binding is available, but it require to be called explicitly, meaning I wasn't successful at integrating both C++ and GDScript in a single list. My current approach would be this : Create a MFCustomScript class that overriden correctly each important function, and call the correct functions in gdscript when appropriate.
 
 ### KForms
-KForm's code is all over the place, and tries to do too much. A huge cleanup is necessary and should stick to be library-focused. E.G. a separate function should retrieve kforms from animation instead of being part of the constructor.
+TODO : KForm's code is all over the place, and tries to do too much. A huge cleanup is necessary and should stick to be library-focused. E.G. a separate function should retrieve kforms from animation instead of being part of the constructor.
 
 ### MotionFeatures
 
-MFBonesInfo needs a cleanup and proper space switching.
-MFDistance needs
+TODO : MFBonesInfo needs a cleanup and proper space switching.
+TODO : MFDistance needs more work and options.
+TODO : MFEvents needs more work and options.
+TODO : MFRootVelocity is good enough since it's a simple features.
+TODO : MFTrajectory is good but I need to find a way to serialize and unserialize better.
+TODO : Add MFCustomScript.
 
 ### Animation PostProcess
 
-Change the initials and stick to MM.
+TODO : Change the initials and stick to MM.
 
 
 

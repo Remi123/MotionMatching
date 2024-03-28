@@ -432,6 +432,7 @@ public:
 	GETSET(PackedFloat32Array, LR_MAX);
 	GETSET(int, BOUND_SM_SIZE);
 	GETSET(int, BOUND_LR_SIZE);
+	GETSET(real_t,category_penality);
 
 	void build_bounds() {
 		// Compute array size
@@ -473,7 +474,7 @@ public:
 	// TODO : The categories need to be supported..
 	// The logic is range-based. So it's better to find all the Tags that include the category, and remove the unwanted.
 	// This require a whole rework of Tags.
-	TypedArray<Dictionary> query_pose_aabb(PackedFloat32Array query, int best_index = -1, int64_t included_category = std::numeric_limits<int64_t>::max(), int64_t excluded_category = 0) {
+	TypedArray<Dictionary> query_pose_aabb(PackedFloat32Array query, int best_index = -1, int64_t included_category = std::numeric_limits<int64_t>::max()) {
 		constexpr size_t ignore_range_end = 20, ignore_surrounding = 20;
 		constexpr float transition_cost = 0.0f;
 		size_t nfeatures = nb_dimensions;
@@ -567,6 +568,12 @@ public:
 							if (curr_cost >= best_cost) {
 								break;
 							}
+						}
+
+						// Cateogory penality. If include_category is not the default value and it's different than the current category, 
+						// multiply the current cost by the category_penality
+						if(included_category != std::numeric_limits<int64_t>::max() && included_category != db_anim_category[i]){
+							curr_cost *= category_penality;
 						}
 
 						// If cost is lower than current best then update best
@@ -853,7 +860,7 @@ protected:
 			ClassDB::bind_method(D_METHOD("recalculate_weights"), &MMAnimationLibrary::recalculate_weights);
 			ClassDB::bind_method(D_METHOD("check_query_results", "Query", "Result count"), &MMAnimationLibrary::check_query_results);
 			ClassDB::bind_method(D_METHOD("query_pose", "serialized_query", "number_result", "include_category", "exclude_category"), &MMAnimationLibrary::query_pose, DEFVAL(1), DEFVAL(std::numeric_limits<int64_t>::max()), DEFVAL(0));
-			ClassDB::bind_method(D_METHOD("query_pose_aabb", "serialized_query", "best_index", "include_category", "exclude_category"), &MMAnimationLibrary::query_pose_aabb, DEFVAL(-1), DEFVAL(std::numeric_limits<int64_t>::max()), DEFVAL(0));
+			ClassDB::bind_method(D_METHOD("query_pose_aabb", "serialized_query", "best_index", "include_category"), &MMAnimationLibrary::query_pose_aabb, DEFVAL(-1), DEFVAL(std::numeric_limits<int64_t>::max()));
 		}
 		// Internal properties
 		{
@@ -938,6 +945,11 @@ protected:
 		}
 		ClassDB::add_property_group(get_class_static(), "AABB Bounding box", "");
 		{
+			ClassDB::bind_method(D_METHOD("set_category_penality", "value"), &MMAnimationLibrary::set_category_penality, DEFVAL(2.0));
+			ClassDB::bind_method(D_METHOD("get_category_penality"), &MMAnimationLibrary::get_category_penality);
+			godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT, "category_penality", PROPERTY_HINT_RANGE, "1.0, 100.0, 0.1, or_greater"), "set_category_penality", "get_category_penality");
+
+
 			ClassDB::bind_method(D_METHOD("set_BOUND_LR_SIZE", "value"), &MMAnimationLibrary::set_BOUND_LR_SIZE, DEFVAL(64));
 			ClassDB::bind_method(D_METHOD("get_BOUND_LR_SIZE"), &MMAnimationLibrary::get_BOUND_LR_SIZE);
 			godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::INT, "BOUND_LR_SIZE", PROPERTY_HINT_RANGE, "2, 100, 1, or_greater"), "set_BOUND_LR_SIZE", "get_BOUND_LR_SIZE");
