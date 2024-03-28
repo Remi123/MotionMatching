@@ -53,7 +53,6 @@ using namespace godot;
 	ClassDB::bind_method(D_METHOD(STRING_PREFIX(get_, variable)), &type::get_##variable);          \
 	ADD_PROPERTY(PropertyInfo(variant_type, #variable, __VA_ARGS__), STRING_PREFIX(set_, variable), STRING_PREFIX(get_, variable));
 
-// TODO : Save the array in a hashed data structure, so that multiple object doesn't add a new array for each schema.
 struct MMAnimationLibrary : public AnimationLibrary {
 	using u = godot::UtilityFunctions;
 	GDCLASS(MMAnimationLibrary, AnimationLibrary)
@@ -434,8 +433,6 @@ public:
 	GETSET(int, BOUND_SM_SIZE);
 	GETSET(int, BOUND_LR_SIZE);
 
-
-	// TODO : Weight are embedded into the normalization process.
 	void build_bounds() {
 		// Compute array size
 		const size_t nframe = MotionData.size() / nb_dimensions;
