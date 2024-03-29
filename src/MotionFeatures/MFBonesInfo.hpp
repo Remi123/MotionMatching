@@ -36,7 +36,7 @@ public:
 	GETSET(real_t, weight_bone_ang);
 	GETSET(real_t, weight_inertialization);
 
-	GETSET(bool, use_inertialization,false)
+	GETSET(bool, use_inertialization, false)
 	GETSET(String, relative_to_bone, "");
 	GETSET(float, inertialization_halflife, 0.1);
 	GETSET(PackedStringArray, bone_names);
@@ -93,9 +93,9 @@ public:
 			auto bone_path = u::str(_skel_path) + u::str(":") + bone_names[index];
 			auto bone = bone_names[index];
 
-			kbone = _get_bone_kform_model_with_root_vel(bone, animation, time);
+			kbone = get_root_model_kform(_skel, animation, time, bone);
 			if (relative_to_bone != _skel->get_root_bone()) {
-				kbone = _get_bone_kform_model_with_root_vel(relative_to_bone, animation, time).inverse() * kbone;
+				kbone = get_root_model_kform(_skel, animation, time, relative_to_bone).inverse() * kbone;
 			}
 
 			// Serialize
@@ -133,27 +133,6 @@ public:
 	}
 
 private:
-	kform _get_bone_kform_model_with_root_vel(String bone, Ref<Animation> animation, float time) {
-		if (bone.is_empty())
-			return kform{};
-		std::vector<kform> trs{};
-		do {
-			auto back = trs.emplace_back(kform{ _skel, u::str(_skel_path) + u::str(":") + bone, animation, time });
-			if (bone == _skel->get_root_bone()) {
-				back.vel = back.rot.xform_inv(back.vel);
-				back.pos = Vector3{};
-				back.rot = Quaternion();
-				break;
-			}
-			bone = _skel->get_bone_parent(_skel->find_bone(bone)); // Now bone is its parent
-		} while (!bone.is_empty());
-
-		return std::reduce(trs.rbegin(), trs.rend(), kform{},
-				[](const kform &acc, const kform &i) {
-					return acc * i;
-				});
-	}
-
 	kform _get_bone_kform_global(const kforms &bones, String bone) {
 		if (bone.is_empty())
 			return kform{};
@@ -304,7 +283,7 @@ public:
 				String bone = bone_names[i];
 
 				kform kbone; // = _get_bone_kform_global(mm_player->bones_model, bone);
-				kbone = mm_player->bones_model[_skel->find_bone(bone)];
+				kbone = mm_player->bones_root_model[_skel->find_bone(bone)];
 				Vector3 const pos = kbone.pos, vel = kbone.vel, dir = kbone.rot.xform(Vector3(0, 0, 1)), ang = kbone.ang;
 
 				if (bone_info_type.test(Position)) {

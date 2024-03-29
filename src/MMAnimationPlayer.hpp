@@ -64,7 +64,7 @@ public:
 	GETSET(Motion_Tags, motion_tag);
 	GETSET(TypedArray<Transform3D>, transforms_queue);
 
-	kforms bones_local{ 0 }, bones_offset{ 0 }, bones_model{ 0 };
+	kforms bones_local{ 0 }, bones_offset{ 0 }, bones_root_model{ 0 };
 	PackedInt32Array bone_parent{};
 
 	float default_halflife = 0.1f;
@@ -93,7 +93,7 @@ public:
 		bone_parent.resize(_skeleton->get_bone_count());
 		bone_parent.fill(-1);
 
-		bones_model.reserve(_skeleton->get_bone_count());
+		bones_root_model.reserve(_skeleton->get_bone_count());
 
 		for (auto i = 0; i < _skeleton->get_bone_count(); ++i) {
 			bone_parent[i] = _skeleton->get_bone_parent(i);
@@ -293,7 +293,6 @@ public:
 
 				if (bone_id == root_bone_id) {
 					desired.vel = desired.rot.xform_inv(desired.vel);
-					// desired_angular = desired_rotation.xform_inv(desired_angular);
 					desired.pos = Vector3();
 					desired.rot = Quaternion();
 				}
@@ -322,21 +321,21 @@ public:
 
 		for (auto i = 0; i < bone_parent.size(); ++i) {
 			if (bone_parent[i] == -1) {
-				bones_model.pos[i] = bones_local.pos[i];
-				bones_model.vel[i] = bones_local.vel[i];
-				bones_model.rot[i] = bones_local.rot[i];
-				bones_model.ang[i] = bones_local.ang[i];
-				bones_model.scl[i] = bones_local.scl[i];
-				bones_model.svl[i] = bones_local.svl[i];
+				bones_root_model.pos[i] = bones_local.pos[i];
+				bones_root_model.vel[i] = bones_local.vel[i];
+				bones_root_model.rot[i] = bones_local.rot[i];
+				bones_root_model.ang[i] = bones_local.ang[i];
+				bones_root_model.scl[i] = bones_local.scl[i];
+				bones_root_model.svl[i] = bones_local.svl[i];
 			} else {
-				kform parent = bones_model[bone_parent[i]];
+				kform parent = bones_root_model[bone_parent[i]];
 				kform result = parent * bones_local[i];
-				bones_model.pos[i] = result.pos;
-				bones_model.vel[i] = result.vel;
-				bones_model.rot[i] = result.rot;
-				bones_model.ang[i] = result.ang;
-				bones_model.scl[i] = result.scl;
-				bones_model.svl[i] = result.svl;
+				bones_root_model.pos[i] = result.pos;
+				bones_root_model.vel[i] = result.vel;
+				bones_root_model.rot[i] = result.rot;
+				bones_root_model.ang[i] = result.ang;
+				bones_root_model.scl[i] = result.scl;
+				bones_root_model.svl[i] = result.svl;
 			}
 		}
 	}
@@ -345,121 +344,25 @@ public:
 		ERR_FAIL_COND_V(_skeleton == nullptr, {});
 		auto id = _skeleton->find_bone(bone_name);
 		ERR_FAIL_COND_V_MSG(id == -1, {}, "Bone " + bone_name + " doesn't exist in skeleton");
-		const auto kin = bones_local[id];
-		Dictionary result = Dictionary{};
-		result["position"] = kin.pos;
-		result["linear_vel"] = kin.vel;
-		result["rotation"] = kin.rot;
-		result["angular_vel"] = kin.ang;
-		result["scale"] = kin.scl;
-		result["scalar_vel"] = kin.svl;
-		return result;
-	}
-
-	// Assume bone_id is correct
-	kform get_bone_global_kform(int bone_id) {
-		std::vector<int> parents_id{ bone_id };
-		auto tmp_p = bone_id;
-		while (_skeleton->get_bone_parent(tmp_p) != -1) {
-			auto new_parent = _skeleton->get_bone_parent(tmp_p);
-			parents_id.push_back(new_parent);
-			tmp_p = new_parent;
-		}
-		const auto motion_scale = _skeleton->get_motion_scale();
-		return std::accumulate(parents_id.rbegin(), parents_id.rend(), kform{},
-				[this, motion_scale](const kform &acc, int i) {
-					auto info = bones_local[i];
-					//    info.pos *= motion_scale;
-					return acc * info;
-				});
-	}
-
-	kform get_bone_model_kform(int bone_id) {
-		ERR_FAIL_COND_V(_skeleton == nullptr, {});
-		if (bone_id == root_bone_id) {
-			return kform{};
-		}
-		std::vector<int> parents_id{};
-		auto tmp_p = bone_id;
-
-		do {
-			parents_id.push_back(tmp_p);
-			tmp_p = _skeleton->get_bone_parent(tmp_p);
-		} while (tmp_p != -1 && tmp_p != root_bone_id);
-
-		const auto motion_scale = _skeleton->get_motion_scale();
-		return std::accumulate(parents_id.rbegin(), parents_id.rend(), kform{},
-				[this, motion_scale](const kform &acc, int i) {
-					auto info = bones_local[i];
-					//    info.pos *= motion_scale;
-					return acc * info;
-				});
-	}
-
-	kform get_bone_info(StringName bone_name, kform::Space space) {
-		ERR_FAIL_COND_V(_skeleton == nullptr, {});
-		auto id = _skeleton->find_bone(bone_name);
-		ERR_FAIL_COND_V_MSG(id == -1, {}, "Bone " + bone_name + " doesn't exist in skeleton");
-		if (space == kform::Space::Local) {
-			return bones_local[id];
-		} else if (space == kform::Space::Global) {
-			return get_bone_global_kform(id);
-		} else if (space == kform::Space::RootMotion) {
-			kform global = get_bone_global_kform(id);
-			// kform root = bones_kform[root_bone_id];
-			// global.vel -= root.vel;
-			return global;
-
-			return bones_local[root_bone_id].inverse() * global;
-		} else if (space == kform::Space::Model) {
-			return get_bone_model_kform(id);
-		}
-		return kform{};
-	}
-
-	Dictionary get_global_bone_info(StringName bone_name) {
-		ERR_FAIL_COND_V(_skeleton == nullptr, {});
-		auto id = _skeleton->find_bone(bone_name);
-		ERR_FAIL_COND_V_MSG(id == -1, {}, "Bone " + bone_name + " doesn't exist in skeleton");
-		kform global = get_bone_info(bone_name, kform::Space::Global);
-
-		Dictionary result = Dictionary{};
-		result["position"] = global.pos;
-		result["linear_vel"] = global.vel;
-		result["rotation"] = global.rot;
-		result["angular_vel"] = global.ang;
-		result["scale"] = global.scl;
-		result["scalar_vel"] = global.svl;
-		return result;
+		return (Dictionary)bones_local[id];
 	}
 
 	Dictionary get_model_bone_info(StringName bone_name) {
 		ERR_FAIL_COND_V(_skeleton == nullptr, {});
 		auto id = _skeleton->find_bone(bone_name);
 		ERR_FAIL_COND_V_MSG(id == -1, {}, "Bone " + bone_name + " doesn't exist in skeleton");
-		// kform global = get_bone_info(bone_name, kform::Space::RootMotion);
-		if (id == root_bone_id) {
-			Dictionary result = Dictionary{};
-			kform global = bones_local[root_bone_id];
-			result["position"] = global.pos;
-			result["linear_vel"] = global.vel;
-			result["rotation"] = global.rot;
-			result["angular_vel"] = global.ang;
-			result["scale"] = global.scl;
-			result["scalar_vel"] = global.svl;
-			return result;
-		}
+		kform root = bones_local[root_bone_id];
+		return (Dictionary)(root.inverse() * bones_root_model[id]);
+	}
 
-		kform global = bones_model[id];
-
-		Dictionary result = Dictionary{};
-		result["position"] = global.pos;
-		result["linear_vel"] = global.vel;
-		result["rotation"] = global.rot;
-		result["angular_vel"] = global.ang;
-		result["scale"] = global.scl;
-		result["scalar_vel"] = global.svl;
-		return result;
+	Dictionary get_root_model_bone_info(StringName bone_name) {
+		ERR_FAIL_COND_V(_skeleton == nullptr, {});
+		auto id = _skeleton->find_bone(bone_name);
+		ERR_FAIL_COND_V_MSG(id == -1, {}, "Bone " + bone_name + " doesn't exist in skeleton");
+		return (Dictionary)bones_root_model[id];
+	}
+	Dictionary get_global_bone_info(StringName bone_name) {
+		return get_root_model_bone_info(bone_name);
 	}
 
 	Vector3 get_root_motion_velocity() {
@@ -493,7 +396,8 @@ protected:
 
 		ClassDB::bind_method(D_METHOD("get_local_bone_info", "bone_name"), &MMAnimationPlayer::get_local_bone_info);
 		ClassDB::bind_method(D_METHOD("get_model_bone_info", "bone_name"), &MMAnimationPlayer::get_model_bone_info);
-		ClassDB::bind_method(D_METHOD("get_raw_bone_info", "bone_name"), &MMAnimationPlayer::get_global_bone_info);
+		ClassDB::bind_method(D_METHOD("get_root_model_bone_info", "bone_name"), &MMAnimationPlayer::get_root_model_bone_info);
+		ClassDB::bind_method(D_METHOD("get_global_bone_info", "bone_name"), &MMAnimationPlayer::get_global_bone_info);
 
 		ClassDB::bind_method(D_METHOD("get_inertialized_root_motion_velocity"), &MMAnimationPlayer::get_root_motion_velocity);
 		ClassDB::bind_method(D_METHOD("get_inertialized_root_motion_angular", "delta_time"), &MMAnimationPlayer::get_root_motion_angular);

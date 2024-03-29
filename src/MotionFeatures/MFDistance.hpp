@@ -14,7 +14,6 @@
 #include <godot_cpp/templates/local_vector.hpp>
 #include <godot_cpp/templates/vector.hpp>
 
-
 #include <godot_cpp/classes/time.hpp>
 
 #include <godot_cpp/classes/animation.hpp>
@@ -25,16 +24,13 @@
 #include <godot_cpp/classes/skeleton3d.hpp>
 #include <godot_cpp/classes/skeleton_profile.hpp>
 
-
 #include <godot_cpp/classes/box_mesh.hpp>
 #include <godot_cpp/classes/editor_node3d_gizmo.hpp>
 #include <godot_cpp/classes/editor_node3d_gizmo_plugin.hpp>
 #include <godot_cpp/classes/standard_material3d.hpp>
 
-
 #include <algorithm>
 #include <limits>
-
 
 #include <MMAnimationLibrary.hpp>
 #include <MotionFeatures/MFEvents.hpp>
@@ -145,12 +141,14 @@ public:
 			}
 			// Step 2 : Get anchor point pos
 			if (event->anchor_point_strategy == TagMFDistance::Strategy::RootPos) {
-				kform const anchor_bone = kform::get_global(mmlib->skeleton_profile, animation, event->timestamp, NodePath(mmlib->skeleton_profile->get_root_bone()));
+				kform const anchor_bone = // kform::get_global(mmlib->skeleton_profile, animation, event->timestamp, NodePath(mmlib->skeleton_profile->get_root_bone()));
+						get_global_kform(mmlib->skeleton_profile, animation, event->timestamp, NodePath(mmlib->skeleton_profile->get_root_bone()));
 				anchor_pos = anchor_bone.pos;
 			} else if (event->anchor_point_strategy == TagMFDistance::Strategy::AnchorPoint) {
 				anchor_pos = event->reference_position;
 			} else if (event->anchor_point_strategy == TagMFDistance::Strategy::AnchorBone) {
-				kform const anchor_bone = kform::get_global(mmlib->skeleton_profile, animation, event->timestamp, NodePath(event->reference_bone));
+				kform const anchor_bone = // kform::get_global(mmlib->skeleton_profile, animation, event->timestamp, NodePath(event->reference_bone));
+						get_global_kform(mmlib->skeleton_profile, animation, event->timestamp, NodePath(event->reference_bone));
 				anchor_pos = anchor_bone.pos;
 			}
 

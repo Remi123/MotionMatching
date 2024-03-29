@@ -52,194 +52,6 @@ struct kform {
 
 	kform(Vector3 p, Quaternion r, Vector3 s = Vector3{ 1, 1, 1 }, Vector3 lv = Vector3{}, Vector3 av = Vector3{}, Vector3 sv = Vector3{}) :
 			pos{ p }, rot{ r }, scl{ s }, vel{ lv }, ang{ av }, svl{ sv } {}
-	kform(Ref<Animation> anim, double time, NodePath bonepath, kform bone_rest = kform{}) :
-			kform{ bone_rest } {
-		auto tpos = anim->find_track(bonepath, Animation::TrackType::TYPE_POSITION_3D);
-		auto trot = anim->find_track(bonepath, Animation::TrackType::TYPE_ROTATION_3D);
-		auto tscl = anim->find_track(bonepath, Animation::TrackType::TYPE_SCALE_3D);
-		kform s1 = *this;
-		if (tpos != -1) {
-			pos = anim->position_track_interpolate(tpos, time);
-			s1.pos = anim->position_track_interpolate(tpos, time + dt);
-		}
-		if (trot != -1) {
-			rot = anim->rotation_track_interpolate(trot, time);
-			s1.rot = anim->rotation_track_interpolate(trot, time + dt);
-		}
-		if (tscl != -1) {
-			scl = anim->scale_track_interpolate(tscl, time);
-			s1.scl = anim->scale_track_interpolate(tscl, time + dt);
-		}
-		*this = finite_difference(*this, s1, dt);
-	}
-
-	kform(Skeleton3D *skel, Ref<Animation> anim, double time, String bonename, String relative_to) {
-		int const relative_bone_id = skel->find_bone(relative_to);
-		int bone_id = skel->find_bone(bonename);
-		ERR_FAIL_COND_MSG(bone_id == -1, "Bone isn't in skeleton :" + bonename);
-		std::vector<kform> locals{};
-		do {
-			String const tmp_bonename = skel->get_bone_name(bone_id);
-			String const bonepath = skel->is_unique_name_in_owner() ? String("%") + skel->get_name() + tmp_bonename : skel->get_name() + tmp_bonename;
-			kform const rest{ skel->get_bone_rest(bone_id) };
-			kform const local = kform{ anim, time, bonepath, rest };
-			locals.push_back(local);
-
-			bone_id = skel->get_bone_parent(bone_id);
-		} while (bone_id != -1 && bone_id != relative_bone_id);
-
-		*this = std::accumulate(locals.rbegin(), locals.rend(), kform{},
-				[](const kform &acc, const kform &i) {
-					return acc * i;
-				});
-	}
-	kform(Skeleton3D *skel, Ref<Animation> anim, double time, String bonename) :
-			kform{ skel, anim, time, bonename, bonename } {}
-
-	kform(Ref<SkeletonProfile> skel, Ref<Animation> anim, double time, NodePath bonepath, NodePath relative_to) {
-		StringName const skel_path = bonepath.get_concatenated_names();
-		ERR_FAIL_COND_MSG(skel_path.is_empty(), "Bonename argument doesn't contain the path to the skeleton." + bonepath);
-		StringName const bone_name = bonepath.get_concatenated_subnames();
-		ERR_FAIL_COND_MSG(bone_name.is_empty(), "Bonename argument doesn't contain the name of the bone." + bonepath);
-		int const relative_bone_id = skel->find_bone((String)relative_to.get_concatenated_subnames());
-		int bone_id = skel->find_bone(bone_name);
-		ERR_FAIL_COND_MSG(bone_id == -1, "Bone isn't in skeleton :" + bonepath);
-		std::vector<kform> locals{};
-		do {
-			String const tmp_bonename = skel->get_bone_name(bone_id);
-			NodePath const tmp_bonepath = (String)skel_path + tmp_bonename;
-			kform const rest{ skel->get_reference_pose(bone_id) };
-			kform const local = kform{ anim, time, tmp_bonepath, rest };
-			locals.push_back(local);
-
-			bone_id = skel->find_bone(skel->get_bone_parent(bone_id));
-		} while (bone_id != -1 && bone_id != relative_bone_id);
-
-		*this = std::accumulate(locals.rbegin(), locals.rend(), kform{},
-				[](const kform &acc, const kform &i) {
-					return acc * i;
-				});
-	}
-	kform(Ref<SkeletonProfile> skel, Ref<Animation> anim, double time, String bonename) :
-			kform{ skel, anim, time, bonename, bonename } {}
-
-	kform(Ref<SkeletonProfile> skel, NodePath bonepath, Ref<Animation> anim, double time) :
-			kform{ skel->get_reference_pose(skel->find_bone(bonepath.get_concatenated_subnames())) } {
-		auto tpos = anim->find_track(bonepath, Animation::TrackType::TYPE_POSITION_3D);
-		auto trot = anim->find_track(bonepath, Animation::TrackType::TYPE_ROTATION_3D);
-		auto tscl = anim->find_track(bonepath, Animation::TrackType::TYPE_SCALE_3D);
-		kform s1 = *this;
-		if (tpos != -1) {
-			pos = anim->position_track_interpolate(tpos, time);
-			s1.pos = anim->position_track_interpolate(tpos, time + dt);
-		}
-		if (trot != -1) {
-			rot = anim->rotation_track_interpolate(trot, time);
-			s1.rot = anim->rotation_track_interpolate(trot, time + dt);
-		}
-		if (tscl != -1) {
-			scl = anim->scale_track_interpolate(tscl, time);
-			s1.scl = anim->scale_track_interpolate(tscl, time + dt);
-		}
-		*this = finite_difference(*this, s1, dt);
-	}
-
-	enum Space {
-		Local,
-		Model,
-		RootMotion,
-		Global
-	};
-
-	static inline kform get_global(Ref<SkeletonProfile> skel, Ref<Animation> anim, double time, NodePath bonepath) {
-		return kform(skel, anim, time, bonepath, Global);
-	}
-	static inline kform get_model(Ref<SkeletonProfile> skel, Ref<Animation> anim, double time, NodePath bonepath) {
-		return kform(skel, anim, time, bonepath, Model);
-	}
-	static inline kform get_root(Ref<SkeletonProfile> skel, Ref<Animation> anim, double time, NodePath bonepath) {
-		return kform(skel, anim, time, bonepath, RootMotion);
-	}
-	static inline kform get_local(Ref<SkeletonProfile> skel, Ref<Animation> anim, double time, NodePath bonepath) {
-		return kform(skel, anim, time, bonepath, Local);
-	}
-
-	kform(Ref<SkeletonProfile> skel, Ref<Animation> anim, double time, NodePath bonepath, Space space) :
-			kform(skel->get_reference_pose(skel->find_bone(bonepath.get_concatenated_subnames()))) {
-		switch (space) {
-			case Local:
-				_local(skel, anim, time, bonepath);
-				break;
-			case Model:
-				_model(skel, anim, time, bonepath);
-				break;
-			case RootMotion:
-				_root(skel, anim, time, bonepath);
-				break;
-			case Global:
-				_global(skel, anim, time, bonepath);
-				break;
-		}
-	}
-	static constexpr double dt = 0.032;
-	//DONE
-	void _local(Ref<SkeletonProfile> skel, Ref<Animation> anim, double time, NodePath bonepath) {
-		*this = skel->get_reference_pose(skel->find_bone(bonepath.get_concatenated_subnames()));
-		auto tpos = anim->find_track(bonepath, Animation::TrackType::TYPE_POSITION_3D);
-		auto trot = anim->find_track(bonepath, Animation::TrackType::TYPE_ROTATION_3D);
-		auto tscl = anim->find_track(bonepath, Animation::TrackType::TYPE_SCALE_3D);
-		kform s1 = *this;
-		if (tpos != -1) {
-			pos = anim->position_track_interpolate(tpos, time);
-			s1.pos = anim->position_track_interpolate(tpos, time + dt);
-		}
-		if (trot != -1) {
-			rot = anim->rotation_track_interpolate(trot, time);
-			s1.rot = anim->rotation_track_interpolate(trot, time + dt);
-		}
-		if (tscl != -1) {
-			scl = anim->scale_track_interpolate(tscl, time);
-			s1.scl = anim->scale_track_interpolate(tscl, time + dt);
-		}
-		*this = finite_difference(*this, s1, dt);
-	}
-	// Done
-	void _model(Ref<SkeletonProfile> skel, Ref<Animation> anim, double time, NodePath bonepath) {
-		_global(skel, anim, time, bonepath);
-		auto root = kform{};
-		root._local(skel, anim, time, bonepath.get_concatenated_names() + String(":") + skel->get_root_bone());
-		*this = *this / root;
-	}
-	//TODO
-	void _root(Ref<SkeletonProfile> skel, Ref<Animation> anim, double time, NodePath bonepath) {
-		_global(skel, anim, time, bonepath);
-		auto root = kform{};
-		root._local(skel, anim, time, bonepath.get_concatenated_names() + String(":") + skel->get_root_bone());
-		*this = root / *this;
-	}
-	//DONE
-	void _global(Ref<SkeletonProfile> skel, Ref<Animation> anim, double time, NodePath bonepath) {
-		kform s1 = *this;
-
-		std::vector<kform> locals{};
-		String skelpath = bonepath.get_concatenated_names();
-		String bone = bonepath.get_concatenated_subnames();
-		int bone_id = skel->find_bone(bone);
-
-		do {
-			kform l = *this;
-			l._local(skel, anim, time, skelpath + ':' + u::str(bone));
-			locals.push_back(l);
-
-			bone = skel->get_bone_parent(bone_id);
-			bone_id = skel->find_bone(bone);
-		} while (bone_id != -1);
-
-		*this = std::accumulate(locals.rbegin(), locals.rend(), kform{},
-				[](const kform &acc, const kform &i) {
-					return acc * i;
-				});
-	}
 
 	static Vector3 _log(Vector3 v) {
 		return Vector3(std::log(v.x), std::log(v.y), std::log(v.z));
@@ -276,7 +88,7 @@ struct kform {
 		result["position"] = pos;
 		result["velocity_linear"] = vel;
 		result["rotation"] = rot;
-		result["velocity.angular"] = ang;
+		result["velocity_angular"] = ang;
 		result["scale"] = scl;
 		result["velocity_scalar"] = svl;
 		return result;
@@ -398,8 +210,8 @@ static kform get_root_model_kform(Ref<SkeletonProfile> skel, Ref<Animation> anim
 	StringName bone = bonepath.get_concatenated_subnames();
 	std::vector<kform> trs{};
 	do {
-		kform _local = get_local_kform(skel,anim,time,NodePath{u::str(_skel_path) + u::str(":") + bone});
-		kform& back = trs.emplace_back(std::move(_local));
+		kform _local = get_local_kform(skel, anim, time, NodePath{ u::str(_skel_path) + u::str(":") + bone });
+		kform &back = trs.emplace_back(std::move(_local));
 		if (bone == skel->get_root_bone()) {
 			back.vel = back.rot.xform_inv(back.vel);
 			back.pos = Vector3{};
@@ -422,8 +234,8 @@ static kform get_model_kform(Ref<SkeletonProfile> skel, Ref<Animation> anim, dou
 	StringName bone = bonepath.get_concatenated_subnames();
 	std::vector<kform> trs{};
 	do {
-		kform _local = get_local_kform(skel,anim,time,NodePath{u::str(_skel_path) + u::str(":") + bone});
-		kform& back = trs.emplace_back(std::move(_local));
+		kform _local = get_local_kform(skel, anim, time, NodePath{ u::str(_skel_path) + u::str(":") + bone });
+		kform &back = trs.emplace_back(std::move(_local));
 		if (bone == skel->get_root_bone()) {
 			back = {};
 			break;
@@ -444,7 +256,7 @@ static kform get_global_kform(Ref<SkeletonProfile> skel, Ref<Animation> anim, do
 	StringName bone = bonepath.get_concatenated_subnames();
 	std::vector<kform> trs{};
 	do {
-		kform _local = get_local_kform(skel,anim,time,NodePath{u::str(_skel_path) + u::str(":") + bone});
+		kform _local = get_local_kform(skel, anim, time, NodePath{ u::str(_skel_path) + u::str(":") + bone });
 		trs.emplace_back(std::move(_local));
 		if (bone == skel->get_root_bone()) {
 			break;

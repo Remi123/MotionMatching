@@ -432,7 +432,7 @@ public:
 	GETSET(PackedFloat32Array, LR_MAX);
 	GETSET(int, BOUND_SM_SIZE);
 	GETSET(int, BOUND_LR_SIZE);
-	GETSET(real_t,category_penality);
+	GETSET(real_t, category_penality);
 
 	void build_bounds() {
 		// Compute array size
@@ -570,9 +570,9 @@ public:
 							}
 						}
 
-						// Cateogory penality. If include_category is not the default value and it's different than the current category, 
+						// Cateogory penality. If include_category is not the default value and it's different than the current category,
 						// multiply the current cost by the category_penality
-						if(included_category != std::numeric_limits<int64_t>::max() && included_category != db_anim_category[i]){
+						if (included_category != std::numeric_limits<int64_t>::max() && included_category != db_anim_category[i]) {
 							curr_cost *= category_penality;
 						}
 
@@ -709,121 +709,25 @@ public:
 	Dictionary sample_bone_global_info(StringName animation_name, double time, NodePath bone_path) {
 		ERR_FAIL_COND_V(skeleton_profile == nullptr, {});
 		ERR_FAIL_COND_V(!has_animation(animation_name), {});
-		std::vector<kform> trs{};
-		String _skel = bone_path.get_concatenated_names();
-		String bone = bone_path.get_concatenated_subnames();
-		do {
-			trs.emplace_back(kform{ skeleton_profile, NodePath(_skel + ":" + bone), get_animation(animation_name), time });
-			bone = skeleton_profile->get_bone_parent(skeleton_profile->find_bone(bone));
-		} while (!bone.is_empty());
-
-		auto kbone = std::reduce(trs.rbegin(), trs.rend(), kform{},
-				[](const kform &acc, const kform &i) {
-					return acc * i;
-				});
-		Dictionary result = Dictionary{};
-		result["position"] = kbone.pos;
-		result["linear_vel"] = kbone.vel;
-		result["rotation"] = kbone.rot;
-		result["angular_vel"] = kbone.ang;
-		result["scale"] = kbone.scl;
-		result["scalar_vel"] = kbone.svl;
-		return result;
+		return (Dictionary)get_global_kform(skeleton_profile, get_animation(animation_name), time, bone_path);
 	}
 
 	Dictionary sample_bone_model_info(StringName animation_name, double time, NodePath bone_path) {
 		ERR_FAIL_COND_V(skeleton_profile == nullptr, {});
 		ERR_FAIL_COND_V(!has_animation(animation_name), {});
-		std::vector<kform> trs{};
-		String _skel = bone_path.get_concatenated_names();
-		String bone = bone_path.get_concatenated_subnames();
-		do {
-			trs.emplace_back(kform{ skeleton_profile, NodePath(_skel + ":" + bone), get_animation(animation_name), time });
-			bone = skeleton_profile->get_bone_parent(skeleton_profile->find_bone(bone));
-		} while (!bone.is_empty() && bone != skeleton_profile->get_root_bone());
-
-		auto kbone = std::reduce(trs.rbegin(), trs.rend(), kform{},
-				[](const kform &acc, const kform &i) {
-					return acc * i;
-				});
-		Dictionary result = Dictionary{};
-		result["position"] = kbone.pos;
-		result["linear_vel"] = kbone.vel;
-		result["rotation"] = kbone.rot;
-		result["angular_vel"] = kbone.ang;
-		result["scale"] = kbone.scl;
-		result["scalar_vel"] = kbone.svl;
-		return result;
+		return (Dictionary)get_model_kform(skeleton_profile, get_animation(animation_name), time, bone_path);
 	}
 
 	Dictionary sample_bone_rootmotion_info(StringName animation_name, double time, NodePath bone_path) {
 		ERR_FAIL_COND_V(skeleton_profile == nullptr, {});
 		ERR_FAIL_COND_V(!has_animation(animation_name), {});
-		std::vector<kform> trs{};
-		String _skel = bone_path.get_concatenated_names();
-		String bone = bone_path.get_concatenated_subnames();
-		do {
-			trs.emplace_back(kform{ skeleton_profile, NodePath(_skel + ":" + bone), get_animation(animation_name), time });
-			bone = skeleton_profile->get_bone_parent(skeleton_profile->find_bone(bone));
-		} while (!bone.is_empty() && bone != skeleton_profile->get_root_bone());
-
-		kform root{ skeleton_profile, NodePath(_skel + ":" + skeleton_profile->get_root_bone()), get_animation(animation_name), time };
-		root.vel = root.rot.xform_inv(root.vel);
-		root.ang = root.rot.xform_inv(root.ang);
-		root.pos = Vector3();
-		root.rot = Quaternion();
-
-		auto kbone = std::reduce(trs.rbegin(), trs.rend(), root,
-				[](const kform &acc, const kform &i) {
-					return acc * i;
-				});
-		Dictionary result = Dictionary{};
-		result["position"] = kbone.pos;
-		result["linear_vel"] = kbone.vel;
-		result["rotation"] = kbone.rot;
-		result["angular_vel"] = kbone.ang;
-		result["scale"] = kbone.scl;
-		result["scalar_vel"] = kbone.svl;
-		return result;
+		return (Dictionary)get_root_model_kform(skeleton_profile, get_animation(animation_name), time, bone_path);
 	}
 
 	Dictionary sample_bone_local_info(StringName animation_name, double time, NodePath bone_path) {
 		ERR_FAIL_COND_V(skeleton_profile == nullptr, {});
 		ERR_FAIL_COND_V(!has_animation(animation_name), {});
-		kform bone = kform{ skeleton_profile, bone_path, get_animation(animation_name), time };
-		Dictionary result = Dictionary{};
-		result["position"] = bone.pos;
-		result["linear_vel"] = bone.vel;
-		result["rotation"] = bone.rot;
-		result["angular_vel"] = bone.ang;
-		result["scale"] = bone.scl;
-		result["scalar_vel"] = bone.svl;
-		return result;
-	}
-
-	static kform sample_bone_rootmotion_kform(Ref<Animation> animation, double time, Ref<SkeletonProfile> skeleton_profile, NodePath bone_path) {
-		ERR_FAIL_COND_V(skeleton_profile == nullptr, kform{});
-		std::vector<kform> trs{};
-		String _skel = bone_path.get_concatenated_names();
-		String bone = bone_path.get_concatenated_subnames();
-
-		do {
-			trs.emplace_back(kform{ skeleton_profile, NodePath(_skel + ":" + bone), animation, time });
-			bone = skeleton_profile->get_bone_parent(skeleton_profile->find_bone(bone));
-		} while (!bone.is_empty() && bone != skeleton_profile->get_root_bone());
-
-		const auto root_path = NodePath(_skel + ":" + skeleton_profile->get_root_bone());
-
-		kform root{ skeleton_profile, root_path, animation, time };
-		// root.vel = root.rot.xform_inv(root.vel);
-		// root.ang = root.rot.xform_inv(root.ang);
-		root.pos = Vector3();
-		root.rot = Quaternion();
-
-		return std::reduce(trs.rbegin(), trs.rend(), root,
-				[](const kform &acc, const kform &i) {
-					return acc * i;
-				});
+		return (Dictionary)get_local_kform(skeleton_profile, get_animation(animation_name), time, bone_path);
 	}
 
 	void prints_dimensions() {
@@ -949,7 +853,6 @@ protected:
 			ClassDB::bind_method(D_METHOD("get_category_penality"), &MMAnimationLibrary::get_category_penality);
 			godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT, "category_penality", PROPERTY_HINT_RANGE, "1.0, 100.0, 0.1, or_greater"), "set_category_penality", "get_category_penality");
 
-
 			ClassDB::bind_method(D_METHOD("set_BOUND_LR_SIZE", "value"), &MMAnimationLibrary::set_BOUND_LR_SIZE, DEFVAL(64));
 			ClassDB::bind_method(D_METHOD("get_BOUND_LR_SIZE"), &MMAnimationLibrary::get_BOUND_LR_SIZE);
 			godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::INT, "BOUND_LR_SIZE", PROPERTY_HINT_RANGE, "2, 100, 1, or_greater"), "set_BOUND_LR_SIZE", "get_BOUND_LR_SIZE");
@@ -959,22 +862,22 @@ protected:
 
 			ClassDB::bind_method(D_METHOD("set_LR_MAX", "value"), &MMAnimationLibrary::set_LR_MAX);
 			ClassDB::bind_method(D_METHOD("get_LR_MAX"), &MMAnimationLibrary::get_LR_MAX);
-			godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "LR_MAX",PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_READ_ONLY), "set_LR_MAX", "get_LR_MAX");
+			godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "LR_MAX", PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_READ_ONLY), "set_LR_MAX", "get_LR_MAX");
 			ClassDB::bind_method(D_METHOD("set_LR_MIN", "value"), &MMAnimationLibrary::set_LR_MIN);
 			ClassDB::bind_method(D_METHOD("get_LR_MIN"), &MMAnimationLibrary::get_LR_MIN);
-			godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "LR_MIN",PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_READ_ONLY), "set_LR_MIN", "get_LR_MIN");
+			godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "LR_MIN", PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_READ_ONLY), "set_LR_MIN", "get_LR_MIN");
 			ClassDB::bind_method(D_METHOD("set_SM_MAX", "value"), &MMAnimationLibrary::set_SM_MAX);
 			ClassDB::bind_method(D_METHOD("get_SM_MAX"), &MMAnimationLibrary::get_SM_MAX);
-			godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "SM_MAX",PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_READ_ONLY), "set_SM_MAX", "get_SM_MAX");
+			godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "SM_MAX", PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_READ_ONLY), "set_SM_MAX", "get_SM_MAX");
 			ClassDB::bind_method(D_METHOD("set_SM_MIN", "value"), &MMAnimationLibrary::set_SM_MIN);
 			ClassDB::bind_method(D_METHOD("get_SM_MIN"), &MMAnimationLibrary::get_SM_MIN);
-			godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "SM_MIN",PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_READ_ONLY), "set_SM_MIN", "get_SM_MIN");
+			godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "SM_MIN", PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_READ_ONLY), "set_SM_MIN", "get_SM_MIN");
 			ClassDB::bind_method(D_METHOD("set_Rng_Start", "value"), &MMAnimationLibrary::set_Rng_Start);
 			ClassDB::bind_method(D_METHOD("get_Rng_Start"), &MMAnimationLibrary::get_Rng_Start);
-			godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "Rng_Start",PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_READ_ONLY), "set_Rng_Start", "get_Rng_Start");
+			godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "Rng_Start", PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_READ_ONLY), "set_Rng_Start", "get_Rng_Start");
 			ClassDB::bind_method(D_METHOD("set_Rng_Stop", "value"), &MMAnimationLibrary::set_Rng_Stop);
 			ClassDB::bind_method(D_METHOD("get_Rng_Stop"), &MMAnimationLibrary::get_Rng_Stop);
-			godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "Rng_Stop",PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_READ_ONLY), "set_Rng_Stop", "get_Rng_Stop");
+			godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "Rng_Stop", PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_READ_ONLY), "set_Rng_Stop", "get_Rng_Stop");
 		}
 	}
 

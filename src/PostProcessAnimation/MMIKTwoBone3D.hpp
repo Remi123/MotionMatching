@@ -13,10 +13,8 @@
 #include <godot_cpp/templates/vector.hpp>
 #include <godot_cpp/variant/node_path.hpp>
 
-
 #include <godot_cpp/classes/animation_mixer.hpp>
 #include <godot_cpp/classes/skeleton3d.hpp>
-
 
 #include <KForm.hpp>
 
@@ -143,21 +141,16 @@ public:
 		float ac_ab_1 = acosf(u::clampf((lab * lab + lat * lat - lcb * lcb) / (2.0f * lab * lat), -1.0f, 1.0f));
 		float ba_bc_1 = acosf(u::clampf((lab * lab + lcb * lcb - lat * lat) / (2.0f * lab * lcb), -1.0f, 1.0f));
 
-		Quaternion r0 = Quaternion(axis_rot, ac_ab_1 - ac_ab_0); // Spring::quat_from_angle_axis(ac_ab_1 - ac_ab_0, axis_rot);
-		Quaternion r1 = Quaternion(axis_rot, ba_bc_1 - ba_bc_0); //Spring::quat_from_angle_axis(ba_bc_1 - ba_bc_0, axis_rot);
+		Quaternion r0 = Quaternion(axis_rot, ac_ab_1 - ac_ab_0);
+		Quaternion r1 = Quaternion(axis_rot, ba_bc_1 - ba_bc_0);
 
 		Vector3 c_a = (global.pos[BONE_REACH] - global.pos[BONE_ROOT]).normalized();
 		Vector3 t_a = (target_clamp - global.pos[BONE_ROOT]).normalized();
 
-		// Quaternion r2 = Spring::quat_from_angle_axis(
-		//     acosf(u::clampf(c_a.dot(t_a), -1.0f, 1.0f)),
-		//     (c_a.cross(t_a).normalized()));
 		Quaternion r2 = Quaternion(c_a.cross(t_a).normalized(), acosf(u::clampf(c_a.dot(t_a), -1.0f, 1.0f)));
 
 		local.rot[BONE_ROOT] = global.rot[BONE_PARENT].inverse() * (r2 * r0 * global.rot[BONE_ROOT]);
-		// local.rot[BONE_ROOT] = quat_inv_mul(global.rot[BONE_PARENT], quat_mul(r2, quat_mul(r0, global.rot[BONE_ROOT])));
 		local.rot[BONE_MIDDLE] = global.rot[BONE_ROOT].inverse() * r1 * global.rot[BONE_MIDDLE];
-		// local.rot[BONE_MIDDLE] = quat_inv_mul( global.rot[BONE_ROOT], quat_mul(r1, global.rot[BONE_MIDDLE]));
 	}
 
 protected:
