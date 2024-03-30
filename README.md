@@ -82,9 +82,6 @@ TODO : AABBTree doesn't support categories for now, and while index_range_set is
 
 TODO : Since Godot 4.3, GDScript's virtual binding is available, but it require to be called explicitly, meaning I wasn't successful at integrating both C++ and GDScript in a single list. My current approach would be this : Create a MFCustomScript class that overriden correctly each important function, and call the correct functions in gdscript when appropriate.
 
-### KForms
-TODO : KForm's code is all over the place, and tries to do too much. A huge cleanup is necessary and should stick to be library-focused. E.G. a separate function should retrieve kforms from animation instead of being part of the constructor.
-
 ### MotionFeatures
 
 TODO : MFBonesInfo needs a cleanup and proper space switching.
