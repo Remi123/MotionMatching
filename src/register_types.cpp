@@ -13,6 +13,7 @@
 #include "MotionFeatures/MFRootVelocity.hpp"
 #include "MotionFeatures/MFTrajectory.hpp"
 #include "MotionFeatures/MotionFeatures.hpp"
+#include "MotionFeatures/MFCustomScript.hpp"
 #include "Spring.hpp"
 
 #include "CircularBuffer.hpp"
@@ -21,6 +22,8 @@
 #include <PostProcessAnimation/MMIKLookAt3D.hpp>
 #include <PostProcessAnimation/MMIKTwoBone3D.hpp>
 #include <PostProcessAnimation/MMInertialization3D.hpp>
+
+#include <TestVirtual/Base.hpp>
 
 
 #include <AnimTags/AnimTag.hpp>
@@ -50,6 +53,7 @@ void gdextension_MM_initialize(ModuleInitializationLevel p_level) {
 			ClassDB::register_class<MFTrajectory>();
 			ClassDB::register_class<MFEvents>();
 			ClassDB::register_class<MFDistance>();
+			ClassDB::register_class<MFCustomScript>();
 		}
 
 		{ // Animation Tags
@@ -75,6 +79,9 @@ void gdextension_MM_initialize(ModuleInitializationLevel p_level) {
 			ClassDB::register_class<CircularBuffer>();
 			ClassDB::register_class<Spring>();
 		}
+		ClassDB::register_class<BaseVirtual>(true);
+		ClassDB::register_class<CppVirtual>();
+		ClassDB::register_class<VirtualContainer>();
 	}
 }
 

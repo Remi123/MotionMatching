@@ -3,6 +3,8 @@
 #include <climits>
 #include <godot_cpp/variant/utility_functions.hpp>
 
+#include <godot_cpp/core/gdvirtual.gen.inc>
+
 #include <godot_cpp/classes/global_constants.hpp>
 #include <godot_cpp/classes/node.hpp>
 #include <godot_cpp/variant/node_path.hpp>
