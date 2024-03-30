@@ -18,17 +18,17 @@ env = SConscript("godot-cpp/SConstruct")
 
 
 # For some reason the 
-print(env["CPPDEFINES"])
-print(env["CXXFLAGS"])
-print(env["disable_exceptions"])
-if env["disable_exceptions"]:
-    if env.get("is_msvc", False):
-        env.Append(CPPDEFINES=[("_HAS_EXCEPTIONS", 0)])
-        env.Append(CXXFLAGS=["/EHsc"])
-    else:
-        env.Append(CXXFLAGS=["-fno-exceptions"])
-elif env.get("is_msvc", False):
-    env.Append(CXXFLAGS=["/EHsc"])
+# print(env["CPPDEFINES"])
+# print(env["CXXFLAGS"])
+# print(env["disable_exceptions"])
+# if env["disable_exceptions"]:
+#     if env.get("is_msvc", False):
+#         # env.Append(CPPDEFINES=[("_HAS_EXCEPTIONS", 0)])
+#         env.Append(CXXFLAGS=["/EHsc"])
+#     else:
+#         env.Append(CXXFLAGS=["-fno-exceptions"])
+# elif env.get("is_msvc", False):
+#     env.Append(CXXFLAGS=["/EHsc"])
 
 
 # Initial options inheriting from CLI args
