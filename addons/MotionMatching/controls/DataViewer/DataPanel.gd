@@ -120,8 +120,8 @@ func show_lign(lign:int)->void:
 		weights_row.set_text_alignment(0,HORIZONTAL_ALIGNMENT_RIGHT)
 		var hints :PackedStringArray= f.get_hints()
 		for i in range(f.get_dimension()):
-			var scale :float= lib.feature_scale[i]
-			var avg :float= lib.feature_offset[i]
+			var scale :float = lib.feature_scale[offset+i]
+			var avg :float = lib.feature_offset[offset+i]
 			data_row.set_text(i+1, "%0.3f" % ((data[offset+i] * scale) + avg ) )
 			data_row.set_text_alignment(i+1,HORIZONTAL_ALIGNMENT_CENTER)
 
