@@ -121,9 +121,6 @@ public:
 	// Dimensional Stats.
 	GETSET(int, nb_dimensions)
 	GETSET(PackedFloat32Array, weights)
-	GETSET(PackedFloat32Array, means)
-	GETSET(PackedFloat32Array, stddev)
-	GETSET(Array, densities)
 
 	GETSET(PackedFloat32Array, feature_offset);
 	GETSET(PackedFloat32Array, feature_scale);
@@ -208,31 +205,21 @@ public:
 		ERR_FAIL_COND_EDMSG(skeleton_profile == nullptr, "Skeleton_profile is empty");
 		ERR_FAIL_COND_EDMSG(skeleton_profile->get_root_bone().is_empty(), "SkeletonProfile requires a Root Bone");
 		u::prints("Preparing Features...");
-		size_t tmp_nb_dim = 0;
+		int tmp_nb_dim = 0;
 		for (auto i = 0; i < motion_features.size(); ++i) {
 			MotionFeature *f = Object::cast_to<MotionFeature>(motion_features[i]);
 			ERR_FAIL_NULL_MSG(f, "Features no." + u::str(i) + "is null");
-			u::prints("Feature no.", i, f->get_name(), "Dimensions:", (size_t)f->call("get_dimension"));
+			u::prints("Feature no.", i, f->get_name(), "Dimensions:", (int)f->call("get_dimension"));
 			if ((bool)f->call("setup_bake_init", Ref<MMAnimationLibrary>(this)) == false) {
 				ERR_FAIL_EDMSG("Motion Feature failed when setting the profile at index " + u::str(i));
 			}
-			tmp_nb_dim += (size_t)f->call("get_dimension");
+			tmp_nb_dim += (int)f->call("get_dimension");
 		}
 		nb_dimensions = tmp_nb_dim;
 		u::prints("Total Dimension", nb_dimensions);
 
 		godot::TypedArray<godot::StringName> anim_names = get_animation_list();
 		u::prints("Detecting", anim_names.size(), "animations. Preparing...");
-
-		means.clear();
-		means.resize(nb_dimensions);
-		means.fill(0.0f);
-		stddev.clear();
-		stddev.resize(nb_dimensions);
-		stddev.fill(0.0f);
-		densities.clear();
-		densities.resize(nb_dimensions);
-		densities.fill(Array::make(0.0, 0.0));
 
 		PackedFloat32Array data = PackedFloat32Array();
 
@@ -349,41 +336,27 @@ public:
 		feature_offset.fill(0.0f);
 		feature_scale.fill(1.0f);
 
-		// // Normalization
-		// First calculate the means and the variance for each dimensions.
-		for (auto i = 0; i < nb_dimensions; ++i) {
-			means[i] = mean(data_stats[i]);
-			stddev[i] = std::sqrtf(variance(data_stats[i]));
-			if (stddev[i] <= std::numeric_limits<float>::epsilon()) {
-				stddev[i] = 1.0f;
-			}
-			Array arr{};
-			for (const auto &d : density(data_stats[i])) {
-				arr.append(Array::make(d.first, d.second));
-			}
-			densities[i] = std::move(arr);
-		}
-
+		// Normalization
 		// There is some amount of logic here that must be taking care when baking and querying.
 		// A feature could expect to use the raw values instead of normalizing.
 		// I expect this part to be changed feature type get added.
 		for (size_t features_index = 0, offset = 0; features_index < motion_features.size(); ++features_index) {
 			MotionFeature *f = Object::cast_to<MotionFeature>(motion_features[features_index]);
+			int feature_dimension = (int)f->call("get_dimension");
 			if (MotionFeature::NormalizationType::Standard == f->get_normalization_type()) {
-				for (auto i = offset; i < f->get_dimension(); ++i) {
-					// feature_offset[offset + i] = mean(data_stats[offset + i]);
+				for (auto i = offset; i < feature_dimension; ++i) {
 					feature_scale[offset + i] = std::sqrtf(variance(data_stats[offset + i]));
 					if (feature_scale[offset + i] < std::numeric_limits<float>::epsilon()) {
 						feature_scale[offset + i] = 1.0f;
 					}
 				}
 			} else if (MotionFeature::NormalizationType::RawValue == f->get_normalization_type()) {
-				for (auto i = offset; i < f->get_dimension(); ++i) {
+				for (auto i = offset; i < feature_dimension; ++i) {
 					feature_offset[offset + i] = 0.0f;
 					feature_scale[offset + i] = 1.0f;
 				}
 			}
-			offset += (size_t)f->call("get_dimension");
+			offset += (int)f->call("get_dimension");
 		}
 		// Apply normalization to data. When using RawValue, means and variance are 0 and 1 respectively.
 		for (size_t pose = 0; pose < data.size() / nb_dimensions; ++pose) {
@@ -399,7 +372,8 @@ public:
 			WARN_PRINT_ED("Weights resized to " + u::str(nb_dimensions) + " and reset to ones.");
 			weights.resize(nb_dimensions);
 		}
-
+		
+		u::prints("Creating bounds");
 		build_bounds();
 
 		u::prints("Finished All Animations");
@@ -430,8 +404,8 @@ public:
 	GETSET(PackedFloat32Array, SM_MAX);
 	GETSET(PackedFloat32Array, LR_MIN);
 	GETSET(PackedFloat32Array, LR_MAX);
-	GETSET(int, BOUND_SM_SIZE);
-	GETSET(int, BOUND_LR_SIZE);
+	GETSET(int, BOUND_SM_SIZE,16);
+	GETSET(int, BOUND_LR_SIZE,64);
 	GETSET(real_t, category_penality);
 
 	void build_bounds() {
@@ -482,7 +456,7 @@ public:
 		float best_cost = 0.0f;
 		int curr_index = best_index;
 
-		for (size_t i = 0; i < means.size(); ++i) {
+		for (size_t i = 0; i < feature_offset.size(); ++i) {
 			query[i] = (query[i] - feature_offset[i]) / feature_scale[i];
 		}
 
@@ -653,7 +627,7 @@ public:
 		_cache_kdtree();
 
 		// Normalization of the query data. It's expected to not be normalized.
-		for (size_t i = 0; i < means.size(); ++i) {
+		for (size_t i = 0; i < feature_offset.size(); ++i) {
 			query[i] = (query[i] - feature_offset[i]) / feature_scale[i];
 		}
 
@@ -738,7 +712,7 @@ public:
 			u::prints("Features #", features_index, "hints", f->call("get_hints"));
 			u::prints("Features #", features_index, "setup_bake_init", f->call("setup_bake_init", this));
 			u::prints("Features #", features_index, "setup_bake_animation", f->call("setup_bake_animation", nullptr));
-			u::prints("Features #", features_index, "bake", f->has_method("bake_animation_pose") ? (PackedFloat32Array)f->call("bake_animation_pose", nullptr, 0.016) : f->bake_animation_pose(nullptr, 0.032));
+			u::prints("Features #", features_index, "bake",(PackedFloat32Array)f->call("bake_animation_pose", nullptr, 0.016));
 		}
 	}
 
@@ -768,16 +742,6 @@ protected:
 		}
 		// Internal properties
 		{
-			ClassDB::bind_method(D_METHOD("set_means", "value"), &MMAnimationLibrary::set_means);
-			ClassDB::bind_method(D_METHOD("get_means"), &MMAnimationLibrary::get_means);
-			godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "means", PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_READ_ONLY), "set_means", "get_means");
-			ClassDB::bind_method(D_METHOD("set_stddev", "value"), &MMAnimationLibrary::set_stddev);
-			ClassDB::bind_method(D_METHOD("get_stddev"), &MMAnimationLibrary::get_stddev);
-			godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "stddev", PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_READ_ONLY), "set_stddev", "get_stddev");
-			ClassDB::bind_method(D_METHOD("set_densities", "value"), &MMAnimationLibrary::set_densities);
-			ClassDB::bind_method(D_METHOD("get_densities"), &MMAnimationLibrary::get_densities);
-			godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::ARRAY, "densities", PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_READ_ONLY), "set_densities", "get_densities");
-
 			ClassDB::bind_method(D_METHOD("set_nb_dimensions", "value"), &MMAnimationLibrary::set_nb_dimensions);
 			ClassDB::bind_method(D_METHOD("get_nb_dimensions"), &MMAnimationLibrary::get_nb_dimensions);
 			godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::INT, "nb_dimensions", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_READ_ONLY), "set_nb_dimensions", "get_nb_dimensions");
@@ -855,7 +819,7 @@ protected:
 
 			ClassDB::bind_method(D_METHOD("set_BOUND_LR_SIZE", "value"), &MMAnimationLibrary::set_BOUND_LR_SIZE, DEFVAL(64));
 			ClassDB::bind_method(D_METHOD("get_BOUND_LR_SIZE"), &MMAnimationLibrary::get_BOUND_LR_SIZE);
-			godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::INT, "BOUND_LR_SIZE", PROPERTY_HINT_RANGE, "2, 100, 1, or_greater"), "set_BOUND_LR_SIZE", "get_BOUND_LR_SIZE");
+			godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::INT, "BOUND_LR_SIZE", PROPERTY_HINT_RANGE, "4, 100, 1, or_greater"), "set_BOUND_LR_SIZE", "get_BOUND_LR_SIZE");
 			ClassDB::bind_method(D_METHOD("set_BOUND_SM_SIZE", "value"), &MMAnimationLibrary::set_BOUND_SM_SIZE, DEFVAL(16));
 			ClassDB::bind_method(D_METHOD("get_BOUND_SM_SIZE"), &MMAnimationLibrary::get_BOUND_SM_SIZE);
 			godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::INT, "BOUND_SM_SIZE", PROPERTY_HINT_RANGE, "2, 100, 1, or_greater"), "set_BOUND_SM_SIZE", "get_BOUND_SM_SIZE");

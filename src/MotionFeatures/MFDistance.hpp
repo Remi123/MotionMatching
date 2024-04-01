@@ -60,13 +60,23 @@ public:
 
 	static constexpr float delta = 0.016f;
 
-	virtual int get_dimension() override { return events_names.size() * 3; }
+	int get_dimension() const { return events_names.size() * 3; }
 
-	virtual PackedFloat32Array get_weights() override { return Array::make(1.0f, 1.0f, 1.0f); }
+	PackedFloat32Array get_weights() const { return Array::make(1.0f, 1.0f, 1.0f); }
+
+	PackedStringArray get_hints() const {
+		PackedStringArray hints = {};
+		for (auto e : events_names) {
+			hints.append(e + ":x");
+			hints.append(e + ":y");
+			hints.append(e + ":z");
+		}
+		return hints;
+	}
 
 	String root_bone_track = "";
 	Transform3D rest_pose = Transform3D();
-	virtual bool setup_bake_init(Ref<MMAnimationLibrary> animlib) override {
+	bool setup_bake_init(Ref<MMAnimationLibrary> animlib) {
 		ERR_FAIL_COND_V_EDMSG(animlib->skeleton_path.is_empty(), false, "SkeletonPath is Empty");
 		ERR_FAIL_COND_V_EDMSG(animlib->skeleton_profile == nullptr, false, "SkeletonProfile is null");
 		ERR_FAIL_COND_V_EDMSG(animlib->skeleton_profile->get_root_bone().is_empty(), false, "No Root bone to extract data");
@@ -77,19 +87,10 @@ public:
 		rest_pose = animlib->skeleton_profile->get_reference_pose(animlib->skeleton_profile->find_bone(animlib->skeleton_profile->get_root_bone()));
 		return true;
 	}
-	virtual PackedStringArray get_hints() const {
-		PackedStringArray hints = {};
-		for (auto e : events_names) {
-			hints.append(e + ":x");
-			hints.append(e + ":y");
-			hints.append(e + ":z");
-		}
-		return hints;
-	}
 
 	int root_track_pos = -1;
 	int root_track_quat = -1;
-	virtual bool setup_bake_animation(Ref<Animation> animation) override {
+	bool setup_bake_animation(Ref<Animation> animation) {
 		auto tags = mmlib->tags;
 		animation_events.clear();
 		for (auto i = 0; i < mmlib->tags.size(); ++i) {
@@ -104,7 +105,7 @@ public:
 	}
 
 	// the current logic is this : Take the first event
-	virtual PackedFloat32Array bake_animation_pose(Ref<Animation> animation, float time) override {
+	PackedFloat32Array bake_animation_pose(Ref<Animation> animation, float time) {
 		PackedFloat32Array result = {};
 		std::vector<Ref<TagMFEvent>> current_events{};
 		const float time_offset = 1.0f / Engine::get_singleton()->get_physics_ticks_per_second();

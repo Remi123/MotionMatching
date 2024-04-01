@@ -30,6 +30,7 @@
 #include <godot_cpp/classes/editor_node3d_gizmo_plugin.hpp>
 #include <godot_cpp/classes/standard_material3d.hpp>
 
+#include <MMAnimationLibrary.hpp>
 #include <MMAnimationPlayer.hpp>
 #include <godot_cpp/classes/character_body3d.hpp>
 
@@ -45,11 +46,10 @@
 	ClassDB::bind_method(D_METHOD(STRING_PREFIX(get_, variable)), &type::get_##variable);          \
 	ADD_PROPERTY(PropertyInfo(variant_type, #variable, __VA_ARGS__), STRING_PREFIX(set_, variable), STRING_PREFIX(get_, variable));
 
-class MMAnimationLibrary;
 
 struct MotionFeature : public Resource {
 	GDCLASS(MotionFeature, Resource)
-	friend class MMAnimationLibrary;
+
 
 public:
 	enum NormalizationType {
@@ -62,30 +62,14 @@ public:
 
 	static constexpr float delta = 0.016f;
 
-	virtual int get_dimension() { return 0; }
+	GDVIRTUAL0RC(int,get_dimension);
+	GDVIRTUAL0RC(PackedStringArray,get_hints);
+	GDVIRTUAL0RC(PackedFloat32Array,get_weights);
 
-	virtual PackedStringArray get_hints() const { return {}; }
-
-	virtual PackedFloat32Array get_weights() { return {}; }
-
-	virtual bool setup_bake_init(Ref<MMAnimationLibrary> mmal) {
-		UtilityFunctions::prints("Default init called, probably not what you want");
-		// returning false will abort the process.
-		// feel free to print more details
-		return true;
-	}
-
-	virtual bool setup_bake_animation(Ref<Animation> animation) {
-		// returning false will skip this animation and print a warning
-		// feel free to print more details
-		return true;
-	}
-	virtual PackedFloat32Array bake_animation_pose(Ref<Animation> animation, float time) {
-		PackedFloat32Array result{};
-		result.resize((size_t)this->call("get_dimension"));
-		result.fill(0.0f);
-		return result;
-	}
+	
+	GDVIRTUAL1R(bool,setup_bake_animation,Ref<Animation>);
+	GDVIRTUAL2R(PackedFloat32Array,bake_animation_pose,Ref<Animation>,float);
+	GDVIRTUAL1R(bool,setup_bake_init,Ref<AnimationLibrary>);
 
 	virtual float calculate_cost(PackedFloat32Array query, PackedFloat32Array data) const{
 		ERR_FAIL_V_MSG(query.size() != data.size(),"Query and Data not the same size");
@@ -102,22 +86,22 @@ public:
 		BIND_ENUM_CONSTANT(Standard);
 		BIND_ENUM_CONSTANT(RawValue);
 
-		BIND_VIRTUAL_METHOD(MotionFeature, get_dimension);
-		// ClassDB::bind_method( D_METHOD("get_dimension"), &MotionFeature::get_dimension);
-		BIND_VIRTUAL_METHOD(MotionFeature, get_weights);
-		// ClassDB::bind_method( D_METHOD("get_weights"), &MotionFeature::get_weights);
-		BIND_VIRTUAL_METHOD(MotionFeature, get_hints);
-		// ClassDB::bind_method( D_METHOD("get_hints"), &MotionFeature::get_hints);
+		GDVIRTUAL_BIND(get_dimension);
 
-		ClassDB::bind_method(D_METHOD("set_normalization_type", "value"), &MotionFeature::set_normalization_type, DEFVAL(NormalizationType::RawValue));
+		GDVIRTUAL_BIND(get_weights);
+
+		GDVIRTUAL_BIND(get_hints);
+
+
+		ClassDB::bind_method(D_METHOD("set_normalization_type", "value"), &MotionFeature::set_normalization_type, DEFVAL(NormalizationType::Standard));
 		ClassDB::bind_method(D_METHOD("get_normalization_type"), &MotionFeature::get_normalization_type);
 		ADD_PROPERTY(PropertyInfo(Variant::INT, "normalization_type", godot::PROPERTY_HINT_ENUM, "Standard,RawValue"), "set_normalization_type", "get_normalization_type");
 
-		BIND_VIRTUAL_METHOD(MotionFeature, setup_bake_init);
+		GDVIRTUAL_BIND( setup_bake_init,"animation_library");
 		// ClassDB::bind_method( D_METHOD("setup_bake_init","mm_animation_library"),   &MotionFeature::setup_bake_init);
-		BIND_VIRTUAL_METHOD(MotionFeature, setup_bake_animation);
+		GDVIRTUAL_BIND( setup_bake_animation,"animation");
 		// ClassDB::bind_method( D_METHOD("setup_bake_animation","animation"),         &MotionFeature::setup_bake_animation);
-		BIND_VIRTUAL_METHOD(MotionFeature, bake_animation_pose);
+		GDVIRTUAL_BIND( bake_animation_pose,"animation","timestamp");
 		// ClassDB::bind_method( D_METHOD("bake_animation_pose","animation","time"),   &MotionFeature::bake_animation_pose);
 		BIND_VIRTUAL_METHOD(MotionFeature, calculate_cost);
 

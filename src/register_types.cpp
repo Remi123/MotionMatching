@@ -6,14 +6,12 @@
 #include <godot_cpp/core/defs.hpp>
 #include <godot_cpp/godot.hpp>
 
-
 #include "MotionFeatures/MFBonesInfo.hpp"
 #include "MotionFeatures/MFDistance.hpp"
 #include "MotionFeatures/MFEvents.hpp"
 #include "MotionFeatures/MFRootVelocity.hpp"
 #include "MotionFeatures/MFTrajectory.hpp"
 #include "MotionFeatures/MotionFeatures.hpp"
-#include "MotionFeatures/MFCustomScript.hpp"
 #include "Spring.hpp"
 
 #include "CircularBuffer.hpp"
@@ -24,7 +22,6 @@
 #include <PostProcessAnimation/MMInertialization3D.hpp>
 
 #include <TestVirtual/Base.hpp>
-
 
 #include <AnimTags/AnimTag.hpp>
 
@@ -42,18 +39,17 @@ using namespace godot;
 
 void gdextension_MM_initialize(ModuleInitializationLevel p_level) {
 	if (p_level == MODULE_INITIALIZATION_LEVEL_SCENE) {
-		ClassDB::register_class<MMAnimationPlayer>();
-		ClassDB::register_class<MMAnimationLibrary>();
+		GDREGISTER_CLASS(MMAnimationPlayer);
+		GDREGISTER_CLASS(MMAnimationLibrary);
 
 		{ // Motion Features Resources
-			ClassDB::register_class<MotionFeature>(true); // Abstract class
+			GDREGISTER_VIRTUAL_CLASS(MotionFeature);
 
-			ClassDB::register_class<MFRootVelocity>();
-			ClassDB::register_class<MFBonesInfo>();
-			ClassDB::register_class<MFTrajectory>();
-			ClassDB::register_class<MFEvents>();
-			ClassDB::register_class<MFDistance>();
-			ClassDB::register_class<MFCustomScript>();
+			GDREGISTER_CLASS(MFRootVelocity);
+			GDREGISTER_CLASS(MFBonesInfo);
+			GDREGISTER_CLASS(MFTrajectory);
+			GDREGISTER_CLASS(MFEvents);
+			GDREGISTER_CLASS(MFDistance);
 		}
 
 		{ // Animation Tags
@@ -70,18 +66,18 @@ void gdextension_MM_initialize(ModuleInitializationLevel p_level) {
 		}
 
 		{ // PostProcessing Nodes
-			ClassDB::register_class<MMInertialization3D>();
-			ClassDB::register_class<MMIKLookAt3D>();
-			ClassDB::register_class<MMIKTwoBone3D>();
+			GDREGISTER_CLASS(MMInertialization3D);
+			GDREGISTER_CLASS(MMIKLookAt3D);
+			GDREGISTER_CLASS(MMIKTwoBone3D);
 		}
 
 		{ // Various helper
-			ClassDB::register_class<CircularBuffer>();
-			ClassDB::register_class<Spring>();
+			GDREGISTER_CLASS(CircularBuffer);
+			GDREGISTER_CLASS(Spring);
 		}
-		ClassDB::register_class<BaseVirtual>(true);
-		ClassDB::register_class<CppVirtual>();
-		ClassDB::register_class<VirtualContainer>();
+		GDREGISTER_VIRTUAL_CLASS(BaseVirtual);
+		GDREGISTER_CLASS(CppVirtual);
+		GDREGISTER_CLASS(VirtualContainer);
 	}
 }
 

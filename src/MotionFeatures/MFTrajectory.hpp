@@ -34,7 +34,6 @@
 #include <cmath>
 #include <format>
 
-
 using namespace godot;
 using u = godot::UtilityFunctions;
 
@@ -58,10 +57,20 @@ public:
 	GETSET(PackedFloat32Array, future_time_dt);
 	GETSET(bool, use_y_coordinate, false);
 
+public:
+	int get_dimension() const {
+		const unsigned int size = use_y_coordinate ? 3 : 2;
+		// Offset for each
+		const size_t past_pos = size * past_time_dt.size();
+		const size_t future_pos = size * future_time_dt.size();
+		const size_t future_rot_angle = size * future_time_dt.size();
+		return past_pos + future_pos + future_rot_angle;
+	}
+
 	GETSET(float, weight_history_pos, 1.0f);
 	GETSET(float, weight_prediction_pos, 1.0f);
 	GETSET(float, weight_prediction_angle, 1.0f);
-	virtual PackedFloat32Array get_weights() override {
+	PackedFloat32Array get_weights() const {
 		const unsigned int size = use_y_coordinate ? 3 : 2;
 		PackedFloat32Array result{};
 		for (auto i = 0; i < size * past_time_dt.size(); ++i) {
@@ -75,15 +84,29 @@ public:
 		}
 		return result;
 	}
+	PackedStringArray get_hints() const {
+		PackedStringArray result{};
 
-public:
-	virtual int get_dimension() override {
-		const unsigned int size = use_y_coordinate ? 3 : 2;
-		// Offset for each
-		const size_t past_pos = size * past_time_dt.size();
-		const size_t future_pos = size * future_time_dt.size();
-		const size_t future_rot_angle = size * future_time_dt.size();
-		return past_pos + future_pos + future_rot_angle;
+		for (auto elem : past_time_dt) {
+			result.append("Px-" + u::str(std::format("{:.2f}", elem).c_str()));
+			if (use_y_coordinate)
+				result.append("Py-" + u::str(std::format("{:.2f}", elem).c_str()));
+			result.append("Pz-" + u::str(std::format("{:.2f}", elem).c_str()));
+		}
+		for (auto elem : future_time_dt) {
+			result.append("Px+" + u::str(std::format("{:.2f}", elem).c_str()));
+			if (use_y_coordinate)
+				result.append("Py+" + u::str(std::format("{:.2f}", elem).c_str()));
+			result.append("Pz+" + u::str(std::format("{:.2f}", elem).c_str()));
+		}
+		for (auto elem : future_time_dt) {
+			result.append("Dx+" + u::str(std::format("{:.2f}", elem).c_str()));
+			if (use_y_coordinate)
+				result.append("Dy+" + u::str(std::format("{:.2f}", elem).c_str()));
+			result.append("Dz+" + u::str(std::format("{:.2f}", elem).c_str()));
+		}
+
+		return result;
 	}
 
 	int root_tracks[3] = { 0, 0, 0 };
@@ -92,7 +115,7 @@ public:
 	Quaternion start_rot, end_rot, end_ang_vel;
 	float start_time = 0.0f, end_time = 0.0f;
 
-	virtual bool setup_bake_init(Ref<MMAnimationLibrary> animlib) override {
+	bool setup_bake_init(Ref<MMAnimationLibrary> animlib) {
 		ERR_FAIL_COND_V_EDMSG(animlib->get_skeleton_path().is_empty(), false, "SkeletonPath is Empty");
 		ERR_FAIL_COND_V_EDMSG(animlib->get_skeleton_profile() == nullptr, false, "SkeletonProfile is null");
 		ERR_FAIL_COND_V_EDMSG(animlib->get_skeleton_profile()->get_root_bone().is_empty(), false, "No Root bone to extract data");
@@ -100,7 +123,7 @@ public:
 		return true;
 	};
 
-	virtual bool setup_bake_animation(Ref<Animation> animation) override {
+	bool setup_bake_animation(Ref<Animation> animation) {
 		if (animation->get_loop_mode() == Animation::LOOP_PINGPONG) {
 			WARN_PRINT(std::format("animation is loop type Ping Pong, which isn't supported for now. ").c_str());
 		}
@@ -135,7 +158,7 @@ public:
 		return true;
 	}
 
-	virtual PackedFloat32Array bake_animation_pose(Ref<Animation> animation, float time) override {
+	PackedFloat32Array bake_animation_pose(Ref<Animation> animation, float time) {
 		PackedFloat32Array result{};
 		kform current_kform{
 			animation->position_track_interpolate(root_tracks[0], time),
@@ -248,7 +271,7 @@ public:
 		const size_t x_offset = 0, y_offset = 1, z_offset = use_y_coordinate ? 2 : 1;
 		const size_t past_size = past_time_dt.size();
 		for (size_t i = 0; i < past_size; ++i) {
-			Vector3 query_past{},data_past{};
+			Vector3 query_past{}, data_past{};
 			query_past.x = query[past_pos_offset + i * dim_size + x_offset];
 			if (use_y_coordinate)
 				query_past.y = query[past_pos_offset + i * dim_size + y_offset];
@@ -263,7 +286,7 @@ public:
 		}
 		// Future Post Cost
 		for (size_t i = 0; i < future_time_dt.size(); ++i) {
-			Vector3 query_pos_future{},data_pos_future{};
+			Vector3 query_pos_future{}, data_pos_future{};
 			query_pos_future.x = query[fut_pos_offset + i * dim_size + x_offset];
 			if (use_y_coordinate)
 				query_pos_future.y = query[fut_pos_offset + i * dim_size + y_offset];
@@ -279,7 +302,7 @@ public:
 
 		// Future Dir Cost
 		for (size_t i = 0; i < future_time_dt.size(); ++i) {
-			Vector3 query_dir_future{},data_dir_future{};
+			Vector3 query_dir_future{}, data_dir_future{};
 			query_dir_future.x = query[fut_dir_offset + i * dim_size + x_offset];
 			if (use_y_coordinate)
 				query_dir_future.y = query[fut_dir_offset + i * dim_size + y_offset];
@@ -321,31 +344,6 @@ public:
 				result.append(elem.y);
 			result.append(elem.z);
 		}
-		return result;
-	}
-
-	virtual PackedStringArray get_hints() const override {
-		PackedStringArray result{};
-
-		for (auto elem : past_time_dt) {
-			result.append("Px-" + u::str(std::format("{:.2f}", elem).c_str()));
-			if (use_y_coordinate)
-				result.append("Py-" + u::str(std::format("{:.2f}", elem).c_str()));
-			result.append("Pz-" + u::str(std::format("{:.2f}", elem).c_str()));
-		}
-		for (auto elem : future_time_dt) {
-			result.append("Px+" + u::str(std::format("{:.2f}", elem).c_str()));
-			if (use_y_coordinate)
-				result.append("Py+" + u::str(std::format("{:.2f}", elem).c_str()));
-			result.append("Pz+" + u::str(std::format("{:.2f}", elem).c_str()));
-		}
-		for (auto elem : future_time_dt) {
-			result.append("Dx+" + u::str(std::format("{:.2f}", elem).c_str()));
-			if (use_y_coordinate)
-				result.append("Dy+" + u::str(std::format("{:.2f}", elem).c_str()));
-			result.append("Dz+" + u::str(std::format("{:.2f}", elem).c_str()));
-		}
-
 		return result;
 	}
 

@@ -14,7 +14,6 @@
 #include <godot_cpp/templates/local_vector.hpp>
 #include <godot_cpp/templates/vector.hpp>
 
-
 #include <godot_cpp/classes/time.hpp>
 
 #include <godot_cpp/classes/animation.hpp>
@@ -25,17 +24,14 @@
 #include <godot_cpp/classes/skeleton3d.hpp>
 #include <godot_cpp/classes/skeleton_profile.hpp>
 
-
 #include <godot_cpp/classes/box_mesh.hpp>
 #include <godot_cpp/classes/editor_node3d_gizmo.hpp>
 #include <godot_cpp/classes/editor_node3d_gizmo_plugin.hpp>
 #include <godot_cpp/classes/standard_material3d.hpp>
 
-
 #include <algorithm>
 #include <limits>
 #include <ranges>
-
 
 #include <MotionFeatures/MotionFeatures.hpp>
 
@@ -53,7 +49,6 @@ struct MMAnimationLibrary;
 	ClassDB::bind_method(D_METHOD(STRING_PREFIX(set_, variable), "value"), &type::set_##variable); \
 	ClassDB::bind_method(D_METHOD(STRING_PREFIX(get_, variable)), &type::get_##variable);          \
 	ADD_PROPERTY(PropertyInfo(variant_type, #variable, __VA_ARGS__), STRING_PREFIX(set_, variable), STRING_PREFIX(get_, variable));
-
 
 using namespace godot;
 
@@ -92,20 +87,21 @@ public:
 
 	static constexpr float delta = 0.016f;
 
-	virtual int get_dimension() override { return events_names.size(); }
+	int get_dimension() const { return events_names.size(); }
 
-	virtual PackedFloat32Array get_weights() override { return Array::make(1.0f); }
+	PackedFloat32Array get_weights() const { return Array::make(1.0f); }
 
-	virtual bool setup_bake_init(Ref<MMAnimationLibrary> animlib) override {
+	PackedStringArray get_hints() const { return events_names; }
+
+	bool setup_bake_init(Ref<MMAnimationLibrary> animlib) {
 		// returning false will abort the process.
 		// feel free to print more details
 		mmlib = animlib;
 
 		return true;
 	}
-	virtual PackedStringArray get_hints() const { return events_names; }
 
-	virtual bool setup_bake_animation(Ref<Animation> animation) override {
+	bool setup_bake_animation(Ref<Animation> animation) {
 		u::prints("Events", animation->get_name());
 		auto tags = mmlib->tags;
 		animation_events.clear();
@@ -119,7 +115,7 @@ public:
 	}
 
 	// the current logic is this : Take the first event
-	virtual PackedFloat32Array bake_animation_pose(Ref<Animation> animation, float time) override {
+	PackedFloat32Array bake_animation_pose(Ref<Animation> animation, float time) {
 		PackedFloat32Array result = {};
 		// std::vector<Ref<TagMFEvent>> current_events{};
 		const float time_offset = 1.0f / Engine::get_singleton()->get_physics_ticks_per_second();
@@ -166,6 +162,12 @@ public:
 		BIND_ENUM_CONSTANT(Timing);
 		BIND_ENUM_CONSTANT(EmbedValue);
 
+		ClassDB::bind_method(D_METHOD("get_dimension"), &MFEvents::get_dimension);
+
+		ClassDB::bind_method(D_METHOD("get_weights"), &MFEvents::get_weights);
+
+		ClassDB::bind_method(D_METHOD("get_hints"), &MFEvents::get_hints);
+
 		ClassDB::bind_method(D_METHOD("set_events_names", "value"), &MFEvents::set_events_names);
 		ClassDB::bind_method(D_METHOD("get_events_names"), &MFEvents::get_events_names);
 		godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_STRING_ARRAY, "events_names"), "set_events_names", "get_events_names");
@@ -177,12 +179,6 @@ public:
 		// ClassDB::bind_method( D_METHOD("set_embed_as_frames" ,"value"), &MFEvents::set_embed_as_frames);
 		// ClassDB::bind_method( D_METHOD("get_embed_as_frames" ), &MFEvents::get_embed_as_frames);
 		// godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::BOOL,"embed_as_frames"), "set_embed_as_frames", "get_embed_as_frames");
-
-		ClassDB::bind_method(D_METHOD("get_dimension"), &MFEvents::get_dimension);
-
-		ClassDB::bind_method(D_METHOD("get_weights"), &MFEvents::get_weights);
-
-		ClassDB::bind_method(D_METHOD("get_hints"), &MFEvents::get_hints);
 
 		ClassDB::bind_method(D_METHOD("setup_bake_init", "mm_animation_library"), &MFEvents::setup_bake_init);
 		ClassDB::bind_method(D_METHOD("setup_bake_animation", "animation"), &MFEvents::setup_bake_animation);

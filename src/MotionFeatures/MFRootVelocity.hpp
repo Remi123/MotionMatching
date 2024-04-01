@@ -13,7 +13,6 @@
 #include <godot_cpp/templates/local_vector.hpp>
 #include <godot_cpp/templates/vector.hpp>
 
-
 #include <godot_cpp/classes/time.hpp>
 
 #include <godot_cpp/classes/animation.hpp>
@@ -23,18 +22,15 @@
 #include <godot_cpp/classes/resource.hpp>
 #include <godot_cpp/classes/skeleton3d.hpp>
 
-
 #include <godot_cpp/classes/box_mesh.hpp>
 #include <godot_cpp/classes/editor_node3d_gizmo.hpp>
 #include <godot_cpp/classes/editor_node3d_gizmo_plugin.hpp>
 #include <godot_cpp/classes/standard_material3d.hpp>
 
-
 #include <godot_cpp/classes/character_body3d.hpp>
 
 #include <MMAnimationLibrary.hpp>
 #include <MotionFeatures/MotionFeatures.hpp>
-
 
 using namespace godot;
 using u = godot::UtilityFunctions;
@@ -48,16 +44,19 @@ public:
 	String root_bone_track = "%GeneralSkeleton:Root";
 	Transform3D rest_pose = Transform3D();
 
-	virtual int get_dimension() override {
+	int get_dimension() const {
 		return 3;
 	}
 
 	GETSET(float, weight, 1.0f);
-	virtual PackedFloat32Array get_weights() override {
+	PackedFloat32Array get_weights() const {
 		return Array::make(weight, weight, weight);
 	}
+	PackedStringArray get_hints() const {
+		return Array::make("Vx", "Vy", "Vz");
+	}
 
-	virtual bool setup_bake_init(Ref<MMAnimationLibrary> animlib) override {
+	bool setup_bake_init(Ref<MMAnimationLibrary> animlib) {
 		ERR_FAIL_COND_V_EDMSG(animlib->skeleton_path.is_empty(), false, "SkeletonPath is Empty");
 		ERR_FAIL_COND_V_EDMSG(animlib->skeleton_profile == nullptr, false, "SkeletonProfile is null");
 		ERR_FAIL_COND_V_EDMSG(animlib->skeleton_profile->get_root_bone().is_empty(), false, "No Root bone to extract data");
@@ -65,13 +64,13 @@ public:
 		root_bone_track = u::str(animlib->skeleton_path) + ":" + animlib->skeleton_profile->get_root_bone();
 		return true;
 	}
-	virtual bool setup_bake_animation(Ref<Animation> animation) override {
+	bool setup_bake_animation(Ref<Animation> animation) {
 		root_track_pos = animation->find_track(NodePath(root_bone_track), Animation::TrackType::TYPE_POSITION_3D);
 		root_track_quat = animation->find_track(NodePath(root_bone_track), Animation::TrackType::TYPE_ROTATION_3D);
 		return true;
 	}
 
-	virtual PackedFloat32Array bake_animation_pose(Ref<Animation> animation, float time) override {
+	PackedFloat32Array bake_animation_pose(Ref<Animation> animation, float time) {
 		Vector3 pos, prev_pos;
 		if (root_track_pos >= 0) {
 			pos = animation->position_track_interpolate(root_track_pos, time + 0.032);
@@ -108,14 +107,10 @@ public:
 		return result;
 	}
 
-	virtual float calculate_cost(PackedFloat32Array query,PackedFloat32Array data) const override{
-		Vector3 v_query = Vector3(query[0],query[1],query[2]);
-		Vector3 v_data = Vector3(data[0],data[1],data[2]);
+	virtual float calculate_cost(PackedFloat32Array query, PackedFloat32Array data) const override {
+		Vector3 v_query = Vector3(query[0], query[1], query[2]);
+		Vector3 v_data = Vector3(data[0], data[1], data[2]);
 		return v_query.distance_to(v_data) * weight;
-	}
-
-	virtual PackedStringArray get_hints() const override {
-		return Array::make("Vx", "Vy", "Vz");
 	}
 
 protected:

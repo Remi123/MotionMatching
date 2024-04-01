@@ -54,7 +54,7 @@ public:
 	int get_bone_info_type() { return (int)bone_info_type.to_ulong(); }
 	void set_bone_info_type(int value) { bone_info_type = value; }
 
-	virtual int get_dimension() override {
+	int get_dimension() const {
 		// if(use_inertialization)
 		// {
 		//     return bone_names.size() * 3;
@@ -62,13 +62,78 @@ public:
 		return bone_names.size() * 3 * bone_info_type.count();
 	}
 
-	virtual bool setup_bake_animation(Ref<Animation> animation) override {
+	PackedFloat32Array get_weights() const {
+		PackedFloat32Array result{};
+
+		// if (use_inertialization)
+		// {
+		//     for (auto i = 0; i < 3 * bone_names.size(); ++i)
+		//     {
+		//         result.append(weight_inertialization);
+		//     }
+		//     return result;
+		// }
+
+		for (auto i = 0; i < bone_names.size(); ++i) {
+			if (bone_info_type.test(Position))
+				for (auto i = 0; i < 3; ++i)
+					result.append(weight_bone_pos);
+			if (bone_info_type.test(Velocity))
+				for (auto i = 0; i < 3; ++i)
+					result.append(weight_bone_vel);
+			if (bone_info_type.test(Rotation))
+				for (auto i = 0; i < 3; ++i)
+					result.append(weight_bone_rot);
+			if (bone_info_type.test(AngularVel))
+				for (auto i = 0; i < 3; ++i)
+					result.append(weight_bone_ang);
+		}
+		return result;
+	}
+
+	PackedStringArray get_hints() const {
+		PackedStringArray result{};
+
+		// if (use_inertialization)
+		// {
+		//     for (auto i = 0; i < bone_names.size(); ++i)
+		//     {
+		//         result.append_array(Array::make("ixB"+u::str(i),"iyB"+u::str(i),"izB"+u::str(i)));
+		//     }
+		//     return result;
+		// }
+		for (auto i = 0; i < bone_names.size(); ++i) {
+			if (bone_info_type.test(Position)) {
+				result.append("PxB" + u::str(i));
+				result.append("PyB" + u::str(i));
+				result.append("PzB" + u::str(i));
+			}
+			if (bone_info_type.test(Velocity)) {
+				result.append("VxB" + u::str(i));
+				result.append("VyB" + u::str(i));
+				result.append("VzB" + u::str(i));
+			}
+			if (bone_info_type.test(Rotation)) {
+				result.append("RxB" + u::str(i));
+				result.append("RyB" + u::str(i));
+				result.append("RzB" + u::str(i));
+			}
+			if (bone_info_type.test(AngularVel)) {
+				result.append("AxB" + u::str(i));
+				result.append("AyB" + u::str(i));
+				result.append("AzB" + u::str(i));
+			}
+		}
+		return result;
+	}
+
+	bool setup_bake_animation(Ref<Animation> animation) {
 		return true;
 	}
 
 	NodePath _skel_path;
 
-	virtual bool setup_bake_init(Ref<MMAnimationLibrary> animlib) override {
+	bool setup_bake_init(Ref<MMAnimationLibrary> animlib) {
 		ERR_FAIL_COND_V_EDMSG(animlib->skeleton_path.is_empty(), false, "SkeletonPath is Empty");
 		ERR_FAIL_COND_V_EDMSG(animlib->skeleton_profile == nullptr, false, "SkeletonProfile is null");
 		ERR_FAIL_COND_V_EDMSG(relative_to_bone != "" && animlib->skeleton_profile->find_bone(relative_to_bone) == -1, false, "SkeletonProfile doesn't contain the relative bone ( Empty for global)");
@@ -85,7 +150,7 @@ public:
 		return false;
 	}
 
-	virtual PackedFloat32Array bake_animation_pose(Ref<Animation> animation, float time) override {
+	PackedFloat32Array bake_animation_pose(Ref<Animation> animation, float time) {
 		PackedFloat32Array result{};
 		kform kbone{};
 		auto relative_to_bone_path = u::str(_skel_path) + u::str(":") + relative_to_bone;
@@ -159,35 +224,6 @@ public:
 	Vector3 inertialization_cost_function(Vector3 pos, Vector3 vel, float halflife) {
 		const auto halfdamp = Spring::halflife_to_damping(halflife) / 2.0;
 		return (2 * pos) / halfdamp + vel / (halfdamp * halfdamp);
-	}
-
-	virtual PackedFloat32Array get_weights() override {
-		PackedFloat32Array result{};
-
-		// if (use_inertialization)
-		// {
-		//     for (auto i = 0; i < 3 * bone_names.size(); ++i)
-		//     {
-		//         result.append(weight_inertialization);
-		//     }
-		//     return result;
-		// }
-
-		for (auto i = 0; i < bone_names.size(); ++i) {
-			if (bone_info_type.test(Position))
-				for (auto i = 0; i < 3; ++i)
-					result.append(weight_bone_pos);
-			if (bone_info_type.test(Velocity))
-				for (auto i = 0; i < 3; ++i)
-					result.append(weight_bone_vel);
-			if (bone_info_type.test(Rotation))
-				for (auto i = 0; i < 3; ++i)
-					result.append(weight_bone_rot);
-			if (bone_info_type.test(AngularVel))
-				for (auto i = 0; i < 3; ++i)
-					result.append(weight_bone_ang);
-		}
-		return result;
 	}
 
 	virtual float calculate_cost(PackedFloat32Array query, PackedFloat32Array data) const override {
@@ -312,41 +348,7 @@ public:
 		return result;
 	}
 
-	virtual PackedStringArray get_hints() const override {
-		PackedStringArray result{};
 
-		// if (use_inertialization)
-		// {
-		//     for (auto i = 0; i < bone_names.size(); ++i)
-		//     {
-		//         result.append_array(Array::make("ixB"+u::str(i),"iyB"+u::str(i),"izB"+u::str(i)));
-		//     }
-		//     return result;
-		// }
-		for (auto i = 0; i < bone_names.size(); ++i) {
-			if (bone_info_type.test(Position)) {
-				result.append("PxB" + u::str(i));
-				result.append("PyB" + u::str(i));
-				result.append("PzB" + u::str(i));
-			}
-			if (bone_info_type.test(Velocity)) {
-				result.append("VxB" + u::str(i));
-				result.append("VyB" + u::str(i));
-				result.append("VzB" + u::str(i));
-			}
-			if (bone_info_type.test(Rotation)) {
-				result.append("RxB" + u::str(i));
-				result.append("RyB" + u::str(i));
-				result.append("RzB" + u::str(i));
-			}
-			if (bone_info_type.test(AngularVel)) {
-				result.append("AxB" + u::str(i));
-				result.append("AyB" + u::str(i));
-				result.append("AzB" + u::str(i));
-			}
-		}
-		return result;
-	}
 
 protected:
 	static void _bind_methods() {
