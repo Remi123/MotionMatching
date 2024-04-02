@@ -460,14 +460,14 @@ public:
 			query[i] = (query[i] - feature_offset[i]) / feature_scale[i];
 		}
 
-		auto query_normalized = [&](size_t i) { return weights[i] * query[i]; };
-		auto features = [&](size_t i, size_t j) { return weights[j] * MotionData[i * nb_dimensions + j]; };
+		auto query_normalized = [&](size_t i) { return query[i]; };
+		auto features = [&](size_t i, size_t j) { return MotionData[i * nb_dimensions + j]; };
 		auto range_starts = [&](size_t i) { return Rng_Start[i]; };
 		auto range_stops = [&](size_t i) { return Rng_Stop[i]; };
-		auto bound_lr_min = [&](size_t i, size_t j) { return weights[j] * LR_MIN[i * nb_dimensions + j]; };
-		auto bound_lr_max = [&](size_t i, size_t j) { return weights[j] * LR_MAX[i * nb_dimensions + j]; };
-		auto bound_sm_min = [&](size_t i, size_t j) { return weights[j] * SM_MIN[i * nb_dimensions + j]; };
-		auto bound_sm_max = [&](size_t i, size_t j) { return weights[j] * SM_MAX[i * nb_dimensions + j]; };
+		auto bound_lr_min = [&](size_t i, size_t j) { return LR_MIN[i * nb_dimensions + j]; };
+		auto bound_lr_max = [&](size_t i, size_t j) { return LR_MAX[i * nb_dimensions + j]; };
+		auto bound_sm_min = [&](size_t i, size_t j) { return SM_MIN[i * nb_dimensions + j]; };
+		auto bound_sm_max = [&](size_t i, size_t j) { return SM_MAX[i * nb_dimensions + j]; };
 
 		if (best_index != -1) {
 			best_cost = 0.0;
@@ -492,7 +492,7 @@ public:
 				// Find distance to box
 				curr_cost = transition_cost;
 				for (int j = 0; j < nfeatures; j++) {
-					curr_cost += squaref(query_normalized(j) - clampf(query_normalized(j), bound_lr_min(i_lr, j), bound_lr_max(i_lr, j)));
+					curr_cost += weights[j] * squaref(query_normalized(j) - clampf(query_normalized(j), bound_lr_min(i_lr, j), bound_lr_max(i_lr, j)));
 
 					if (curr_cost >= best_cost) {
 						break;
@@ -514,7 +514,7 @@ public:
 					// Find distance to box
 					curr_cost = transition_cost;
 					for (int j = 0; j < nfeatures; j++) {
-						curr_cost += squaref(query_normalized(j) - clampf(query_normalized(j), bound_sm_min(i_sm, j), bound_sm_max(i_sm, j)));
+						curr_cost += weights[j] * squaref(query_normalized(j) - clampf(query_normalized(j), bound_sm_min(i_sm, j), bound_sm_max(i_sm, j)));
 
 						if (curr_cost >= best_cost) {
 							break;
@@ -538,7 +538,7 @@ public:
 						// Check against each frame inside small box
 						curr_cost = transition_cost;
 						for (int j = 0; j < nfeatures; j++) {
-							curr_cost += squaref(query_normalized(j) - features(i, j));
+							curr_cost += weights[j] * squaref(query_normalized(j) - features(i, j));
 							if (curr_cost >= best_cost) {
 								break;
 							}
