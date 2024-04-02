@@ -372,7 +372,7 @@ public:
 			WARN_PRINT_ED("Weights resized to " + u::str(nb_dimensions) + " and reset to ones.");
 			weights.resize(nb_dimensions);
 		}
-		
+
 		u::prints("Creating bounds");
 		build_bounds();
 
@@ -404,8 +404,8 @@ public:
 	GETSET(PackedFloat32Array, SM_MAX);
 	GETSET(PackedFloat32Array, LR_MIN);
 	GETSET(PackedFloat32Array, LR_MAX);
-	GETSET(int, BOUND_SM_SIZE,16);
-	GETSET(int, BOUND_LR_SIZE,64);
+	GETSET(int, BOUND_SM_SIZE, 16);
+	GETSET(int, BOUND_LR_SIZE, 64);
 	GETSET(real_t, category_penality);
 
 	void build_bounds() {
@@ -712,7 +712,7 @@ public:
 			u::prints("Features #", features_index, "hints", f->call("get_hints"));
 			u::prints("Features #", features_index, "setup_bake_init", f->call("setup_bake_init", this));
 			u::prints("Features #", features_index, "setup_bake_animation", f->call("setup_bake_animation", nullptr));
-			u::prints("Features #", features_index, "bake",(PackedFloat32Array)f->call("bake_animation_pose", nullptr, 0.016));
+			u::prints("Features #", features_index, "bake", (PackedFloat32Array)f->call("bake_animation_pose", nullptr, 0.016));
 		}
 	}
 
