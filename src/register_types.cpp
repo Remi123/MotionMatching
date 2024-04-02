@@ -21,8 +21,6 @@
 #include <PostProcessAnimation/MMIKTwoBone3D.hpp>
 #include <PostProcessAnimation/MMInertialization3D.hpp>
 
-#include <TestVirtual/Base.hpp>
-
 #include <AnimTags/AnimTag.hpp>
 
 namespace boost {
@@ -75,9 +73,6 @@ void gdextension_MM_initialize(ModuleInitializationLevel p_level) {
 			GDREGISTER_CLASS(CircularBuffer);
 			GDREGISTER_CLASS(Spring);
 		}
-		GDREGISTER_VIRTUAL_CLASS(BaseVirtual);
-		GDREGISTER_CLASS(CppVirtual);
-		GDREGISTER_CLASS(VirtualContainer);
 	}
 }
 
