@@ -596,13 +596,13 @@ public:
 		return answer;
 	}
 
-	static Dictionary character_predict(
+	static TypedArray<Dictionary> character_predict(
 			Vector3 x, Vector3 v, Vector3 a,
 			Quaternion q, Vector3 angular_v,
 			Vector3 v_goal, Quaternion q_goal,
 			real_t halflife_v, real_t halflife_q,
 			PackedFloat32Array dts) {
-		Dictionary answer;
+		TypedArray<Dictionary> answer;
 		dts.sort();
 		for (int i = 0; i < dts.size(); i++) {
 			real_t dt = dts[i];
@@ -616,7 +616,7 @@ public:
 			step["angular_rotation"] = q;
 			step["angular_velocity"] = angular_v;
 			step["delta"] = dt;
-			answer[i] = step;
+			answer.append(step);
 		}
 		return answer;
 	}
