@@ -419,7 +419,158 @@ public:
 		return result;
 	}
 
-	static Dictionary character_update(
+	static inline void _trajectory_spring_damper(
+			Vector3 &x,
+			Vector3 &v,
+			Vector3 &a,
+			const Vector3 v_goal,
+			const real_t halflife,
+			const real_t dt) {
+		real_t y = halflife_to_damping(halflife) / 2.0f;
+		Vector3 j0 = v - v_goal;
+		Vector3 j1 = a + j0 * y;
+		real_t eydt = fast_negexp(y * dt);
+
+		x = eydt * (((-j1) / (y * y)) + ((-j0 - j1 * dt) / y)) +
+				(j1 / (y * y)) + j0 / y + v_goal * dt + x;
+		v = eydt * (j0 + j1 * dt) + v_goal;
+		a = eydt * (a - j1 * y * dt);
+	}
+
+	static inline void _trajectory_spring_damper(
+			Quaternion &x,
+			Vector3 &v,
+			Vector3 &a,
+			const Vector3 v_goal,
+			const real_t halflife,
+			const real_t dt) {
+		real_t y = halflife_to_damping(halflife) / 2.0f;
+		Vector3 j0 = v - v_goal;
+		Vector3 j1 = a + j0 * y;
+		real_t eydt = fast_negexp(y * dt);
+
+		x = quat_from_scaled_angle_axis(eydt * (((-j1) / (y * y)) + ((-j0 - j1 * dt) / y)) +
+					(j1 / (y * y)) + j0 / y + v_goal * dt) *
+				x;
+		v = eydt * (j0 + j1 * dt) + v_goal;
+		a = eydt * (a - j1 * y * dt);
+	}
+
+	static Dictionary trajectory_update(
+			Vector3 linear_position,
+			Vector3 linear_velocity,
+			Vector3 linear_acceleration,
+			Quaternion angular_rotation,
+			Vector3 angular_velocity,
+			Vector3 angular_acceleration,
+			real_t desired_linear_velocity,
+			real_t desired_angular_velocity,
+			real_t halflife_linear,
+			real_t halflife_angular,
+			real_t dt) {
+		Dictionary step{};
+
+		_trajectory_spring_damper(
+				angular_rotation,
+				angular_velocity,
+				angular_acceleration,
+				Vector3(0, desired_angular_velocity, 0),
+				halflife_angular,
+				dt);
+
+		_trajectory_spring_damper(
+				linear_position,
+				linear_velocity,
+				linear_acceleration,
+				angular_rotation.xform(Vector3(0, 0, desired_linear_velocity)),
+				halflife_linear,
+				dt);
+
+		step["linear_position"] = linear_position;
+		step["linear_velocity"] = linear_velocity;
+		step["linear_acceleration"] = linear_acceleration;
+		step["angular_rotation"] = angular_rotation;
+		step["angular_velocity"] = angular_velocity;
+		step["angular_acceleration"] = angular_acceleration;
+		return step;
+	}
+
+	static TypedArray<Dictionary> trajectory_predict(
+			int size,
+			Vector3 linear_position,
+			Vector3 linear_velocity,
+			Vector3 linear_acceleration,
+			Quaternion angular_rotation,
+			Vector3 angular_velocity,
+			Vector3 angular_acceleration,
+			real_t desired_linear_velocity,
+			real_t desired_angular_velocity,
+			real_t halflife_linear,
+			real_t halflife_angular,
+			real_t dt) {
+		TypedArray<Dictionary> out{};
+		for (size_t i = 0; i < size; ++i) {
+			_trajectory_spring_damper(
+					angular_rotation,
+					angular_velocity,
+					angular_acceleration,
+					Vector3(0, desired_angular_velocity, 0),
+					halflife_angular,
+					dt);
+
+			_trajectory_spring_damper(
+					linear_position,
+					linear_velocity,
+					linear_acceleration,
+					angular_rotation.xform(Vector3(0, 0, desired_linear_velocity)),
+					halflife_linear,
+					dt);
+			Dictionary step{};
+			step["linear_position"] = linear_position;
+			step["linear_velocity"] = linear_velocity;
+			step["linear_acceleration"] = linear_acceleration;
+			step["angular_rotation"] = angular_rotation;
+			step["angular_velocity"] = angular_velocity;
+			step["angular_acceleration"] = angular_acceleration;
+			out.append(step);
+		}
+		return out;
+	}
+
+	static void _character_update(
+			Vector3 &pos,
+			Vector3 &vel,
+			Vector3 &acc,
+			Quaternion &quaternion,
+			Vector3 &angular_velocity,
+			const Vector3 v_goal,
+			const Quaternion &q_goal,
+			const real_t halflife_vel,
+			const real_t halflife_rot,
+			const real_t dt) {
+		{
+			real_t y = halflife_to_damping(halflife_vel) / 2.0;
+			Vector3 j0 = vel - v_goal;
+			Vector3 j1 = acc + j0 * y;
+			real_t eydt = fast_negexp(y * dt);
+
+			pos = eydt * ((-j1 / (y * y)) + ((-j0 - j1 * dt) / y)) +
+					(j1 / (y * y)) + j0 / y + v_goal * dt + pos;
+			vel = eydt * (j0 + j1 * dt) + v_goal;
+			acc = eydt * (acc - j1 * y * dt);
+		}
+		{
+			real_t y = halflife_to_damping(halflife_rot) / 2.0;
+			Vector3 j0 = (quaternion * q_goal.inverse()).get_euler_xyz();
+			Vector3 j1 = angular_velocity + j0 * y;
+			real_t eydt = fast_negexp(y * dt);
+			quaternion = (Quaternion(eydt * (j0 + j1 * dt)) * q_goal).normalized();
+			angular_velocity = eydt * (angular_velocity - j1 * y * dt);
+		}
+	}
+
+	static Dictionary
+	character_update(
 			Vector3 pos,
 			Vector3 vel,
 			Vector3 acc,
@@ -432,23 +583,14 @@ public:
 			real_t dt) {
 		Dictionary answer;
 		{
-			real_t y = halflife_to_damping(halflife_vel) / 2.0;
-			Vector3 j0 = vel - v_goal;
-			Vector3 j1 = acc + j0 * y;
-			real_t eydt = fast_negexp(y * dt);
+			_character_update(pos, vel, acc, quaternion, angular_velocity, v_goal, q_goal, halflife_vel, halflife_rot, dt);
 
-			answer["world_position"] = eydt * ((-j1 / (y * y)) + ((-j0 - j1 * dt) / y)) +
-					(j1 / (y * y)) + j0 / y + v_goal * dt + pos;
-			answer["velocity"] = eydt * (j0 + j1 * dt) + v_goal;
-			answer["acceleration"] = eydt * (acc - j1 * y * dt);
-		}
-		{
-			real_t y = halflife_to_damping(halflife_rot) / 2.0;
-			Vector3 j0 = (quaternion * q_goal.inverse()).get_euler();
-			Vector3 j1 = angular_velocity + j0 * y;
-			real_t eydt = fast_negexp(y * dt);
-			answer["quaternion"] = (Quaternion(eydt * (j0 + j1 * dt)) * q_goal).normalized();
-			answer["angular_velocity"] = eydt * (angular_velocity - j1 * y * dt);
+			answer["linear_position"] = pos;
+			answer["linear_velocity"] = vel;
+			answer["linear_acceleration"] = acc;
+
+			answer["angular_rotation"] = quaternion;
+			answer["angular_velocity"] = angular_velocity;
 			answer["delta"] = dt;
 		}
 		return answer;
@@ -459,11 +601,22 @@ public:
 			Quaternion q, Vector3 angular_v,
 			Vector3 v_goal, Quaternion q_goal,
 			real_t halflife_v, real_t halflife_q,
-			const PackedFloat32Array dts) {
+			PackedFloat32Array dts) {
 		Dictionary answer;
+		dts.sort();
 		for (int i = 0; i < dts.size(); i++) {
 			real_t dt = dts[i];
-			answer[i] = character_update(x, v, a, q, angular_v, v_goal, q_goal, halflife_v, halflife_q, dt);
+			_character_update(x, v, a, q, angular_v, v_goal, q_goal, halflife_v, halflife_q, i > 0 ? dt - dts[i - 1] : dt);
+			Dictionary step;
+
+			step["linear_position"] = x;
+			step["linear_velocity"] = v;
+			step["linear_acceleration"] = a;
+
+			step["angular_rotation"] = q;
+			step["angular_velocity"] = angular_v;
+			step["delta"] = dt;
+			answer[i] = step;
 		}
 		return answer;
 	}
@@ -571,5 +724,8 @@ protected:
 
 		ClassDB::bind_static_method("Spring", D_METHOD("character_update", "pos", "vel", "acc", "quaternion", "angular_velocity", "v_goal", "q_goal", "halflife_vel", "halflife_rot", "dt"), &Spring::character_update);
 		ClassDB::bind_static_method("Spring", D_METHOD("character_predict", "x", "v", "a", "q", "angular_v", "v_goal", "q_goal", "halflife_v", "halflife_q", "dts"), &Spring::character_predict);
+
+		ClassDB::bind_static_method("Spring", D_METHOD("trajectory_update", "linear_position", "linear_velocity", "linear_acceleration", "angular_rotation", "angular_velocity", "angular_acceleration", "desired_linear_velocity", "desired_angular_velocity", "halflife_linear", "halflife_angular", "dt"), &Spring::trajectory_update);
+		ClassDB::bind_static_method("Spring", D_METHOD("trajectory_predict", "size", "linear_position", "linear_velocity", "linear_acceleration", "angular_rotation", "angular_velocity", "angular_acceleration", "desired_linear_velocity", "desired_angular_velocity", "halflife_linear", "halflife_angular", "dt"), &Spring::trajectory_predict);
 	}
 };

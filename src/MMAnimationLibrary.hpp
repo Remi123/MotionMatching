@@ -472,7 +472,7 @@ public:
 		if (best_index != -1) {
 			best_cost = 0.0;
 			for (int i = 0; i < nfeatures; i++) {
-				best_cost += squaref(query_normalized(i) - features(best_index, i));
+				best_cost += weights[i] * squaref(query_normalized(i) - features(best_index, i));
 			}
 		}
 

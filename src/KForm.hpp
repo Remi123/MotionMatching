@@ -52,10 +52,11 @@ struct kform {
 
 	kform(Vector3 p, Quaternion r, Vector3 s = Vector3{ 1, 1, 1 }, Vector3 lv = Vector3{}, Vector3 av = Vector3{}, Vector3 sv = Vector3{}) :
 			pos{ p }, rot{ r }, scl{ s }, vel{ lv }, ang{ av }, svl{ sv } {}
-
+private:
 	static Vector3 _log(Vector3 v) {
 		return Vector3(std::log(v.x), std::log(v.y), std::log(v.z));
 	}
+public:
 
 	kform &finite_difference(const kform input_next, real_t _dt) {
 		vel = (input_next.pos - pos) / _dt;
