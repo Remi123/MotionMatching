@@ -54,7 +54,6 @@ public:
 	void set_embedded_axis(int value) { embedded_axis = std::bitset<3>(value); }
 
 	GETSET(float, default_value, (1 << 30));
-	GETSET(bool, embed_as_frames);
 	GETSET(bool, use_only_start, false);
 	GETSET(godot::PackedStringArray, events_names);
 
@@ -130,23 +129,23 @@ public:
 			Vector3 root_pos{}, anchor_pos{};
 			Quaternion root_rot{};
 			// Step 1 : Get root bone transform
-			Transform3D root_tr = (Transform3D)get_global_kform(mmlib->skeleton_profile,animation,time,u::str(mmlib->skeleton_path) + ":" + mmlib->skeleton_profile->get_root_bone());
-			Transform3D anchor_tr {};
+			Transform3D root_gtr = (Transform3D)get_global_kform(mmlib->skeleton_profile,animation,time,u::str(mmlib->skeleton_path) + ":" + mmlib->skeleton_profile->get_root_bone());
+			Transform3D anchor_gtr {};
 			// Step 2 : Get anchor point pos
 			if (event->anchor_point_strategy == TagMFDistance::Strategy::RootPos) {
-				kform const anchor_bone = get_global_kform(mmlib->skeleton_profile, animation, event->timestamp, NodePath(mmlib->skeleton_profile->get_root_bone()));
+				kform const anchor_bone = get_global_kform(mmlib->skeleton_profile, animation, event->timestamp, u::str(mmlib->skeleton_path) + ":" + mmlib->skeleton_profile->get_root_bone());
 				anchor_pos = anchor_bone.pos;
-				anchor_tr = (Transform3D)anchor_bone;
+				anchor_gtr = (Transform3D)anchor_bone;
 			} else if (event->anchor_point_strategy == TagMFDistance::Strategy::AnchorPoint) {
 				anchor_pos = event->reference_position;
-				anchor_tr = Transform3D(Basis{},event->reference_position);
+				anchor_gtr = Transform3D(Basis{},event->reference_position);
 			} else if (event->anchor_point_strategy == TagMFDistance::Strategy::AnchorBone) {
-				kform const anchor_bone = get_global_kform(mmlib->skeleton_profile, animation, event->timestamp, NodePath(event->reference_bone));
+				kform const anchor_bone = get_global_kform(mmlib->skeleton_profile, animation, event->timestamp, u::str(mmlib->skeleton_path) + ":" + event->reference_bone);
 				anchor_pos = anchor_bone.pos;
-				anchor_tr = (Transform3D)anchor_bone;
+				anchor_gtr = (Transform3D)anchor_bone;
 			}
 
-			value = ( root_tr.inverse() * anchor_tr).origin;
+			value = ( root_gtr.inverse() * anchor_gtr).origin;
 
 			result.append(value.x);
 			result.append(value.y);
