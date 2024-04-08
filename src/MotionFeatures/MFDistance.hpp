@@ -129,31 +129,24 @@ public:
 			// Find distance from Root bone to the point depending on the tag.
 			Vector3 root_pos{}, anchor_pos{};
 			Quaternion root_rot{};
-			// Step 1 : Get root bone pos
-			if (root_track_pos >= 0) {
-				root_pos = animation->position_track_interpolate(root_track_pos, time);
-			} else {
-				root_pos = rest_pose.get_origin();
-			}
-			if (root_track_quat >= 0) {
-				root_rot = animation->rotation_track_interpolate(root_track_quat, time);
-			} else {
-				root_rot = rest_pose.get_basis().get_rotation_quaternion();
-			}
+			// Step 1 : Get root bone transform
+			Transform3D root_tr = (Transform3D)get_global_kform(mmlib->skeleton_profile,animation,time,u::str(mmlib->skeleton_path) + ":" + mmlib->skeleton_profile->get_root_bone());
+			Transform3D anchor_tr {};
 			// Step 2 : Get anchor point pos
 			if (event->anchor_point_strategy == TagMFDistance::Strategy::RootPos) {
-				kform const anchor_bone = // kform::get_global(mmlib->skeleton_profile, animation, event->timestamp, NodePath(mmlib->skeleton_profile->get_root_bone()));
-						get_global_kform(mmlib->skeleton_profile, animation, event->timestamp, NodePath(mmlib->skeleton_profile->get_root_bone()));
+				kform const anchor_bone = get_global_kform(mmlib->skeleton_profile, animation, event->timestamp, NodePath(mmlib->skeleton_profile->get_root_bone()));
 				anchor_pos = anchor_bone.pos;
+				anchor_tr = (Transform3D)anchor_bone;
 			} else if (event->anchor_point_strategy == TagMFDistance::Strategy::AnchorPoint) {
 				anchor_pos = event->reference_position;
+				anchor_tr = Transform3D(Basis{},event->reference_position);
 			} else if (event->anchor_point_strategy == TagMFDistance::Strategy::AnchorBone) {
-				kform const anchor_bone = // kform::get_global(mmlib->skeleton_profile, animation, event->timestamp, NodePath(event->reference_bone));
-						get_global_kform(mmlib->skeleton_profile, animation, event->timestamp, NodePath(event->reference_bone));
+				kform const anchor_bone = get_global_kform(mmlib->skeleton_profile, animation, event->timestamp, NodePath(event->reference_bone));
 				anchor_pos = anchor_bone.pos;
+				anchor_tr = (Transform3D)anchor_bone;
 			}
 
-			value = root_pos - (anchor_pos);
+			value = ( root_tr.inverse() * anchor_tr).origin;
 
 			result.append(value.x);
 			result.append(value.y);

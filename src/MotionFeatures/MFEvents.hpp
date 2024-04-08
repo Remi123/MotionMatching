@@ -29,6 +29,8 @@
 #include <godot_cpp/classes/editor_node3d_gizmo_plugin.hpp>
 #include <godot_cpp/classes/standard_material3d.hpp>
 
+#include <godot_cpp/classes/project_settings.hpp>
+
 #include <algorithm>
 #include <limits>
 #include <ranges>
@@ -80,7 +82,7 @@ public:
 
 	GETSET(EventType, event_type);
 
-	GETSET(bool, embed_as_frames);
+	GETSET(bool, embed_as_frames, false);
 	GETSET(bool, use_only_start, false);
 	GETSET(real_t, max_signed_time, real_t(2.0));
 	GETSET(godot::PackedStringArray, events_names);
@@ -150,8 +152,12 @@ public:
 						return A < B;
 					});
 			//              0.5     1.0                 1.0                 0.5 :   0.5                                    1.0
-			const float T = time < nearest->timestamp ? nearest->timestamp - time : nearest->timestamp + nearest->duration - time;
-			result.append(u::clampf(T, -max_signed_time, max_signed_time));
+			float T = time < nearest->timestamp ? nearest->timestamp - time : nearest->timestamp + nearest->duration - time;
+			T = u::clampf(T, -max_signed_time, max_signed_time);
+			if (embed_as_frames) {
+				T *= (int)ProjectSettings::get_singleton()->get_setting("physics/common/physics_ticks_per_second");
+			}
+			result.append(T);
 		}
 		return result;
 	}
@@ -176,9 +182,9 @@ public:
 		ClassDB::bind_method(D_METHOD("get_max_signed_time"), &MFEvents::get_max_signed_time);
 		godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT, "max_signed_time"), "set_max_signed_time", "get_max_signed_time");
 
-		// ClassDB::bind_method( D_METHOD("set_embed_as_frames" ,"value"), &MFEvents::set_embed_as_frames);
-		// ClassDB::bind_method( D_METHOD("get_embed_as_frames" ), &MFEvents::get_embed_as_frames);
-		// godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::BOOL,"embed_as_frames"), "set_embed_as_frames", "get_embed_as_frames");
+		ClassDB::bind_method(D_METHOD("set_embed_as_frames", "value"), &MFEvents::set_embed_as_frames);
+		ClassDB::bind_method(D_METHOD("get_embed_as_frames"), &MFEvents::get_embed_as_frames);
+		godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::BOOL, "embed_as_frames"), "set_embed_as_frames", "get_embed_as_frames");
 
 		ClassDB::bind_method(D_METHOD("setup_bake_init", "mm_animation_library"), &MFEvents::setup_bake_init);
 		ClassDB::bind_method(D_METHOD("setup_bake_animation", "animation"), &MFEvents::setup_bake_animation);
