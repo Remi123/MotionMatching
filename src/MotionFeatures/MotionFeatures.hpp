@@ -56,6 +56,15 @@ public:
 		Standard,
 		RawValue
 	};
+
+	void _notification(int p_what) {
+		switch (p_what) {
+			case NOTIFICATION_POSTINITIALIZE:
+				set_local_to_scene(true);
+				break;
+		}
+	}
+
 	GETSET(NormalizationType, normalization_type, RawValue);
 	GETSET(real_t, norm_clamp_min, std::numeric_limits<float>::min());
 	GETSET(real_t, norm_clamp_max, std::numeric_limits<float>::max());

@@ -158,10 +158,10 @@ public:
 			auto bone_path = u::str(_skel_path) + u::str(":") + bone_names[index];
 			auto bone = bone_names[index];
 
-			kbone = get_root_model_kform(_skel, animation, time, bone_path);
-			// if (relative_to_bone != _skel->get_root_bone()) {
-			// 	kbone = get_root_model_kform(_skel, animation, time, relative_to_bone).inverse() * kbone;
-			// }
+			kbone = get_model_kform(_skel, animation, time, bone_path);
+			if (relative_to_bone != _skel->get_root_bone()) {
+				kbone = get_model_kform(_skel, animation, time, relative_to_bone).inverse() * kbone;
+			}
 
 			// Serialize
 			// if (bone_info_type == PositionAndVelocity && use_inertialization)

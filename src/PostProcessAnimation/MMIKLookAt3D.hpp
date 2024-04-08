@@ -62,21 +62,26 @@ public:
 		if (bone_id == -1)
 			return;
 
+		emit_signal("pre_calculation");
+
 		Vector3 target_pos = get_global_position();
 		Vector3 bone_global_pos = skeleton->get_global_position() + skeleton->get_bone_global_pose(bone_id).origin;
 		Quaternion bone_global_rot = skeleton->get_global_transform().get_basis().get_rotation_quaternion() * skeleton->get_bone_global_pose(bone_id).basis.get_rotation_quaternion();
 
 		Vector3 tar_pos = bone_global_rot.xform_inv(target_pos - bone_global_pos);
 
-		Quaternion diff = Quaternion(get_global_basis().get_rotation_quaternion().xform(Vector3(0, 0, 1)), tar_pos.normalized());
+		Quaternion diff = Quaternion(get_global_basis().get_rotation_quaternion().xform(Vector3(0, 0, -1)), tar_pos.normalized());
 
 		// Rotate the head to face toward the target
 		Quaternion bone_local_rot = skeleton->get_bone_pose_rotation(bone_id);
 		skeleton->set_bone_pose_rotation(bone_id, bone_local_rot * diff);
+		emit_signal("post_calculation");
 	}
 
 protected:
 	static void _bind_methods() {
+		ADD_SIGNAL(MethodInfo("pre_calculation"));
+		ADD_SIGNAL(MethodInfo("post_calculation"));
 		ClassDB::bind_method(D_METHOD("set_active", "value"), &MMIKLookAt3D::set_active);
 		ClassDB::bind_method(D_METHOD("get_active"), &MMIKLookAt3D::get_active);
 		godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::BOOL, "active"), "set_active", "get_active");

@@ -227,6 +227,8 @@ public:
 			return;
 		}
 
+		emit_signal("pre_calculation");
+
 		// Let's hope this is done after AnimationMixer's _notification
 		Ref<Animation> animation = get_current_animation().is_empty() ? nullptr : get_animation(get_current_animation());
 
@@ -265,15 +267,15 @@ public:
 				}
 
 				Spring::_simple_spring_damper_exact(
-						bones_local.pos[bone_id], bones_local.vel[bone_id], desired.pos, halflife, _delta);
+						bones_local.pos[bone_id], bones_local.vel[bone_id], desired.pos, halflife, _delta * get_speed_scale());
 				Spring::_simple_spring_damper_exact(
-						bones_local.rot[bone_id], bones_local.ang[bone_id], desired.rot, halflife, _delta);
+						bones_local.rot[bone_id], bones_local.ang[bone_id], desired.rot, halflife, _delta * get_speed_scale());
 				Spring::_decay_spring_damper_exact(
 						bones_offset.pos[bone_id], bones_offset.vel[bone_id],
-						halflife, _delta);
+						halflife, _delta * get_speed_scale());
 				Spring::_decay_spring_damper_exact(
 						bones_offset.rot[bone_id], bones_offset.ang[bone_id],
-						halflife, _delta);
+						halflife, _delta * get_speed_scale());
 			} else {
 				desired.pos = _skeleton->get_bone_pose_position(bone_id); // Have MotionScale
 				desired.vel = Vector3();
@@ -338,6 +340,8 @@ public:
 				bones_root_model.svl[i] = result.svl;
 			}
 		}
+		_skeleton->force_update_bone_child_transform(root_bone_id);
+		emit_signal("post_calculation");
 	}
 
 	Dictionary get_local_bone_info(StringName bone_name) {
@@ -380,6 +384,8 @@ public:
 
 protected:
 	static void _bind_methods() {
+		ADD_SIGNAL(MethodInfo("pre_calculation"));
+		ADD_SIGNAL(MethodInfo("post_calculation"));
 		BIND_ENUM_CONSTANT(NoTag);
 		BIND_ENUM_CONSTANT(StartUp);
 		BIND_ENUM_CONSTANT(Active);

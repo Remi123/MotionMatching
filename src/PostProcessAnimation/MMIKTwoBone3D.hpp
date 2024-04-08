@@ -46,6 +46,8 @@ public:
 
 	GETSET(bool, active);
 
+	GETSET(Vector3, forward, Vector3(0, 0, -1));
+
 	enum Bone_Type {
 		BONE_ROOT,
 		BONE_MIDDLE,
@@ -79,32 +81,43 @@ public:
 		if (bone_A_id == -1 || bone_B_id == -1 || bone_C_id == -1) {
 			return;
 		};
+		emit_signal("pre_calculation");
 
 		locals.pos[BONE_ROOT] = skeleton->get_bone_pose_position(bone_A_id);
 		locals.rot[BONE_ROOT] = skeleton->get_bone_pose_rotation(bone_A_id);
-		globals.pos[BONE_ROOT] = skeleton->get_global_position() + skeleton->get_bone_global_pose(bone_A_id).origin;
-		globals.rot[BONE_ROOT] = skeleton->get_global_transform().get_basis().get_rotation_quaternion() * skeleton->get_bone_global_pose(bone_A_id).basis.get_rotation_quaternion();
+		globals.pos[BONE_ROOT] = skeleton->get_bone_global_pose(bone_A_id).origin;
+		globals.rot[BONE_ROOT] = skeleton->get_bone_global_pose(bone_A_id).basis.get_rotation_quaternion();
 
 		locals.pos[BONE_MIDDLE] = skeleton->get_bone_pose_position(bone_B_id);
 		locals.rot[BONE_MIDDLE] = skeleton->get_bone_pose_rotation(bone_B_id);
-		globals.pos[BONE_MIDDLE] = skeleton->get_global_position() + skeleton->get_bone_global_pose(bone_B_id).origin;
-		globals.rot[BONE_MIDDLE] = skeleton->get_global_transform().get_basis().get_rotation_quaternion() * skeleton->get_bone_global_pose(bone_B_id).basis.get_rotation_quaternion();
+		kform middle_global = globals[BONE_ROOT] * locals[BONE_MIDDLE]; 
+		globals.pos[BONE_MIDDLE] = skeleton->get_bone_global_pose(bone_B_id).origin;
+		globals.rot[BONE_MIDDLE] = skeleton->get_bone_global_pose(bone_B_id).basis.get_rotation_quaternion();
 
 		locals.pos[BONE_REACH] = skeleton->get_bone_pose_position(bone_C_id);
 		locals.rot[BONE_REACH] = skeleton->get_bone_pose_rotation(bone_C_id);
-		globals.pos[BONE_REACH] = skeleton->get_global_position() + skeleton->get_bone_global_pose(bone_C_id).origin;
-		globals.rot[BONE_REACH] = skeleton->get_global_transform().get_basis().get_rotation_quaternion() * skeleton->get_bone_global_pose(bone_C_id).basis.get_rotation_quaternion();
+		kform reach_global = globals[BONE_MIDDLE] * locals[BONE_REACH]; 
+		globals.pos[BONE_REACH] = skeleton->get_bone_global_pose(bone_C_id).origin;
+		globals.rot[BONE_REACH] = skeleton->get_bone_global_pose(bone_C_id).basis.get_rotation_quaternion();
 
 		auto parent_id = skeleton->get_bone_parent(bone_A_id);
 		locals.pos[BONE_PARENT] = skeleton->get_bone_pose_position(parent_id);
 		locals.rot[BONE_PARENT] = skeleton->get_bone_pose_rotation(parent_id);
-		globals.pos[BONE_PARENT] = skeleton->get_global_position() + skeleton->get_bone_global_pose(parent_id).origin;
-		globals.rot[BONE_PARENT] = skeleton->get_global_transform().get_basis().get_rotation_quaternion() * skeleton->get_bone_global_pose(parent_id).basis.get_rotation_quaternion();
+		globals.pos[BONE_PARENT] = skeleton->get_bone_global_pose(parent_id).origin;
+		globals.rot[BONE_PARENT] = skeleton->get_bone_global_pose(parent_id).basis.get_rotation_quaternion();
+
+		auto target_local_to_skeleton = skeleton->get_global_transform().inverse() * get_global_transform();
+		auto target_rotation = (globals.rot[BONE_PARENT]).xform(forward);
 
 		op_two_bone_ik_static(
-				locals, globals, get_global_position(), get_global_basis().get_rotation_quaternion().xform(Vector3(0, 0, -1)));
-		skeleton->set_bone_pose_rotation(bone_A_id, locals.rot[BONE_ROOT]);
-		skeleton->set_bone_pose_rotation(bone_B_id, locals.rot[BONE_MIDDLE]);
+				locals, globals, target_local_to_skeleton.origin, target_rotation);
+
+		skeleton->set_bone_pose_rotation(bone_A_id, locals.rot[BONE_ROOT].normalized());
+		skeleton->set_bone_pose_rotation(bone_B_id, locals.rot[BONE_MIDDLE].normalized());
+		// skeleton->set_bone_pose_rotation(bone_C_id, locals.rot[BONE_REACH]);
+
+		skeleton->force_update_bone_child_transform(parent_id);
+		emit_signal("post_calculation");
 	}
 
 	void op_two_bone_ik_static(
@@ -155,6 +168,8 @@ public:
 
 protected:
 	static void _bind_methods() {
+		ADD_SIGNAL(MethodInfo("pre_calculation"));
+		ADD_SIGNAL(MethodInfo("post_calculation"));
 		ClassDB::bind_method(D_METHOD("set_active", "value"), &MMIKTwoBone3D::set_active);
 		ClassDB::bind_method(D_METHOD("get_active"), &MMIKTwoBone3D::get_active);
 		godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::BOOL, "active"), "set_active", "get_active");
@@ -168,6 +183,10 @@ protected:
 		ClassDB::bind_method(D_METHOD("set_bone_C", "value"), &MMIKTwoBone3D::set_bone_C);
 		ClassDB::bind_method(D_METHOD("get_bone_C"), &MMIKTwoBone3D::get_bone_C);
 		godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::STRING, "bone_C"), "set_bone_C", "get_bone_C");
+
+		ClassDB::bind_method(D_METHOD("set_forward", "value"), &MMIKTwoBone3D::set_forward);
+		ClassDB::bind_method(D_METHOD("get_forward"), &MMIKTwoBone3D::get_forward);
+		::godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::VECTOR3, "forward"), "set_forward", "get_forward");
 
 		ClassDB::bind_method(D_METHOD("set_mixer", "value"), &MMIKTwoBone3D::set_mixer);
 		ClassDB::bind_method(D_METHOD("get_mixer"), &MMIKTwoBone3D::get_mixer);
