@@ -36,43 +36,31 @@ public:
 	GETSET(real_t, weight_bone_ang);
 	GETSET(real_t, weight_inertialization);
 
-	GETSET(bool, use_inertialization, false)
 	GETSET(String, relative_to_bone, "");
-	GETSET(float, inertialization_halflife, 0.1);
+
 	GETSET(PackedStringArray, bone_names);
 
 	enum BoneInfoType {
-		Position,
-		Velocity,
-		Rotation,
-		AngularVel,
+		Position, //3
+		Velocity, //3
+		Rotation, //3
+		AngularVel, //3
+		InertializationCost, //3
 
 		MAX_SIZE
 	};
 
+	GETSET(float, inertialization_halflife, 0.1);
 	std::bitset<BoneInfoType::MAX_SIZE> bone_info_type{};
 	int get_bone_info_type() { return (int)bone_info_type.to_ulong(); }
 	void set_bone_info_type(int value) { bone_info_type = value; }
 
 	int get_dimension() const {
-		// if(use_inertialization)
-		// {
-		//     return bone_names.size() * 3;
-		// }
 		return bone_names.size() * 3 * bone_info_type.count();
 	}
 
 	PackedFloat32Array get_weights() const {
 		PackedFloat32Array result{};
-
-		// if (use_inertialization)
-		// {
-		//     for (auto i = 0; i < 3 * bone_names.size(); ++i)
-		//     {
-		//         result.append(weight_inertialization);
-		//     }
-		//     return result;
-		// }
 
 		for (auto i = 0; i < bone_names.size(); ++i) {
 			if (bone_info_type.test(Position))
@@ -87,6 +75,9 @@ public:
 			if (bone_info_type.test(AngularVel))
 				for (auto i = 0; i < 3; ++i)
 					result.append(weight_bone_ang);
+			if (bone_info_type.test(InertializationCost))
+				for (auto i = 0; i < 3; ++i)
+					result.append(weight_inertialization);
 		}
 		return result;
 	}
@@ -94,14 +85,6 @@ public:
 	PackedStringArray get_hints() const {
 		PackedStringArray result{};
 
-		// if (use_inertialization)
-		// {
-		//     for (auto i = 0; i < bone_names.size(); ++i)
-		//     {
-		//         result.append_array(Array::make("ixB"+u::str(i),"iyB"+u::str(i),"izB"+u::str(i)));
-		//     }
-		//     return result;
-		// }
 		for (auto i = 0; i < bone_names.size(); ++i) {
 			if (bone_info_type.test(Position)) {
 				result.append("PxB" + u::str(i));
@@ -122,6 +105,11 @@ public:
 				result.append("AxB" + u::str(i));
 				result.append("AyB" + u::str(i));
 				result.append("AzB" + u::str(i));
+			}
+			if (bone_info_type.test(InertializationCost)) {
+				result.append("ICxB" + u::str(i));
+				result.append("ICyB" + u::str(i));
+				result.append("ICzB" + u::str(i));
 			}
 		}
 		return result;
@@ -164,13 +152,6 @@ public:
 			}
 
 			// Serialize
-			// if (bone_info_type == PositionAndVelocity && use_inertialization)
-			// {
-			//     const auto cost = inertialization_cost_function(kbone.pos, kbone.vel, inertialization_halflife);
-			//     result.push_back(cost.x);
-			//     result.push_back(cost.y);
-			//     result.push_back(cost.z);
-			// }
 			if (bone_info_type.test(Position)) {
 				result.push_back(kbone.pos.x);
 				result.push_back(kbone.pos.y);
@@ -191,6 +172,12 @@ public:
 				result.push_back(kbone.ang.x);
 				result.push_back(kbone.ang.y);
 				result.push_back(kbone.ang.z);
+			}
+			if(bone_info_type.test(InertializationCost)){
+				Vector3 const cost = inertialization_cost_function(kbone.pos, kbone.vel, inertialization_halflife);
+				result.append(cost.x);
+				result.append(cost.y);
+				result.append(cost.z);
 			}
 		}
 
@@ -256,6 +243,12 @@ public:
 				result += p_query.distance_to(p_data) * weight_bone_ang;
 				offset += 3;
 			}
+			if (bone_info_type.test(InertializationCost)) {
+				Vector3 p_query = Vector3(query[offset + 0], query[offset + 1], query[offset + 2]);
+				Vector3 p_data = Vector3(data[offset + 0], data[offset + 1], data[offset + 2]);
+				result += p_query.distance_to(p_data) * weight_inertialization;
+				offset += 3;
+			}
 		}
 		return result;
 	}
@@ -290,6 +283,12 @@ public:
 				result.append(ang.y);
 				result.append(ang.z);
 			}
+			if (bone_info_type.test(InertializationCost)) {
+				Vector3 const cost = inertialization_cost_function(pos, vel, inertialization_halflife);
+				result.append(cost.x);
+				result.append(cost.y);
+				result.append(cost.z);
+			}
 		}
 		return result;
 	}
@@ -298,22 +297,6 @@ public:
 		ERR_FAIL_NULL_V_MSG(mm_player, {}, "MMAnimationPlayer is null");
 		constexpr size_t size = 3;
 		PackedFloat32Array result{};
-		// if (use_inertialization)
-		// {
-		//     result.resize(bone_names.size() * 3);
-		//     for (size_t i = 0; i < bone_names.size(); ++i)
-		//     {
-		//         // _skel isn't init
-		//         kform b = mm_player->get_bone_global_kform(_skel->find_bone(bone_names[i]));
-		//         Vector3 pos = b.pos, vel = b.vel;
-		//         auto cost = inertialization_cost_function(pos, vel, inertialization_halflife);
-		//         result[i * size] = cost.x;
-		//         result[i * size + 1] = cost.y;
-		//         result[i * size + 2] = cost.z;
-		//     }
-		//     return result;
-		// }
-		// else
 		{
 			for (size_t i = 0; i < bone_names.size(); ++i) {
 				String bone = bone_names[i];
@@ -342,19 +325,23 @@ public:
 					result.append(ang.y);
 					result.append(ang.z);
 				}
+				if (bone_info_type.test(InertializationCost)) {
+					Vector3 const cost = inertialization_cost_function(pos, vel, mm_player->halflife);
+					result.append(cost.x);
+					result.append(cost.y);
+					result.append(cost.z);
+				}
 			}
 			return result;
 		}
 		return result;
 	}
 
-
-
 protected:
 	static void _bind_methods() {
 		ClassDB::bind_method(D_METHOD("set_bone_info_type", "value"), &MFBonesInfo::set_bone_info_type, DEFVAL(1));
 		ClassDB::bind_method(D_METHOD("get_bone_info_type"), &MFBonesInfo::get_bone_info_type);
-		godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::INT, "bone_info_type", godot::PROPERTY_HINT_FLAGS, "Position,Velocity,Rotation,AngularVel", godot::PROPERTY_USAGE_DEFAULT), "set_bone_info_type", "get_bone_info_type");
+		godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::INT, "bone_info_type", godot::PROPERTY_HINT_FLAGS, "Position,Velocity,Rotation,AngularVel,InertializationCost", godot::PROPERTY_USAGE_DEFAULT), "set_bone_info_type", "get_bone_info_type");
 
 		{
 			ClassDB::bind_method(D_METHOD("serialize_MMAnimationPlayer", "body"), &MFBonesInfo::serialize_mmplayer);
@@ -383,20 +370,15 @@ protected:
 		ClassDB::bind_method(D_METHOD("get_weight_bone_ang"), &MFBonesInfo::get_weight_bone_ang);
 		godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT, "weight_bone_ang"), "set_weight_bone_ang", "get_weight_bone_ang");
 
-		// ClassDB::bind_method(D_METHOD("set_weight_inertialization", "value"), &MFBonesInfo::set_weight_inertialization,DEFVAL(real_t{1.0}));
-		// ClassDB::bind_method(D_METHOD("get_weight_inertialization"), &MFBonesInfo::get_weight_inertialization);
-		// godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT, "weight_inertialization"), "set_weight_inertialization", "get_weight_inertialization");
+		ClassDB::bind_method(D_METHOD("set_weight_inertialization", "value"), &MFBonesInfo::set_weight_inertialization,DEFVAL(real_t{1.0}));
+		ClassDB::bind_method(D_METHOD("get_weight_inertialization"), &MFBonesInfo::get_weight_inertialization);
+		godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT, "weight_inertialization"), "set_weight_inertialization", "get_weight_inertialization");
 
 		ClassDB::add_property_group(get_class_static(), "Nodes & Resources Sources", "");
 		{
-			// TODO Change use inertialization setup to only be available when choosing PositionAndVelocity
-			// ClassDB::bind_method(D_METHOD("set_use_inertialization", "value"), &MFBonesInfo::set_use_inertialization, DEFVAL(false));
-			// ClassDB::bind_method(D_METHOD("get_use_inertialization"), &MFBonesInfo::get_use_inertialization);
-			// godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::BOOL, "use_inertialization"), "set_use_inertialization", "get_use_inertialization");
-
-			// ClassDB::bind_method(D_METHOD("set_inertialization_halflife", "value"), &MFBonesInfo::set_inertialization_halflife, DEFVAL(0.1f));
-			// ClassDB::bind_method(D_METHOD("get_inertialization_halflife"), &MFBonesInfo::get_inertialization_halflife);
-			// godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT, "inertialization_halflife"), "set_inertialization_halflife", "get_inertialization_halflife");
+			ClassDB::bind_method(D_METHOD("set_inertialization_halflife", "value"), &MFBonesInfo::set_inertialization_halflife, DEFVAL(0.1f));
+			ClassDB::bind_method(D_METHOD("get_inertialization_halflife"), &MFBonesInfo::get_inertialization_halflife);
+			godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT, "inertialization_halflife"), "set_inertialization_halflife", "get_inertialization_halflife");
 
 			ClassDB::bind_method(D_METHOD("set_debug_color_position", "value"), &MFBonesInfo::set_debug_color_position);
 			ClassDB::bind_method(D_METHOD("get_debug_color_position"), &MFBonesInfo::get_debug_color_position);
@@ -436,10 +418,6 @@ protected:
 		auto velocity_color = gizmo->get_plugin()->get_material(mat_name_vel, gizmo);
 		position_color->set_albedo(debug_color_position);
 		velocity_color->set_albedo(debug_color_velocity);
-
-		if (use_inertialization) {
-			return;
-		}
 
 		constexpr int s = 3;
 		for (size_t index = 0; index < bone_names.size(); ++index) {
