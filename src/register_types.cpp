@@ -12,7 +12,7 @@
 #include "MotionFeatures/MFRootVelocity.hpp"
 #include "MotionFeatures/MFTrajectory.hpp"
 #include "MotionFeatures/MotionFeatures.hpp"
-#include "Spring.hpp"
+#include "Math/Spring.hpp"
 
 #include "Util/CircularBuffer.hpp"
 #include <MMAnimationLibrary.hpp>

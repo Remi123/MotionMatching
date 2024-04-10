@@ -25,7 +25,7 @@
 
 #include <godot_cpp/variant/dictionary.hpp>
 
-#include <Spring.hpp>
+#include <Math/Spring.hpp>
 
 using namespace godot;
 

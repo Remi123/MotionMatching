@@ -35,7 +35,7 @@
 #include "kdtree-cpp/kdtree.hpp"
 #include <AnimTags/AnimTag.hpp>
 
-#include <KForm.hpp>
+#include <Math/KForm.hpp>
 #include <boost/accumulators/accumulators.hpp>
 #include <boost/accumulators/statistics.hpp>
 

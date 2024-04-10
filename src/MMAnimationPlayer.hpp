@@ -28,8 +28,8 @@
 
 #include <godot_cpp/classes/animation_root_node.hpp>
 
-#include <KForm.hpp>
-#include <Spring.hpp>
+#include <Math/KForm.hpp>
+#include <Math/Spring.hpp>
 #include <numeric>
 
 // Macro setup. Mostly there to simplify writing all those

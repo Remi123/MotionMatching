@@ -18,7 +18,7 @@
 #include <godot_cpp/classes/skeleton3d.hpp>
 
 
-#include <KForm.hpp>
+#include <Math/KForm.hpp>
 
 #define GETSET(type, variable, ...)            \
 	type variable{ __VA_ARGS__ };              \
