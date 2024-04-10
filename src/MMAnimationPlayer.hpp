@@ -94,13 +94,18 @@ public:
 		bone_parent.fill(-1);
 
 		bones_root_model.reserve(_skeleton->get_bone_count());
+		bones_local.reserve(_skeleton->get_bone_count());
 
 		for (auto i = 0; i < _skeleton->get_bone_count(); ++i) {
 			bone_parent[i] = _skeleton->get_bone_parent(i);
+			bones_local[i] = _skeleton->get_bone_rest(i);
+			// bones_local.pos[i] = _skeleton->get_bone_pose_position(i);
+			// bones_local.rot[i] = _skeleton->get_bone_pose_rotation(i);
+			// bones_local.scl[i] = _skeleton->get_bone_pose_scale(i);
 		}
 
 		_skeleton->reset_bone_poses();
-		inertialize_reset();
+		inertialize_reset(true);
 		root_bone_id = _skeleton->find_bone(get_root_motion_track().get_concatenated_subnames());
 		connect("animation_finished", Callable(this, "_on_anim_finish"));
 	}
@@ -115,10 +120,10 @@ public:
 		bones_local.reserve(bone_count);
 		bones_offset.reserve(bone_count);
 		for (int b = 0; b < bone_count; ++b) {
-			bones_local.reset(b);
-			bones_local.pos[b] = _skeleton->get_bone_pose_position(b);
-			bones_local.rot[b] = _skeleton->get_bone_pose_rotation(b);
-			bones_local.scl[b] = _skeleton->get_bone_pose_scale(b);
+			// bones_local.reset(b);
+			// bones_local.pos[b] = _skeleton->get_bone_pose_position(b);
+			// bones_local.rot[b] = _skeleton->get_bone_pose_rotation(b);
+			// bones_local.scl[b] = _skeleton->get_bone_pose_scale(b);
 
 			bones_offset.reset(b);
 		}
@@ -312,13 +317,13 @@ public:
 						_delta * get_speed_scale()); // delta time between frames
 			}
 
-			if (bone_id == root_bone_id) {
-				_skeleton->set_bone_pose_position(root_bone_id, Vector3{});
-				_skeleton->set_bone_pose_rotation(root_bone_id, Quaternion{});
-			} else {
-				_skeleton->set_bone_pose_position(bone_id, bones_local.pos[bone_id]);
-				_skeleton->set_bone_pose_rotation(bone_id, bones_local.rot[bone_id]);
-			}
+			// if (bone_id == root_bone_id) {
+			// 	_skeleton->set_bone_pose_position(root_bone_id, Vector3{});
+			// 	_skeleton->set_bone_pose_rotation(root_bone_id, Quaternion{});
+			// } else {
+			// 	_skeleton->set_bone_pose_position(bone_id, bones_local.pos[bone_id]);
+			// 	_skeleton->set_bone_pose_rotation(bone_id, bones_local.rot[bone_id]);
+			// }
 		}
 
 		for (auto i = 0; i < bone_parent.size(); ++i) {
@@ -339,6 +344,9 @@ public:
 				bones_root_model.scl[i] = result.scl;
 				bones_root_model.svl[i] = result.svl;
 			}
+			_skeleton->set_bone_pose_position(i, bones_local[i].pos);
+			_skeleton->set_bone_pose_rotation(i, bones_local[i].rot);
+			_skeleton->set_bone_pose_scale(i, bones_local[i].scl);
 		}
 		_skeleton->force_update_bone_child_transform(root_bone_id);
 		emit_signal("post_calculation");

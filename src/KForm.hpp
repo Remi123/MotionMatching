@@ -52,12 +52,13 @@ struct kform {
 
 	kform(Vector3 p, Quaternion r, Vector3 s = Vector3{ 1, 1, 1 }, Vector3 lv = Vector3{}, Vector3 av = Vector3{}, Vector3 sv = Vector3{}) :
 			pos{ p }, rot{ r }, scl{ s }, vel{ lv }, ang{ av }, svl{ sv } {}
+
 private:
 	static Vector3 _log(Vector3 v) {
 		return Vector3(std::log(v.x), std::log(v.y), std::log(v.z));
 	}
-public:
 
+public:
 	kform &finite_difference(const kform input_next, real_t _dt) {
 		vel = (input_next.pos - pos) / _dt;
 
@@ -160,15 +161,48 @@ struct kforms {
 		return pos.size();
 	}
 
-	inline const kform operator[](const std::size_t N) const noexcept {
-		kform out{};
-		out.pos = pos[N];
-		out.rot = rot[N];
-		out.scl = scl[N];
-		out.vel = vel[N];
-		out.ang = ang[N];
-		out.svl = svl[N];
-		return out;
+	template<bool is_const>
+	struct kform_ref {
+		using vec3 = std::conditional_t<is_const,const Vector3&, Vector3&>;
+		using quat = std::conditional_t<is_const,const Quaternion&, Quaternion&>;
+		quat &rot;
+		vec3 &pos;
+		vec3 &scl;
+		vec3 &vel;
+		vec3 &ang;
+		vec3 &svl;
+		kform_ref() = delete;
+		kform_ref(kform_ref &other) = default;
+		kform_ref(kform other) :
+				pos{ other.pos }, rot{ other.rot }, scl{ other.scl }, vel{ other.vel }, ang{ other.ang }, svl{ other.svl } {
+		}
+		kform_ref(vec3 p, quat q, vec3 s, vec3 V, vec3 A, vec3 S) :
+				pos{ p }, rot{ q }, scl{ s }, vel{ V }, ang{ A }, svl{ S } {
+		}
+		void operator=(const kform &rhs) {
+			pos = rhs.pos;
+			rot = rhs.rot;
+			scl = rhs.scl;
+			vel = rhs.vel;
+			ang = rhs.ang;
+			svl = rhs.svl;
+		}
+		operator kform() const {
+			return kform{ pos, rot, scl, vel, ang, svl };
+		}
+		operator Dictionary() const {
+			return (Dictionary)kform{ pos, rot, scl, vel, ang, svl };
+		}
+		operator Transform3D() const {
+			return Transform3D(Basis(rot,scl),pos);
+		}
+	};
+
+	inline kform_ref<false> operator[](const std::size_t N) noexcept {
+		return { pos[N], rot[N], scl[N], vel[N], ang[N], svl[N] };
+	}
+	inline const kform_ref<true> operator[](const std::size_t N) const noexcept {
+		return { pos[N], rot[N], scl[N], vel[N], ang[N], svl[N] };
 	}
 
 	void reset(const std::size_t N) {

@@ -90,13 +90,13 @@ public:
 
 		locals.pos[BONE_MIDDLE] = skeleton->get_bone_pose_position(bone_B_id);
 		locals.rot[BONE_MIDDLE] = skeleton->get_bone_pose_rotation(bone_B_id);
-		kform middle_global = globals[BONE_ROOT] * locals[BONE_MIDDLE]; 
+		kform middle_global = (kform)globals[BONE_ROOT] * (kform)locals[BONE_MIDDLE]; 
 		globals.pos[BONE_MIDDLE] = skeleton->get_bone_global_pose(bone_B_id).origin;
 		globals.rot[BONE_MIDDLE] = skeleton->get_bone_global_pose(bone_B_id).basis.get_rotation_quaternion();
 
 		locals.pos[BONE_REACH] = skeleton->get_bone_pose_position(bone_C_id);
 		locals.rot[BONE_REACH] = skeleton->get_bone_pose_rotation(bone_C_id);
-		kform reach_global = globals[BONE_MIDDLE] * locals[BONE_REACH]; 
+		kform reach_global = (kform)globals[BONE_MIDDLE] * (kform)locals[BONE_REACH]; 
 		globals.pos[BONE_REACH] = skeleton->get_bone_global_pose(bone_C_id).origin;
 		globals.rot[BONE_REACH] = skeleton->get_bone_global_pose(bone_C_id).basis.get_rotation_quaternion();
 
@@ -107,14 +107,19 @@ public:
 		globals.rot[BONE_PARENT] = skeleton->get_bone_global_pose(parent_id).basis.get_rotation_quaternion();
 
 		auto target_local_to_skeleton = skeleton->get_global_transform().inverse() * get_global_transform();
-		auto target_rotation = (globals.rot[BONE_PARENT]).xform(forward);
+		auto target_rotation = (globals.rot[BONE_MIDDLE]).xform(forward);
+
+		if (Engine::get_singleton()->is_editor_hint()){
+			target_rotation = target_local_to_skeleton.xform(forward);
+		}
 
 		op_two_bone_ik_static(
 				locals, globals, target_local_to_skeleton.origin, target_rotation);
 
 		skeleton->set_bone_pose_rotation(bone_A_id, locals.rot[BONE_ROOT].normalized());
 		skeleton->set_bone_pose_rotation(bone_B_id, locals.rot[BONE_MIDDLE].normalized());
-		// skeleton->set_bone_pose_rotation(bone_C_id, locals.rot[BONE_REACH]);
+		// skeleton->set_bone_global_pose_override(bone_A_id,(Transform3D)globals[BONE_ROOT],1.0,true);
+		// skeleton->set_bone_global_pose_override(bone_B_id,(Transform3D)globals[BONE_MIDDLE],1.0,true);
 
 		skeleton->force_update_bone_child_transform(parent_id);
 		emit_signal("post_calculation");
@@ -122,7 +127,7 @@ public:
 
 	void op_two_bone_ik_static(
 			kforms &local,
-			const kforms &global,
+			kforms &global,
 			const Vector3 heel_target,
 			const Vector3 fwd = Vector3(0.0f, 1.0f, 0.0f),
 			const float max_length_buffer = 0.01f) {
@@ -164,6 +169,10 @@ public:
 
 		local.rot[BONE_ROOT] = global.rot[BONE_PARENT].inverse() * (r2 * r0 * global.rot[BONE_ROOT]);
 		local.rot[BONE_MIDDLE] = global.rot[BONE_ROOT].inverse() * r1 * global.rot[BONE_MIDDLE];
+
+		global[BONE_ROOT] = (kform)global[BONE_PARENT] * (kform)local[BONE_ROOT];
+		global[BONE_MIDDLE] = (kform)global[BONE_ROOT] * (kform)local[BONE_MIDDLE];
+		global[BONE_REACH] = (kform)global[BONE_MIDDLE] * (kform)local[BONE_REACH];
 	}
 
 protected:

@@ -67,6 +67,7 @@ void gdextension_MM_initialize(ModuleInitializationLevel p_level) {
 			GDREGISTER_CLASS(MMInertialization3D);
 			GDREGISTER_CLASS(MMIKLookAt3D);
 			GDREGISTER_CLASS(MMIKTwoBone3D);
+			
 		}
 
 		{ // Various helper

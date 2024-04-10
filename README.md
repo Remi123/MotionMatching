@@ -1,8 +1,14 @@
 # MotionMatching for Godot 4
 
-This library is a generic implementation of Motion Matching inside the Godot Engine 4.2.
+This library is a generic implementation of Motion Matching inside the Godot Engine 4.3.
 
 We provide a few Nodes and Resources that are useful for playing animations, either with or without Motion Matching. The goal is to be as modular as possible.
+
+## WORK IN PROGRESS
+
+TODO : As of writing this, the latest godot development added SkeletonModifier3D, finally proposing a postprocessing chain of events for me to properly do inertialization and IK. I need to experiment with it, but I expect it to fully replace my Ik nodes, and maybe change how I do inertialization.
+
+## NODES
 
 Here is what you can expect :
 
@@ -87,9 +93,8 @@ TODO : Since Godot 4.3, GDScript's virtual binding is available, but it require 
 TODO : MFBonesInfo needs a cleanup and proper space switching.
 TODO : MFDistance needs more work and options.
 TODO : MFEvents needs more work and options.
-TODO : MFRootVelocity is good enough since it's a simple features.
+MFRootVelocity : good enough since it's a simple features.
 TODO : MFTrajectory is good but I need to find a way to serialize and unserialize better.
-TODO : Add MFCustomScript.
 
 ### Spring
 
