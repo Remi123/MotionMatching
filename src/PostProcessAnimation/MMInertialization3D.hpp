@@ -13,10 +13,8 @@
 #include <godot_cpp/templates/vector.hpp>
 #include <godot_cpp/variant/node_path.hpp>
 
-
 #include <godot_cpp/classes/animation_mixer.hpp>
 #include <godot_cpp/classes/skeleton3d.hpp>
-
 
 #include <Math/KForm.hpp>
 
@@ -38,6 +36,7 @@ using namespace godot;
 struct MMInertialization3D : godot::Node {
 	GDCLASS(MMInertialization3D, Node);
 	friend class MFBonesInfo;
+
 public:
 	using u = godot::UtilityFunctions;
 

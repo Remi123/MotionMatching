@@ -161,10 +161,10 @@ struct kforms {
 		return pos.size();
 	}
 
-	template<bool is_const>
+	template <bool is_const>
 	struct kform_ref {
-		using vec3 = std::conditional_t<is_const,const Vector3&, Vector3&>;
-		using quat = std::conditional_t<is_const,const Quaternion&, Quaternion&>;
+		using vec3 = std::conditional_t<is_const, const Vector3 &, Vector3 &>;
+		using quat = std::conditional_t<is_const, const Quaternion &, Quaternion &>;
 		quat &rot;
 		vec3 &pos;
 		vec3 &scl;
@@ -194,7 +194,7 @@ struct kforms {
 			return (Dictionary)kform{ pos, rot, scl, vel, ang, svl };
 		}
 		operator Transform3D() const {
-			return Transform3D(Basis(rot,scl),pos);
+			return Transform3D(Basis(rot, scl), pos);
 		}
 	};
 
