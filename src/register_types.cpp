@@ -14,7 +14,7 @@
 #include "MotionFeatures/MotionFeatures.hpp"
 #include "Spring.hpp"
 
-#include "CircularBuffer.hpp"
+#include "Util/CircularBuffer.hpp"
 #include <MMAnimationLibrary.hpp>
 #include <MMAnimationPlayer.hpp>
 #include <PostProcessAnimation/MMIKLookAt3D.hpp>
