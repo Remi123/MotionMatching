@@ -14,7 +14,14 @@ except:
     env = Environment(tools=["default"], PLATFORM="")
 
 # TODO: Do not copy environment after godot-cpp/test is updated <https://github.com/godotengine/godot-cpp/blob/master/test/SConstruct>.
+# env["gdextension_dir"]=Dir("gdextension_api_files/")
+env.Append(gdextension_dir= ("gdextension_api_files/"))
+Export('env')
 env = SConscript("godot-cpp/SConstruct")
+
+
+# AddOption("gdextension_dir","gdextension_api_files/")
+
 
 
 # For some reason the 
@@ -51,7 +58,10 @@ if env.get("is_msvc", False):
     wtmp = wtmp.replace("/std:c++17","/std:c++20")
     env.Replace(CXXFLAGS = wtmp)
 else:
-    env["CXXFLAGS"].Replace("-std=c++17","-std=c++20")
+    # env["CXXFLAGS"].Replace("-std=c++17","-std=c++20")
+    wtmp = str(env["CXXFLAGS"])
+    wtmp = wtmp.replace("-std=c++17","-std=c++20")
+    env.Replace(CXXFLAGS = wtmp)
 
 sources = []
 for root,dirnames,filenames in os.walk("./src/"):
