@@ -22,6 +22,7 @@
 #include <PostProcessAnimation/MMInertialization3D.hpp>
 
 #include <AnimTags/AnimTag.hpp>
+#include <AnimTags/IndexSet.hpp>
 
 namespace boost {
 #ifdef BOOST_NO_EXCEPTIONS
