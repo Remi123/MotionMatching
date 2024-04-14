@@ -36,8 +36,8 @@
 
 using namespace godot;
 
-struct MMInertialization3D : godot::SkeletonModifier3D {
-	GDCLASS(MMInertialization3D, SkeletonModifier3D);
+struct MMInertialization3D : godot::SkeletonIK3D {
+	GDCLASS(MMInertialization3D, SkeletonIK3D);
 	friend class MFBonesInfo;
 
 public:
