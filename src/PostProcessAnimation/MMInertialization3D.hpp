@@ -15,6 +15,9 @@
 
 #include <godot_cpp/classes/animation_mixer.hpp>
 #include <godot_cpp/classes/skeleton3d.hpp>
+#include <godot_cpp/classes/skeleton_modifier3d.hpp>
+#include <godot_cpp/classes/skeleton_ik3d.hpp>
+
 
 #include <Math/KForm.hpp>
 
@@ -33,8 +36,8 @@
 
 using namespace godot;
 
-struct MMInertialization3D : godot::Node {
-	GDCLASS(MMInertialization3D, Node);
+struct MMInertialization3D : godot::SkeletonModifier3D {
+	GDCLASS(MMInertialization3D, SkeletonModifier3D);
 	friend class MFBonesInfo;
 
 public:
@@ -70,6 +73,9 @@ public:
 
 	virtual void _ready() override {
 		inertialize_reset();
+		Callable advance_func = callable_mp(this,&MMInertialization3D::advance).bind(0.016);
+
+		this->connect("modification_processed",advance_func);
 	}
 
 	void inertialize_reset() {
@@ -89,11 +95,13 @@ public:
 	}
 
 	virtual void _process(double delta) override {
+		return;
 		if (mixer != nullptr && mixer->get_callback_mode_process() == AnimationMixer::AnimationCallbackModeProcess::ANIMATION_CALLBACK_MODE_PROCESS_IDLE)
 			advance(delta);
 	}
 
 	virtual void _physics_process(double delta) override {
+		return;
 		if (mixer != nullptr && mixer->get_callback_mode_process() == AnimationMixer::AnimationCallbackModeProcess::ANIMATION_CALLBACK_MODE_PROCESS_PHYSICS)
 			advance(delta);
 	}
