@@ -62,6 +62,9 @@ void gdextension_MM_initialize(ModuleInitializationLevel p_level) {
 
 			ClassDB::register_class<TagAnimation>(true); // Abstract
 			ClassDB::register_class<TagRootWarp>();
+
+			GDREGISTER_CLASS(RangeIndex);
+			GDREGISTER_CLASS(SetRangeIndex);
 		}
 
 		{ // PostProcessing Nodes

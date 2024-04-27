@@ -34,6 +34,7 @@
 #include "MotionFeatures/MotionFeatures.hpp"
 #include "kdtree-cpp/kdtree.hpp"
 #include <AnimTags/AnimTag.hpp>
+#include <AnimTags/IndexSet.hpp>
 
 #include <Math/KForm.hpp>
 #include <boost/accumulators/accumulators.hpp>
@@ -90,6 +91,7 @@ public:
 		}
 	}
 
+	GETSET(int,strategy)
 	GETSET(StringName, skeleton_path);
 	GETSET(Ref<SkeletonProfile>, skeleton_profile)
 	float time_interval{};
@@ -272,55 +274,70 @@ public:
 
 			const auto length = animation->get_loop_mode() == Animation::LOOP_NONE ? animation->get_length() - 0.2 : animation->get_length();
 
-			u::prints("Animations setup for", anim_name, "duration", length);
+			u::prints("Animations setup for", anim_name, "duration", animation->get_length());
+
+			IndexSet timed(0, animation->get_length() / time_interval);
+			for (TagInfo *tag : current_tags) {
+				if (TagJunk *junk = Object::cast_to<TagJunk>(tag); junk) {
+					timed -= IndexRange(junk->timestamp / time_interval, (junk->timestamp + junk->duration) / time_interval);
+				}
+			}
 
 			auto counter = 0;
-			for (auto time = time_interval; time < length; time += time_interval) {
-				int64_t tmp_category_value = 0;
+			for (IndexRange interval : timed) {
+				u::prints("[", interval.FROM, ",", interval.TO, "]");
+				for (size_t time_index = interval.front(); time_index <= interval.back(); ++time_index) {
+					auto time = time_index * time_interval;
 
-				// Tags Logic
-				// Get all tags at this timestamp
-				// If one is Junk, continue
-				auto skip = std::find_if(current_tags.begin(), current_tags.end(),
-						[time](TagInfo *tag) {
-							TagJunk *junk = Object::cast_to<TagJunk>(tag);
-							if (junk != nullptr) {
-								return junk->timestamp <= time && time <= junk->timestamp + junk->duration;
-							}
-							return false;
-						});
-				if (skip != current_tags.end()) {
-					continue;
+					// }
+
+					// for (auto time = time_interval; time < length; time += time_interval) {
+					int64_t tmp_category_value = 0;
+
+					// Tags Logic
+					// Get all tags at this timestamp
+					// If one is Junk, continue
+					auto skip = std::find_if(current_tags.begin(), current_tags.end(),
+							[time](TagInfo *tag) {
+								TagJunk *junk = Object::cast_to<TagJunk>(tag);
+								if (junk != nullptr) {
+									return junk->timestamp <= time && time <= junk->timestamp + junk->duration;
+								}
+								return false;
+							});
+					if (skip != current_tags.end()) {
+						continue;
+					}
+					// If category, OR it
+					std::for_each(current_tags.begin(), current_tags.end(),
+							[&tmp_category_value, time](TagInfo *tag) {
+								TagCategory *category = Object::cast_to<TagCategory>(tag);
+								if (category != nullptr && category->timestamp <= time && time <= category->timestamp + category->duration) {
+									tmp_category_value |= category->category;
+								}
+							});
+
+					PackedFloat32Array pose_data{};
+					for (size_t features_index = 0; features_index < motion_features.size(); ++features_index) {
+						MotionFeature *f = Object::cast_to<MotionFeature>(motion_features[features_index]);
+						size_t const expected_dimension = (size_t)f->call("get_dimension");
+						PackedFloat32Array feature_data = f->call("bake_animation_pose", animation, time);
+						ERR_FAIL_COND_MSG(feature_data.size() != expected_dimension, String("Features no.") + u::str(int(features_index)) + "bake_animation_pose didn't return a array of the correct size:" + u::str(feature_data.size()) + '/' + u::str(expected_dimension));
+						pose_data.append_array(feature_data);
+					}
+
+					for (int i = 0; i < nb_dimensions; ++i) {
+						data_stats[i](pose_data[i]);
+					}
+					data.append_array(pose_data);
+					db_anim_index.append(anim_index);
+					db_anim_timestamp.append(time);
+					db_anim_category.append(tmp_category_value);
+
+					++counter;
+					Rng_Stop[anim_index] = range_counter;
+					++range_counter;
 				}
-				// If category, OR it
-				std::for_each(current_tags.begin(), current_tags.end(),
-						[&tmp_category_value, time](TagInfo *tag) {
-							TagCategory *category = Object::cast_to<TagCategory>(tag);
-							if (category != nullptr && category->timestamp <= time && time <= category->timestamp + category->duration) {
-								tmp_category_value |= category->category;
-							}
-						});
-
-				PackedFloat32Array pose_data{};
-				for (size_t features_index = 0; features_index < motion_features.size(); ++features_index) {
-					MotionFeature *f = Object::cast_to<MotionFeature>(motion_features[features_index]);
-					size_t const expected_dimension = (size_t)f->call("get_dimension");
-					PackedFloat32Array feature_data = f->call("bake_animation_pose", animation, time);
-					ERR_FAIL_COND_MSG(feature_data.size() != expected_dimension, String("Features no.") + u::str(int(features_index)) + "bake_animation_pose didn't return a array of the correct size:" + u::str(feature_data.size()) + '/' + u::str(expected_dimension));
-					pose_data.append_array(feature_data);
-				}
-
-				for (int i = 0; i < nb_dimensions; ++i) {
-					data_stats[i](pose_data[i]);
-				}
-				data.append_array(pose_data);
-				db_anim_index.append(anim_index);
-				db_anim_timestamp.append(time);
-				db_anim_category.append(tmp_category_value);
-
-				++counter;
-				Rng_Stop[anim_index] = range_counter;
-				++range_counter;
 			}
 			auto clock_end = std::chrono::system_clock::now();
 			float duration = float(std::chrono::duration_cast<std::chrono::milliseconds>(clock_end - clock_start).count());
@@ -769,6 +786,13 @@ protected:
 			ClassDB::bind_method(D_METHOD("get_skeleton_profile"), &MMAnimationLibrary::get_skeleton_profile);
 			godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::OBJECT, "skeleton_profile", PROPERTY_HINT_RESOURCE_TYPE, "SkeletonProfile"), "set_skeleton_profile", "get_skeleton_profile");
 		}
+
+		{
+			ClassDB::bind_method(D_METHOD("set_strategy", "value"), &MMAnimationLibrary::set_strategy);
+			ClassDB::bind_method(D_METHOD("get_strategy"), &MMAnimationLibrary::get_strategy);
+			godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::INT, "strategy", PROPERTY_HINT_ENUM, "NoAcceleration:0,AABBTree:1,KDTree:2"), "set_strategy", "get_strategy");
+		}
+
 		ClassDB::add_property_group(get_class_static(), "Features", "");
 		{
 			ClassDB::bind_method(D_METHOD("set_category_track_names", "value"), &MMAnimationLibrary::set_category_track_names);
