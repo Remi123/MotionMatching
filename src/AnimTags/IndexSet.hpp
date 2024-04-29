@@ -682,9 +682,10 @@ public:
 			_tmp_lhs.push_back({ (size_t)_rg.from, (size_t)_rg.to });
 		}
 
-		std::remove_if(_tmp_lhs.begin(),_tmp_lhs.end(),[](auto r){
+		auto limit_it = std::remove_if(_tmp_lhs.begin(),_tmp_lhs.end(),[](auto r){
 			return r.FROM > r.TO;
 		});
+		_tmp_lhs.erase(limit_it,_tmp_lhs.end());
 
 		spans_simplify(_tmp_lhs,false);
 

@@ -91,7 +91,7 @@ public:
 		}
 	}
 
-	GETSET(int,strategy)
+	GETSET(int, strategy)
 	GETSET(StringName, skeleton_path);
 	GETSET(Ref<SkeletonProfile>, skeleton_profile)
 	float time_interval{};
@@ -458,6 +458,49 @@ public:
 									   : x;
 	}
 
+	Ref<SetRangeIndex> get_indexes_of_animations() {
+		Ref<SetRangeIndex> out{};
+		out.instantiate();
+
+		for (size_t i = 0; i < Rng_Start.size(); ++i) {
+			out->AddRange(Rng_Start[i], Rng_Stop[i]);
+		}
+
+		return out;
+	}
+
+	Ref<SetRangeIndex> get_indexes_of_category(int _mask) {
+		Ref<SetRangeIndex> out{};
+		out.instantiate();
+
+		std::bitset<32> mask = _mask;
+
+		bool out_active = false;
+		int out_i = 0;
+		int start = 0;
+
+		for (auto i :
+				std::views::iota(0) | std::ranges::views::take(db_anim_category.size())) {
+			std::bitset<32> bit = db_anim_category[i];
+			// Activate output
+			if (!out_active && (bit & mask) == mask) {
+				start = i;
+				out_active = true;
+			}
+			// Deactivate output
+			else if (out_active && (bit & mask) != mask) {
+				out->AddRange(start, i);
+				out_active = false;
+				out_i++;
+			}
+		}
+		if (out_active) {
+			out->AddRange(start, db_anim_category.size());
+			out_i++;
+		}
+		return out;
+	}
+
 	// TODO : The categories need to be supported..
 	// The logic is range-based. So it's better to find all the Tags that include the category, and remove the unwanted.
 	// This require a whole rework of Tags.
@@ -752,6 +795,12 @@ protected:
 			ClassDB::bind_method(D_METHOD("check_query_results", "Query", "Result count"), &MMAnimationLibrary::check_query_results);
 			ClassDB::bind_method(D_METHOD("query_pose", "serialized_query", "number_result", "include_category", "exclude_category"), &MMAnimationLibrary::query_pose, DEFVAL(1), DEFVAL(std::numeric_limits<int64_t>::max()), DEFVAL(0));
 			ClassDB::bind_method(D_METHOD("query_pose_aabb", "serialized_query", "best_index", "include_category"), &MMAnimationLibrary::query_pose_aabb, DEFVAL(-1), DEFVAL(std::numeric_limits<int64_t>::max()));
+
+			// get_animation_boundary_index
+			ClassDB::bind_method(D_METHOD("get_indexes_of_animations"), &MMAnimationLibrary::get_indexes_of_animations);
+			
+			ClassDB::bind_method(D_METHOD("get_indexes_of_category","mask"), &MMAnimationLibrary::get_indexes_of_category);
+
 		}
 		// Internal properties
 		{
