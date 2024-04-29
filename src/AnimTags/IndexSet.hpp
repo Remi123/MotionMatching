@@ -604,6 +604,7 @@ public:
 
 #include <godot_cpp/core/class_db.hpp>
 #include <godot_cpp/core/method_bind.hpp>
+#include <algorithm>
 
 struct RangeIndex : godot::RefCounted {
 public:
@@ -659,6 +660,43 @@ public:
 		_tmp->ranges.append(_r);
 		Union(_tmp);
 	}
+	void RemoveRange(int from, int to) {
+		if (ranges.size() == 0) {
+			return;
+		}
+
+		Ref<SetRangeIndex> _tmp{};
+		_tmp.instantiate();
+		Ref<RangeIndex> _r{};
+		_r.instantiate();
+		_r->from = from;
+		_r->to = to;
+		_tmp->ranges.append(_r);
+		Difference(_tmp);
+	}
+
+	void Fix() {
+		std::vector<IndexRange> _tmp_lhs{};
+		for (size_t i = 0; i < ranges.size(); ++i) {
+			auto _rg = *cast_to<RangeIndex>(ranges[i]);
+			_tmp_lhs.push_back({ (size_t)_rg.from, (size_t)_rg.to });
+		}
+
+		std::remove_if(_tmp_lhs.begin(),_tmp_lhs.end(),[](auto r){
+			return r.FROM > r.TO;
+		});
+
+		spans_simplify(_tmp_lhs,false);
+
+		ranges.clear();
+		for (size_t i = 0; i < _tmp_lhs.size(); ++i) {
+			Ref<RangeIndex> _ri{};
+			_ri.instantiate();
+			_ri->from = _tmp_lhs[i].front();
+			_ri->to = _tmp_lhs[i].back();
+			ranges.append(_ri);
+		}
+	}
 
 	void Union(Ref<SetRangeIndex> other) {
 		std::vector<IndexRange> _tmp_lhs{}, _tmp_rhs{}, _tmp_out{};
@@ -686,19 +724,15 @@ public:
 	void Difference(Ref<SetRangeIndex> other) {
 		std::vector<IndexRange> _tmp_lhs{}, _tmp_rhs{}, _tmp_out{};
 
-        u::prints("Diff0",ranges.size(),other->ranges.size());
 		for (size_t i = 0; i < ranges.size(); ++i) {
 			auto _rg = *cast_to<RangeIndex>(ranges[i]);
 			_tmp_lhs.push_back({ (size_t)_rg.from, (size_t)_rg.to });
 		}
-        u::prints("Diff",_tmp_lhs.size(),_tmp_rhs.size());
 		for (size_t i = 0; i < other->ranges.size(); ++i) {
 			auto _rg = *cast_to<RangeIndex>(other->ranges[i]);
 			_tmp_rhs.push_back({ (size_t)_rg.from, (size_t)_rg.to });
 		}
-        u::prints("Diff",_tmp_lhs.size(),_tmp_rhs.size());
 		spans_difference(_tmp_out, _tmp_lhs, _tmp_rhs);
-        u::prints("Diff",_tmp_out.size());
 
 		ranges.clear();
 		for (size_t i = 0; i < _tmp_out.size(); ++i) {
@@ -740,11 +774,14 @@ protected:
 		::godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::ARRAY, "ranges", godot::PROPERTY_HINT_TYPE_STRING, u::str(Variant::OBJECT) + '/' + u::str(Variant::BASIS) + ":RangeIndex", PROPERTY_USAGE_DEFAULT), "set_ranges", "get_ranges");
 
 		ClassDB::bind_method(D_METHOD("AddRange", "from", "to"), &SetRangeIndex::AddRange);
+		ClassDB::bind_method(D_METHOD("RemoveRange", "from", "to"), &SetRangeIndex::RemoveRange);
 
 		ClassDB::bind_method(D_METHOD("Union", "other"), &SetRangeIndex::Union);
 
 		ClassDB::bind_method(D_METHOD("Difference", "other"), &SetRangeIndex::Difference);
 
 		ClassDB::bind_method(D_METHOD("Intersection", "other"), &SetRangeIndex::Intersection);
+
+		ClassDB::bind_method(D_METHOD("Fix"), &SetRangeIndex::Fix);
 	}
 };

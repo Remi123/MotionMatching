@@ -285,13 +285,9 @@ public:
 
 			auto counter = 0;
 			for (IndexRange interval : timed) {
-				u::prints("[", interval.FROM, ",", interval.TO, "]");
 				for (size_t time_index = interval.front(); time_index <= interval.back(); ++time_index) {
 					auto time = time_index * time_interval;
 
-					// }
-
-					// for (auto time = time_interval; time < length; time += time_interval) {
 					int64_t tmp_category_value = 0;
 
 					// Tags Logic
