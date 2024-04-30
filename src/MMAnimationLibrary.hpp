@@ -458,7 +458,7 @@ public:
 									   : x;
 	}
 
-	Ref<SetRangeIndex> get_indexes_of_animations() {
+	Ref<SetRangeIndex> get_indicies_of_animations() {
 		Ref<SetRangeIndex> out{};
 		out.instantiate();
 
@@ -469,18 +469,18 @@ public:
 		return out;
 	}
 
-	Ref<SetRangeIndex> get_indexes_of_category(int _mask) {
+	Ref<SetRangeIndex> get_indicies_of_category(int _mask) {
 		Ref<SetRangeIndex> out{};
 		out.instantiate();
 
-		std::bitset<32> mask = _mask;
+		const std::bitset<32> mask = _mask;
 
 		bool out_active = false;
 		int out_i = 0;
 		int start = 0;
 
 		for (auto i :
-				std::views::iota(0) | std::ranges::views::take(db_anim_category.size())) {
+				std::ranges::iota_view{ 1, db_anim_category.size() }) {
 			std::bitset<32> bit = db_anim_category[i];
 			// Activate output
 			if (!out_active && (bit & mask) == mask) {
@@ -504,8 +504,8 @@ public:
 	// TODO : The categories need to be supported..
 	// The logic is range-based. So it's better to find all the Tags that include the category, and remove the unwanted.
 	// This require a whole rework of Tags.
-	TypedArray<Dictionary> query_pose_aabb(PackedFloat32Array query, int best_index = -1, int64_t included_category = std::numeric_limits<int64_t>::max()) {
-		constexpr size_t ignore_range_end = 20, ignore_surrounding = 20;
+	TypedArray<Dictionary> query_pose_aabb(PackedFloat32Array query, int best_index = -1, int ignore_surrounding = 20, Ref<SetRangeIndex> ranges_search = nullptr, int64_t included_category = std::numeric_limits<int64_t>::max()) {
+		constexpr size_t ignore_range_end = 20;
 		constexpr float transition_cost = 0.0f;
 		size_t nfeatures = nb_dimensions;
 		size_t nranges = Rng_Start.size();
@@ -518,14 +518,14 @@ public:
 
 		auto query_normalized = [&](size_t i) { return query[i]; };
 		auto features = [&](size_t i, size_t j) { return MotionData[i * nb_dimensions + j]; };
-		auto range_starts = [&](size_t i) { return Rng_Start[i]; };
-		auto range_stops = [&](size_t i) { return Rng_Stop[i]; };
+		auto range_starts = [&](size_t i) -> int { if (ranges_search == nullptr) return Rng_Start[i]; else return cast_to<RangeIndex>(ranges_search->ranges[i])->from; };
+		auto range_stops = [&](size_t i) -> int { if (ranges_search == nullptr) return Rng_Stop[i]; else return cast_to<RangeIndex>(ranges_search->ranges[i])->to; };
 		auto bound_lr_min = [&](size_t i, size_t j) { return LR_MIN[i * nb_dimensions + j]; };
 		auto bound_lr_max = [&](size_t i, size_t j) { return LR_MAX[i * nb_dimensions + j]; };
 		auto bound_sm_min = [&](size_t i, size_t j) { return SM_MIN[i * nb_dimensions + j]; };
 		auto bound_sm_max = [&](size_t i, size_t j) { return SM_MAX[i * nb_dimensions + j]; };
 
-		if (best_index != -1) {
+		if (best_index >= 0) {
 			best_cost = 0.0;
 			for (int i = 0; i < nfeatures; i++) {
 				best_cost += weights[i] * squaref(query_normalized(i) - features(best_index, i));
@@ -538,7 +538,7 @@ public:
 		for (int r = 0; r < nranges; r++) {
 			// Exclude end of ranges from search
 			int i = range_starts(r);
-			int range_end = range_stops(r) - ignore_range_end;
+			int range_end = range_stops(r); // - ignore_range_end;
 
 			while (i < range_end) {
 				// Find index of current and next large box
@@ -794,13 +794,12 @@ protected:
 			ClassDB::bind_method(D_METHOD("recalculate_weights"), &MMAnimationLibrary::recalculate_weights);
 			ClassDB::bind_method(D_METHOD("check_query_results", "Query", "Result count"), &MMAnimationLibrary::check_query_results);
 			ClassDB::bind_method(D_METHOD("query_pose", "serialized_query", "number_result", "include_category", "exclude_category"), &MMAnimationLibrary::query_pose, DEFVAL(1), DEFVAL(std::numeric_limits<int64_t>::max()), DEFVAL(0));
-			ClassDB::bind_method(D_METHOD("query_pose_aabb", "serialized_query", "best_index", "include_category"), &MMAnimationLibrary::query_pose_aabb, DEFVAL(-1), DEFVAL(std::numeric_limits<int64_t>::max()));
+			ClassDB::bind_method(D_METHOD("query_pose_aabb", "serialized_query", "best_index", "ignore_surrounding_indicies", "ranges_search", "include_category"), &MMAnimationLibrary::query_pose_aabb, DEFVAL(-1), DEFVAL(20), DEFVAL(nullptr), DEFVAL(std::numeric_limits<int64_t>::max()));
 
 			// get_animation_boundary_index
-			ClassDB::bind_method(D_METHOD("get_indexes_of_animations"), &MMAnimationLibrary::get_indexes_of_animations);
-			
-			ClassDB::bind_method(D_METHOD("get_indexes_of_category","mask"), &MMAnimationLibrary::get_indexes_of_category);
+			ClassDB::bind_method(D_METHOD("get_indicies_of_animations"), &MMAnimationLibrary::get_indicies_of_animations);
 
+			ClassDB::bind_method(D_METHOD("get_indicies_of_category", "mask"), &MMAnimationLibrary::get_indicies_of_category);
 		}
 		// Internal properties
 		{
