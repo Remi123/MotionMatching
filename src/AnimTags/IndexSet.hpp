@@ -602,9 +602,10 @@ public:
 	// }
 };
 
+#include <algorithm>
 #include <godot_cpp/core/class_db.hpp>
 #include <godot_cpp/core/method_bind.hpp>
-#include <algorithm>
+
 
 struct RangeIndex : godot::RefCounted {
 public:
@@ -682,12 +683,12 @@ public:
 			_tmp_lhs.push_back({ (size_t)_rg.from, (size_t)_rg.to });
 		}
 
-		auto limit_it = std::remove_if(_tmp_lhs.begin(),_tmp_lhs.end(),[](auto r){
+		auto limit_it = std::remove_if(_tmp_lhs.begin(), _tmp_lhs.end(), [](auto r) {
 			return r.FROM > r.TO;
 		});
-		_tmp_lhs.erase(limit_it,_tmp_lhs.end());
+		_tmp_lhs.erase(limit_it, _tmp_lhs.end());
 
-		spans_simplify(_tmp_lhs,false);
+		spans_simplify(_tmp_lhs, false);
 
 		ranges.clear();
 		for (size_t i = 0; i < _tmp_lhs.size(); ++i) {
@@ -766,6 +767,19 @@ public:
 			_ri->to = _tmp_out[i].back();
 			ranges.append(_ri);
 		}
+	}
+
+	bool Contain(int index) const {
+		for (auto v : std::ranges::iota_view{ ranges.size() }) {
+			auto r = cast_to<RangeIndex>(ranges[v]);
+			if (r == nullptr)
+				return false;
+			if (r->from <= index && index <= r->to) {
+				return true;
+			} else if (r->from > index)
+				return false;
+		}
+		return false;
 	}
 
 protected:

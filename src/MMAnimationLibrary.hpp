@@ -796,9 +796,8 @@ protected:
 			ClassDB::bind_method(D_METHOD("query_pose", "serialized_query", "number_result", "include_category", "exclude_category"), &MMAnimationLibrary::query_pose, DEFVAL(1), DEFVAL(std::numeric_limits<int64_t>::max()), DEFVAL(0));
 			ClassDB::bind_method(D_METHOD("query_pose_aabb", "serialized_query", "best_index", "ignore_surrounding_indicies", "ranges_search", "include_category"), &MMAnimationLibrary::query_pose_aabb, DEFVAL(-1), DEFVAL(20), DEFVAL(nullptr), DEFVAL(std::numeric_limits<int64_t>::max()));
 
-			// get_animation_boundary_index
+			// SetRangeIndex
 			ClassDB::bind_method(D_METHOD("get_indicies_of_animations"), &MMAnimationLibrary::get_indicies_of_animations);
-
 			ClassDB::bind_method(D_METHOD("get_indicies_of_category", "mask"), &MMAnimationLibrary::get_indicies_of_category);
 		}
 		// Internal properties
