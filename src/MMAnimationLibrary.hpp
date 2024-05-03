@@ -98,6 +98,8 @@ public:
 	float get_time_interval() { return time_interval; }
 	void set_time_interval(float value) { time_interval = std::abs(value); }
 
+	GETSET(float, continuation_bias);
+
 	String category_hint_string{};
 	String get_category_hint_string() { return category_hint_string; }
 	void set_category_hint_string(String value) {
@@ -530,6 +532,7 @@ public:
 			for (int i = 0; i < nfeatures; i++) {
 				best_cost += weights[i] * squaref(query_normalized(i) - features(best_index, i));
 			}
+			best_cost -= continuation_bias;
 		}
 
 		float curr_cost = 0.0f;
@@ -880,6 +883,10 @@ protected:
 		}
 		ClassDB::add_property_group(get_class_static(), "AABB Bounding box", "");
 		{
+			ClassDB::bind_method(D_METHOD("set_continuation_bias", "value"), &MMAnimationLibrary::set_continuation_bias);
+			ClassDB::bind_method(D_METHOD("get_continuation_bias"), &MMAnimationLibrary::get_continuation_bias);
+			::godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT, "continuation_bias"), "set_continuation_bias", "get_continuation_bias");
+
 			ClassDB::bind_method(D_METHOD("set_category_penality", "value"), &MMAnimationLibrary::set_category_penality, DEFVAL(2.0));
 			ClassDB::bind_method(D_METHOD("get_category_penality"), &MMAnimationLibrary::get_category_penality);
 			godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT, "category_penality", PROPERTY_HINT_RANGE, "1.0, 100.0, 0.1, or_greater"), "set_category_penality", "get_category_penality");
