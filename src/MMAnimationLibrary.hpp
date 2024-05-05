@@ -508,7 +508,7 @@ public:
 	// This require a whole rework of Tags.
 	TypedArray<Dictionary> query_pose_aabb(PackedFloat32Array query, int best_index = -1, int ignore_surrounding = 20, Ref<SetRangeIndex> ranges_search = nullptr, int64_t included_category = std::numeric_limits<int64_t>::max()) {
 		constexpr size_t ignore_range_end = 20;
-		constexpr float transition_cost = 0.0f;
+		const float transition_cost = continuation_bias;
 		size_t nfeatures = nb_dimensions;
 		size_t nranges = Rng_Start.size();
 		float best_cost = 0.0f;
@@ -532,7 +532,6 @@ public:
 			for (int i = 0; i < nfeatures; i++) {
 				best_cost += weights[i] * squaref(query_normalized(i) - features(best_index, i));
 			}
-			best_cost -= continuation_bias;
 		}
 
 		float curr_cost = 0.0f;
