@@ -503,10 +503,8 @@ public:
 		return out;
 	}
 
-	// TODO : The categories need to be supported..
 	// The logic is range-based. So it's better to find all the Tags that include the category, and remove the unwanted.
-	// This require a whole rework of Tags.
-	TypedArray<Dictionary> query_pose_aabb(PackedFloat32Array query, int best_index = -1, int ignore_surrounding = 20, Ref<SetRangeIndex> ranges_search = nullptr, int64_t included_category = std::numeric_limits<int64_t>::max()) {
+	TypedArray<Dictionary> query_pose_aabb(PackedFloat32Array query, int best_index = -1, int ignore_surrounding = 20, Ref<SetRangeIndex> ranges_search = nullptr) {
 		constexpr size_t ignore_range_end = 20;
 		const float transition_cost = continuation_bias;
 		size_t nfeatures = nb_dimensions;
@@ -600,12 +598,6 @@ public:
 							if (curr_cost >= best_cost) {
 								break;
 							}
-						}
-
-						// Cateogory penality. If include_category is not the default value and it's different than the current category,
-						// multiply the current cost by the category_penality
-						if (included_category != std::numeric_limits<int64_t>::max() && included_category != db_anim_category[i]) {
-							curr_cost *= category_penality;
 						}
 
 						// If cost is lower than current best then update best
@@ -796,7 +788,7 @@ protected:
 			ClassDB::bind_method(D_METHOD("recalculate_weights"), &MMAnimationLibrary::recalculate_weights);
 			ClassDB::bind_method(D_METHOD("check_query_results", "Query", "Result count"), &MMAnimationLibrary::check_query_results);
 			ClassDB::bind_method(D_METHOD("query_pose", "serialized_query", "number_result", "include_category", "exclude_category"), &MMAnimationLibrary::query_pose, DEFVAL(1), DEFVAL(std::numeric_limits<int64_t>::max()), DEFVAL(0));
-			ClassDB::bind_method(D_METHOD("query_pose_aabb", "serialized_query", "best_index", "ignore_surrounding_indicies", "ranges_search", "include_category"), &MMAnimationLibrary::query_pose_aabb, DEFVAL(-1), DEFVAL(20), DEFVAL(nullptr), DEFVAL(std::numeric_limits<int64_t>::max()));
+			ClassDB::bind_method(D_METHOD("query_pose_aabb", "serialized_query", "best_index", "ignore_surrounding_indicies", "ranges_search"), &MMAnimationLibrary::query_pose_aabb, DEFVAL(-1), DEFVAL(20), DEFVAL(nullptr));
 
 			// SetRangeIndex
 			ClassDB::bind_method(D_METHOD("get_indicies_of_animations"), &MMAnimationLibrary::get_indicies_of_animations);
