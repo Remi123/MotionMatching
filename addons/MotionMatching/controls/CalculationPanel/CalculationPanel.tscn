@@ -1,7 +1,14 @@
-[gd_scene format=3 uid="uid://t1me7mggbgko"]
+[gd_scene load_steps=2 format=3 uid="uid://t1me7mggbgko"]
+
+[ext_resource type="Script" path="res://addons/MotionMatching/controls/CalculationPanel/calculation_panel.gd" id="1_onu5j"]
 
 [node name="Calculation" type="HFlowContainer"]
-visible = false
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 93.0
+grow_horizontal = 2
+size_flags_horizontal = 3
+script = ExtResource("1_onu5j")
 
 [node name="MarginContainer" type="MarginContainer" parent="."]
 layout_mode = 2
@@ -17,7 +24,7 @@ text = "Discover Halflife from Derivative  -  Start:"
 
 [node name="SpinBox" type="SpinBox" parent="MarginContainer/HFlowContainer"]
 layout_mode = 2
-step = 0.1
+step = 0.05
 value = 1.0
 allow_greater = true
 allow_lesser = true
@@ -29,7 +36,7 @@ text = "End
 
 [node name="SpinBox2" type="SpinBox" parent="MarginContainer/HFlowContainer"]
 layout_mode = 2
-step = 0.1
+step = 0.05
 value = 1.0
 allow_greater = true
 allow_lesser = true
@@ -40,7 +47,7 @@ text = "Max Derivative"
 
 [node name="SpinBox3" type="SpinBox" parent="MarginContainer/HFlowContainer"]
 layout_mode = 2
-step = 0.1
+step = 0.05
 value = 1.0
 allow_greater = true
 allow_lesser = true
@@ -51,3 +58,10 @@ text = "="
 
 [node name="Answer2" type="Label" parent="MarginContainer/HFlowContainer"]
 layout_mode = 2
+size_flags_horizontal = 3
+text = "test
+"
+
+[connection signal="value_changed" from="MarginContainer/HFlowContainer/SpinBox" to="." method="on_discover_halflife"]
+[connection signal="value_changed" from="MarginContainer/HFlowContainer/SpinBox2" to="." method="on_discover_halflife"]
+[connection signal="value_changed" from="MarginContainer/HFlowContainer/SpinBox3" to="." method="on_discover_halflife"]

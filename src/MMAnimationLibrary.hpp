@@ -507,8 +507,8 @@ public:
 	TypedArray<Dictionary> query_pose_aabb(PackedFloat32Array query, int best_index = -1, int ignore_surrounding = 20, Ref<SetRangeIndex> ranges_search = nullptr) {
 		constexpr size_t ignore_range_end = 20;
 		const float transition_cost = continuation_bias;
-		size_t nfeatures = nb_dimensions;
-		size_t nranges = Rng_Start.size();
+		const size_t nfeatures = nb_dimensions;
+		const size_t nranges = Rng_Start.size();
 		float best_cost = 0.0f;
 		int curr_index = best_index;
 
