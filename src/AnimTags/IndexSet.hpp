@@ -636,9 +636,9 @@ protected:
 	}
 };
 
-struct SetRangeIndex : godot::RefCounted {
+struct SetRangeIndex : godot::Resource {
 public:
-	GDCLASS(SetRangeIndex, RefCounted)
+	GDCLASS(SetRangeIndex, Resource)
 public:
 	GETSET(TypedArray<RangeIndex>, ranges);
 

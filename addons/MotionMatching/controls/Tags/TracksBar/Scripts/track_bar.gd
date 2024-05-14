@@ -64,7 +64,7 @@ func _ready() -> void:
 	#popup_menu.id_pressed.connect(_on_popup_select)
 	pass
 
-enum {ADDCATEGORY=00, ADDTIMING = 01, ADDDISTANCE=02 , ADDJUNK = 03,
+enum {ADDCATEGORY=01, ADDTIMING = 02, ADDDISTANCE=03 , ADDJUNK = 04,
 	ADDTRACK = 10,
 	DELETETRACK = 20}
 
