@@ -1,7 +1,7 @@
 #pragma once
 
-#include <Math/KForm.hpp>
 #include <MMAnimationLibrary.hpp>
+#include <Math/KForm.hpp>
 #include <MotionFeatures/MotionFeatures.hpp>
 #include <algorithm>
 
@@ -173,7 +173,7 @@ public:
 				result.push_back(kbone.ang.y);
 				result.push_back(kbone.ang.z);
 			}
-			if(bone_info_type.test(InertializationCost)){
+			if (bone_info_type.test(InertializationCost)) {
 				Vector3 const cost = inertialization_cost_function(kbone.pos, kbone.vel, inertialization_halflife);
 				result.append(cost.x);
 				result.append(cost.y);
@@ -190,12 +190,13 @@ private:
 			return kform{};
 		std::vector<kform> trs{};
 		do {
-			trs.push_back(bones[_skel->find_bone(bone)]);
+			trs.push_back((kform)bones[_skel->find_bone(bone)]);
 			if (bone == _skel->get_root_bone()) {
-				auto back = trs.back();
-				back.vel = back.rot.xform_inv(back.vel);
-				back.pos = Vector3{};
-				back.rot = Quaternion();
+				auto &back = trs.back();
+				// back = {};
+				// back.vel = back.rot.xform_inv(back.vel);
+				// back.pos = Vector3{};
+				// back.rot = Quaternion();
 				break;
 			}
 			bone = _skel->get_bone_parent(_skel->find_bone(bone)); // Now bone is its parent
@@ -257,10 +258,13 @@ public:
 		PackedFloat32Array result{};
 		for (size_t i = 0; i < bone_names.size(); ++i) {
 			String bone = bone_names[i];
+			int id = node->skeleton->find_bone(bone);
 
-			kform kbone = _get_bone_kform_global(node->bones, bone);
-			if (relative_to_bone != _skel->get_root_bone() && bone != relative_to_bone)
-				kbone = _get_bone_kform_global(node->bones, relative_to_bone).inverse() * kbone;
+			// kform kbone = _get_bone_kform_global(node->bones, bone);
+			// if (relative_to_bone != _skel->get_root_bone() && bone != relative_to_bone)
+			// 	kbone = _get_bone_kform_global(node->bones, _skel->get_root_bone()).inverse() * kbone;
+
+			kform kbone = (kform)node->bone_model[id];
 			Vector3 const pos = kbone.pos, vel = kbone.vel, dir = kbone.rot.xform(Vector3(0, 0, 1)), ang = kbone.ang;
 
 			if (bone_info_type.test(Position)) {
@@ -302,7 +306,7 @@ public:
 				String bone = bone_names[i];
 
 				kform kbone; // = _get_bone_kform_global(mm_player->bones_model, bone);
-				kbone = mm_player->bones_root_model[_skel->find_bone(bone)];
+				kbone = (kform)mm_player->bones_root_model[_skel->find_bone(bone)];
 				Vector3 const pos = kbone.pos, vel = kbone.vel, dir = kbone.rot.xform(Vector3(0, 0, 1)), ang = kbone.ang;
 
 				if (bone_info_type.test(Position)) {
@@ -370,7 +374,7 @@ protected:
 		ClassDB::bind_method(D_METHOD("get_weight_bone_ang"), &MFBonesInfo::get_weight_bone_ang);
 		godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT, "weight_bone_ang"), "set_weight_bone_ang", "get_weight_bone_ang");
 
-		ClassDB::bind_method(D_METHOD("set_weight_inertialization", "value"), &MFBonesInfo::set_weight_inertialization,DEFVAL(real_t{1.0}));
+		ClassDB::bind_method(D_METHOD("set_weight_inertialization", "value"), &MFBonesInfo::set_weight_inertialization, DEFVAL(real_t{ 1.0 }));
 		ClassDB::bind_method(D_METHOD("get_weight_inertialization"), &MFBonesInfo::get_weight_inertialization);
 		godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT, "weight_inertialization"), "set_weight_inertialization", "get_weight_inertialization");
 

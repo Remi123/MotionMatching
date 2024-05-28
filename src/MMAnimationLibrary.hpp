@@ -508,7 +508,7 @@ public:
 		constexpr size_t ignore_range_end = 20;
 		const float transition_cost = continuation_bias;
 		const size_t nfeatures = nb_dimensions;
-		const size_t nranges = Rng_Start.size();
+		const size_t nranges = ranges_search == nullptr ? Rng_Start.size() : ranges_search->ranges.size();
 		float best_cost = 0.0f;
 		int curr_index = best_index;
 
@@ -528,6 +528,7 @@ public:
 		if (best_index >= 0) {
 			best_cost = 0.0;
 			for (int i = 0; i < nfeatures; i++) {
+				// Important to not add transition_cost
 				best_cost += weights[i] * squaref(query_normalized(i) - features(best_index, i));
 			}
 		}
@@ -613,6 +614,15 @@ public:
 		}
 		TypedArray<Dictionary> result{};
 		Dictionary data{};
+		if (best_index < 0) {
+			data["index"] = -1;
+			data["animation"] = "";
+			data["timestamp"] = 0.0f;
+			data["cost"] = best_cost;
+			result.append(data);
+			return result;
+		}
+
 		const StringName anim_name = get_animation_list()[db_anim_index[best_index]];
 		const float anim_time = db_anim_timestamp[best_index];
 		data["index"] = best_index;

@@ -41,6 +41,16 @@ public:
 		return 1.0 / (1.0 + x + 0.48 * x * x + 0.235 * x * x * x);
 	}
 
+	static inline real_t _damper_exact(real_t variable, real_t goal, real_t halflife, real_t dt, real_t eps = 1e-5) {
+		return Math::lerp(variable,goal, real_t(1.0 - fast_negexp((Spring::Ln2 * dt) / (halflife + eps))));
+	}
+	static inline Vector3 _damper_exact(Vector3 variable, Vector3 goal, real_t halflife, real_t dt, real_t eps = 1e-5) {
+		return variable.lerp(goal, 1.0 - fast_negexp((Spring::Ln2 * dt) / (halflife + eps)));
+	}
+	static inline Quaternion _damper_exact(Quaternion variable, Quaternion goal, real_t halflife, real_t dt, real_t eps = 1e-5) {
+		return variable.slerp(goal, 1.0 - fast_negexp((Spring::Ln2 * dt) / (halflife + eps)));
+	}
+
 	static inline Variant damper_exact(Variant variable, Variant goal, real_t halflife, real_t dt, real_t eps = 1e-5) {
 		return Math::lerp(variable, goal, 1.0 - fast_negexp((Spring::Ln2 * dt) / (halflife + eps)));
 	}

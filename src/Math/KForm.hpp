@@ -149,12 +149,12 @@ struct kforms {
 	}
 
 	void reserve(std::size_t N) {
-		pos.reserve(N);
-		rot.reserve(N);
-		scl.reserve(N);
-		vel.reserve(N);
-		ang.reserve(N);
-		svl.reserve(N);
+		pos.resize(N);
+		rot.resize(N);
+		scl.resize(N);
+		vel.resize(N);
+		ang.resize(N);
+		svl.resize(N);
 	}
 
 	std::size_t count() const noexcept {
@@ -163,8 +163,8 @@ struct kforms {
 
 	template <bool is_const>
 	struct kform_ref {
-		using vec3 = std::conditional_t<is_const, const Vector3 &, Vector3 &>;
-		using quat = std::conditional_t<is_const, const Quaternion &, Quaternion &>;
+		using vec3 = std::conditional_t<is_const, const Vector3, Vector3 >;
+		using quat = std::conditional_t<is_const, const Quaternion, Quaternion>;
 		quat &rot;
 		vec3 &pos;
 		vec3 &scl;
@@ -187,7 +187,7 @@ struct kforms {
 			ang = rhs.ang;
 			svl = rhs.svl;
 		}
-		operator kform() const {
+		explicit operator kform() const {
 			return kform{ pos, rot, scl, vel, ang, svl };
 		}
 		operator Dictionary() const {

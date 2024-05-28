@@ -52,6 +52,7 @@ public:
 
 	kforms offsets = { 0 };
 	kforms bones = { 0 };
+	kforms bone_model = {0};
 
 	GETSET(AnimationMixer *, mixer, nullptr);
 	Skeleton3D *skeleton{ nullptr };
@@ -84,6 +85,7 @@ public:
 		const auto bone_count = skeleton->get_bone_count();
 		bones.reserve(bone_count);
 		offsets.reserve(bone_count);
+		bone_model.reserve(bone_count);
 		for (int b = 0; b < bone_count; ++b) {
 			bones.reset(b);
 			bones.pos[b] = skeleton->get_bone_pose_position(b);
@@ -91,6 +93,16 @@ public:
 			bones.scl[b] = skeleton->get_bone_pose_scale(b);
 
 			offsets.reset(b);
+		}
+		for(int id = 0; id < skeleton->get_bone_count(); ++id)
+		{
+			int parent = skeleton->get_bone_parent(id);
+			if(parent != -1)
+			{
+				bone_model[id] = (kform)bone_model[parent] * (kform)bones[id];
+			} else {
+				bone_model[id] = (kform)bones[id];
+			}
 		}
 	}
 
@@ -117,6 +129,24 @@ public:
 				break;
 			}
 		}
+		for(int id = 0; id < skeleton->get_bone_count(); ++id)
+		{
+			int parent = skeleton->get_bone_parent(id);
+			kform step{};
+			if(parent != -1)
+			{
+				step = (kform)bone_model[parent] * (kform)bones[id];
+			} else {
+				step = (kform)bones[id];
+			}
+			bone_model.pos[id] = step.pos;
+			bone_model.vel[id] = step.vel;
+			bone_model.rot[id] = step.rot;
+			bone_model.ang[id] = step.ang;
+			bone_model.scl[id] = step.scl;
+			bone_model.svl[id] = step.svl;
+			
+		}
 	}
 
 	void _simple(double delta) {
@@ -125,13 +155,14 @@ public:
 
 		bones.reserve(skeleton->get_bone_count());
 		offsets.reserve(skeleton->get_bone_count());
+		bone_model.reserve(skeleton->get_bone_count());
 
 		for (auto bone_id = 0; bone_id < skeleton->get_bone_count(); ++bone_id) {
 			kform desired{};
 			desired.pos = skeleton->get_bone_pose_position(bone_id);
 			desired.rot = skeleton->get_bone_pose_rotation(bone_id);
-			desired.vel = (desired.pos - bones.pos[bone_id]) / delta;
-			desired.ang = Spring::quat_differentiate_angular_velocity(desired.rot, bones.rot[bone_id], delta);
+			// desired.vel = (desired.pos - bones.pos[bone_id]) / delta;
+			// desired.ang = Spring::quat_differentiate_angular_velocity(desired.rot, bones.rot[bone_id], delta);
 
 			Spring::_simple_spring_damper_exact(
 					bones.pos[bone_id], bones.vel[bone_id], desired.pos, halflife, delta);
@@ -185,11 +216,15 @@ public:
 		}
 	}
 
+	Dictionary get_bone_model(StringName bone)const{
+		return (Dictionary)bone_model[skeleton->find_bone(bone)];
+	}
+
 protected:
 	static void _bind_methods() {
 		ClassDB::bind_method(D_METHOD("set_type", "value"), &MMInertialization3D::set_type, DEFVAL(InertializationType::Simple));
 		ClassDB::bind_method(D_METHOD("get_type"), &MMInertialization3D::get_type);
-		ADD_PROPERTY(PropertyInfo(Variant::INT, "type", godot::PROPERTY_HINT_ENUM, "Simple,OffsetDecay"), "set_type", "get_type");
+		ADD_PROPERTY(PropertyInfo(Variant::INT, "type", godot::PROPERTY_HINT_ENUM, "Simple"), "set_type", "get_type");
 
 		ClassDB::bind_method(D_METHOD("set_active", "value"), &MMInertialization3D::set_active, DEFVAL(true));
 		ClassDB::bind_method(D_METHOD("get_active"), &MMInertialization3D::get_active);
@@ -206,6 +241,8 @@ protected:
 		ClassDB::bind_method(D_METHOD("set_skeleton", "value"), &MMInertialization3D::set_skeleton);
 		ClassDB::bind_method(D_METHOD("get_skeleton"), &MMInertialization3D::get_skeleton);
 		godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::OBJECT, "skeleton", PROPERTY_HINT_NODE_TYPE, "Skeleton3D", PROPERTY_USAGE_SCRIPT_VARIABLE | PROPERTY_USAGE_DEFAULT), "set_skeleton", "get_skeleton");
+
+		ClassDB::bind_method(D_METHOD("get_bone_model","bone"),&MMInertialization3D::get_bone_model);
 
 		BIND_ENUM_CONSTANT(Simple);
 		BIND_ENUM_CONSTANT(OffsetDecay);

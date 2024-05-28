@@ -252,7 +252,7 @@ public:
 			if (get_current_animation().is_empty()) {
 				animation = get_animation(last_anim);
 
-				desired = bones_local[bone_id];
+				desired = (kform)bones_local[bone_id];
 
 				const Transform3D bone_rest = _skeleton->get_bone_rest(bone_id).scaled_local(Vector3(1, 1, 1) * motion_scale);
 				const String bone_path = u::str(skeleton_path) + String(":") + _skeleton->get_bone_name(bone_id);
@@ -335,8 +335,8 @@ public:
 				bones_root_model.scl[i] = bones_local.scl[i];
 				bones_root_model.svl[i] = bones_local.svl[i];
 			} else {
-				kform parent = bones_root_model[bone_parent[i]];
-				kform result = parent * bones_local[i];
+				kform parent = (kform)bones_root_model[bone_parent[i]];
+				kform result = parent * (kform)bones_local[i];
 				bones_root_model.pos[i] = result.pos;
 				bones_root_model.vel[i] = result.vel;
 				bones_root_model.rot[i] = result.rot;
@@ -363,8 +363,8 @@ public:
 		ERR_FAIL_COND_V(_skeleton == nullptr, {});
 		auto id = _skeleton->find_bone(bone_name);
 		ERR_FAIL_COND_V_MSG(id == -1, {}, "Bone " + bone_name + " doesn't exist in skeleton");
-		kform root = bones_local[root_bone_id];
-		return (Dictionary)(root.inverse() * bones_root_model[id]);
+		kform root = (kform)bones_local[root_bone_id];
+		return (Dictionary)(root.inverse() * (kform)bones_root_model[id]);
 	}
 
 	Dictionary get_root_model_bone_info(StringName bone_name) {
