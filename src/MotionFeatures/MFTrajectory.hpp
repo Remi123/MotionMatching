@@ -264,9 +264,6 @@ public:
 					 fut_pos_offset = past_time_dt.size() * dim_size,
 					 fut_dir_offset = (past_time_dt.size() + future_time_dt.size()) * dim_size;
 
-		// std::vector<Vector3> query_past(past_time_dt.size(),Vector3{}), data_past(past_time_dt.size(),Vector3{});
-		// std::vector<Vector3> query_pos_future(future_time_dt.size(),Vector3{}), data_pos_future(past_time_dt.size(),Vector3{});
-		// std::vector<Vector3> query_dir_future(future_time_dt.size(),Vector3{}), data_dir_future(past_time_dt.size(),Vector3{});
 		// Past Cost
 		const size_t x_offset = 0, y_offset = 1, z_offset = use_y_coordinate ? 2 : 1;
 		const size_t past_size = past_time_dt.size();
