@@ -282,8 +282,8 @@ public:
 			IndexSet timed(0, _limit);
 			for (TagInfo *tag : current_tags) {
 				if (TagJunk *junk = Object::cast_to<TagJunk>(tag); junk) {
-					auto _start = godot::CLAMP(int(junk->timestamp/time_interval),0,_limit);
-					auto _end = godot::CLAMP(int((junk->timestamp + junk->duration) / time_interval),0,_limit);
+					auto _start = godot::CLAMP(int(junk->timestamp / time_interval), 0, _limit);
+					auto _end = godot::CLAMP(int((junk->timestamp + junk->duration) / time_interval), 0, _limit);
 					timed -= IndexRange(_start, _end);
 				}
 			}
