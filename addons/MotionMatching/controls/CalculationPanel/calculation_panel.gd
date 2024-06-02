@@ -8,4 +8,3 @@ extends HFlowContainer
 
 func on_discover_halflife(value:float):
 	answer_2.text = str(Spring.maximum_spring_velocity_to_halflife(spin_box.value,spin_box_2.value,spin_box_3.value))
-

@@ -736,13 +736,6 @@ public:
 		return {};
 	}
 
-	enum Space {
-		Local,
-		Model,
-		RootMotion,
-		Global
-	};
-
 	Dictionary sample_bone_global_info(StringName animation_name, double time, NodePath bone_path) {
 		ERR_FAIL_COND_V(skeleton_profile == nullptr, {});
 		ERR_FAIL_COND_V(!has_animation(animation_name), {});
@@ -783,13 +776,6 @@ protected:
 	static void _bind_methods() {
 		ClassDB::bind_method(D_METHOD("prints_dimensions"), &MMAnimationLibrary::prints_dimensions);
 		ClassDB::bind_method(D_METHOD("fill_kdtree"), &MMAnimationLibrary::fill_kdtree);
-		// Enum
-		{
-			BIND_ENUM_CONSTANT(Local);
-			BIND_ENUM_CONSTANT(Model);
-			BIND_ENUM_CONSTANT(RootMotion);
-			BIND_ENUM_CONSTANT(Global);
-		}
 		// Functions
 		{
 			ClassDB::bind_method(D_METHOD("sample_bone_local_info", "animation_name", "time", "bone_path"), &MMAnimationLibrary::sample_bone_local_info);
@@ -926,4 +912,13 @@ protected:
 public:
 };
 
-VARIANT_ENUM_CAST(MMAnimationLibrary::Space);
+struct QueryOptions : public godot::RefCounted {
+	GDCLASS(QueryOptions, RefCounted)
+	using u = godot::UtilityFunctions;
+public:
+	GETSET(PackedFloat32Array,custom_weights);
+	GETSET(PackedFloat32Array,custom_ranges);
+	static void _bind_methods() {
+
+	}
+};

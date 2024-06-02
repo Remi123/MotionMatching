@@ -172,5 +172,3 @@ func _on_category_flag_edit_text_submitted(new_text: String) -> void:
 			category_tag.property_hint_string = new_text
 			category_tag.notify_property_list_changed()
 	pass # Replace with function body.
-
-

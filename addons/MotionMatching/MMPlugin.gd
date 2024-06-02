@@ -41,6 +41,3 @@ func visibility() -> void:
 			bottompanel.library = l as MMAnimationLibrary
 	else :
 		remove_control_from_bottom_panel(bottompanel)
-
-
-
