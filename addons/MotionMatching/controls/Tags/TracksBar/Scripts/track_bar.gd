@@ -1,8 +1,6 @@
 @tool
 class_name TrackBar extends Panel
 
-const TRACK_BAR = preload("res://addons/MotionMatching/controls/Tags/TracksBar/track_bar.tscn")
-
 @onready var popup_menu: PopupMenu = $PopupMenu
 
 var current_library : MMAnimationLibrary = null
@@ -74,6 +72,7 @@ func populate_tag(tag:TagInfo,emit:bool = true):
 		EVB = JUNK_EVENT_BAR.instantiate()
 	elif tag is TagCategory:
 		EVB = CATEGORY_EVENT_BAR.instantiate()
+		EVB.property_hint_string = current_library.category_hint_string
 	elif tag is TagMFEvent:
 		EVB = EVENT_BAR.instantiate()
 	elif tag is TagMFDistance:

@@ -1,150 +1,6 @@
-[gd_scene load_steps=37 format=3 uid="uid://bj4qic5cdef61"]
+[gd_scene load_steps=2 format=3 uid="uid://bj4qic5cdef61"]
 
 [ext_resource type="Script" path="res://addons/MotionMatching/controls/Tags/TagsEditor.gd" id="1_gnt8s"]
-
-[sub_resource type="TagCategory" id="TagCategory_mphpq"]
-category = 3
-property_hint_string = &"Idle,Walk,Run,Strafe"
-track_id = 2
-duration = 0.16
-
-[sub_resource type="TagJunk" id="TagJunk_el156"]
-duration = 0.16
-
-[sub_resource type="TagJunk" id="TagJunk_dgy60"]
-track_id = 1
-duration = 0.16
-
-[sub_resource type="TagJunk" id="TagJunk_36f17"]
-duration = 0.16
-
-[sub_resource type="TagJunk" id="TagJunk_rvi2c"]
-duration = 0.16
-
-[sub_resource type="TagCategory" id="TagCategory_vpn47"]
-category = 1
-property_hint_string = &"Idle,Walk,Run,Strafe"
-track_id = 1
-duration = 0.16
-
-[sub_resource type="TagCategory" id="TagCategory_nrrgn"]
-category = 2
-property_hint_string = &"Idle,Walk,Run,Strafe"
-duration = 0.16
-
-[sub_resource type="TagJunk" id="TagJunk_qmno2"]
-track_id = 2
-duration = 0.16
-
-[sub_resource type="TagCategory" id="TagCategory_eee16"]
-category = 1
-property_hint_string = &"Idle,Walk,Run,Strafe"
-track_id = 1
-duration = 0.16
-
-[sub_resource type="TagJunk" id="TagJunk_6g6lk"]
-track_id = 2
-duration = 0.16
-
-[sub_resource type="TagJunk" id="TagJunk_21uj3"]
-duration = 0.16
-
-[sub_resource type="TagCategory" id="TagCategory_h4vcu"]
-category = 2
-property_hint_string = &"Idle,Walk,Run,Strafe"
-track_id = 1
-duration = 0.16
-
-[sub_resource type="TagJunk" id="TagJunk_jcv2u"]
-duration = 0.16
-
-[sub_resource type="TagCategory" id="TagCategory_huqhf"]
-category = 1
-property_hint_string = &"Idle,Walk,Run,Strafe"
-track_id = 2
-duration = 0.16
-
-[sub_resource type="TagJunk" id="TagJunk_7fsbf"]
-duration = 0.16
-
-[sub_resource type="TagJunk" id="TagJunk_7hh67"]
-duration = 0.16
-
-[sub_resource type="TagJunk" id="TagJunk_0mgwi"]
-duration = 0.16
-
-[sub_resource type="TagCategory" id="TagCategory_npatx"]
-category = 2
-property_hint_string = &"Idle,Walk,Run,Strafe"
-track_id = 1
-duration = 0.16
-
-[sub_resource type="TagCategory" id="TagCategory_hetm0"]
-category = 2
-property_hint_string = &"Idle,Walk,Run,Strafe"
-track_id = 1
-duration = 0.16
-
-[sub_resource type="TagJunk" id="TagJunk_injwi"]
-duration = 0.16
-
-[sub_resource type="TagJunk" id="TagJunk_5t30w"]
-duration = 0.16
-
-[sub_resource type="TagJunk" id="TagJunk_r70t7"]
-duration = 0.16
-
-[sub_resource type="TagJunk" id="TagJunk_syf78"]
-duration = 0.16
-
-[sub_resource type="TagCategory" id="TagCategory_fxd0e"]
-property_hint_string = &"Idle,Walk,Run,Strafe"
-track_id = 1
-duration = 0.16
-
-[sub_resource type="TagJunk" id="TagJunk_2tso8"]
-duration = 0.16
-
-[sub_resource type="TagJunk" id="TagJunk_jfhnm"]
-duration = 0.16
-
-[sub_resource type="TagCategory" id="TagCategory_w3mdf"]
-category = 2
-property_hint_string = &"Idle,Walk,Run,Strafe"
-track_id = 1
-duration = 0.16
-
-[sub_resource type="TagJunk" id="TagJunk_fikwh"]
-duration = 0.16
-
-[sub_resource type="TagCategory" id="TagCategory_7odi3"]
-category = 6
-property_hint_string = &"Idle,Walk,Run,Strafe"
-track_id = 1
-duration = 0.16
-
-[sub_resource type="TagJunk" id="TagJunk_j0cq2"]
-duration = 0.16
-
-[sub_resource type="TagCategory" id="TagCategory_v1sj4"]
-category = 6
-property_hint_string = &"Idle,Walk,Run,Strafe"
-track_id = 1
-duration = 0.16
-
-[sub_resource type="TagJunk" id="TagJunk_ab0ub"]
-duration = 0.16
-
-[sub_resource type="TagJunk" id="TagJunk_q1yeu"]
-duration = 0.16
-
-[sub_resource type="TagCategory" id="TagCategory_vjpqj"]
-property_hint_string = &"Idle,Walk,Run,Strafe"
-track_id = 1
-duration = 0.16
-
-[sub_resource type="TagJunk" id="TagJunk_v48jy"]
-duration = 0.16
 
 [node name="TagEditorPanel" type="VBoxContainer"]
 anchors_preset = 15
@@ -155,7 +11,6 @@ grow_vertical = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 script = ExtResource("1_gnt8s")
-tags = Array[TagInfo]([SubResource("TagCategory_mphpq"), SubResource("TagJunk_el156"), SubResource("TagJunk_dgy60"), SubResource("TagJunk_36f17"), SubResource("TagJunk_rvi2c"), SubResource("TagCategory_vpn47"), SubResource("TagCategory_nrrgn"), SubResource("TagJunk_qmno2"), SubResource("TagCategory_eee16"), SubResource("TagJunk_6g6lk"), SubResource("TagJunk_21uj3"), SubResource("TagCategory_h4vcu"), SubResource("TagJunk_jcv2u"), SubResource("TagCategory_huqhf"), SubResource("TagJunk_7fsbf"), SubResource("TagJunk_7hh67"), SubResource("TagJunk_0mgwi"), SubResource("TagCategory_npatx"), SubResource("TagCategory_hetm0"), SubResource("TagJunk_injwi"), SubResource("TagJunk_5t30w"), SubResource("TagJunk_r70t7"), SubResource("TagJunk_syf78"), SubResource("TagCategory_fxd0e"), SubResource("TagJunk_2tso8"), SubResource("TagJunk_jfhnm"), SubResource("TagCategory_w3mdf"), SubResource("TagJunk_fikwh"), SubResource("TagCategory_7odi3"), SubResource("TagJunk_j0cq2"), SubResource("TagCategory_v1sj4"), SubResource("TagJunk_ab0ub"), SubResource("TagJunk_q1yeu"), SubResource("TagCategory_vjpqj"), SubResource("TagJunk_v48jy")])
 
 [node name="HSplitContainer" type="HBoxContainer" parent="."]
 layout_mode = 2
@@ -173,7 +28,6 @@ layout_mode = 2
 text = "Select Animation"
 item_count = 72
 popup/item_0/text = "001-walk-start-forward_rightfoot"
-popup/item_0/id = 0
 popup/item_1/text = "002-idle_right_foot_front"
 popup/item_1/id = 1
 popup/item_2/text = "002-walk-start-left45-rightFoot"
