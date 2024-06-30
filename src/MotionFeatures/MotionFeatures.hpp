@@ -93,8 +93,6 @@ public:
 		return cost;
 	}
 
-	virtual void debug_pose_gizmo(Ref<EditorNode3DGizmo> gizmo, const PackedFloat32Array data, godot::Transform3D tr = godot::Transform3D{}) { return; }
-
 	GDVIRTUAL5C(show_debug_info, Ref<EditorNode3DGizmo>, Ref<AnimationLibrary>, String, float, Skeleton3D *);
 	// virtual void show_debug_info(Ref<EditorNode3DGizmo> gizmo, Ref<MMAnimationLibrary> library , Ref<Animation> animation, float timestamp,Skeleton3D * root_transform){}
 
@@ -124,8 +122,6 @@ public:
 		GDVIRTUAL_BIND(bake_animation_pose, "animation", "timestamp");
 		// ClassDB::bind_method( D_METHOD("bake_animation_pose","animation","time"),   &MotionFeature::bake_animation_pose);
 		BIND_VIRTUAL_METHOD(MotionFeature, calculate_cost);
-
-		ClassDB::bind_method(D_METHOD("debug_pose_gizmo", "gizmo", "data", "root_transform"), &MotionFeature::debug_pose_gizmo);
 	}
 
 	static void serialize_variant(Variant &v, PackedFloat32Array &result) {

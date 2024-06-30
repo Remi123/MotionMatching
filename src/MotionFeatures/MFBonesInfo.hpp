@@ -440,43 +440,12 @@ protected:
 
 		ClassDB::bind_method(D_METHOD("calculate_cost", "query", "data"), &MFBonesInfo::calculate_cost);
 
-		ClassDB::bind_method(D_METHOD("debug_pose_gizmo", "gizmo", "data", "root_transform"), &MFBonesInfo::debug_pose_gizmo);
 		ClassDB::bind_method(D_METHOD("show_debug_info", "gizmo", "lib", "animation_name", "timestamp"
 																						   "skeleton"),
 				&MFBonesInfo::show_debug_info);
 	}
 
-	virtual void debug_pose_gizmo(Ref<EditorNode3DGizmo> gizmo, const PackedFloat32Array data, godot::Transform3D tr = godot::Transform3D{}) override {
-		const auto mat_name_pos = "pos" + get_path();
-		const auto mat_name_vel = "vel" + get_path();
-		if (gizmo->get_plugin()->get_material(mat_name_pos, gizmo) == nullptr) {
-			gizmo->get_plugin()->create_material(mat_name_pos, debug_color_position);
-		}
-		if (gizmo->get_plugin()->get_material(mat_name_vel, gizmo) == nullptr) {
-			gizmo->get_plugin()->create_material(mat_name_vel, debug_color_velocity);
-		}
-
-		auto position_color = gizmo->get_plugin()->get_material(mat_name_pos, gizmo);
-		auto velocity_color = gizmo->get_plugin()->get_material(mat_name_vel, gizmo);
-		position_color->set_albedo(debug_color_position);
-		velocity_color->set_albedo(debug_color_velocity);
-
-		constexpr int s = 3;
-		for (size_t index = 0; index < bone_names.size(); ++index) {
-			//i*size*2+size+2
-			Vector3 pos = Vector3(data[index * s * 2 + 0], data[index * s * 2 + 1], data[index * s * 2 + 2]);
-			Vector3 vel = Vector3(data[index * s * 2 + s + 0], data[index * s * 2 + s + 1], data[index * s * 2 + s + 2]);
-			pos = tr.xform(pos);
-			vel = tr.xform(vel);
-
-			gizmo->add_lines(Array::make(pos, pos + vel), velocity_color);
-			auto box = Ref<BoxMesh>();
-			box.instantiate();
-			box->set_size(Vector3(0.05f, 0.05f, 0.05f));
-			Transform3D tr = Transform3D(Basis(), pos);
-			gizmo->add_mesh(box, position_color, tr);
-		}
-	}
+	
 };
 
 // VARIANT_ENUM_CAST(MFBonesInfo::BoneInfoType);

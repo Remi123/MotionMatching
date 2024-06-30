@@ -162,8 +162,6 @@ public:
 		return result;
 	}
 
-	virtual void debug_pose_gizmo(Ref<EditorNode3DGizmo> gizmo, const PackedFloat32Array data, godot::Transform3D tr = godot::Transform3D{}) { return; }
-
 	static void _bind_methods() {
 		BIND_ENUM_CONSTANT(Timing);
 		BIND_ENUM_CONSTANT(EmbedValue);
@@ -190,8 +188,6 @@ public:
 		ClassDB::bind_method(D_METHOD("setup_bake_animation", "animation"), &MFEvents::setup_bake_animation);
 
 		ClassDB::bind_method(D_METHOD("bake_animation_pose", "animation", "time"), &MFEvents::bake_animation_pose);
-
-		ClassDB::bind_method(D_METHOD("debug_pose_gizmo", "gizmo", "data", "root_transform"), &MFEvents::debug_pose_gizmo);
 	}
 };
 

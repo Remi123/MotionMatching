@@ -183,24 +183,10 @@ protected:
 
 		ClassDB::bind_method(D_METHOD("calculate_cost", "query", "data"), &MFRootVelocity::calculate_cost);
 
-		ClassDB::bind_method(D_METHOD("debug_pose_gizmo", "gizmo", "data", "root_transform"), &MFRootVelocity::debug_pose_gizmo);
 		ClassDB::bind_method(D_METHOD("show_debug_info", "gizmo", "lib" ,"animation_name","timestamp" "skeleton"), &MFRootVelocity::show_debug_info);
 	}
 
 	GETSET(Color, debug_color, godot::Color(1.0f, 1.0f, 1.0f));
-
-	virtual void debug_pose_gizmo(Ref<EditorNode3DGizmo> gizmo, const PackedFloat32Array data, godot::Transform3D tr = godot::Transform3D{}) override {
-		const auto material_name = "rootvel" + get_path();
-		if (gizmo->get_plugin()->get_material(material_name) == nullptr) {
-			gizmo->get_plugin()->create_material(material_name, debug_color);
-		}
-		if (data.size() == get_dimension()) {
-			Vector3 vel = tr.xform(Vector3(data[0], data[1], data[2]));
-			auto mat = gizmo->get_plugin()->get_material(material_name, gizmo);
-			mat->set_albedo(debug_color);
-			gizmo->add_lines(Array::make(tr.origin, tr.origin + vel), mat);
-		}
-	}
 };
 
 #undef MAKE_RESOURCE_TYPE_HINT

@@ -666,8 +666,6 @@ protected:
 
 		ClassDB::bind_method(D_METHOD("calculate_cost", "query", "data"), &MFTrajectory::calculate_cost);
 
-		ClassDB::bind_method(D_METHOD("debug_pose_gizmo", "gizmo", "data", "root_transform"), &MFTrajectory::debug_pose_gizmo);
-
 		ClassDB::bind_method(D_METHOD("show_debug_info", "gizmo", "lib", "animation_name", "timestamp"
 																						   "skeleton"),
 				&MFTrajectory::show_debug_info);
@@ -676,85 +674,7 @@ protected:
 	GETSET(Color, debug_color_history, godot::Color(1.0f, 1.0f, 1.0f));
 	GETSET(Color, debug_color_future, godot::Color(0.0f, 0.0f, 0.0f));
 
-	virtual void debug_pose_gizmo(Ref<EditorNode3DGizmo> gizmo, const PackedFloat32Array data, godot::Transform3D tr = godot::Transform3D{}) override {
-		const auto mat_name_history = "history" + get_path();
-		const auto mat_name_future = "future" + get_path();
-		if (gizmo->get_plugin()->get_material(mat_name_history, gizmo) == nullptr) {
-			gizmo->get_plugin()->create_material(mat_name_history, debug_color_history);
-		}
-		if (gizmo->get_plugin()->get_material(mat_name_future, gizmo) == nullptr) {
-			gizmo->get_plugin()->create_material(mat_name_future, debug_color_future);
-		}
-		if (use_refactor) {
-			int counter = 0;
-			for (int i = 0; i < options.size(); ++i) {
-				MFTrajectoryOptions *opt = cast_to<MFTrajectoryOptions>(options[i]);
-				gizmo->get_plugin()->create_material(opt->get_path(), debug_color_history, false, true);
-				auto mat = gizmo->get_plugin()->get_material(opt->get_path(), gizmo);
-				std::bitset<32> bit = opt->options;
-				for (int o = 0; o < bit.size(); ++o) {
-					if (!bit.test(o))
-						continue;
-					Vector3 P{}, V{}, D{};
-					Vector3 I{};
-					if (opt->coordinate == MFTrajectoryOptions::Coordinates::XZ) {
-						I.x = data[counter++];
-						I.z = data[counter++];
-					} else if (opt->coordinate == MFTrajectoryOptions::Coordinates::XYZ) {
-						I.x = data[counter++];
-						I.y = data[counter++];
-						I.z = data[counter++];
-					}
-					auto t = tr;
-					Ref<BoxMesh> mesh = new BoxMesh{};
-					mesh->set_size(Vector3{ 0.1, 0.1, 0.2 });
-					if (o == MFTrajectoryOptions::Options::Position) {
-						P = I;
-						t.translate_local(P);
-					}
-					if (o == MFTrajectoryOptions::Options::Direction) {
-						D = I;
-						Quaternion q = Quaternion(Vector3{ 0, 0, 1 }, D);
-						t.basis *= q;
-					}
-					// TODO This might get ugly
-					if (o == MFTrajectoryOptions::Options::Velocity) {
-						V = t.xform(I);
-						gizmo->add_lines(Array::make(t.origin, V), mat);
-					}
 
-					gizmo->add_mesh(mesh, mat, t);
-				}
-			}
-
-			return;
-		}
-
-		// if (data.size() == get_dimension())
-		{
-			constexpr int s = 3;
-			auto history = gizmo->get_plugin()->get_material(mat_name_history, gizmo);
-			history->set_albedo(debug_color_history);
-			auto future = gizmo->get_plugin()->get_material(mat_name_future, gizmo);
-			future->set_albedo(debug_color_future);
-			for (size_t i = 0; i < past_time_dt.size(); ++i) {
-				const size_t offset = i * 2;
-				Vector3 pos = Vector3(data[offset + 0], 0, data[offset + 1]);
-				pos = tr.xform(pos);
-				gizmo->add_lines(Array::make(pos, pos + Vector3(0, 1, 0)), history);
-			}
-			const size_t pos_offset = past_time_dt.size();
-			const size_t traj_offset = past_time_dt.size() * 2 + future_time_dt.size() * 2;
-			for (size_t i = 0; i < future_time_dt.size(); ++i) {
-				const size_t offset = (pos_offset + i) * 2;
-				Vector3 pos = Vector3(data[offset + 0], 0, data[offset + 1]);
-				Vector3 traj = tr.xform(Vector3(0, 0, 1)).rotated(Vector3(0, 1, 0), data[traj_offset + i]);
-				pos = tr.xform(pos);
-				// traj = tr.xform(traj);
-				gizmo->add_lines(Array::make(pos, pos + traj), future);
-			}
-		}
-	}
 };
 
 #undef MAKE_RESOURCE_TYPE_HINT
