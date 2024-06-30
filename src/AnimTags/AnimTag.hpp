@@ -1,9 +1,9 @@
 #pragma once
+#include <godot_cpp/classes/curve.hpp>
 #include <godot_cpp/core/class_db.hpp>
 #include <godot_cpp/core/method_bind.hpp>
 #include <godot_cpp/variant/dictionary.hpp>
 #include <godot_cpp/variant/utility_functions.hpp>
-
 
 #include <ranges>
 
@@ -21,8 +21,8 @@
 using namespace godot;
 using u = godot::UtilityFunctions;
 // Base Class
-struct TagInfo : godot::Resource {
-	GDCLASS(TagInfo, Resource);
+struct TagInfo : godot::RefCounted {
+	GDCLASS(TagInfo, RefCounted);
 
 public:
 	GETSET(StringName, animation_name);

@@ -5,6 +5,8 @@
 #include <MotionFeatures/MotionFeatures.hpp>
 #include <algorithm>
 
+#include <godot_cpp/classes/prism_mesh.hpp>
+
 // Friends
 #include <PostProcessAnimation/MMInertialization3D.hpp>
 
@@ -148,7 +150,7 @@ public:
 
 			kbone = get_model_kform(_skel, animation, time, bone_path);
 			if (relative_to_bone != _skel->get_root_bone()) {
-				kbone = get_model_kform(_skel, animation, time, relative_to_bone).inverse() * kbone;
+				kbone = get_model_kform(_skel, animation, time, relative_to_bone_path).inverse() * kbone;
 			}
 
 			// Serialize
@@ -341,6 +343,39 @@ public:
 		return result;
 	}
 
+	virtual void show_debug_info(Ref<EditorNode3DGizmo> gizmo, Ref<MMAnimationLibrary> library, String animation_name, float time, Skeleton3D *skel) {
+		const auto material_name = "bone" + get_path();
+		if (gizmo->get_plugin()->get_material(material_name, gizmo) == nullptr) {
+			gizmo->get_plugin()->create_material(material_name, debug_color_position);
+		}
+		auto mat = gizmo->get_plugin()->get_material(material_name, gizmo);
+
+		const Ref<Animation> animation = library->get_animation(animation_name);
+		const String reference_path = (String)library->skeleton_path + ":" + relative_to_bone;
+		const Transform3D root_tr = get_global_kform(library->skeleton_profile,animation,time,reference_path);
+		for (size_t i = 0; i < bone_names.size(); ++i) {
+			const String bone_path = (String)library->skeleton_path + ":" + bone_names[i];
+
+			const kform relative = get_model_kform(library->skeleton_profile, animation, time, reference_path);
+			const kform model = get_model_kform(library->skeleton_profile, animation, time, bone_path);
+			const kform kbone = relative_to_bone.is_empty() || relative_to_bone == library->skeleton_profile->get_root_bone() ? model : relative.inverse() * model;
+
+			Transform3D global = root_tr * (Transform3D)kbone;
+
+			Ref<PrismMesh> mesh{};
+			mesh.instantiate();
+			mesh->set_size(Vector3{ 1, 1.2, 1 } * 0.05);
+			gizmo->add_mesh(mesh, mat, global.rotated_local(Vector3(0, 0, 1), Math::deg_to_rad(90.0)));
+
+			
+
+			gizmo->add_lines(Array::make((root_tr * (Transform3D)relative).origin,global.origin),mat);
+			gizmo->add_lines(Array::make(global.origin,global.xform(kbone.vel) ),mat);
+
+
+		}
+	}
+
 protected:
 	static void _bind_methods() {
 		ClassDB::bind_method(D_METHOD("set_bone_info_type", "value"), &MFBonesInfo::set_bone_info_type, DEFVAL(1));
@@ -406,6 +441,9 @@ protected:
 		ClassDB::bind_method(D_METHOD("calculate_cost", "query", "data"), &MFBonesInfo::calculate_cost);
 
 		ClassDB::bind_method(D_METHOD("debug_pose_gizmo", "gizmo", "data", "root_transform"), &MFBonesInfo::debug_pose_gizmo);
+		ClassDB::bind_method(D_METHOD("show_debug_info", "gizmo", "lib", "animation_name", "timestamp"
+																						   "skeleton"),
+				&MFBonesInfo::show_debug_info);
 	}
 
 	virtual void debug_pose_gizmo(Ref<EditorNode3DGizmo> gizmo, const PackedFloat32Array data, godot::Transform3D tr = godot::Transform3D{}) override {

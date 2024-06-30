@@ -90,6 +90,23 @@ public:
 		result.push_back(vel.z);
 		return result;
 	}
+	
+	PackedFloat32Array bake_pose(Ref<MMAnimationLibrary> mmlib, String animation_name, float time)
+	{
+		// MMAnimationLibrary * mmlib = lib->cast_to<MMAnimationLibrary>(lib.ptr());
+		Ref<Animation> anim = mmlib->get_animation(animation_name);
+		root_bone_track = u::str(mmlib->skeleton_path) + ":" + mmlib->skeleton_profile->get_root_bone();
+
+		kform root_motion = get_root_model_kform(mmlib->skeleton_profile,anim,time,root_bone_track);
+
+		PackedFloat32Array result{};
+		result.append(root_motion.vel.x);
+		result.append(root_motion.vel.y);
+		result.append(root_motion.vel.z);
+		return result;
+	}
+
+
 
 	PackedFloat32Array serialize_charbody3d(CharacterBody3D *body) {
 		PackedFloat32Array result{};
@@ -111,6 +128,25 @@ public:
 		Vector3 v_query = Vector3(query[0], query[1], query[2]);
 		Vector3 v_data = Vector3(data[0], data[1], data[2]);
 		return v_query.distance_to(v_data) * weight;
+	}
+
+
+	virtual void show_debug_info(Ref<EditorNode3DGizmo> gizmo, Ref<MMAnimationLibrary> library , String animation_name, float timestamp,Skeleton3D * skel) const {
+		Ref<Animation> animation = library->get_animation(animation_name);
+		auto root_bone_path = String(library->skeleton_path) + ":" + library->skeleton_profile->get_root_bone();
+		Vector3 local_vel = get_root_model_kform(library->skeleton_profile,animation,timestamp,root_bone_path).vel;
+		PackedVector3Array lines{};
+		auto root_bone_tr = skel->get_bone_global_pose(skel->find_bone(library->skeleton_profile->get_root_bone()));
+
+		lines.append(root_bone_tr.origin);
+		lines.append(root_bone_tr.xform(local_vel));
+
+		const auto material_name = "rootvel" + get_path();
+		if (gizmo->get_plugin()->get_material(material_name) == nullptr) {
+			gizmo->get_plugin()->create_material(material_name, debug_color);
+		}
+		auto mat = gizmo->get_plugin()->get_material(material_name, gizmo);
+		gizmo->add_lines(lines,mat);
 	}
 
 protected:
@@ -137,14 +173,18 @@ protected:
 		ClassDB::bind_method(D_METHOD("get_weights"), &MFRootVelocity::get_weights);
 		ClassDB::bind_method(D_METHOD("get_dimension"), &MFRootVelocity::get_dimension);
 
+		// TODO REMOVE
 		ClassDB::bind_method(D_METHOD("setup_bake_init", "mm_animation_library"), &MFRootVelocity::setup_bake_init);
 		ClassDB::bind_method(D_METHOD("setup_bake_animation", "animation"), &MFRootVelocity::setup_bake_animation);
-
 		ClassDB::bind_method(D_METHOD("bake_animation_pose", "animation", "time"), &MFRootVelocity::bake_animation_pose);
+
+		// TO KEEP
+		ClassDB::bind_method(D_METHOD("bake_pose","animation_library", "animation_name", "time"), &MFRootVelocity::bake_pose);
 
 		ClassDB::bind_method(D_METHOD("calculate_cost", "query", "data"), &MFRootVelocity::calculate_cost);
 
 		ClassDB::bind_method(D_METHOD("debug_pose_gizmo", "gizmo", "data", "root_transform"), &MFRootVelocity::debug_pose_gizmo);
+		ClassDB::bind_method(D_METHOD("show_debug_info", "gizmo", "lib" ,"animation_name","timestamp" "skeleton"), &MFRootVelocity::show_debug_info);
 	}
 
 	GETSET(Color, debug_color, godot::Color(1.0f, 1.0f, 1.0f));

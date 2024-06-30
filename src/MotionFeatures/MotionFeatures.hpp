@@ -5,6 +5,7 @@
 
 #include <godot_cpp/core/gdvirtual.gen.inc>
 
+#include "godot_cpp/core/math.hpp"
 #include <godot_cpp/classes/global_constants.hpp>
 #include <godot_cpp/classes/node.hpp>
 #include <godot_cpp/variant/node_path.hpp>
@@ -32,7 +33,8 @@
 
 #include <MMAnimationLibrary.hpp>
 #include <MMAnimationPlayer.hpp>
-#include <godot_cpp/classes/character_body3d.hpp>
+#include <AnimTags/AnimTag.hpp>
+// #include <g0odot_cpp/classes/character_body3d.hpp>
 
 // Macro setup. Mostly there to simplify writing all those
 #define GETSET(type, variable, ...)            \
@@ -46,10 +48,10 @@
 	ClassDB::bind_method(D_METHOD(STRING_PREFIX(get_, variable)), &type::get_##variable);          \
 	ADD_PROPERTY(PropertyInfo(variant_type, #variable, __VA_ARGS__), STRING_PREFIX(set_, variable), STRING_PREFIX(get_, variable));
 
+class MMAnimationLibrary;
 
 struct MotionFeature : public Resource {
 	GDCLASS(MotionFeature, Resource)
-
 
 public:
 	enum NormalizationType {
@@ -71,25 +73,30 @@ public:
 
 	static constexpr float delta = 0.016f;
 
-	GDVIRTUAL0RC(int,get_dimension);
-	GDVIRTUAL0RC(PackedStringArray,get_hints);
-	GDVIRTUAL0RC(PackedFloat32Array,get_weights);
+	GDVIRTUAL0RC(int, get_dimension);
+	GDVIRTUAL0RC(PackedStringArray, get_hints);
+	GDVIRTUAL0RC(PackedFloat32Array, get_weights);
 
-	
-	GDVIRTUAL1R(bool,setup_bake_animation,Ref<Animation>);
-	GDVIRTUAL2R(PackedFloat32Array,bake_animation_pose,Ref<Animation>,float);
-	GDVIRTUAL1R(bool,setup_bake_init,Ref<AnimationLibrary>);
+	GDVIRTUAL3R(PackedFloat32Array, bake_pose, Ref<AnimationLibrary>, String, float);
+	// PackedFloat32Array bake_pose(Ref<AnimationLibrary> mmlib, String animation_name, float time)
 
-	virtual float calculate_cost(PackedFloat32Array query, PackedFloat32Array data) const{
-		ERR_FAIL_V_MSG(query.size() != data.size(),"Query and Data not the same size");
+	GDVIRTUAL1R(bool, setup_bake_animation, Ref<Animation>);
+	GDVIRTUAL2R(PackedFloat32Array, bake_animation_pose, Ref<Animation>, float);
+	GDVIRTUAL1R(bool, setup_bake_init, Ref<AnimationLibrary>);
+
+	virtual float calculate_cost(PackedFloat32Array query, PackedFloat32Array data) const {
+		ERR_FAIL_V_MSG(query.size() != data.size(), "Query and Data not the same size");
 		float cost = 0.0f;
-		for(size_t i = 0; i < query.size(); ++i){
+		for (size_t i = 0; i < query.size(); ++i) {
 			cost += std::fabs(query[i] - data[i]);
 		}
 		return cost;
 	}
 
 	virtual void debug_pose_gizmo(Ref<EditorNode3DGizmo> gizmo, const PackedFloat32Array data, godot::Transform3D tr = godot::Transform3D{}) { return; }
+
+	GDVIRTUAL5C(show_debug_info, Ref<EditorNode3DGizmo>, Ref<AnimationLibrary>, String, float, Skeleton3D *);
+	// virtual void show_debug_info(Ref<EditorNode3DGizmo> gizmo, Ref<MMAnimationLibrary> library , Ref<Animation> animation, float timestamp,Skeleton3D * root_transform){}
 
 	static void _bind_methods() {
 		BIND_ENUM_CONSTANT(Standard);
@@ -101,21 +108,24 @@ public:
 
 		GDVIRTUAL_BIND(get_hints);
 
-
 		ClassDB::bind_method(D_METHOD("set_normalization_type", "value"), &MotionFeature::set_normalization_type, DEFVAL(NormalizationType::Standard));
 		ClassDB::bind_method(D_METHOD("get_normalization_type"), &MotionFeature::get_normalization_type);
 		ADD_PROPERTY(PropertyInfo(Variant::INT, "normalization_type", godot::PROPERTY_HINT_ENUM, "Standard,RawValue"), "set_normalization_type", "get_normalization_type");
 
-		GDVIRTUAL_BIND( setup_bake_init,"animation_library");
+		// REFACTOR : This is the new API.
+		GDVIRTUAL_BIND(bake_pose, "mmanimationlibrary", "animation_name", "time", "current_tags");
+		GDVIRTUAL_BIND(show_debug_info, "gizmo", "profile", "animation", "timestamp", "skeleton");
+
+		// TODO Remove below. no longer required.
+		GDVIRTUAL_BIND(setup_bake_init, "animation_library");
 		// ClassDB::bind_method( D_METHOD("setup_bake_init","mm_animation_library"),   &MotionFeature::setup_bake_init);
-		GDVIRTUAL_BIND( setup_bake_animation,"animation");
+		GDVIRTUAL_BIND(setup_bake_animation, "animation");
 		// ClassDB::bind_method( D_METHOD("setup_bake_animation","animation"),         &MotionFeature::setup_bake_animation);
-		GDVIRTUAL_BIND( bake_animation_pose,"animation","timestamp");
+		GDVIRTUAL_BIND(bake_animation_pose, "animation", "timestamp");
 		// ClassDB::bind_method( D_METHOD("bake_animation_pose","animation","time"),   &MotionFeature::bake_animation_pose);
 		BIND_VIRTUAL_METHOD(MotionFeature, calculate_cost);
 
-		BIND_VIRTUAL_METHOD(MotionFeature, debug_pose_gizmo);
-		// ClassDB::bind_method( D_METHOD("debug_pose_gizmo","gizmo","data","root_transform"), &MotionFeature::debug_pose_gizmo);
+		ClassDB::bind_method(D_METHOD("debug_pose_gizmo", "gizmo", "data", "root_transform"), &MotionFeature::debug_pose_gizmo);
 	}
 
 	static void serialize_variant(Variant &v, PackedFloat32Array &result) {

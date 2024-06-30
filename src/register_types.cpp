@@ -6,15 +6,17 @@
 #include <godot_cpp/core/defs.hpp>
 #include <godot_cpp/godot.hpp>
 
+#include "Math/Spring.hpp"
 #include "MotionFeatures/MFBonesInfo.hpp"
 #include "MotionFeatures/MFDistance.hpp"
 #include "MotionFeatures/MFEvents.hpp"
 #include "MotionFeatures/MFRootVelocity.hpp"
 #include "MotionFeatures/MFTrajectory.hpp"
 #include "MotionFeatures/MotionFeatures.hpp"
-#include "Math/Spring.hpp"
+
 
 #include "Util/CircularBuffer.hpp"
+#include "Util/Util.hpp"
 #include <MMAnimationLibrary.hpp>
 #include <MMAnimationPlayer.hpp>
 #include <PostProcessAnimation/MMIKLookAt3D.hpp>
@@ -47,6 +49,7 @@ void gdextension_MM_initialize(ModuleInitializationLevel p_level) {
 			GDREGISTER_CLASS(MFRootVelocity);
 			GDREGISTER_CLASS(MFBonesInfo);
 			GDREGISTER_CLASS(MFTrajectory);
+			GDREGISTER_INTERNAL_CLASS(MFTrajectoryOptions);
 			GDREGISTER_CLASS(MFEvents);
 			GDREGISTER_CLASS(MFDistance);
 		}
@@ -71,7 +74,6 @@ void gdextension_MM_initialize(ModuleInitializationLevel p_level) {
 			GDREGISTER_CLASS(MMInertialization3D);
 			GDREGISTER_CLASS(MMIKLookAt3D);
 			GDREGISTER_CLASS(MMIKTwoBone3D);
-			
 		}
 
 		{ // Various helper

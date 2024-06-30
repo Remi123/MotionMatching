@@ -59,6 +59,14 @@ private:
 	}
 
 public:
+	kform remove_velocities() const {
+		kform result = *this;
+		result.vel = {};
+		result.ang = {};
+		result.svl = {};
+		return result;
+	}
+
 	kform &finite_difference(const kform input_next, real_t _dt) {
 		vel = (input_next.pos - pos) / _dt;
 
