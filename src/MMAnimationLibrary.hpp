@@ -1,5 +1,7 @@
 #pragma once
 
+
+#include <godot_cpp/core/gdvirtual.gen.inc>
 #include <godot_cpp/variant/utility_functions.hpp>
 
 #include <godot_cpp/classes/global_constants.hpp>
@@ -43,18 +45,6 @@
 
 using namespace godot;
 
-// Macro setup. Mostly there to simplify writing all those
-#define GETSET(type, variable, ...)            \
-	type variable{ __VA_ARGS__ };              \
-	type get_##variable() { return variable; } \
-	void set_##variable(type value) { variable = value; }
-#define STR(x) #x
-#define STRING_PREFIX(prefix, s) STR(prefix##s)
-#define BINDER_PROPERTY_PARAMS(type, variant_type, variable, ...)                                  \
-	ClassDB::bind_method(D_METHOD(STRING_PREFIX(set_, variable), "value"), &type::set_##variable); \
-	ClassDB::bind_method(D_METHOD(STRING_PREFIX(get_, variable)), &type::get_##variable);          \
-	ADD_PROPERTY(PropertyInfo(variant_type, #variable, __VA_ARGS__), STRING_PREFIX(set_, variable), STRING_PREFIX(get_, variable));
-
 struct MMAnimationLibrary : public AnimationLibrary {
 	using u = godot::UtilityFunctions;
 	GDCLASS(MMAnimationLibrary, AnimationLibrary)
@@ -71,13 +61,16 @@ public:
 		}
 	}
 
+	Callable anim_added = Callable(this, "_event_on_anim_added");
+	Callable anim_removed = Callable(this, "_event_on_anim_removed");
+
 	void _notification(int what) {
 		switch (what) {
 			case NOTIFICATION_POSTINITIALIZE: // Constructor
 			{
 				u::prints("MMAL NOTIFICATION_POSTINITIALIZE", "InEditor:", godot::Engine::get_singleton()->is_editor_hint(), MotionData.size());
-				connect("animation_added", Callable(this, "_event_on_anim_added"));
-				connect("animation_removed", Callable(this, "_event_on_anim_removed"));
+				connect("animation_added", anim_added);
+				connect("animation_removed", anim_removed);
 				if (!godot::Engine::get_singleton()->is_editor_hint()) {
 					// fill_kdtree();
 				}
@@ -85,6 +78,9 @@ public:
 			case NOTIFICATION_PREDELETE: // Destructor
 			{
 				u::prints("MMAL NOTIFICATION_PREDELETE", "InEditor:", godot::Engine::get_singleton()->is_editor_hint(), MotionData.size());
+				disconnect("animation_added",anim_added);
+				disconnect("animation_removed", anim_removed);
+
 				if (kdt != nullptr) {
 					delete kdt;
 				}
@@ -257,7 +253,8 @@ public:
 			if ((bool)f->call("setup_bake_init", Ref<MMAnimationLibrary>(this)) == false) {
 				ERR_FAIL_EDMSG("Motion Feature failed when setting the profile at index " + u::str(i));
 			}
-			tmp_nb_dim += (int)f->call("get_dimension");
+			int feature_dim = 0;
+			tmp_nb_dim += GDVIRTUAL_REQUIRED_CALL_PTR(f,get_dimension,feature_dim);
 		}
 		nb_dimensions = tmp_nb_dim;
 		u::prints("Total Dimension", nb_dimensions);
@@ -302,19 +299,19 @@ public:
 			}
 			u::prints("Found", current_tags.size(), "Tags associated with current animation");
 
-			int should_continue = -1;
-			for (auto features_index = 0; features_index < motion_features.size(); ++features_index) {
-				MotionFeature *f = Object::cast_to<MotionFeature>(motion_features[features_index]);
-				if ((bool)f->call("setup_bake_animation", animation) == false) {
-					u::prints((bool)f->call("setup_bake_animation", animation));
-					should_continue = features_index;
-					break;
-				}
-			}
-			if (should_continue != -1) {
-				WARN_PRINT_ED("Skipping Animation '" + (String)anim_name + "' because of motion feature index :" + u::str(should_continue));
-				continue;
-			}
+			// int should_continue = -1;
+			// for (auto features_index = 0; features_index < motion_features.size(); ++features_index) {
+			// 	MotionFeature *f = Object::cast_to<MotionFeature>(motion_features[features_index]);
+			// 	if ((bool)f->call("setup_bake_animation", animation) == false) {
+			// 		u::prints((bool)f->call("setup_bake_animation", animation));
+			// 		should_continue = features_index;
+			// 		break;
+			// 	}
+			// }
+			// if (should_continue != -1) {
+			// 	WARN_PRINT_ED("Skipping Animation '" + (String)anim_name + "' because of motion feature index :" + u::str(should_continue));
+			// 	continue;
+			// }
 
 			const auto length = animation->get_loop_mode() == Animation::LOOP_NONE ? animation->get_length() - 0.2 : animation->get_length();
 
@@ -415,7 +412,7 @@ public:
 		for (size_t features_index = 0, offset = 0; features_index < motion_features.size(); ++features_index) {
 			MotionFeature *f = Object::cast_to<MotionFeature>(motion_features[features_index]);
 			int feature_dimension = (int)f->call("get_dimension");
-			if (MotionFeature::NormalizationType::Standard == f->get_normalization_type()) {
+			if (MotionFeature::NormalizationType::Standardized == f->get_normalization_type()) {
 				for (auto i = offset; i < feature_dimension; ++i) {
 					feature_scale[offset + i] = std::sqrtf(variance(data_stats[offset + i]));
 					if (feature_scale[offset + i] < std::numeric_limits<float>::epsilon()) {

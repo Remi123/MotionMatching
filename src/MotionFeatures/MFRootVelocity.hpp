@@ -35,20 +35,21 @@
 using namespace godot;
 using u = godot::UtilityFunctions;
 
+#define GETSET(type, variable, ...)            \
+	type variable{ __VA_ARGS__ };              \
+	type get_##variable() { return variable; } \
+	void set_##variable(type value) { variable = value; }
+
 struct MFRootVelocity : public MotionFeature {
 	GDCLASS(MFRootVelocity, MotionFeature);
 
 public:
-	int root_track_pos = -1, root_track_quat = -1; //, root_track_scale = -1;
-
-	String root_bone_track = "%GeneralSkeleton:Root";
-	Transform3D rest_pose = Transform3D();
-
 	int get_dimension() const {
 		return 3;
 	}
 
 	GETSET(float, weight, 1.0f);
+
 	PackedFloat32Array get_weights() const {
 		return Array::make(weight, weight, weight);
 	}
@@ -56,48 +57,15 @@ public:
 		return Array::make("Vx", "Vy", "Vz");
 	}
 
-	bool setup_bake_init(Ref<MMAnimationLibrary> animlib) {
-		ERR_FAIL_COND_V_EDMSG(animlib->skeleton_path.is_empty(), false, "SkeletonPath is Empty");
-		ERR_FAIL_COND_V_EDMSG(animlib->skeleton_profile == nullptr, false, "SkeletonProfile is null");
-		ERR_FAIL_COND_V_EDMSG(animlib->skeleton_profile->get_root_bone().is_empty(), false, "No Root bone to extract data");
-		rest_pose = animlib->skeleton_profile->get_reference_pose(animlib->skeleton_profile->find_bone(animlib->skeleton_profile->get_root_bone()));
-		root_bone_track = u::str(animlib->skeleton_path) + ":" + animlib->skeleton_profile->get_root_bone();
-		return true;
-	}
-	bool setup_bake_animation(Ref<Animation> animation) {
-		root_track_pos = animation->find_track(NodePath(root_bone_track), Animation::TrackType::TYPE_POSITION_3D);
-		root_track_quat = animation->find_track(NodePath(root_bone_track), Animation::TrackType::TYPE_ROTATION_3D);
-		return true;
-	}
-
-	PackedFloat32Array bake_animation_pose(Ref<Animation> animation, float time) {
-		Vector3 pos, prev_pos;
-		if (root_track_pos >= 0) {
-			pos = animation->position_track_interpolate(root_track_pos, time + 0.032);
-			prev_pos = animation->position_track_interpolate(root_track_pos, time);
-		} else {
-			pos = rest_pose.get_origin();
-			prev_pos = rest_pose.get_origin();
-		}
-
-		Quaternion rotation = root_track_quat >= 0 ? animation->rotation_track_interpolate(root_track_quat, time).normalized() : rest_pose.get_basis().get_rotation_quaternion();
-
-		Vector3 vel = rotation.xform_inv(pos - prev_pos) / 0.032;
-
-		PackedFloat32Array result{};
-		result.push_back(vel.x);
-		result.push_back(vel.y);
-		result.push_back(vel.z);
-		return result;
-	}
-	
 	PackedFloat32Array bake_pose(Ref<MMAnimationLibrary> mmlib, String animation_name, float time)
 	{
-		// MMAnimationLibrary * mmlib = lib->cast_to<MMAnimationLibrary>(lib.ptr());
+		ERR_FAIL_COND_V_EDMSG(mmlib->skeleton_path.is_empty(), {}, "SkeletonPath is Empty");
+		ERR_FAIL_COND_V_EDMSG(mmlib->skeleton_profile == nullptr, {}, "SkeletonProfile is null");
+		ERR_FAIL_COND_V_EDMSG(mmlib->skeleton_profile->get_root_bone().is_empty(), {}, "No Root bone to extract data");
 		Ref<Animation> anim = mmlib->get_animation(animation_name);
-		root_bone_track = u::str(mmlib->skeleton_path) + ":" + mmlib->skeleton_profile->get_root_bone();
+		auto _root_bone_track = u::str(mmlib->skeleton_path) + ":" + mmlib->skeleton_profile->get_root_bone();
 
-		kform root_motion = get_root_model_kform(mmlib->skeleton_profile,anim,time,root_bone_track);
+		kform root_motion = get_root_model_kform(mmlib->skeleton_profile,anim,time,_root_bone_track);
 
 		PackedFloat32Array result{};
 		result.append(root_motion.vel.x);
@@ -124,7 +92,7 @@ public:
 		return result;
 	}
 
-	virtual float calculate_cost(PackedFloat32Array query, PackedFloat32Array data) const override {
+	virtual float calculate_cost(PackedFloat32Array query, PackedFloat32Array data) const {
 		Vector3 v_query = Vector3(query[0], query[1], query[2]);
 		Vector3 v_data = Vector3(data[0], data[1], data[2]);
 		return v_query.distance_to(v_data) * weight;
@@ -133,7 +101,7 @@ public:
 
 	virtual void show_debug_info(Ref<EditorNode3DGizmo> gizmo, Ref<MMAnimationLibrary> library , String animation_name, float timestamp,Skeleton3D * skel) const {
 		Ref<Animation> animation = library->get_animation(animation_name);
-		auto root_bone_path = String(library->skeleton_path) + ":" + library->skeleton_profile->get_root_bone();
+		String root_bone_path = String(library->skeleton_path) + ":" + library->skeleton_profile->get_root_bone();
 		Vector3 local_vel = get_root_model_kform(library->skeleton_profile,animation,timestamp,root_bone_path).vel;
 		PackedVector3Array lines{};
 		auto root_bone_tr = skel->get_bone_global_pose(skel->find_bone(library->skeleton_profile->get_root_bone()));
@@ -173,12 +141,6 @@ protected:
 		ClassDB::bind_method(D_METHOD("get_weights"), &MFRootVelocity::get_weights);
 		ClassDB::bind_method(D_METHOD("get_dimension"), &MFRootVelocity::get_dimension);
 
-		// TODO REMOVE
-		ClassDB::bind_method(D_METHOD("setup_bake_init", "mm_animation_library"), &MFRootVelocity::setup_bake_init);
-		ClassDB::bind_method(D_METHOD("setup_bake_animation", "animation"), &MFRootVelocity::setup_bake_animation);
-		ClassDB::bind_method(D_METHOD("bake_animation_pose", "animation", "time"), &MFRootVelocity::bake_animation_pose);
-
-		// TO KEEP
 		ClassDB::bind_method(D_METHOD("bake_pose","animation_library", "animation_name", "time"), &MFRootVelocity::bake_pose);
 
 		ClassDB::bind_method(D_METHOD("calculate_cost", "query", "data"), &MFRootVelocity::calculate_cost);
@@ -188,8 +150,3 @@ protected:
 
 	GETSET(Color, debug_color, godot::Color(1.0f, 1.0f, 1.0f));
 };
-
-#undef MAKE_RESOURCE_TYPE_HINT
-#undef GETSET
-#undef STR
-#undef STRING_PREFIX
