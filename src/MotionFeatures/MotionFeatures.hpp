@@ -73,25 +73,13 @@ public:
 
 		BINDER_PROPERTY_PARAMS(MotionFeature,Variant::INT,normalization_type,godot::PROPERTY_HINT_ENUM, "Standardized,RawValue");
 
-		// ClassDB::bind_method(D_METHOD("set_normalization_type", "value"), &MotionFeature::set_normalization_type, DEFVAL(NormalizationType::Standardized));
-		// ClassDB::bind_method(D_METHOD("get_normalization_type"), &MotionFeature::get_normalization_type);
-		// ADD_PROPERTY(PropertyInfo(Variant::INT, "normalization_type", godot::PROPERTY_HINT_ENUM, "Standardized,RawValue"), "set_normalization_type", "get_normalization_type");
-
 		// REFACTOR : This is the new API.
 		GDVIRTUAL_BIND(get_dimension);
 		GDVIRTUAL_BIND(get_weights);
 		GDVIRTUAL_BIND(get_hints);
 
-		GDVIRTUAL_BIND(bake_pose, "mmanimationlibrary", "animation_name", "time", "current_tags");
+		GDVIRTUAL_BIND(bake_pose, "mmanimationlibrary", "animation_name", "time");
 		GDVIRTUAL_BIND(show_debug_info, "gizmo", "profile", "animation", "timestamp", "skeleton");
-
-		// TODO Remove below. no longer required.
-		// ClassDB::bind_method( D_METHOD("setup_bake_init","mm_animation_library"),   &MotionFeature::setup_bake_init);
-		// GDVIRTUAL_BIND(setup_bake_animation, "animation");
-		// ClassDB::bind_method( D_METHOD("setup_bake_animation","animation"),         &MotionFeature::setup_bake_animation);
-		// GDVIRTUAL_BIND(bake_animation_pose, "animation", "timestamp");
-		// ClassDB::bind_method( D_METHOD("bake_animation_pose","animation","time"),   &MotionFeature::bake_animation_pose);
-		// BIND_VIRTUAL_METHOD(MotionFeature, calculate_cost);
 	}
 
 	static void serialize_variant(Variant &v, PackedFloat32Array &result) {

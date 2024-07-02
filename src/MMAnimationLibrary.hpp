@@ -224,7 +224,7 @@ public:
 		TypedArray<TagInfo> result{};
 		for (auto i = 0; i < tags.size(); ++i) {
 			Ref<TagInfo> tag = cast_to<TagInfo>(tags[i]);
-			if (tag->animation_name == animation_name && time >= tag->timestamp && tag->timestamp + tag->duration >= time) {
+			if (tag->animation_name == animation_name && time >= tag->timestamp && (tag->timestamp + tag->duration) >= time) {
 				result.append(tag);
 			}
 		}
@@ -235,9 +235,9 @@ public:
 		for (auto i = 0; i < motion_features.size(); ++i) {
 			MotionFeature *f = Object::cast_to<MotionFeature>(motion_features[i]);
 			ERR_FAIL_COND_EDMSG(!f->has_method("get_dimension"), "Feature # " + u::str(i) + " doesn't have a get_dimension method");
-			ERR_FAIL_COND_EDMSG(!f->has_method("setup_bake_init"), "Feature # " + u::str(i) + " doesn't have a setup_bake_init method");
-			ERR_FAIL_COND_EDMSG(!f->has_method("setup_bake_animation"), "Feature # " + u::str(i) + " doesn't have a setup_bake_animation method");
-			ERR_FAIL_COND_EDMSG(!f->has_method("bake_animation_pose"), "Feature # " + u::str(i) + " doesn't have a bake_animation_pose method");
+			// ERR_FAIL_COND_EDMSG(!f->has_method("setup_bake_init"), "Feature # " + u::str(i) + " doesn't have a setup_bake_init method");
+			// ERR_FAIL_COND_EDMSG(!f->has_method("setup_bake_animation"), "Feature # " + u::str(i) + " doesn't have a setup_bake_animation method");
+			// ERR_FAIL_COND_EDMSG(!f->has_method("bake_animation_pose"), "Feature # " + u::str(i) + " doesn't have a bake_animation_pose method");
 		}
 
 		ERR_FAIL_COND_EDMSG(time_interval < 0.016f, "Please choose a time inverval higher than 0.016s");
@@ -250,11 +250,12 @@ public:
 			MotionFeature *f = Object::cast_to<MotionFeature>(motion_features[i]);
 			ERR_FAIL_NULL_MSG(f, "Features no." + u::str(i) + "is null");
 			u::prints("Feature no.", i, f->get_name(), "Dimensions:", (int)f->call("get_dimension"));
-			if ((bool)f->call("setup_bake_init", Ref<MMAnimationLibrary>(this)) == false) {
-				ERR_FAIL_EDMSG("Motion Feature failed when setting the profile at index " + u::str(i));
-			}
 			int feature_dim = 0;
-			tmp_nb_dim += GDVIRTUAL_REQUIRED_CALL_PTR(f,get_dimension,feature_dim);
+			if(!GDVIRTUAL_CALL_PTR(f,get_dimension,feature_dim))
+			{
+				feature_dim = f->call("get_dimension");
+			}
+			tmp_nb_dim += feature_dim;
 		}
 		nb_dimensions = tmp_nb_dim;
 		u::prints("Total Dimension", nb_dimensions);
@@ -265,10 +266,13 @@ public:
 		PackedFloat32Array data = PackedFloat32Array();
 
 		biases.clear();
-
 		db_anim_category.clear();
 		db_anim_index.clear();
 		db_anim_timestamp.clear();
+		Rng_Start.resize(anim_names.size());
+		Rng_Start.fill(-1);
+		Rng_Stop.resize(anim_names.size());
+		Rng_Stop.fill(-1);
 
 		using namespace boost::accumulators;
 		using acc_stats = stats<tag::density, tag::max, tag::min, tag::median, tag::skewness, tag::variance>;
@@ -276,10 +280,7 @@ public:
 		std::vector<accumulator_set<float, acc_stats>> data_stats(nb_dimensions, default_acc);
 
 		u::prints("Starting animation baking...");
-		Rng_Start.resize(anim_names.size());
-		Rng_Start.fill(-1);
-		Rng_Stop.resize(anim_names.size());
-		Rng_Stop.fill(-1);
+
 		size_t range_counter = 0;
 		for (auto anim_index = 0; anim_index < anim_names.size(); ++anim_index) {
 			auto clock_start = std::chrono::system_clock::now();
@@ -297,30 +298,12 @@ public:
 					current_tags.push_back(tag);
 				}
 			}
-			u::prints("Found", current_tags.size(), "Tags associated with current animation");
 
-			// int should_continue = -1;
-			// for (auto features_index = 0; features_index < motion_features.size(); ++features_index) {
-			// 	MotionFeature *f = Object::cast_to<MotionFeature>(motion_features[features_index]);
-			// 	if ((bool)f->call("setup_bake_animation", animation) == false) {
-			// 		u::prints((bool)f->call("setup_bake_animation", animation));
-			// 		should_continue = features_index;
-			// 		break;
-			// 	}
-			// }
-			// if (should_continue != -1) {
-			// 	WARN_PRINT_ED("Skipping Animation '" + (String)anim_name + "' because of motion feature index :" + u::str(should_continue));
-			// 	continue;
-			// }
+			u::prints("Animations setup for", anim_name, "duration", animation->get_length(),"found",current_tags.size(),"tags for this animation");
 
-			const auto length = animation->get_loop_mode() == Animation::LOOP_NONE ? animation->get_length() - 0.2 : animation->get_length();
-
-			u::prints("Animations setup for", anim_name, "duration", animation->get_length());
-
-			int _limit = animation->get_length() / time_interval;
+			const int _limit = animation->get_length() / time_interval;
 			IndexSet timed(0, _limit);
 			for (auto t = 0; t < current_tags.size(); ++t) {
-				// for (TagInfo *tag : current_tags) {
 				if (TagJunk *junk = Object::cast_to<TagJunk>(current_tags[t]); junk) {
 					auto _start = godot::CLAMP(int(junk->timestamp / time_interval), 0, _limit);
 					auto _end = godot::CLAMP(int((junk->timestamp + junk->duration) / time_interval), 0, _limit);
@@ -331,29 +314,12 @@ public:
 			nb_poses = 0;
 			for (IndexRange interval : timed) {
 				for (size_t time_index = interval.front(); time_index <= interval.back(); ++time_index) {
-					auto time = time_index * time_interval;
+					auto time = time_index * time_interval;					
 
-					int64_t tmp_category_value = 0;
-
-					// Tags Logic
-					// Get all tags at this timestamp
-					// If one is Junk, continue
-					auto skip = std::find_if(current_tags.begin(), current_tags.end(),
-							[time](TagInfo *tag) {
-								TagJunk *junk = Object::cast_to<TagJunk>(tag);
-								if (junk != nullptr) {
-									return junk->timestamp <= time && time <= junk->timestamp + junk->duration;
-								}
-								return false;
-							});
-					if (skip != current_tags.end()) {
-						continue;
-					}
 					// If category, OR it
-					auto tmp_tags = TypedArray<TagInfo>{};
+					int64_t tmp_category_value = 0;
 					std::for_each(current_tags.begin(), current_tags.end(),
-							[&tmp_category_value, time, &tmp_tags](TagInfo *tag) {
-								tmp_tags.append(tag);
+							[&tmp_category_value, time](TagInfo *tag) {
 								TagCategory *category = Object::cast_to<TagCategory>(tag);
 								if (category != nullptr && category->timestamp <= time && time <= category->timestamp + category->duration) {
 									tmp_category_value |= category->category;
@@ -364,9 +330,13 @@ public:
 					for (size_t features_index = 0; features_index < motion_features.size(); ++features_index) {
 						MotionFeature *f = Object::cast_to<MotionFeature>(motion_features[features_index]);
 						size_t const expected_dimension = (size_t)f->call("get_dimension");
-						PackedFloat32Array feature_data = f->call("bake_animation_pose", animation, time);
-						GDVIRTUAL_REQUIRED_CALL_PTR(f, bake_pose, this, anim_name, time, feature_data);
-						ERR_FAIL_COND_MSG(feature_data.size() != expected_dimension, String("Features no.") + u::str(int(features_index)) + "bake_animation_pose didn't return a array of the correct size:" + u::str(feature_data.size()) + '/' + u::str(expected_dimension));
+						PackedFloat32Array feature_data{} ;
+						if(!GDVIRTUAL_CALL_PTR(f, bake_pose, this, anim_name, time, feature_data))
+						{
+							feature_data = f->call("bake_pose",this,anim_name,time);
+						}
+						// f->GDVIRTUAL_CALL(bake_pose,this, anim_name, time, feature_data);
+						ERR_FAIL_COND_MSG(feature_data.size() != expected_dimension, String("Features no.") + u::str(int(features_index)) + " bake_pose didn't return a array of the correct size:" + u::str(feature_data.size()) + '/' + u::str(expected_dimension));
 						pose_data.append_array(feature_data);
 					}
 					// Discover Biases
@@ -425,7 +395,9 @@ public:
 					feature_scale[offset + i] = 1.0f;
 				}
 			}
-			offset += (int)f->call("get_dimension");
+			int feature_dim=0;
+			GDVIRTUAL_REQUIRED_CALL_PTR(f,get_dimension,feature_dim);
+			offset += feature_dim;
 		}
 		// Apply normalization to data. When using RawValue, means and variance are 0 and 1 respectively.
 		for (size_t pose = 0; pose < data.size() / nb_dimensions; ++pose) {
@@ -454,15 +426,17 @@ public:
 	// Take into consideration the number of dimensions.
 	// The calculation might be reconsidered, but it's the best I found.
 	void recalculate_weights() {
-		PackedFloat32Array tmp_weight{};
+		PackedFloat32Array all_weight{};
 
 		for (auto features_index = 0; features_index < motion_features.size(); ++features_index) {
+			PackedFloat32Array feature_weight{};
 			MotionFeature *f = Object::cast_to<MotionFeature>(motion_features[features_index]);
 			ERR_FAIL_COND_EDMSG(!f->has_method("get_weights"), "Feature # " + u::str(features_index) + " doesn't have a get_weights method");
-			tmp_weight.append_array((PackedFloat32Array)f->call("get_weights"));
+			GDVIRTUAL_CALL_PTR(f,get_weights,feature_weight);
+			all_weight.append_array(feature_weight);
 		}
 		weights.clear();
-		weights = tmp_weight;
+		weights = all_weight;
 		u::prints("New Weights Values:", weights);
 	}
 
@@ -911,9 +885,9 @@ public:
 
 			u::prints("Features #", features_index, "nb dimension", f->call("get_dimension"));
 			u::prints("Features #", features_index, "hints", f->call("get_hints"));
-			u::prints("Features #", features_index, "setup_bake_init", f->call("setup_bake_init", this));
-			u::prints("Features #", features_index, "setup_bake_animation", f->call("setup_bake_animation", nullptr));
-			u::prints("Features #", features_index, "bake", (PackedFloat32Array)f->call("bake_animation_pose", nullptr, 0.016));
+			// u::prints("Features #", features_index, "setup_bake_init", f->call("setup_bake_init", this));
+			// u::prints("Features #", features_index, "setup_bake_animation", f->call("setup_bake_animation", nullptr));
+			// u::prints("Features #", features_index, "bake", (PackedFloat32Array)f->call("bake_animation_pose", nullptr, 0.016));
 		}
 	}
 

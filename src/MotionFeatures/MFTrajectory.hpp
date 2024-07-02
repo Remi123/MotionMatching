@@ -41,12 +41,6 @@
 using namespace godot;
 using u = godot::UtilityFunctions;
 
-// Macro setup. Mostly there to simplify writing all those
-#define GETSET(type, variable, ...)            \
-	type variable{ __VA_ARGS__ };              \
-	type get_##variable() { return variable; } \
-	void set_##variable(type value) { variable = value; }
-
 struct MFTrajectoryOptions : public Resource {
 	GDCLASS(MFTrajectoryOptions, Resource)
 public:
@@ -217,15 +211,16 @@ public:
 		ERR_FAIL_COND_V_EDMSG(mmlib->skeleton_path.is_empty(), {}, "SkeletonPath is Empty");
 		ERR_FAIL_COND_V_EDMSG(mmlib->skeleton_profile == nullptr, {}, "SkeletonProfile is null");
 		ERR_FAIL_COND_V_EDMSG(mmlib->get_skeleton_profile()->get_root_bone().is_empty(), {}, "No Root bone to extract data");
+		root_bone_track = String(mmlib->skeleton_path) + ':' + mmlib->skeleton_profile->get_root_bone();
 		PackedFloat32Array result{};
 		Ref<Animation> animation = mmlib->get_animation(animation_name);
 
-		kform current = get_global_kform(profile, animation, time, root_bone_track);
+		const kform current = get_global_kform(mmlib->skeleton_profile, animation, time, root_bone_track);
 		for (int i = 0; i < options.size(); ++i) {
 			auto *option = cast_to<MFTrajectoryOptions>(options[i]);
 			if (option) {
-				kform offset = _get_global_root_kform(m_library, animation, time + option->time_offset);
-				kform difference = current.remove_velocities().inverse() * offset;
+				kform global = _get_global_root_kform(mmlib, animation, time + option->time_offset);
+				kform difference = current.remove_velocities().inverse() * global;
 				std::bitset<32> bit = option->options;
 				for (int o = 0; o < bit.size(); ++o) {
 					Vector3 I{};
@@ -235,6 +230,8 @@ public:
 						I = difference.vel;
 					} else if (o == MFTrajectoryOptions::Options::Direction && bit.test(MFTrajectoryOptions::Options::Direction)) {
 						I = difference.rot.xform(Vector3(0, 0, 1));
+					} else {
+						continue;
 					}
 					if (option->coordinate == MFTrajectoryOptions::Coordinates::XZ) {
 						result.append(I.x);

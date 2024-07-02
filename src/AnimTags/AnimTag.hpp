@@ -12,8 +12,8 @@
 using namespace godot;
 using u = godot::UtilityFunctions;
 // Base Class
-struct TagInfo : godot::RefCounted {
-	GDCLASS(TagInfo, RefCounted);
+struct TagInfo : godot::Resource {
+	GDCLASS(TagInfo, Resource);
 
 public:
 	GETSET(StringName, animation_name);
