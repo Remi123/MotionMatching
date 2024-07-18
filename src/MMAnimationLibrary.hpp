@@ -1,6 +1,5 @@
 #pragma once
 
-
 #include <godot_cpp/core/gdvirtual.gen.inc>
 #include <godot_cpp/variant/utility_functions.hpp>
 
@@ -56,9 +55,6 @@ public:
 	}
 	~MMAnimationLibrary() {
 		u::prints("MMAL", "Destructor");
-		if (kdt != nullptr) {
-			delete kdt;
-		}
 	}
 
 	Callable anim_added = Callable(this, "_event_on_anim_added");
@@ -71,49 +67,18 @@ public:
 				u::prints("MMAL NOTIFICATION_POSTINITIALIZE", "InEditor:", godot::Engine::get_singleton()->is_editor_hint(), MotionData.size());
 				connect("animation_added", anim_added);
 				connect("animation_removed", anim_removed);
-				if (!godot::Engine::get_singleton()->is_editor_hint()) {
-					// fill_kdtree();
-				}
 			} break;
 			case NOTIFICATION_PREDELETE: // Destructor
 			{
 				u::prints("MMAL NOTIFICATION_PREDELETE", "InEditor:", godot::Engine::get_singleton()->is_editor_hint(), MotionData.size());
-				disconnect("animation_added",anim_added);
+				disconnect("animation_added", anim_added);
 				disconnect("animation_removed", anim_removed);
-
-				if (kdt != nullptr) {
-					delete kdt;
-				}
 			} break;
 			default:
 				u::prints("MMAL Default notification", what);
 		}
 	}
 
-	GETSET(int, strategy)
-	GETSET(StringName, skeleton_path);
-	GETSET(Ref<SkeletonProfile>, skeleton_profile)
-	float time_interval{};
-	float get_time_interval() { return time_interval; }
-	void set_time_interval(float value) { time_interval = std::abs(value); }
-
-	GETSET(float, continuation_bias);
-
-	String category_hint_string{};
-	String get_category_hint_string() { return category_hint_string; }
-	void set_category_hint_string(String value) {
-		category_hint_string = value;
-		int nb = 0;
-		for (int i = 0; i < tags.size(); ++i) {
-			TagCategory *category = Object::cast_to<TagCategory>(tags[i]);
-			if (category != nullptr) {
-				category->property_hint_string = category_hint_string;
-				++nb;
-			}
-		}
-	}
-	GETSET(TypedArray<TagInfo>, tags);
-	GETSET(Dictionary, curvecost); // map<StringName,Curve> -> map<animation_name, cost>
 	void _event_on_anim_added(StringName animname) {
 		Curve *c = new Curve();
 		Ref<Animation> anim = get_animation(animname);
@@ -136,88 +101,6 @@ public:
 	}
 	Ref<Curve> get_curvecost_animname(StringName animname) {
 		return curvecost.get_or_add(animname, new Curve{});
-	}
-
-	// Category tracks
-	GETSET(TypedArray<String>, category_track_names)
-	// Array of the motion features.
-	GETSET(TypedArray<MotionFeature>, motion_features);
-	// The data
-	GETSET(PackedFloat32Array, MotionData);
-
-	// Dimensional Stats.
-	GETSET(int, nb_dimensions)
-	GETSET(int, nb_poses)
-	GETSET(PackedFloat32Array, weights)
-	GETSET(PackedFloat32Array, biases)
-
-	GETSET(PackedFloat32Array, feature_offset);
-	GETSET(PackedFloat32Array, feature_scale);
-
-	// Database. A pose is just the index of a row in the kdtree.
-	// Usage : db_anim_*[result.index] =
-	GETSET(PackedInt32Array, db_anim_index); // Index of the animation name in the animation library
-	GETSET(PackedFloat32Array, db_anim_timestamp); // timestamp of the pose in the animation
-	GETSET(PackedInt32Array, db_anim_category); // Category of the pose in the animation
-
-	// The KdTree.
-	Kdtree::KdTree *kdt = nullptr;
-
-	// How the kdtree calculate the distance.
-	// 0 (L0) : Maximum of each difference in all dimensions.
-	// 1 (L1) : Manhattan distance (default)
-	// 2 (L2) : Distance squared.
-	int distance_type = 1;
-	int get_distance_type() { return distance_type; }
-	void set_distance_type(int value) {
-		distance_type = value;
-		if (kdt != nullptr && 0 <= distance_type && distance_type <= 2)
-			kdt->set_distance(distance_type);
-	}
-
-	void _cache_kdtree(bool reset = false) {
-		if (reset) {
-			if (kdt != nullptr)
-				delete kdt;
-			kdt = nullptr;
-		}
-		if (kdt == nullptr) {
-			std::cout << "Creating kdtree" << std::endl;
-			fill_kdtree();
-		}
-	}
-
-	void fill_kdtree() {
-		u::prints("MF size", motion_features.size());
-		ERR_FAIL_COND_EDMSG(nb_dimensions == 0, "Number Dimensions is zero");
-		ERR_FAIL_COND_EDMSG(MotionData.is_empty(), "Motion Data is Empty");
-
-		u::prints("Total Dimension", nb_dimensions);
-		if (kdt != nullptr)
-			delete kdt;
-
-		// Now we bake all the data
-		u::prints("Preparing kdtree");
-		Kdtree::KdNodeVector nodes{};
-		for (size_t i = 0; i < MotionData.size() / nb_dimensions; ++i) {
-			auto begin = MotionData.ptr(), end = MotionData.ptr(); // We use the ptr as iterator.
-			begin = std::next(begin, nb_dimensions * i);
-			end = std::next(begin, nb_dimensions);
-			std::vector<float> point(begin, end);
-			nodes.push_back(Kdtree::KdNode(std::move(point), &db_anim_category[i], i));
-		}
-		u::prints("Creating kdtree");
-		kdt = new Kdtree::KdTree(&nodes, distance_type);
-
-		weights.resize(nb_dimensions);
-
-		auto begin = weights.ptr(), end = weights.ptr(); // We use the ptr as iterator.
-		begin = std::next(begin, 0);
-		end = std::next(begin, nb_dimensions);
-		const std::vector<float> tmp_weight(begin, end);
-
-		kdt->set_distance(distance_type, &tmp_weight);
-		u::prints("KDTree Constructed");
 	}
 
 	TypedArray<TagInfo> get_pose_tags(String animation_name, float time) {
@@ -251,8 +134,7 @@ public:
 			ERR_FAIL_NULL_MSG(f, "Features no." + u::str(i) + "is null");
 			u::prints("Feature no.", i, f->get_name(), "Dimensions:", (int)f->call("get_dimension"));
 			int feature_dim = 0;
-			if(!GDVIRTUAL_CALL_PTR(f,get_dimension,feature_dim))
-			{
+			if (!GDVIRTUAL_CALL_PTR(f, get_dimension, feature_dim)) {
 				feature_dim = f->call("get_dimension");
 			}
 			tmp_nb_dim += feature_dim;
@@ -299,7 +181,7 @@ public:
 				}
 			}
 
-			u::prints("Animations setup for", anim_name, "duration", animation->get_length(),"found",current_tags.size(),"tags for this animation");
+			u::prints("Animations setup for", anim_name, "duration", animation->get_length(), "found", current_tags.size(), "tags for this animation");
 
 			const int _limit = animation->get_length() / time_interval;
 			IndexSet timed(0, _limit);
@@ -314,7 +196,7 @@ public:
 			nb_poses = 0;
 			for (IndexRange interval : timed) {
 				for (size_t time_index = interval.front(); time_index <= interval.back(); ++time_index) {
-					auto time = time_index * time_interval;					
+					auto time = time_index * time_interval;
 
 					// If category, OR it
 					int64_t tmp_category_value = 0;
@@ -330,10 +212,9 @@ public:
 					for (size_t features_index = 0; features_index < motion_features.size(); ++features_index) {
 						MotionFeature *f = Object::cast_to<MotionFeature>(motion_features[features_index]);
 						size_t const expected_dimension = (size_t)f->call("get_dimension");
-						PackedFloat32Array feature_data{} ;
-						if(!GDVIRTUAL_CALL_PTR(f, bake_pose, this, anim_name, time, feature_data))
-						{
-							feature_data = f->call("bake_pose",this,anim_name,time);
+						PackedFloat32Array feature_data{};
+						if (!GDVIRTUAL_CALL_PTR(f, bake_pose, this, anim_name, time, feature_data)) {
+							feature_data = f->call("bake_pose", this, anim_name, time);
 						}
 						// f->GDVIRTUAL_CALL(bake_pose,this, anim_name, time, feature_data);
 						ERR_FAIL_COND_MSG(feature_data.size() != expected_dimension, String("Features no.") + u::str(int(features_index)) + " bake_pose didn't return a array of the correct size:" + u::str(feature_data.size()) + '/' + u::str(expected_dimension));
@@ -395,8 +276,8 @@ public:
 					feature_scale[offset + i] = 1.0f;
 				}
 			}
-			int feature_dim=0;
-			GDVIRTUAL_REQUIRED_CALL_PTR(f,get_dimension,feature_dim);
+			int feature_dim = 0;
+			GDVIRTUAL_REQUIRED_CALL_PTR(f, get_dimension, feature_dim);
 			offset += feature_dim;
 		}
 		// Apply normalization to data. When using RawValue, means and variance are 0 and 1 respectively.
@@ -432,29 +313,15 @@ public:
 			PackedFloat32Array feature_weight{};
 			MotionFeature *f = Object::cast_to<MotionFeature>(motion_features[features_index]);
 			ERR_FAIL_COND_EDMSG(!f->has_method("get_weights"), "Feature # " + u::str(features_index) + " doesn't have a get_weights method");
-			GDVIRTUAL_CALL_PTR(f,get_weights,feature_weight);
+			GDVIRTUAL_CALL_PTR(f, get_weights, feature_weight);
 			all_weight.append_array(feature_weight);
 		}
 		weights.clear();
-		weights = all_weight;
+		weights = MMUtil::softmax(all_weight);
+
 		u::prints("New Weights Values:", weights);
 	}
 
-	/// AABB
-	GETSET(PackedInt32Array, Rng_Start);
-	GETSET(PackedInt32Array, Rng_Stop);
-	GETSET(PackedFloat32Array, SM_MIN);
-	GETSET(PackedFloat32Array, SM_MAX);
-	GETSET(PackedFloat32Array, LR_MIN);
-	GETSET(PackedFloat32Array, LR_MAX);
-	GETSET(int, BOUND_SM_SIZE, 16);
-	GETSET(int, BOUND_LR_SIZE, 64);
-	GETSET(real_t, category_penality);
-
-	GETSET(PackedFloat32Array, BIAS_SM_MIN);
-	GETSET(PackedFloat32Array, BIAS_SM_MAX);
-	GETSET(PackedFloat32Array, BIAS_LR_MIN);
-	GETSET(PackedFloat32Array, BIAS_LR_MAX);
 
 	void build_bounds() {
 		// Compute array size
@@ -754,107 +621,7 @@ public:
 		result.append(data);
 		return result;
 	}
-	/// AABB
-
-	// Bypass the feature query, and ask directly which poses is the most similar.
-	// The query must be of the correct dimension.
-	Array check_query_results(PackedFloat32Array query, int64_t nb_result = 1) {
-		_cache_kdtree(true);
-
-		auto begin = weights.ptr(), end = weights.ptr(); // We use the ptr as iterator.
-		begin = std::next(begin, 0);
-		end = std::next(begin, query.size());
-		const std::vector<float> tmp_weight(begin, end);
-
-		kdt->set_distance(distance_type, &tmp_weight);
-
-		auto query_data = Kdtree::CoordPoint(query.ptr(), std::next(query.ptr(), query.size()));
-
-		u::prints("query Constructed");
-
-		Kdtree::KdNodeVector re = Kdtree::KdNodeVector{};
-		kdt->k_nearest_neighbors(query_data, nb_result, &re);
-		u::prints("Results obtained");
-		Array result;
-		for (auto i : re) {
-			const auto anim_name = get_animation_list()[db_anim_index[i.index]];
-			const auto anim_time = db_anim_timestamp[i.index];
-			const auto anim_cat = db_anim_category[i.index];
-			result.append(Array::make(anim_name, anim_time, anim_cat));
-		}
-		return result;
-	}
-
-	struct Category_Pred : Kdtree::KdNodePredicate {
-		const std::bitset<64> m_desired_category;
-		const std::bitset<64> m_exclude_category;
-		Category_Pred(int64_t included_category_bitfield, int64_t excluded_category_bitfield = 0) :
-				m_desired_category{ static_cast<uint64_t>(included_category_bitfield) }, m_exclude_category{ static_cast<uint64_t>(excluded_category_bitfield) } {}
-
-		virtual bool operator()(const Kdtree::KdNode &node) const {
-			static constexpr std::bitset<64> zero = {};
-			const std::bitset<64> node_category = *((int32_t *)node.data);
-			const bool include = (m_desired_category & node_category) == node_category;
-			const bool exclude = (m_exclude_category & node_category) == zero;
-			return include && exclude;
-		}
-	};
-
-	TypedArray<Dictionary> query_pose(PackedFloat32Array query, unsigned int nb_result = 1, int64_t included_category = std::numeric_limits<int64_t>::max(), int64_t excluded_category = 0) {
-		ERR_FAIL_COND_V_MSG(query.size() != nb_dimensions, {}, "Query must the same size as nb_dimensions");
-		ERR_FAIL_COND_V_MSG(feature_offset.size() != nb_dimensions, {}, "Feature Offset must the same size as nb_dimensions");
-		ERR_FAIL_COND_V_MSG(feature_scale.size() != nb_dimensions, {}, "Feature Scale must the same size as nb_dimensions");
-
-		// Create three if needs be
-		_cache_kdtree();
-
-		// Normalization of the query data. It's expected to not be normalized.
-		for (size_t i = 0; i < feature_offset.size(); ++i) {
-			query[i] = (query[i] - feature_offset[i]) / feature_scale[i];
-		}
-
-		{
-			Kdtree::KdNodeVector re{};
-
-			auto query_data = Kdtree::CoordPoint(query.ptr(), std::next(query.ptr(), kdt->dimension));
-			auto clock_start = std::chrono::system_clock::now();
-			if (included_category == std::numeric_limits<int64_t>::max() && excluded_category == 0)
-				kdt->k_nearest_neighbors(query_data, nb_result, &re);
-			else {
-				auto pred = Category_Pred(included_category, excluded_category);
-				kdt->k_nearest_neighbors(query_data, nb_result, &re, &pred);
-			}
-
-			auto clock_end = std::chrono::system_clock::now();
-
-			float duration = float(std::chrono::duration_cast<std::chrono::microseconds>(clock_end - clock_start).count());
-
-			TypedArray<Dictionary> results = {};
-
-			for (int i = 0; i < re.size(); ++i) {
-				Dictionary data{};
-				const StringName anim_name = get_animation_list()[db_anim_index[re[i].index]];
-				const float anim_time = db_anim_timestamp[re[i].index];
-				PackedFloat32Array data_result{};
-				for (auto d : re[i].point) {
-					data_result.append(d);
-				}
-				for (auto i = 0; i < data_result.size(); ++i) {
-					data_result[i] *= feature_scale[i];
-					data_result[i] += feature_offset[i];
-				}
-				data["index"] = re[i].index;
-				data["animation"] = anim_name;
-				data["timestamp"] = std::move(anim_time);
-				data["data"] = data_result;
-				results.append(data);
-			}
-
-			return results;
-		}
-		return {};
-	}
-
+	
 	Dictionary sample_bone_global_info(StringName animation_name, double time, NodePath bone_path) {
 		ERR_FAIL_COND_V(skeleton_profile == nullptr, {});
 		ERR_FAIL_COND_V(!has_animation(animation_name), {});
@@ -891,10 +658,72 @@ public:
 		}
 	}
 
+	// All the GETSET
+	GETSET(StringName, skeleton_path);
+	GETSET(Ref<SkeletonProfile>, skeleton_profile)
+	GETSET(float,time_interval,0.1);
+
+	GETSET(float, continuation_bias);
+	
+	String category_hint_string{};
+	String get_category_hint_string() { return category_hint_string; }
+	void set_category_hint_string(String value) {
+		category_hint_string = value;
+		int nb = 0;
+		for (int i = 0; i < tags.size(); ++i) {
+			TagCategory *category = Object::cast_to<TagCategory>(tags[i]);
+			if (category != nullptr) {
+				category->property_hint_string = category_hint_string;
+				++nb;
+			}
+		}
+		emit_changed();
+	}
+	GETSET(TypedArray<TagInfo>, tags);
+	GETSET(Dictionary, curvecost); // map<StringName,Curve> -> map<animation_name, cost>
+
+		// Category tracks
+	GETSET(TypedArray<String>, category_track_names)
+	// Array of the motion features.
+	GETSET(TypedArray<MotionFeature>, motion_features);
+	// The data
+	GETSET(PackedFloat32Array, MotionData);
+
+	// Dimensional Stats.
+	GETSET(int, nb_dimensions)
+	GETSET(int, nb_poses)
+	GETSET(PackedFloat32Array, weights)
+	GETSET(PackedFloat32Array, biases)
+
+	GETSET(PackedFloat32Array, feature_offset);
+	GETSET(PackedFloat32Array, feature_scale);
+
+	// Database.
+	// Usage : db_anim_*[result.index] =
+	GETSET(PackedInt32Array, db_anim_index); // Index of the animation name in the animation library
+	GETSET(PackedFloat32Array, db_anim_timestamp); // timestamp of the pose in the animation
+	GETSET(PackedInt32Array, db_anim_category); // Category of the pose in the animation
+
+	/// AABB
+	GETSET(PackedInt32Array, Rng_Start);
+	GETSET(PackedInt32Array, Rng_Stop);
+	GETSET(PackedFloat32Array, SM_MIN);
+	GETSET(PackedFloat32Array, SM_MAX);
+	GETSET(PackedFloat32Array, LR_MIN);
+	GETSET(PackedFloat32Array, LR_MAX);
+	GETSET(int, BOUND_SM_SIZE, 16);
+	GETSET(int, BOUND_LR_SIZE, 64);
+	GETSET(real_t, category_penality);
+
+	GETSET(PackedFloat32Array, BIAS_SM_MIN);
+	GETSET(PackedFloat32Array, BIAS_SM_MAX);
+	GETSET(PackedFloat32Array, BIAS_LR_MIN);
+	GETSET(PackedFloat32Array, BIAS_LR_MAX);
+
+
 protected:
 	static void _bind_methods() {
 		ClassDB::bind_method(D_METHOD("prints_dimensions"), &MMAnimationLibrary::prints_dimensions);
-		ClassDB::bind_method(D_METHOD("fill_kdtree"), &MMAnimationLibrary::fill_kdtree);
 		// Functions
 		{
 			ClassDB::bind_method(D_METHOD("sample_bone_local_info", "animation_name", "time", "bone_path"), &MMAnimationLibrary::sample_bone_local_info);
@@ -906,8 +735,6 @@ protected:
 
 			ClassDB::bind_method(D_METHOD("bake_data"), &MMAnimationLibrary::bake_data);
 			ClassDB::bind_method(D_METHOD("recalculate_weights"), &MMAnimationLibrary::recalculate_weights);
-			ClassDB::bind_method(D_METHOD("check_query_results", "Query", "Result count"), &MMAnimationLibrary::check_query_results);
-			ClassDB::bind_method(D_METHOD("query_pose", "serialized_query", "number_result", "include_category", "exclude_category"), &MMAnimationLibrary::query_pose, DEFVAL(1), DEFVAL(std::numeric_limits<int64_t>::max()), DEFVAL(0));
 			ClassDB::bind_method(D_METHOD("query_pose_aabb", "serialized_query", "best_index", "ignore_surrounding_indicies", "ranges_search", "custom_weights"), &MMAnimationLibrary::query_pose_aabb, DEFVAL(-1), DEFVAL(20), DEFVAL(nullptr), DEFVAL(PackedFloat32Array{}));
 			ClassDB::bind_method(D_METHOD("query_pose_noacceleration", "serialized_query", "best_index", "ignore_surrounding_indicies", "ranges_search", "custom_weights"), &MMAnimationLibrary::query_pose_noacceleration, DEFVAL(-1), DEFVAL(20), DEFVAL(nullptr), DEFVAL(PackedFloat32Array{}));
 
@@ -923,6 +750,10 @@ protected:
 		}
 		// Internal properties
 		{
+			ClassDB::bind_method(D_METHOD("set_time_interval", "value"), &MMAnimationLibrary::set_time_interval, DEFVAL(0.016f));
+			ClassDB::bind_method(D_METHOD("get_time_interval"), &MMAnimationLibrary::get_time_interval);
+			godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT, "time_interval", PROPERTY_HINT_RANGE, "0.016, 1, 0.016, or_greater"), "set_time_interval", "get_time_interval");
+
 			ClassDB::bind_method(D_METHOD("set_nb_dimensions", "value"), &MMAnimationLibrary::set_nb_dimensions);
 			ClassDB::bind_method(D_METHOD("get_nb_dimensions"), &MMAnimationLibrary::get_nb_dimensions);
 			godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::INT, "nb_dimensions", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_READ_ONLY), "set_nb_dimensions", "get_nb_dimensions");
@@ -949,10 +780,6 @@ protected:
 		}
 		ClassDB::add_property_group(get_class_static(), "Dependancy resources", "");
 		{
-			ClassDB::bind_method(D_METHOD("set_time_interval", "value"), &MMAnimationLibrary::set_time_interval, DEFVAL(0.016f));
-			ClassDB::bind_method(D_METHOD("get_time_interval"), &MMAnimationLibrary::get_time_interval);
-			godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT, "time_interval", PROPERTY_HINT_RANGE, "0.016, 1, 0.016, or_greater"), "set_time_interval", "get_time_interval");
-
 			ClassDB::bind_method(D_METHOD("set_skeleton_path", "value"), &MMAnimationLibrary::set_skeleton_path);
 			ClassDB::bind_method(D_METHOD("get_skeleton_path"), &MMAnimationLibrary::get_skeleton_path);
 			godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::STRING_NAME, "skeleton_path"), "set_skeleton_path", "get_skeleton_path");
@@ -960,12 +787,6 @@ protected:
 			ClassDB::bind_method(D_METHOD("set_skeleton_profile", "value"), &MMAnimationLibrary::set_skeleton_profile);
 			ClassDB::bind_method(D_METHOD("get_skeleton_profile"), &MMAnimationLibrary::get_skeleton_profile);
 			godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::OBJECT, "skeleton_profile", PROPERTY_HINT_RESOURCE_TYPE, "SkeletonProfile"), "set_skeleton_profile", "get_skeleton_profile");
-		}
-
-		{
-			ClassDB::bind_method(D_METHOD("set_strategy", "value"), &MMAnimationLibrary::set_strategy);
-			ClassDB::bind_method(D_METHOD("get_strategy"), &MMAnimationLibrary::get_strategy);
-			godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::INT, "strategy", PROPERTY_HINT_ENUM, "NoAcceleration:0,AABBTree:1,KDTree:2"), "set_strategy", "get_strategy");
 		}
 
 		ClassDB::add_property_group(get_class_static(), "Features", "");
@@ -981,7 +802,7 @@ protected:
 
 			ClassDB::bind_method(D_METHOD("set_tags", "value"), &MMAnimationLibrary::set_tags);
 			ClassDB::bind_method(D_METHOD("get_tags"), &MMAnimationLibrary::get_tags);
-			godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::ARRAY, "tags", godot::PROPERTY_HINT_TYPE_STRING, u::str(Variant::OBJECT) + '/' + u::str(Variant::BASIS) + ":TagInfo", PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_INTERNAL), "set_tags", "get_tags");
+			godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::ARRAY, "tags", godot::PROPERTY_HINT_TYPE_STRING, u::str(Variant::OBJECT) + '/' + u::str(Variant::BASIS) + ":TagInfo", PROPERTY_USAGE_STORAGE), "set_tags", "get_tags");
 
 			ClassDB::bind_method(D_METHOD("set_motion_features", "value"), &MMAnimationLibrary::set_motion_features);
 			ClassDB::bind_method(D_METHOD("get_motion_features"), &MMAnimationLibrary::get_motion_features);
@@ -1004,12 +825,6 @@ protected:
 			godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "feature_scale", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_READ_ONLY), "set_feature_scale", "get_feature_scale");
 		}
 
-		ClassDB::add_property_group(get_class_static(), "KDTree", "");
-		{
-			ClassDB::bind_method(D_METHOD("set_distance_type", "value"), &MMAnimationLibrary::set_distance_type);
-			ClassDB::bind_method(D_METHOD("get_distance_type"), &MMAnimationLibrary::get_distance_type);
-			godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::INT, "distance_type", PROPERTY_HINT_ENUM, "Manhattan:1,EuclidianSquared:2,Maximum:0"), "set_distance_type", "get_distance_type");
-		}
 		ClassDB::add_property_group(get_class_static(), "AABB Bounding box", "");
 		{
 			ClassDB::bind_method(D_METHOD("set_continuation_bias", "value"), &MMAnimationLibrary::set_continuation_bias);
@@ -1071,7 +886,17 @@ struct QueryOptions : public godot::RefCounted {
 	using u = godot::UtilityFunctions;
 
 public:
-	GETSET(PackedFloat32Array, custom_weights);
+	// GETSET(PackedFloat32Array, custom_weights);
+	PackedFloat32Array custom_weights{};
+	PackedFloat32Array get_custom_weights() { return custom_weights; }
+	void set_custom_weights(PackedFloat32Array value) {
+		custom_weights = value;
+		[this](const auto& empty){
+		if constexpr (std::is_base_of<godot::Resource, decltype(*this)>::value) {
+			this->emit_changed();
+		}
+		}(0);
+	}
 	GETSET(PackedFloat32Array, custom_ranges);
 	static void _bind_methods() {
 	}
