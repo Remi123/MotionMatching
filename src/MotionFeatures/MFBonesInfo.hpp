@@ -117,7 +117,7 @@ public:
 			auto bone = bone_names[index];
 
 			kbone = get_model_kform(mmlib->skeleton_profile, animation, time, bone_path);
-			if (relative_to_bone != mmlib->skeleton_profile->get_root_bone()) {
+			if (!relative_to_bone.is_empty() && relative_to_bone != mmlib->skeleton_profile->get_root_bone()) {
 				kbone = get_model_kform(mmlib->skeleton_profile, animation, time, relative_to_bone_path).inverse() * kbone;
 			}
 
@@ -165,11 +165,11 @@ public:
 			String bone = bone_names[i];
 			int id = node->skeleton->find_bone(bone);
 
-			// kform kbone = _get_bone_kform_global(node->bones, bone);
-			// if (relative_to_bone != _skel->get_root_bone() && bone != relative_to_bone)
-			// 	kbone = _get_bone_kform_global(node->bones, _skel->get_root_bone()).inverse() * kbone;
-
 			kform kbone = (kform)node->bone_model[id];
+			if(!relative_to_bone.is_empty()){
+				const int relative_id = node->skeleton->find_bone(relative_to_bone);
+				kbone = kform(node->bone_model[relative_id]).inverse() * kbone;
+			}
 			Vector3 const pos = kbone.pos, vel = kbone.vel, dir = kbone.rot.xform(Vector3(0, 0, 1)), ang = kbone.ang;
 
 			if (bone_info_type.test(Position)) {
@@ -208,10 +208,10 @@ public:
 		PackedFloat32Array result{};
 		{
 			for (size_t i = 0; i < bone_names.size(); ++i) {
-				String bone = bone_names[i];
-
-				kform kbone; // = _get_bone_kform_global(mm_player->bones_model, bone);
-				kbone = (kform)mm_player->bones_root_model[mmlib->skeleton_profile->find_bone(bone)];
+				kform kbone = mm_player->_get_model_kform(bone_names[i]);
+				if(!relative_to_bone.is_empty()){
+					kbone = mm_player->_get_model_kform(relative_to_bone).inverse() * kbone;
+				}
 				Vector3 const pos = kbone.pos, vel = kbone.vel, dir = kbone.rot.xform(Vector3(0, 0, 1)), ang = kbone.ang;
 
 				if (bone_info_type.test(Position)) {

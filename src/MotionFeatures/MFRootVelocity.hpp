@@ -35,11 +35,6 @@
 using namespace godot;
 using u = godot::UtilityFunctions;
 
-#define GETSET(type, variable, ...)            \
-	type variable{ __VA_ARGS__ };              \
-	type get_##variable() { return variable; } \
-	void set_##variable(type value) { variable = value; }
-
 struct MFRootVelocity : public MotionFeature {
 	GDCLASS(MFRootVelocity, MotionFeature);
 

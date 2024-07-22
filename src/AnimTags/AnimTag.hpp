@@ -17,18 +17,19 @@ struct TagInfo : godot::Resource {
 
 public:
 	GETSET(StringName, animation_name);
-	GETSET(int, track_id);
 	real_t timestamp{};
 	real_t get_timestamp() { return timestamp; }
 	void set_timestamp(real_t value) {
 		const real_t snap = Engine::get_singleton()->get_physics_ticks_per_second();
 		timestamp = std::max(real_t(0.0), std::floor(value * snap) / snap);
+		emit_changed();
 	}
 	real_t duration{ real_t(0.016) };
 	real_t get_duration() { return duration; }
 	void set_duration(real_t value) {
 		const real_t snap = Engine::get_singleton()->get_physics_ticks_per_second();
 		duration = std::abs(value); // std::max(real_t(0.0), std::floor(value * snap) / snap );
+		emit_changed();
 	}
 
 protected:
@@ -36,10 +37,6 @@ protected:
 		ClassDB::bind_method(D_METHOD("set_animation_name", "value"), &TagInfo::set_animation_name);
 		ClassDB::bind_method(D_METHOD("get_animation_name"), &TagInfo::get_animation_name);
 		godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::STRING_NAME, "animation_name"), "set_animation_name", "get_animation_name");
-
-		ClassDB::bind_method(D_METHOD("set_track_id", "value"), &TagInfo::set_track_id);
-		ClassDB::bind_method(D_METHOD("get_track_id"), &TagInfo::get_track_id);
-		godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::INT, "track_id", godot::PROPERTY_HINT_NONE, "", godot::PROPERTY_USAGE_DEFAULT), "set_track_id", "get_track_id");
 
 		ClassDB::bind_method(D_METHOD("set_timestamp", "value"), &TagInfo::set_timestamp);
 		ClassDB::bind_method(D_METHOD("get_timestamp"), &TagInfo::get_timestamp);

@@ -31,7 +31,6 @@ namespace boost {
 void throw_exception(std::exception const &e) {
 	godot::UtilityFunctions::prints("MotionMatching catched exception : ", e.what());
 	//throw 11; // This handle exceptions when dealing with no exception.
-	// TODO
 };
 #endif
 } // namespace boost
@@ -40,6 +39,9 @@ using namespace godot;
 
 void gdextension_MM_initialize(ModuleInitializationLevel p_level) {
 	if (p_level == MODULE_INITIALIZATION_LEVEL_SCENE) {
+
+		GDREGISTER_ABSTRACT_CLASS(MMUtil);
+
 		GDREGISTER_CLASS(MMAnimationPlayer);
 		GDREGISTER_CLASS(MMAnimationLibrary);
 
@@ -55,18 +57,17 @@ void gdextension_MM_initialize(ModuleInitializationLevel p_level) {
 		}
 
 		{ // Animation Tags
-			ClassDB::register_class<TagInfo>(true); // Abstract
-
-			ClassDB::register_class<TagMotionMatching>(true); // Abstract
-			ClassDB::register_class<TagJunk>();
-			ClassDB::register_class<TagCategory>();
-			ClassDB::register_class<TagMFEvent>();
-			ClassDB::register_class<TagMFDistance>();
+			GDREGISTER_VIRTUAL_CLASS(TagInfo);
+			GDREGISTER_VIRTUAL_CLASS(TagMotionMatching);
+			GDREGISTER_CLASS(TagJunk);
+			GDREGISTER_CLASS(TagCategory);
+			GDREGISTER_CLASS(TagMFEvent);
+			GDREGISTER_CLASS(TagMFDistance);
 
 			ClassDB::register_class<TagAnimation>(true); // Abstract
 			ClassDB::register_class<TagRootWarp>();
 
-			GDREGISTER_CLASS(RangeIndex);
+			GDREGISTER_INTERNAL_CLASS(RangeIndex);
 			GDREGISTER_CLASS(SetRangeIndex);
 		}
 

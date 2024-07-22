@@ -342,6 +342,9 @@ public:
 		emit_signal("post_calculation");
 	}
 
+	kform _get_local_kform(StringName bone_name){
+		return (kform)bones_local[_skeleton->find_bone(bone_name)];
+	}
 	Dictionary get_local_bone_info(StringName bone_name) {
 		ERR_FAIL_COND_V(_skeleton == nullptr, {});
 		auto id = _skeleton->find_bone(bone_name);
@@ -349,6 +352,9 @@ public:
 		return (Dictionary)bones_local[id];
 	}
 
+	kform _get_model_kform(StringName bone_name){
+		return kform(bones_local[root_bone_id]).inverse() * (kform)bones_root_model[_skeleton->find_bone(bone_name)];
+	}
 	Dictionary get_model_bone_info(StringName bone_name) {
 		ERR_FAIL_COND_V(_skeleton == nullptr, {});
 		auto id = _skeleton->find_bone(bone_name);
@@ -357,11 +363,18 @@ public:
 		return (Dictionary)(root.inverse() * (kform)bones_root_model[id]);
 	}
 
+	kform _get_root_model_kform(StringName bone_name){
+		return (kform)bones_root_model[_skeleton->find_bone(bone_name)];
+	}
 	Dictionary get_root_model_bone_info(StringName bone_name) {
 		ERR_FAIL_COND_V(_skeleton == nullptr, {});
 		auto id = _skeleton->find_bone(bone_name);
 		ERR_FAIL_COND_V_MSG(id == -1, {}, "Bone " + bone_name + " doesn't exist in skeleton");
 		return (Dictionary)bones_root_model[id];
+	}
+
+	kform _get_global_model_kform(StringName bone_name){
+		return (kform)bones_root_model[_skeleton->find_bone(bone_name)];
 	}
 	Dictionary get_global_bone_info(StringName bone_name) {
 		return get_root_model_bone_info(bone_name);

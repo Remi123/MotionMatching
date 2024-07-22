@@ -81,12 +81,13 @@ To learn more about Motion Matching, you can refer to the following resources:
 
 ## WORK IN PROGRESS
 
+### General
+
+TODO : Need some tests and experiments on virtual calls. Just to be sure that it's correctly called when inherited from GDScript.
+
 ### MMAnimationLibrary
-TODO : The user should be able to select which acceleration structure to use ( KDTree,AABBTree and no acceleration ). This would save memory.
 
-TODO : AABBTree doesn't support categories for now, and while index_range_set is very tempting, the integration in GDScript is taking too much time. For now we add a penality to the cost when the category isn't the same as described, but the proper range query should be developed.
-
-TODO : Since Godot 4.3, GDScript's virtual binding is available, but it require to be called explicitly, meaning I wasn't successful at integrating both C++ and GDScript in a single list. My current approach would be this : Create a MFCustomScript class that overriden correctly each important function, and call the correct functions in gdscript when appropriate.
+TODO : Clean up inspector.
 
 ### MotionFeatures
 

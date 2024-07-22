@@ -46,15 +46,15 @@ struct MFTrajectoryOptions : public Resource {
 public:
 	GETSET(float, time_offset, 0.0f)
 	GETSET(float, weights, 1.0f);
-	GETSET(int, coordinate, 1)
+	GETSET(int, coordinate, Coordinates::XYZ)
 	GETSET(int, options, 3);
 	GETSET(Color, debug_color, Color{ "RED" });
 
 	int get_dimensions() {
 		if (coordinate == Coordinates::XZ)
-			return 2;
+			return 2 * std::bitset<32>(options).count();
 		else if (coordinate == Coordinates::XYZ)
-			return 3;
+			return 3 * std::bitset<32>(options).count();
 		else
 			return 0;
 	}
@@ -133,9 +133,7 @@ public:
 			}
 		}
 		// Standardize
-		standardize(result);
-
-		return result;
+		return MMUtil::standardize(result);
 	}
 
 	PackedStringArray get_hints() const {
@@ -247,6 +245,7 @@ public:
 		return result;
 	}
 
+	// TODO Fix
 	PackedFloat32Array serialize(PackedVector3Array array) {
 		PackedFloat32Array result;
 
@@ -270,6 +269,7 @@ public:
 		return result;
 	}
 
+	// TODO Fix for options
 	PackedFloat32Array serialize_trajectory_local(PackedVector3Array p_history_pos, PackedVector3Array p_future_pos, PackedVector3Array p_future_dir) {
 		PackedFloat32Array result{};
 		for (auto elem : p_history_pos) {

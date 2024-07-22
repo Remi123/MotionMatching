@@ -322,6 +322,46 @@ public:
 		u::prints("New Weights Values:", weights);
 	}
 
+	Array get_stats() {
+		if (MotionData.size() < get_nb_dimensions())
+			return {};
+
+		Array result{};
+		{
+			using namespace boost::accumulators;
+			using acc_stats = stats<tag::density, tag::max, tag::min, tag::median, tag::skewness, tag::variance>;
+			const accumulator_set<float, acc_stats> default_acc(tag::density::num_bins = 11, tag::density::cache_size = 15);
+			std::vector<accumulator_set<float, acc_stats>> data_stats(nb_dimensions, default_acc);
+
+			for (size_t p = 0; p < get_nb_poses(); ++p) {
+				for (size_t d = 0; d < get_nb_dimensions(); ++d) {
+					auto data = MotionData[p * get_nb_dimensions() + d] * feature_scale[d] + feature_offset[d];
+					data_stats[d](data);
+				}
+			}
+
+			for (auto &&s : data_stats) {
+				Dictionary dimension_stats{};
+
+				dimension_stats["maximum"] = max(s);
+				dimension_stats["minimum"] = min(s);
+				dimension_stats["skewness"] = skewness(s);
+				dimension_stats["median"] = median(s);
+				dimension_stats["variance"] = variance(s);
+				auto hist = density(s);
+				PackedFloat32Array lower_bounds, values{};
+				for (auto &&h : hist) {
+					lower_bounds.append(h.first);
+					values.append(h.second);
+				}
+
+				dimension_stats["density_hist_bounds"] = lower_bounds;
+				dimension_stats["density_hist_values"] = values;
+				result.append(dimension_stats);
+			}
+		}
+		return result;
+	}
 
 	void build_bounds() {
 		// Compute array size
@@ -621,7 +661,7 @@ public:
 		result.append(data);
 		return result;
 	}
-	
+
 	Dictionary sample_bone_global_info(StringName animation_name, double time, NodePath bone_path) {
 		ERR_FAIL_COND_V(skeleton_profile == nullptr, {});
 		ERR_FAIL_COND_V(!has_animation(animation_name), {});
@@ -661,10 +701,10 @@ public:
 	// All the GETSET
 	GETSET(StringName, skeleton_path);
 	GETSET(Ref<SkeletonProfile>, skeleton_profile)
-	GETSET(float,time_interval,0.1);
+	GETSET(float, time_interval, 0.1);
 
 	GETSET(float, continuation_bias);
-	
+
 	String category_hint_string{};
 	String get_category_hint_string() { return category_hint_string; }
 	void set_category_hint_string(String value) {
@@ -682,7 +722,7 @@ public:
 	GETSET(TypedArray<TagInfo>, tags);
 	GETSET(Dictionary, curvecost); // map<StringName,Curve> -> map<animation_name, cost>
 
-		// Category tracks
+	// Category tracks
 	GETSET(TypedArray<String>, category_track_names)
 	// Array of the motion features.
 	GETSET(TypedArray<MotionFeature>, motion_features);
@@ -720,10 +760,10 @@ public:
 	GETSET(PackedFloat32Array, BIAS_LR_MIN);
 	GETSET(PackedFloat32Array, BIAS_LR_MAX);
 
-
 protected:
 	static void _bind_methods() {
 		ClassDB::bind_method(D_METHOD("prints_dimensions"), &MMAnimationLibrary::prints_dimensions);
+		ClassDB::bind_method(D_METHOD("get_stats"), &MMAnimationLibrary::get_stats);
 		// Functions
 		{
 			ClassDB::bind_method(D_METHOD("sample_bone_local_info", "animation_name", "time", "bone_path"), &MMAnimationLibrary::sample_bone_local_info);
@@ -891,10 +931,10 @@ public:
 	PackedFloat32Array get_custom_weights() { return custom_weights; }
 	void set_custom_weights(PackedFloat32Array value) {
 		custom_weights = value;
-		[this](const auto& empty){
-		if constexpr (std::is_base_of<godot::Resource, decltype(*this)>::value) {
-			this->emit_changed();
-		}
+		[this](const auto &empty) {
+			if constexpr (std::is_base_of<godot::Resource, decltype(*this)>::value) {
+				this->emit_changed();
+			}
 		}(0);
 	}
 	GETSET(PackedFloat32Array, custom_ranges);
