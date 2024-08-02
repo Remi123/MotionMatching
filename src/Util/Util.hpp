@@ -17,11 +17,17 @@
 		variable = value;                      \
 		[this](const auto &empty) { if constexpr (std::is_base_of<godot::Resource, decltype(*this)>::value) { this->emit_changed();} }(0);      \
 	}
+#define GETSET_NoVar(type, variable, ...)      \
+	type get_##variable() { return variable; } \
+	void set_##variable(type value) {          \
+		variable = value;                      \
+		[this](const auto &empty) { if constexpr (std::is_base_of<godot::Resource, decltype(*this)>::value) { this->emit_changed();} }(0);      \
+	}
 #define STR(x) #x
 #define BINDER_PROPERTY_PARAMS(type, variant_type, variable, ...)                        \
 	ClassDB::bind_method(D_METHOD(STR(set_##variable), "value"), &type::set_##variable); \
 	ClassDB::bind_method(D_METHOD(STR(get_##variable)), &type::get_##variable);          \
-	ADD_PROPERTY(PropertyInfo(variant_type, #variable, __VA_ARGS__), STR(set_##variable), STR(get_##variable));
+	::godot::ClassDB::add_property(get_class_static(), PropertyInfo(variant_type, #variable, __VA_ARGS__), STR(set_##variable), STR(get_##variable));
 
 struct MMUtil : godot::RefCounted {
 	GDCLASS(MMUtil, RefCounted)

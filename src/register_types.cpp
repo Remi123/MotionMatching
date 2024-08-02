@@ -8,8 +8,8 @@
 
 #include "Math/Spring.hpp"
 #include "MotionFeatures/MFBonesInfo.hpp"
-// #include "MotionFeatures/MFDistance.hpp"
-// #include "MotionFeatures/MFEvents.hpp"
+#include "MotionFeatures/MFDistance.hpp"
+#include "MotionFeatures/MFEvents.hpp"
 #include "MotionFeatures/MFRootVelocity.hpp"
 #include "MotionFeatures/MFTrajectory.hpp"
 #include "MotionFeatures/MotionFeatures.hpp"
@@ -44,6 +44,7 @@ void gdextension_MM_initialize(ModuleInitializationLevel p_level) {
 
 		GDREGISTER_CLASS(MMAnimationPlayer);
 		GDREGISTER_CLASS(MMAnimationLibrary);
+		GDREGISTER_INTERNAL_CLASS(QueryOptions);
 
 		{ // Motion Features Resources
 			GDREGISTER_VIRTUAL_CLASS(MotionFeature);
@@ -52,7 +53,7 @@ void gdextension_MM_initialize(ModuleInitializationLevel p_level) {
 			GDREGISTER_CLASS(MFBonesInfo);
 			GDREGISTER_CLASS(MFTrajectory);
 			GDREGISTER_INTERNAL_CLASS(MFTrajectoryOptions);
-			// GDREGISTER_CLASS(MFEvents);
+			GDREGISTER_CLASS(MFEvents);
 			// GDREGISTER_CLASS(MFDistance);
 		}
 
@@ -80,6 +81,7 @@ void gdextension_MM_initialize(ModuleInitializationLevel p_level) {
 		{ // Various helper
 			GDREGISTER_CLASS(CircularBuffer);
 			GDREGISTER_CLASS(Spring);
+			GDREGISTER_CLASS(Kform);
 		}
 	}
 }

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <Util/Util.hpp>
+
 #include <godot_cpp/core/gdvirtual.gen.inc>
 #include <godot_cpp/variant/utility_functions.hpp>
 
@@ -668,10 +670,28 @@ public:
 		return (Dictionary)get_global_kform(skeleton_profile, get_animation(animation_name), time, bone_path);
 	}
 
+	Ref<Kform> sample_bone_global_kform(StringName animation_name, double time, NodePath bone_path) {
+		ERR_FAIL_COND_V(skeleton_profile == nullptr, {});
+		ERR_FAIL_COND_V(!has_animation(animation_name), {});
+		Ref<Kform> result = new Kform{};
+		result.instantiate();
+		result->k = get_global_kform(skeleton_profile, get_animation(animation_name), time, bone_path);
+		return result;
+	}
+
 	Dictionary sample_bone_model_info(StringName animation_name, double time, NodePath bone_path) {
 		ERR_FAIL_COND_V(skeleton_profile == nullptr, {});
 		ERR_FAIL_COND_V(!has_animation(animation_name), {});
 		return (Dictionary)get_model_kform(skeleton_profile, get_animation(animation_name), time, bone_path);
+	}
+
+	Ref<Kform> sample_bone_model_kform(StringName animation_name, double time, NodePath bone_path) {
+		ERR_FAIL_COND_V(skeleton_profile == nullptr, {});
+		ERR_FAIL_COND_V(!has_animation(animation_name), {});
+		Ref<Kform> result = new Kform{};
+		result.instantiate();
+		result->k = get_model_kform(skeleton_profile, get_animation(animation_name), time, bone_path);
+		return result;
 	}
 
 	Dictionary sample_bone_rootmotion_info(StringName animation_name, double time, NodePath bone_path) {
@@ -680,10 +700,28 @@ public:
 		return (Dictionary)get_root_model_kform(skeleton_profile, get_animation(animation_name), time, bone_path);
 	}
 
+	Ref<Kform> sample_bone_rootmotion_kform(StringName animation_name, double time, NodePath bone_path) {
+		ERR_FAIL_COND_V(skeleton_profile == nullptr, {});
+		ERR_FAIL_COND_V(!has_animation(animation_name), {});
+		Ref<Kform> result = new Kform{};
+		result.instantiate();
+		result->k = get_root_model_kform(skeleton_profile, get_animation(animation_name), time, bone_path);
+		return result;
+	}
+
 	Dictionary sample_bone_local_info(StringName animation_name, double time, NodePath bone_path) {
 		ERR_FAIL_COND_V(skeleton_profile == nullptr, {});
 		ERR_FAIL_COND_V(!has_animation(animation_name), {});
 		return (Dictionary)get_local_kform(skeleton_profile, get_animation(animation_name), time, bone_path);
+	}
+
+	Ref<Kform> sample_bone_local_kform(StringName animation_name, double time, NodePath bone_path) {
+		ERR_FAIL_COND_V(skeleton_profile == nullptr, {});
+		ERR_FAIL_COND_V(!has_animation(animation_name), {});
+		Ref<Kform> result = new Kform{};
+		result.instantiate();
+		result->k = get_local_kform(skeleton_profile, get_animation(animation_name), time, bone_path);
+		return result;
 	}
 
 	void prints_dimensions() {
@@ -722,8 +760,6 @@ public:
 	GETSET(TypedArray<TagInfo>, tags);
 	GETSET(Dictionary, curvecost); // map<StringName,Curve> -> map<animation_name, cost>
 
-	// Category tracks
-	GETSET(TypedArray<String>, category_track_names)
 	// Array of the motion features.
 	GETSET(TypedArray<MotionFeature>, motion_features);
 	// The data
@@ -753,7 +789,6 @@ public:
 	GETSET(PackedFloat32Array, LR_MAX);
 	GETSET(int, BOUND_SM_SIZE, 16);
 	GETSET(int, BOUND_LR_SIZE, 64);
-	GETSET(real_t, category_penality);
 
 	GETSET(PackedFloat32Array, BIAS_SM_MIN);
 	GETSET(PackedFloat32Array, BIAS_SM_MAX);
@@ -762,14 +797,114 @@ public:
 
 protected:
 	static void _bind_methods() {
+		// Refactored Default Inspector
+		ClassDB::add_property_group(get_class_static(), "Core", "");
+		{
+			BINDER_PROPERTY_PARAMS(MMAnimationLibrary, Variant::FLOAT, time_interval, PROPERTY_HINT_RANGE, "0.016, 1, 0.016, or_greater");
+			BINDER_PROPERTY_PARAMS(MMAnimationLibrary, Variant::STRING_NAME, skeleton_path);
+			BINDER_PROPERTY_PARAMS(MMAnimationLibrary, Variant::OBJECT, skeleton_profile);
+
+			BINDER_PROPERTY_PARAMS(MMAnimationLibrary, Variant::INT, nb_dimensions, PROPERTY_HINT_NONE, "", PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_READ_ONLY);
+			BINDER_PROPERTY_PARAMS(MMAnimationLibrary, Variant::INT, nb_poses, PROPERTY_HINT_NONE, "", PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_READ_ONLY);
+		}
+
+		ClassDB::add_property_group(get_class_static(), "Features", "");
+		{
+			BINDER_PROPERTY_PARAMS(MMAnimationLibrary, Variant::ARRAY, motion_features, godot::PROPERTY_HINT_TYPE_STRING, u::str(Variant::OBJECT) + '/' + u::str(Variant::BASIS) + ":MotionFeature", PROPERTY_USAGE_DEFAULT);
+		}
+
+		ClassDB::add_property_group(get_class_static(), "Tags", "");
+		{
+			BINDER_PROPERTY_PARAMS(MMAnimationLibrary, Variant::STRING, category_hint_string, PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_UPDATE_ALL_IF_MODIFIED);
+			BINDER_PROPERTY_PARAMS(MMAnimationLibrary, Variant::ARRAY, tags, godot::PROPERTY_HINT_TYPE_STRING, u::str(Variant::OBJECT) + '/' + u::str(Variant::BASIS) + ":TagInfo", PROPERTY_USAGE_STORAGE);
+		}
+
+		ClassDB::add_property_group(get_class_static(), "Query Options", "");
+		{
+			BINDER_PROPERTY_PARAMS(MMAnimationLibrary, Variant::PACKED_FLOAT32_ARRAY, weights);
+			BINDER_PROPERTY_PARAMS(MMAnimationLibrary, Variant::FLOAT, continuation_bias);
+		}
+
+		ClassDB::add_property_group(get_class_static(), "Database", "");
+		{
+			BINDER_PROPERTY_PARAMS(MMAnimationLibrary, Variant::PACKED_FLOAT32_ARRAY, MotionData);
+			
+
+			BINDER_PROPERTY_PARAMS(MMAnimationLibrary, Variant::PACKED_FLOAT32_ARRAY, feature_scale,PROPERTY_HINT_NONE, "", PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_READ_ONLY);
+			BINDER_PROPERTY_PARAMS(MMAnimationLibrary, Variant::PACKED_FLOAT32_ARRAY, feature_offset,PROPERTY_HINT_NONE, "", PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_READ_ONLY);
+
+			ClassDB::add_property_subgroup(get_class_static(), "Acceleration Options", "");
+			{
+				
+				BINDER_PROPERTY_PARAMS(MMAnimationLibrary, Variant::PACKED_FLOAT32_ARRAY, biases, PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_READ_ONLY);
+				
+
+				ClassDB::bind_method(D_METHOD("set_BOUND_LR_SIZE", "value"), &MMAnimationLibrary::set_BOUND_LR_SIZE, DEFVAL(64));
+				ClassDB::bind_method(D_METHOD("get_BOUND_LR_SIZE"), &MMAnimationLibrary::get_BOUND_LR_SIZE);
+				godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::INT, "BOUND_LR_SIZE", PROPERTY_HINT_RANGE, "4, 100, 1, or_greater"), "set_BOUND_LR_SIZE", "get_BOUND_LR_SIZE");
+				ClassDB::bind_method(D_METHOD("set_BOUND_SM_SIZE", "value"), &MMAnimationLibrary::set_BOUND_SM_SIZE, DEFVAL(16));
+				ClassDB::bind_method(D_METHOD("get_BOUND_SM_SIZE"), &MMAnimationLibrary::get_BOUND_SM_SIZE);
+				godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::INT, "BOUND_SM_SIZE", PROPERTY_HINT_RANGE, "2, 100, 1, or_greater"), "set_BOUND_SM_SIZE", "get_BOUND_SM_SIZE");
+				ClassDB::bind_method(D_METHOD("set_curvecost", "value"), &MMAnimationLibrary::set_curvecost);
+				ClassDB::bind_method(D_METHOD("get_curvecost"), &MMAnimationLibrary::get_curvecost);
+				::godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::DICTIONARY, "curvecost", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_INTERNAL), "set_curvecost", "get_curvecost");
+			}
+			ClassDB::add_property_subgroup(get_class_static(), "", "");
+			{
+				ClassDB::bind_method(D_METHOD("set_db_anim_index", "value"), &MMAnimationLibrary::set_db_anim_index);
+				ClassDB::bind_method(D_METHOD("get_db_anim_index"), &MMAnimationLibrary::get_db_anim_index);
+				godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_INT32_ARRAY, "db_anim_index", PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_READ_ONLY), "set_db_anim_index", "get_db_anim_index");
+				ClassDB::bind_method(D_METHOD("set_db_anim_timestamp", "value"), &MMAnimationLibrary::set_db_anim_timestamp);
+				ClassDB::bind_method(D_METHOD("get_db_anim_timestamp"), &MMAnimationLibrary::get_db_anim_timestamp);
+				godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "db_anim_timestamp", PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_READ_ONLY), "set_db_anim_timestamp", "get_db_anim_timestamp");
+				ClassDB::bind_method(D_METHOD("set_db_anim_category", "value"), &MMAnimationLibrary::set_db_anim_category);
+				ClassDB::bind_method(D_METHOD("get_db_anim_category"), &MMAnimationLibrary::get_db_anim_category);
+				godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_INT32_ARRAY, "db_anim_category", PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_READ_ONLY), "set_db_anim_category", "get_db_anim_category");
+
+				ClassDB::bind_method(D_METHOD("set_LR_MAX", "value"), &MMAnimationLibrary::set_LR_MAX);
+				ClassDB::bind_method(D_METHOD("get_LR_MAX"), &MMAnimationLibrary::get_LR_MAX);
+				godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "LR_MAX", PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_READ_ONLY), "set_LR_MAX", "get_LR_MAX");
+				ClassDB::bind_method(D_METHOD("set_LR_MIN", "value"), &MMAnimationLibrary::set_LR_MIN);
+				ClassDB::bind_method(D_METHOD("get_LR_MIN"), &MMAnimationLibrary::get_LR_MIN);
+				godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "LR_MIN", PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_READ_ONLY | PROPERTY_USAGE_INTERNAL), "set_LR_MIN", "get_LR_MIN");
+				ClassDB::bind_method(D_METHOD("set_SM_MAX", "value"), &MMAnimationLibrary::set_SM_MAX);
+				ClassDB::bind_method(D_METHOD("get_SM_MAX"), &MMAnimationLibrary::get_SM_MAX);
+				godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "SM_MAX", PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_READ_ONLY | PROPERTY_USAGE_INTERNAL), "set_SM_MAX", "get_SM_MAX");
+				ClassDB::bind_method(D_METHOD("set_SM_MIN", "value"), &MMAnimationLibrary::set_SM_MIN);
+				ClassDB::bind_method(D_METHOD("get_SM_MIN"), &MMAnimationLibrary::get_SM_MIN);
+				godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "SM_MIN", PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_READ_ONLY | PROPERTY_USAGE_INTERNAL), "set_SM_MIN", "get_SM_MIN");
+
+				ClassDB::bind_method(D_METHOD("set_BIAS_LR_MAX", "value"), &MMAnimationLibrary::set_BIAS_LR_MAX);
+				ClassDB::bind_method(D_METHOD("get_BIAS_LR_MAX"), &MMAnimationLibrary::get_BIAS_LR_MAX);
+				godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "BIAS_LR_MAX", PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_READ_ONLY | PROPERTY_USAGE_INTERNAL), "set_BIAS_LR_MAX", "get_BIAS_LR_MAX");
+				ClassDB::bind_method(D_METHOD("set_BIAS_LR_MIN", "value"), &MMAnimationLibrary::set_BIAS_LR_MIN);
+				ClassDB::bind_method(D_METHOD("get_BIAS_LR_MIN"), &MMAnimationLibrary::get_BIAS_LR_MIN);
+				godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "BIAS_LR_MIN", PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_READ_ONLY | PROPERTY_USAGE_INTERNAL), "set_BIAS_LR_MIN", "get_BIAS_LR_MIN");
+				ClassDB::bind_method(D_METHOD("set_BIAS_SM_MAX", "value"), &MMAnimationLibrary::set_BIAS_SM_MAX);
+				ClassDB::bind_method(D_METHOD("get_BIAS_SM_MAX"), &MMAnimationLibrary::get_BIAS_SM_MAX);
+				godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "BIAS_SM_MAX", PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_READ_ONLY | PROPERTY_USAGE_INTERNAL), "set_BIAS_SM_MAX", "get_BIAS_SM_MAX");
+				ClassDB::bind_method(D_METHOD("set_BIAS_SM_MIN", "value"), &MMAnimationLibrary::set_BIAS_SM_MIN);
+				ClassDB::bind_method(D_METHOD("get_BIAS_SM_MIN"), &MMAnimationLibrary::get_BIAS_SM_MIN);
+				godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "BIAS_SM_MIN", PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_READ_ONLY | PROPERTY_USAGE_INTERNAL), "set_BIAS_SM_MIN", "get_BIAS_SM_MIN");
+
+				ClassDB::bind_method(D_METHOD("set_Rng_Start", "value"), &MMAnimationLibrary::set_Rng_Start);
+				ClassDB::bind_method(D_METHOD("get_Rng_Start"), &MMAnimationLibrary::get_Rng_Start);
+				godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "Rng_Start", PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_READ_ONLY | PROPERTY_USAGE_INTERNAL), "set_Rng_Start", "get_Rng_Start");
+
+				ClassDB::bind_method(D_METHOD("set_Rng_Stop", "value"), &MMAnimationLibrary::set_Rng_Stop);
+				ClassDB::bind_method(D_METHOD("get_Rng_Stop"), &MMAnimationLibrary::get_Rng_Stop);
+				godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "Rng_Stop", PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_READ_ONLY | PROPERTY_USAGE_INTERNAL), "set_Rng_Stop", "get_Rng_Stop");
+			}
+		}
+
 		ClassDB::bind_method(D_METHOD("prints_dimensions"), &MMAnimationLibrary::prints_dimensions);
 		ClassDB::bind_method(D_METHOD("get_stats"), &MMAnimationLibrary::get_stats);
 		// Functions
 		{
-			ClassDB::bind_method(D_METHOD("sample_bone_local_info", "animation_name", "time", "bone_path"), &MMAnimationLibrary::sample_bone_local_info);
-			ClassDB::bind_method(D_METHOD("sample_bone_model_info", "animation_name", "time", "bone_path"), &MMAnimationLibrary::sample_bone_model_info);
-			ClassDB::bind_method(D_METHOD("sample_bone_rootmotion_info", "animation_name", "time", "bone_path"), &MMAnimationLibrary::sample_bone_rootmotion_info);
-			ClassDB::bind_method(D_METHOD("sample_bone_global_info", "animation_name", "time", "bone_path"), &MMAnimationLibrary::sample_bone_global_info);
+			ClassDB::bind_method(D_METHOD("sample_bone_local", "animation_name", "time", "bone_path"), &MMAnimationLibrary::sample_bone_local_kform);
+			ClassDB::bind_method(D_METHOD("sample_bone_model", "animation_name", "time", "bone_path"), &MMAnimationLibrary::sample_bone_model_kform);
+			ClassDB::bind_method(D_METHOD("sample_bone_rootmotion", "animation_name", "time", "bone_path"), &MMAnimationLibrary::sample_bone_rootmotion_kform);
+			ClassDB::bind_method(D_METHOD("sample_bone_global", "animation_name", "time", "bone_path"), &MMAnimationLibrary::sample_bone_global_kform);
 
 			ClassDB::bind_method(D_METHOD("get_pose_tags", "animation_name", "time"), &MMAnimationLibrary::get_pose_tags);
 
@@ -788,134 +923,6 @@ protected:
 			ClassDB::bind_method(D_METHOD("_event_on_anim_added", "anim"), &MMAnimationLibrary::_event_on_anim_added);
 			ClassDB::bind_method(D_METHOD("_event_on_anim_removed", "anim"), &MMAnimationLibrary::_event_on_anim_removed);
 		}
-		// Internal properties
-		{
-			ClassDB::bind_method(D_METHOD("set_time_interval", "value"), &MMAnimationLibrary::set_time_interval, DEFVAL(0.016f));
-			ClassDB::bind_method(D_METHOD("get_time_interval"), &MMAnimationLibrary::get_time_interval);
-			godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT, "time_interval", PROPERTY_HINT_RANGE, "0.016, 1, 0.016, or_greater"), "set_time_interval", "get_time_interval");
-
-			ClassDB::bind_method(D_METHOD("set_nb_dimensions", "value"), &MMAnimationLibrary::set_nb_dimensions);
-			ClassDB::bind_method(D_METHOD("get_nb_dimensions"), &MMAnimationLibrary::get_nb_dimensions);
-			godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::INT, "nb_dimensions", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_READ_ONLY), "set_nb_dimensions", "get_nb_dimensions");
-			ClassDB::bind_method(D_METHOD("set_nb_poses", "value"), &MMAnimationLibrary::set_nb_poses);
-			ClassDB::bind_method(D_METHOD("get_nb_poses"), &MMAnimationLibrary::get_nb_poses);
-			::godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::INT, "nb_poses", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_READ_ONLY), "set_nb_poses", "get_nb_poses");
-
-			ClassDB::bind_method(D_METHOD("set_db_anim_index", "value"), &MMAnimationLibrary::set_db_anim_index);
-			ClassDB::bind_method(D_METHOD("get_db_anim_index"), &MMAnimationLibrary::get_db_anim_index);
-			godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_INT32_ARRAY, "db_anim_index", PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_READ_ONLY), "set_db_anim_index", "get_db_anim_index");
-			ClassDB::bind_method(D_METHOD("set_db_anim_timestamp", "value"), &MMAnimationLibrary::set_db_anim_timestamp);
-			ClassDB::bind_method(D_METHOD("get_db_anim_timestamp"), &MMAnimationLibrary::get_db_anim_timestamp);
-			godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "db_anim_timestamp", PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_READ_ONLY), "set_db_anim_timestamp", "get_db_anim_timestamp");
-			ClassDB::bind_method(D_METHOD("set_db_anim_category", "value"), &MMAnimationLibrary::set_db_anim_category);
-			ClassDB::bind_method(D_METHOD("get_db_anim_category"), &MMAnimationLibrary::get_db_anim_category);
-			godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_INT32_ARRAY, "db_anim_category", PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_READ_ONLY), "set_db_anim_category", "get_db_anim_category");
-
-			ClassDB::bind_method(D_METHOD("set_biases", "value"), &MMAnimationLibrary::set_biases);
-			ClassDB::bind_method(D_METHOD("get_biases"), &MMAnimationLibrary::get_biases);
-			::godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "biases", PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_READ_ONLY), "set_biases", "get_biases");
-			ClassDB::bind_method(D_METHOD("set_curvecost", "value"), &MMAnimationLibrary::set_curvecost);
-			ClassDB::bind_method(D_METHOD("get_curvecost"), &MMAnimationLibrary::get_curvecost);
-			::godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::DICTIONARY, "curvecost", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_INTERNAL), "set_curvecost", "get_curvecost");
-		}
-		ClassDB::add_property_group(get_class_static(), "Dependancy resources", "");
-		{
-			ClassDB::bind_method(D_METHOD("set_skeleton_path", "value"), &MMAnimationLibrary::set_skeleton_path);
-			ClassDB::bind_method(D_METHOD("get_skeleton_path"), &MMAnimationLibrary::get_skeleton_path);
-			godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::STRING_NAME, "skeleton_path"), "set_skeleton_path", "get_skeleton_path");
-
-			ClassDB::bind_method(D_METHOD("set_skeleton_profile", "value"), &MMAnimationLibrary::set_skeleton_profile);
-			ClassDB::bind_method(D_METHOD("get_skeleton_profile"), &MMAnimationLibrary::get_skeleton_profile);
-			godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::OBJECT, "skeleton_profile", PROPERTY_HINT_RESOURCE_TYPE, "SkeletonProfile"), "set_skeleton_profile", "get_skeleton_profile");
-		}
-
-		ClassDB::add_property_group(get_class_static(), "Features", "");
-		{
-			ClassDB::bind_method(D_METHOD("set_category_track_names", "value"), &MMAnimationLibrary::set_category_track_names);
-			ClassDB::bind_method(D_METHOD("get_category_track_names"), &MMAnimationLibrary::get_category_track_names);
-			godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_STRING_ARRAY, "category_track_names", PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_DEFAULT), "set_category_track_names", "get_category_track_names");
-
-			// BINDER_PROPERTY_PARAMS(MMAnimationLibrary,Variant::STRING,category_hint_string);
-			ClassDB::bind_method(D_METHOD("set_category_hint_string", "value"), &MMAnimationLibrary::set_category_hint_string);
-			ClassDB::bind_method(D_METHOD("get_category_hint_string"), &MMAnimationLibrary::get_category_hint_string);
-			godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::STRING, "category_hint_string", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_UPDATE_ALL_IF_MODIFIED), "set_category_hint_string", "get_category_hint_string");
-
-			ClassDB::bind_method(D_METHOD("set_tags", "value"), &MMAnimationLibrary::set_tags);
-			ClassDB::bind_method(D_METHOD("get_tags"), &MMAnimationLibrary::get_tags);
-			godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::ARRAY, "tags", godot::PROPERTY_HINT_TYPE_STRING, u::str(Variant::OBJECT) + '/' + u::str(Variant::BASIS) + ":TagInfo", PROPERTY_USAGE_STORAGE), "set_tags", "get_tags");
-
-			ClassDB::bind_method(D_METHOD("set_motion_features", "value"), &MMAnimationLibrary::set_motion_features);
-			ClassDB::bind_method(D_METHOD("get_motion_features"), &MMAnimationLibrary::get_motion_features);
-			godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::ARRAY, "motion_features", godot::PROPERTY_HINT_TYPE_STRING, u::str(Variant::OBJECT) + '/' + u::str(Variant::BASIS) + ":MotionFeature", PROPERTY_USAGE_DEFAULT), "set_motion_features", "get_motion_features");
-		}
-		ClassDB::add_property_group(get_class_static(), "Database", "");
-		{
-			ClassDB::bind_method(D_METHOD("set_MotionData", "value"), &MMAnimationLibrary::set_MotionData);
-			ClassDB::bind_method(D_METHOD("get_MotionData"), &MMAnimationLibrary::get_MotionData);
-			godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "MotionData"), "set_MotionData", "get_MotionData");
-			ClassDB::bind_method(D_METHOD("set_weights", "value"), &MMAnimationLibrary::set_weights);
-			ClassDB::bind_method(D_METHOD("get_weights"), &MMAnimationLibrary::get_weights);
-			godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "weights"), "set_weights", "get_weights");
-
-			ClassDB::bind_method(D_METHOD("set_feature_offset", "value"), &MMAnimationLibrary::set_feature_offset);
-			ClassDB::bind_method(D_METHOD("get_feature_offset"), &MMAnimationLibrary::get_feature_offset);
-			godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "feature_offset", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_READ_ONLY), "set_feature_offset", "get_feature_offset");
-			ClassDB::bind_method(D_METHOD("set_feature_scale", "value"), &MMAnimationLibrary::set_feature_scale);
-			ClassDB::bind_method(D_METHOD("get_feature_scale"), &MMAnimationLibrary::get_feature_scale);
-			godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "feature_scale", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_READ_ONLY), "set_feature_scale", "get_feature_scale");
-		}
-
-		ClassDB::add_property_group(get_class_static(), "AABB Bounding box", "");
-		{
-			ClassDB::bind_method(D_METHOD("set_continuation_bias", "value"), &MMAnimationLibrary::set_continuation_bias);
-			ClassDB::bind_method(D_METHOD("get_continuation_bias"), &MMAnimationLibrary::get_continuation_bias);
-			::godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT, "continuation_bias"), "set_continuation_bias", "get_continuation_bias");
-
-			ClassDB::bind_method(D_METHOD("set_category_penality", "value"), &MMAnimationLibrary::set_category_penality, DEFVAL(2.0));
-			ClassDB::bind_method(D_METHOD("get_category_penality"), &MMAnimationLibrary::get_category_penality);
-			godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT, "category_penality", PROPERTY_HINT_RANGE, "1.0, 100.0, 0.1, or_greater"), "set_category_penality", "get_category_penality");
-
-			ClassDB::bind_method(D_METHOD("set_BOUND_LR_SIZE", "value"), &MMAnimationLibrary::set_BOUND_LR_SIZE, DEFVAL(64));
-			ClassDB::bind_method(D_METHOD("get_BOUND_LR_SIZE"), &MMAnimationLibrary::get_BOUND_LR_SIZE);
-			godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::INT, "BOUND_LR_SIZE", PROPERTY_HINT_RANGE, "4, 100, 1, or_greater"), "set_BOUND_LR_SIZE", "get_BOUND_LR_SIZE");
-			ClassDB::bind_method(D_METHOD("set_BOUND_SM_SIZE", "value"), &MMAnimationLibrary::set_BOUND_SM_SIZE, DEFVAL(16));
-			ClassDB::bind_method(D_METHOD("get_BOUND_SM_SIZE"), &MMAnimationLibrary::get_BOUND_SM_SIZE);
-			godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::INT, "BOUND_SM_SIZE", PROPERTY_HINT_RANGE, "2, 100, 1, or_greater"), "set_BOUND_SM_SIZE", "get_BOUND_SM_SIZE");
-
-			ClassDB::bind_method(D_METHOD("set_LR_MAX", "value"), &MMAnimationLibrary::set_LR_MAX);
-			ClassDB::bind_method(D_METHOD("get_LR_MAX"), &MMAnimationLibrary::get_LR_MAX);
-			godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "LR_MAX", PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_READ_ONLY), "set_LR_MAX", "get_LR_MAX");
-			ClassDB::bind_method(D_METHOD("set_LR_MIN", "value"), &MMAnimationLibrary::set_LR_MIN);
-			ClassDB::bind_method(D_METHOD("get_LR_MIN"), &MMAnimationLibrary::get_LR_MIN);
-			godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "LR_MIN", PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_READ_ONLY | PROPERTY_USAGE_INTERNAL), "set_LR_MIN", "get_LR_MIN");
-			ClassDB::bind_method(D_METHOD("set_SM_MAX", "value"), &MMAnimationLibrary::set_SM_MAX);
-			ClassDB::bind_method(D_METHOD("get_SM_MAX"), &MMAnimationLibrary::get_SM_MAX);
-			godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "SM_MAX", PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_READ_ONLY | PROPERTY_USAGE_INTERNAL), "set_SM_MAX", "get_SM_MAX");
-			ClassDB::bind_method(D_METHOD("set_SM_MIN", "value"), &MMAnimationLibrary::set_SM_MIN);
-			ClassDB::bind_method(D_METHOD("get_SM_MIN"), &MMAnimationLibrary::get_SM_MIN);
-			godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "SM_MIN", PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_READ_ONLY | PROPERTY_USAGE_INTERNAL), "set_SM_MIN", "get_SM_MIN");
-
-			ClassDB::bind_method(D_METHOD("set_BIAS_LR_MAX", "value"), &MMAnimationLibrary::set_BIAS_LR_MAX);
-			ClassDB::bind_method(D_METHOD("get_BIAS_LR_MAX"), &MMAnimationLibrary::get_BIAS_LR_MAX);
-			godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "BIAS_LR_MAX", PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_READ_ONLY | PROPERTY_USAGE_INTERNAL), "set_BIAS_LR_MAX", "get_BIAS_LR_MAX");
-			ClassDB::bind_method(D_METHOD("set_BIAS_LR_MIN", "value"), &MMAnimationLibrary::set_BIAS_LR_MIN);
-			ClassDB::bind_method(D_METHOD("get_BIAS_LR_MIN"), &MMAnimationLibrary::get_BIAS_LR_MIN);
-			godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "BIAS_LR_MIN", PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_READ_ONLY | PROPERTY_USAGE_INTERNAL), "set_BIAS_LR_MIN", "get_BIAS_LR_MIN");
-			ClassDB::bind_method(D_METHOD("set_BIAS_SM_MAX", "value"), &MMAnimationLibrary::set_BIAS_SM_MAX);
-			ClassDB::bind_method(D_METHOD("get_BIAS_SM_MAX"), &MMAnimationLibrary::get_BIAS_SM_MAX);
-			godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "BIAS_SM_MAX", PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_READ_ONLY | PROPERTY_USAGE_INTERNAL), "set_BIAS_SM_MAX", "get_BIAS_SM_MAX");
-			ClassDB::bind_method(D_METHOD("set_BIAS_SM_MIN", "value"), &MMAnimationLibrary::set_BIAS_SM_MIN);
-			ClassDB::bind_method(D_METHOD("get_BIAS_SM_MIN"), &MMAnimationLibrary::get_BIAS_SM_MIN);
-			godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "BIAS_SM_MIN", PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_READ_ONLY | PROPERTY_USAGE_INTERNAL), "set_BIAS_SM_MIN", "get_BIAS_SM_MIN");
-
-			ClassDB::bind_method(D_METHOD("set_Rng_Start", "value"), &MMAnimationLibrary::set_Rng_Start);
-			ClassDB::bind_method(D_METHOD("get_Rng_Start"), &MMAnimationLibrary::get_Rng_Start);
-			godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "Rng_Start", PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_READ_ONLY | PROPERTY_USAGE_INTERNAL), "set_Rng_Start", "get_Rng_Start");
-
-			ClassDB::bind_method(D_METHOD("set_Rng_Stop", "value"), &MMAnimationLibrary::set_Rng_Stop);
-			ClassDB::bind_method(D_METHOD("get_Rng_Stop"), &MMAnimationLibrary::get_Rng_Stop);
-			godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "Rng_Stop", PROPERTY_HINT_NONE, "", PropertyUsageFlags::PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_READ_ONLY | PROPERTY_USAGE_INTERNAL), "set_Rng_Stop", "get_Rng_Stop");
-		}
 	}
 
 public:
@@ -926,18 +933,28 @@ struct QueryOptions : public godot::RefCounted {
 	using u = godot::UtilityFunctions;
 
 public:
-	// GETSET(PackedFloat32Array, custom_weights);
-	PackedFloat32Array custom_weights{};
-	PackedFloat32Array get_custom_weights() { return custom_weights; }
-	void set_custom_weights(PackedFloat32Array value) {
-		custom_weights = value;
-		[this](const auto &empty) {
-			if constexpr (std::is_base_of<godot::Resource, decltype(*this)>::value) {
-				this->emit_changed();
-			}
-		}(0);
-	}
+	GETSET(PackedFloat32Array, query);
+	GETSET(PackedFloat32Array, custom_weights);
 	GETSET(PackedFloat32Array, custom_ranges);
+	GETSET(int, ignore_surrounding_frames, 10);
+	GETSET(int, best_index, -1);
+
 	static void _bind_methods() {
+		ClassDB::bind_method(D_METHOD("set_query", "value"), &QueryOptions::set_query);
+		ClassDB::bind_method(D_METHOD("get_query"), &QueryOptions::get_query);
+		::godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "query"), "set_query", "get_query");
+		ClassDB::bind_method(D_METHOD("set_custom_weights", "value"), &QueryOptions::set_custom_weights);
+		ClassDB::bind_method(D_METHOD("get_custom_weights"), &QueryOptions::get_custom_weights);
+		::godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "custom_weights"), "set_custom_weights", "get_custom_weights");
+		ClassDB::bind_method(D_METHOD("set_custom_weights", "value"), &QueryOptions::set_custom_weights);
+		ClassDB::bind_method(D_METHOD("get_custom_weights"), &QueryOptions::get_custom_weights);
+		::godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "custom_weights"), "set_custom_weights", "get_custom_weights");
+
+		ClassDB::bind_method(D_METHOD("set_best_index", "value"), &QueryOptions::set_best_index);
+		ClassDB::bind_method(D_METHOD("get_best_index"), &QueryOptions::get_best_index);
+		::godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::INT, "best_index"), "set_best_index", "get_best_index");
+		ClassDB::bind_method(D_METHOD("set_ignore_surrounding_frames", "value"), &QueryOptions::set_ignore_surrounding_frames);
+		ClassDB::bind_method(D_METHOD("get_ignore_surrounding_frames"), &QueryOptions::get_ignore_surrounding_frames);
+		::godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::INT, "ignore_surrounding_frames"), "set_ignore_surrounding_frames", "get_ignore_surrounding_frames");
 	}
 };

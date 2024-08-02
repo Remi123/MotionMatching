@@ -73,38 +73,13 @@ public:
 		return hints;
 	}
 
-	String root_bone_track = "";
-	Transform3D rest_pose = Transform3D();
-	bool setup_bake_init(Ref<MMAnimationLibrary> animlib) {
-		ERR_FAIL_COND_V_EDMSG(animlib->skeleton_path.is_empty(), false, "SkeletonPath is Empty");
-		ERR_FAIL_COND_V_EDMSG(animlib->skeleton_profile == nullptr, false, "SkeletonProfile is null");
-		ERR_FAIL_COND_V_EDMSG(animlib->skeleton_profile->get_root_bone().is_empty(), false, "No Root bone to extract data");
-		// returning false will abort the process.
-		// feel free to print more details
-		mmlib = animlib;
-		root_bone_track = u::str(animlib->skeleton_path) + ":" + animlib->skeleton_profile->get_root_bone();
-		rest_pose = animlib->skeleton_profile->get_reference_pose(animlib->skeleton_profile->find_bone(animlib->skeleton_profile->get_root_bone()));
-		return true;
-	}
+	PackedFloat32Array bake_pose(Ref<MMAnimationLibrary> mmlib, String animation_name, float time){
 
-	int root_track_pos = -1;
-	int root_track_quat = -1;
-	bool setup_bake_animation(Ref<Animation> animation) {
-		auto tags = mmlib->tags;
-		animation_events.clear();
-		for (auto i = 0; i < mmlib->tags.size(); ++i) {
-			if (TagMFDistance *event = Object::cast_to<TagMFDistance>(tags[i]); event != nullptr && event->animation_name == animation->get_name()) {
-				animation_events.push_back(event);
-			}
-		}
-		root_track_pos = animation->find_track(NodePath(root_bone_track), Animation::TrackType::TYPE_POSITION_3D);
-		root_track_quat = animation->find_track(NodePath(root_bone_track), Animation::TrackType::TYPE_ROTATION_3D);
+		Ref<Animation> animation = mmlib->get_animation(animation_name);
+		String root_bone_track = u::str(mmlib->skeleton_path) + ":" + mmlib->skeleton_profile->get_root_bone();
+		Transform3D rest_pose = mmlib->skeleton_profile->get_reference_pose(mmlib->skeleton_profile->find_bone(mmlib->skeleton_profile->get_root_bone()));
+		
 
-		return true;
-	}
-
-	// the current logic is this : Take the first event
-	PackedFloat32Array bake_animation_pose(Ref<Animation> animation, float time) {
 		PackedFloat32Array result = {};
 		std::vector<Ref<TagMFEvent>> current_events{};
 		const float time_offset = 1.0f / Engine::get_singleton()->get_physics_ticks_per_second();
@@ -181,9 +156,6 @@ public:
 
 		ClassDB::bind_method(D_METHOD("get_hints"), &MFDistance::get_hints);
 
-		ClassDB::bind_method(D_METHOD("setup_bake_init", "mm_animation_library"), &MFDistance::setup_bake_init);
-		ClassDB::bind_method(D_METHOD("setup_bake_animation", "animation"), &MFDistance::setup_bake_animation);
-
-		ClassDB::bind_method(D_METHOD("bake_animation_pose", "animation", "time"), &MFDistance::bake_animation_pose);
+		ClassDB::bind_method(D_METHOD("bake_pose", "mm_animation_library" , "animation_name", "time"), &MFDistance::bake_pose);
 	}
 };

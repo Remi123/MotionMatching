@@ -63,15 +63,16 @@ public:
 	GDVIRTUAL0RC(int, get_dimension);
 	GDVIRTUAL0RC(PackedStringArray, get_hints);
 	GDVIRTUAL0RC(PackedFloat32Array, get_weights);
+	GDVIRTUAL0RC(Color, get_tag_color);
 
 	GDVIRTUAL3R(PackedFloat32Array, bake_pose, Ref<AnimationLibrary>, String, float);
 	GDVIRTUAL5C(show_debug_info, Ref<EditorNode3DGizmo>, Ref<AnimationLibrary>, String, float, Skeleton3D *);
-	
+
 	static void _bind_methods() {
 		BIND_ENUM_CONSTANT(Standardized);
 		BIND_ENUM_CONSTANT(RawValue);
 
-		BINDER_PROPERTY_PARAMS(MotionFeature,Variant::INT,normalization_type,godot::PROPERTY_HINT_ENUM, "Standardized,RawValue");
+		BINDER_PROPERTY_PARAMS(MotionFeature, Variant::INT, normalization_type, godot::PROPERTY_HINT_ENUM, "Standardized,RawValue");
 
 		// REFACTOR : This is the new API.
 		GDVIRTUAL_BIND(get_dimension);
@@ -80,9 +81,25 @@ public:
 
 		GDVIRTUAL_BIND(bake_pose, "mmanimationlibrary", "animation_name", "time");
 		GDVIRTUAL_BIND(show_debug_info, "gizmo", "profile", "animation", "timestamp", "skeleton");
+
+		{
+			MethodInfo mi;
+			mi.arguments.push_back(PropertyInfo(Variant::STRING, "variants"));
+			mi.name = "serialize_variants";
+			ClassDB::bind_vararg_method(METHOD_FLAGS_DEFAULT, "serialize_variants", &MotionFeature::serialize_variants, mi);
+		}
 	}
 
-	static void serialize_variant(Variant &v, PackedFloat32Array &result) {
+	auto serialize_variants(const Variant **args, GDExtensionInt arg_count, GDExtensionCallError &error) -> PackedFloat32Array {
+		PackedFloat32Array result{};
+		for(auto i = 0; i < arg_count;++i)
+		{
+			serialize_variant(*(args[i]),result);
+		}
+		return result;
+	}
+	
+	static void serialize_variant(const Variant &v, PackedFloat32Array &result) {
 		using namespace godot;
 		if (v.get_type() == Variant::BOOL) {
 			result.append((bool)v);
@@ -120,6 +137,9 @@ public:
 			result.append(q.y);
 			result.append(q.z);
 			result.append(q.w);
+		}
+		else if (v.get_type() == Variant::PACKED_FLOAT32_ARRAY){
+			result.append_array((PackedFloat32Array)v);
 		}
 	}
 };

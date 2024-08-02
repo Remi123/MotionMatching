@@ -39,19 +39,6 @@
 
 namespace views = std::ranges::views;
 
-struct MMAnimationLibrary;
-
-#define GETSET(type, variable, ...)            \
-	type variable{ __VA_ARGS__ };              \
-	type get_##variable() { return variable; } \
-	void set_##variable(type value) { variable = value; }
-#define STR(x) #x
-#define STRING_PREFIX(prefix, s) STR(prefix##s)
-#define BINDER_PROPERTY_PARAMS(type, variant_type, variable, ...)                                  \
-	ClassDB::bind_method(D_METHOD(STRING_PREFIX(set_, variable), "value"), &type::set_##variable); \
-	ClassDB::bind_method(D_METHOD(STRING_PREFIX(get_, variable)), &type::get_##variable);          \
-	ADD_PROPERTY(PropertyInfo(variant_type, #variable, __VA_ARGS__), STRING_PREFIX(set_, variable), STRING_PREFIX(get_, variable));
-
 using namespace godot;
 
 int sec_to_frame(float seconds, int fps = -1) {
@@ -63,8 +50,6 @@ int sec_to_frame(float seconds, int fps = -1) {
 
 struct MFEvents : public MotionFeature {
 	GDCLASS(MFEvents, MotionFeature)
-	Ref<MMAnimationLibrary> mmlib = nullptr;
-	std::vector<Ref<TagMFEvent>> animation_events{};
 
 public:
 	enum EventType {
@@ -95,32 +80,23 @@ public:
 
 	PackedStringArray get_hints() const { return events_names; }
 
-	bool setup_bake_init(Ref<MMAnimationLibrary> animlib) {
-		// returning false will abort the process.
-		// feel free to print more details
-		mmlib = animlib;
+	// the current logic is this : Take the first event
 
-		return true;
-	}
+	PackedFloat32Array bake_pose(Ref<MMAnimationLibrary> mmlib, String animation_name, float time) {
+		PackedFloat32Array result = {};
 
-	bool setup_bake_animation(Ref<Animation> animation) {
-		u::prints("Events", animation->get_name());
-		auto tags = mmlib->tags;
+		std::vector<Ref<TagMFEvent>> animation_events{};
+		// std::vector<Ref<TagMFEvent>> current_events{};
+		const float time_offset = 1.0f / Engine::get_singleton()->get_physics_ticks_per_second();
+
+		auto animation = mmlib->get_animation(animation_name);
+
 		animation_events.clear();
 		for (auto i = 0; i < mmlib->tags.size(); ++i) {
-			if (TagMFEvent *event = Object::cast_to<TagMFEvent>(tags[i]); event != nullptr && event->animation_name == animation->get_name()) {
+			if (TagMFEvent *event = Object::cast_to<TagMFEvent>(mmlib->tags[i]); event != nullptr && event->animation_name == animation->get_name()) {
 				animation_events.push_back(event);
 			}
 		}
-
-		return true;
-	}
-
-	// the current logic is this : Take the first event
-	PackedFloat32Array bake_animation_pose(Ref<Animation> animation, float time) {
-		PackedFloat32Array result = {};
-		// std::vector<Ref<TagMFEvent>> current_events{};
-		const float time_offset = 1.0f / Engine::get_singleton()->get_physics_ticks_per_second();
 
 		// [  5 4 3 2 1 0 -1 -2 -3 3 2 1 0 0 0 0 -1 -2 2 1 0 -1 ]
 		// 0s are event. positive values are pre-event, negative are post-event
@@ -184,10 +160,7 @@ public:
 		ClassDB::bind_method(D_METHOD("get_embed_as_frames"), &MFEvents::get_embed_as_frames);
 		godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::BOOL, "embed_as_frames"), "set_embed_as_frames", "get_embed_as_frames");
 
-		ClassDB::bind_method(D_METHOD("setup_bake_init", "mm_animation_library"), &MFEvents::setup_bake_init);
-		ClassDB::bind_method(D_METHOD("setup_bake_animation", "animation"), &MFEvents::setup_bake_animation);
-
-		ClassDB::bind_method(D_METHOD("bake_animation_pose", "animation", "time"), &MFEvents::bake_animation_pose);
+		ClassDB::bind_method(D_METHOD("bake_pose", "mm_animation_library", "animation", "time"), &MFEvents::bake_pose);
 	}
 };
 

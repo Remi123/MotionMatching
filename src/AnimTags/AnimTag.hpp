@@ -32,8 +32,18 @@ public:
 		emit_changed();
 	}
 
+	GDVIRTUAL0RC(Color,get_tag_color);
+
+	Color _get_tag_color(){
+		return Color::get_named_color(Color::find_named_color("GREEN_YELLOW"));
+	}
+
 protected:
 	static void _bind_methods() {
+		GDVIRTUAL_BIND(get_tag_color);
+
+		ClassDB::bind_method(D_METHOD("get_tag_color"),&TagInfo::_get_tag_color);
+
 		ClassDB::bind_method(D_METHOD("set_animation_name", "value"), &TagInfo::set_animation_name);
 		ClassDB::bind_method(D_METHOD("get_animation_name"), &TagInfo::get_animation_name);
 		godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::STRING_NAME, "animation_name"), "set_animation_name", "get_animation_name");
