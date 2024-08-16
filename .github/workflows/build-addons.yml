@@ -197,12 +197,15 @@ jobs:
                         ${{ github.workspace }}/godot-cpp/include
                         ${{ github.workspace }}/godot-cpp/gen
                     key: ${{ runner.os }}-${{ env.SUBMODULE_HASH }}
+
+            -   name: Check compiler version
+                run: '$CXX --version'
             
-            -   name: Compile Godot Library
-                if: steps.cache-godot-cpp.outputs.cache-hit != 'true'
-                run: |
-                      scons platform=${{ matrix.platform }} target=${{ matrix.target }} arch=${{ matrix.arch }} precision=${{ matrix.precision }} 
-                working-directory: godot-cpp
+            # -   name: Compile Godot Library
+            #     if: steps.cache-godot-cpp.outputs.cache-hit != 'true'
+            #     run: |
+            #           scons platform=${{ matrix.platform }} target=${{ matrix.target }} arch=${{ matrix.arch }} precision=${{ matrix.precision }} 
+            #     working-directory: godot-cpp
 
             -   name: Compile Addon
                 run:  scons  

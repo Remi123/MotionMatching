@@ -73,6 +73,8 @@ else:
 env.Append(CPPPATH=["src/",boost_path])
 sources = Glob("src/*.cpp")
 
+print(env["CXXFLAGS"])
+
 if env["target"] in ["editor", "template_debug"]:
     doc_data = env.GodotCPPDocData("src/gen/doc_data.gen.cpp", source=Glob("doc_classes/*.xml"))
     sources.append(doc_data)
