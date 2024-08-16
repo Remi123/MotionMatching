@@ -74,7 +74,7 @@ public:
 		}
 	}
 
-	virtual void _process_modification() {
+	virtual void _process_modification() override {
 		// Find delta
 		const float delta = get_skeleton()->get_modifier_callback_mode_process() == Skeleton3D::ModifierCallbackModeProcess::MODIFIER_CALLBACK_MODE_PROCESS_IDLE ? get_process_delta_time() : get_physics_process_delta_time();
 		if (is_active())

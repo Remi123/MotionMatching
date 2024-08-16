@@ -100,7 +100,7 @@ public:
 	}
 
 	static inline Quaternion quat_exp(Vector3 v, real_t eps = 1e-8) {
-		real_t halfangle = sqrtf(v.x * v.x + v.y * v.y + v.z * v.z);
+		real_t halfangle = ::sqrtf(v.x * v.x + v.y * v.y + v.z * v.z);
 
 		if (halfangle < eps) {
 			Quaternion q{};

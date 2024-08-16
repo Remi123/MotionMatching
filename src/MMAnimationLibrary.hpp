@@ -32,6 +32,7 @@
 #include <limits>
 #include <numeric>
 #include <vector>
+#include <cmath>
 
 #include "godot_cpp/core/math.hpp"
 
@@ -208,7 +209,7 @@ public:
 				}
 			}
 
-			u::prints("Animations setup for", anim_name, "duration", animation->get_length(), "found", current_tags.size(), "tags for this animation");
+			u::prints("Animations setup for", anim_name, "duration", animation->get_length(), "found", (int)current_tags.size(), "tags for this animation");
 
 			const int _limit = animation->get_length() / time_interval;
 			IndexSet timed(0, _limit);
@@ -238,7 +239,7 @@ public:
 					PackedFloat32Array pose_data{};
 					for (size_t features_index = 0; features_index < motion_features.size(); ++features_index) {
 						MotionFeature *f = Object::cast_to<MotionFeature>(motion_features[features_index]);
-						size_t const expected_dimension = (size_t)f->call("get_dimension");
+						int const expected_dimension = (int)f->call("get_dimension");
 						PackedFloat32Array feature_data{};
 						if (!GDVIRTUAL_CALL_PTR(f, bake_pose, this, anim_name, time, feature_data)) {
 							feature_data = f->call("bake_pose", this, anim_name, time);
@@ -295,7 +296,7 @@ public:
 			if (MotionFeature::NormalizationType::Standardized == f->get_normalization_type()) {
 				for (auto i = 0; i < feature_dimension; ++i) {
 					dimension_means[offset + i] = mean(data_stats[offset + i]);
-					dimension_stddev[offset + i] = std::sqrtf(variance(data_stats[offset + i])) < std::numeric_limits<float>::epsilon() ? 1.0f : std::sqrtf(variance(data_stats[offset + i]));
+					dimension_stddev[offset + i] = ::sqrtf(variance(data_stats[offset + i])) < std::numeric_limits<float>::epsilon() ? 1.0f : ::sqrtf(variance(data_stats[offset + i]));
 				}
 			} else if (MotionFeature::NormalizationType::RawValue == f->get_normalization_type()) {
 				for (auto i = 0; i < feature_dimension; ++i) {
@@ -538,7 +539,7 @@ public:
 		for (best_pose_type best_pose : tail(accu_best_poses)) {
 			Dictionary data{};
 			const real_t best_cost = best_pose.first;
-			const size_t best_index = best_pose.second;
+			const int best_index = best_pose.second;
 			const StringName anim_name = get_animation_list()[db_anim_index[best_index]];
 			const float anim_time = db_anim_timestamp[best_index];
 			data["index"] = best_index;
@@ -569,12 +570,12 @@ public:
 		const auto ignore_surrounding_frames = option->ignore_surrounding_frames;
 
 		const real_t transition_cost = option->continuation_index >= 0 ? option->continuation_bias : default_continuation_bias;
-		const size_t nfeatures = nb_dimensions;
-		const size_t nranges = ranges_search == nullptr ? Rng_Start.size() : ranges_search->ranges.size();
+		const int nfeatures = nb_dimensions;
+		const int nranges = ranges_search == nullptr ? Rng_Start.size() : ranges_search->ranges.size();
 		real_t best_cost = std::numeric_limits<real_t>::max();
 		int curr_index = best_index;
 
-		for (size_t i = 0; i < dimension_means.size(); ++i) {
+		for (int i = 0; i < dimension_means.size(); ++i) {
 			query[i] = (query[i] - dimension_means[i]) / dimension_stddev[i];
 		}
 
@@ -686,7 +687,7 @@ public:
 		for (best_pose_type best_pose : tail(accu_best_poses)) {
 			Dictionary data{};
 			const real_t best_cost = best_pose.first;
-			const size_t best_index = best_pose.second;
+			const int best_index = best_pose.second;
 			const StringName anim_name = get_animation_list()[db_anim_index[best_index]];
 			const float anim_time = db_anim_timestamp[best_index];
 			data["index"] = best_index;
