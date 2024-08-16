@@ -37,7 +37,6 @@
 #include <MotionFeatures/MotionFeatures.hpp>
 #include <Util/Util.hpp>
 
-#include <format>
 #include <cmath>
 
 using namespace godot;
@@ -178,12 +177,12 @@ public:
 						continue;
 					}
 					if (option->coordinate == MFTrajectoryOptions::Coordinates::XZ) {
-						result.append(I + "x" + u::str(std::format("{:.2f}", option->time_offset).c_str()));
-						result.append(I + "z" + u::str(std::format("{:.2f}", option->time_offset).c_str()));
+						result.append(vformat("%sx%f",I,option->time_offset));
+						result.append(vformat("%sz%f",I,option->time_offset));
 					} else if (option->coordinate == MFTrajectoryOptions::Coordinates::XYZ) {
-						result.append(I + "x" + u::str(std::format("{:.2f}", option->time_offset).c_str()));
-						result.append(I + "y" + u::str(std::format("{:.2f}", option->time_offset).c_str()));
-						result.append(I + "z" + u::str(std::format("{:.2f}", option->time_offset).c_str()));
+						result.append(vformat("%sx%f",I,option->time_offset));
+						result.append(vformat("%sy%f",I,option->time_offset));
+						result.append(vformat("%sz%f",I,option->time_offset));
 					}
 				}
 			}
