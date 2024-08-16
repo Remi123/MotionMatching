@@ -1,249 +1,73 @@
-# godot-cpp template
-This repository serves as a quickstart template for GDExtension development with Godot 4.0+.
+# MotionMatching for Godot 4
 
-## Contents
-* An empty Godot project (`demo/`)
-* godot-cpp as a submodule (`godot-cpp/`)
-* GitHub Issues template (`.github/ISSUE_TEMPLATE.yml`)
-* GitHub CI/CD workflows to publish your library packages when creating a release (`.github/workflows/builds.yml`)
-* GitHub CI/CD actions to build (`.github/actions/build/action.yml`) and to sign Mac frameworks (`.github/actions/build/sign.yml`).
-* preconfigured source files for C++ development of the GDExtension (`src/`)
+This library is a generic implementation of Motion Matching inside the Godot Engine 4.2.
 
-## Usage - Template
+We provide a few Nodes and Resources that are useful for playing animations, either with or without Motion Matching. The goal is to be as modular as possible.
 
-To use this template, log in to GitHub and click the green "Use this template" button at the top of the repository page.
-This will let you create a copy of this repository with a clean git history. Make sure you clone the correct branch as these are configured for development of their respective Godot development branches and differ from each other. Refer to the docs to see what changed between the versions.
+Here is what you can expect :
 
-For getting started after cloning your own copy to your local machine, you should: 
-* initialize the godot-cpp git submodule via `git submodule update --init`
-* change the name of your library
-  * change the name of the compiled library file inside the `SConstruct` file by modifying the `libname` string.
-  * change the pathnames of the to be loaded library name inside the `demo/bin/example.gdextension` file. By replacing `libgdexample` to the name specified in your `SConstruct` file.
-  * change the name of the `demo/bin/example.gdextension` file
-* change the `entry_symbol` string inside your `demo/bin/your-extension.gdextension` file to be configured for your GDExtension name. This should be the same as the `GDExtensionBool GDE_EXPORT` external C function. As the name suggests, this sets the entry function for your GDExtension to be loaded by the Godot editors C API.
-* register the classes you want Godot to interact with inside the `register_types.cpp` file in the initialization method (here `initialize_gdextension_types`) in the syntax `ClassDB::register_class<CLASS-NAME>();`.
+- MMAnimationLibrary and MotionFeatures ( Resources )
+  Don't use. Not ready for usage. Actively changing interface and features. WIP. 
 
-## Usage - Actions
+- MMAnimationPlayer (Node). 
+  This animation player use inertialization as the method of transition. Set the halflife ( default 0.1 ) to control how much time the transition occurs, however it is not a set-in-stone timed transition.
+  However, any other method other than `request_animation(animation_name:String, timestamp:float = 0.0)` and `request_pose(animation_name:String, timestamp:float)` is not supported. Cannot play animation backward and can't enqueue animation (queuing might be supported in the future).
+  You can retrieve the inertialized root bone linear velocity using `get_inertialized_root_motion_velocity()` and angular velocity using `get_inertialized_root_motion_angular(delta:float)`. Other bones info can be retrieved using `get_[local,model,raw]_bone_info(bone_name:String)`.
 
-The actions builds `godot-cpp` at a specified location, and then builds the `gdextension` at a configurable location. It builds for desktop, mobile and web and allows for configuration on what platforms you need. It also supports configuration for debug and release builds, and for double builds.
+  Just a note : `Skeleton3D` use `global_pose` to refer to the position relative to the root bone. It's more accurate to call it the `model` pose. It also dependant on the presence of a root bone. To avoid confusion, we refer to `model` as relative to the root bone, and `raw` as what is in the animation file.
 
-The action uses SConstruct for both godot-cpp and the GDExtension that is built.
+  Usage : Change the type of your AnimationPlayer node to MMAnimationPlayer. Use `request_animation` to play your animation and enjoy sweet transitions.
 
-To reuse the build actions, in a github actions yml file, do the following:
+- Post Processing Animations (Node3D)
+  Having an animation player with custom transitions is great, however the elephant in the room is the AnimationTree. Contrary to AnimationPlayer, AnimationTree receive a bunch of instructions to blend animation together in any order, so there is no clear starting point to do proper inertialization. Also, some inverse kinematic are missing. So here are the nodes. All post processing nodes requires you to define which AnimationMixer-inherited node you refer, and which Skeleton you want bones to be modified. . All those nodes are made to be process after the AnimationMixer-inherited node, so you can either add those nodes as child of AnimationMixer, or set the process priority to an higher value than the mixer. Works also in Editor. 
 
-```yml
-name: Build GDExtension
-on:
-  workflow_call:
-  push:
+  Those nodes doesn't work well with MMAnimationPlayer. Use it with AnimationTree.
 
-jobs:
-  build:
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - platform: linux
-            arch: x86_64
-            os: ubuntu-20.04
-          - platform: windows
-            arch: x86_32
-            os: windows-latest
-          - platform: windows
-            arch: x86_64
-            os: windows-latest
-          - platform: macos
-            arch: universal
-            os: macos-latest
-          - platform: android
-            arch: arm64
-            os: ubuntu-20.04
-          - platform: android
-            arch: arm32
-            os: ubuntu-20.04
-          - platform: android
-            arch: x86_64
-            os: ubuntu-20.04
-          - platform: android
-            arch: x86_32
-            os: ubuntu-20.04
-          - platform: ios
-            arch: arm64
-            os: macos-latest
-          - platform: web
-            arch: wasm32
-            os: ubuntu-20.04
+  - PPIKLookAt3D ( Node3D )
+  A simple look at ik. The position of the node is where the bone will orient its rotation. There is no joints limit, so it's on you to manage that. Recommended priority = 1
 
-    runs-on: ${{ matrix.os }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          submodules: true
-          fetch-depth: 0
-      - name: 🔗 GDExtension Build
-        uses: godotengine/godot-cpp-template/.github/actions/build@main
-        with:
-          platform: ${{ matrix.platform }}
-          arch: ${{ matrix.arch }}
-          float-precision: single
-          build-target-type: template_release
-      - name: 🔗 GDExtension Build
-        uses: ./.github/actions/build
-        with:
-          platform: ${{ matrix.platform }}
-          arch: ${{ matrix.arch }}
-          float-precision: ${{ matrix.float-precision }}
-          build-target-type: template_debug
-      - name: Mac Sign
-        if: ${{ matrix.platform == 'macos' && env.APPLE_CERT_BASE64 }}
-        env:
-          APPLE_CERT_BASE64: ${{ secrets.APPLE_CERT_BASE64 }}
-        uses: godotengine/godot-cpp-template/.github/actions/sign@main
-        with:
-          FRAMEWORK_PATH: bin/macos/macos.framework
-          APPLE_CERT_BASE64: ${{ secrets.APPLE_CERT_BASE64 }}
-          APPLE_CERT_PASSWORD: ${{ secrets.APPLE_CERT_PASSWORD }}
-          APPLE_DEV_PASSWORD: ${{ secrets.APPLE_DEV_PASSWORD }}
-          APPLE_DEV_ID: ${{ secrets.APPLE_DEV_ID }}
-          APPLE_DEV_TEAM_ID: ${{ secrets.APPLE_DEV_TEAM_ID }}
-          APPLE_DEV_APP_ID: ${{ secrets.APPLE_DEV_APP_ID }}
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: GDExtension
-          path: |
-            ${{ github.workspace }}/bin/**
-```
+  - PPIKTwoBone3D ( Node3D )
+  A simple two bone ik logic. Doesn't handle bones inbetween the two defined bones. The position of the node define where two the bone will reach, and the rotation of the node will adjust the orientation. Recommended process priority = Mixer.priority + 1
 
-The above example is a lengthy one, so we will go through it action by action to see what is going on.
+  - PPInertialization ( Node3D)
+  This is the node that tries to inertialize the AnimationTree. It's technically more of a filter than a true inertialization, but it does the job for simple transition. The bone tries to reach the positions and rotations calculated by the AnimationMixer Please keep the halflife low, something like 0.05. In the AnimationTree, you can set the transition time ( for example in AnimationNodeStateMachineTransition ) to 0 and it will work fine. If you set it to higher, you will technically inertialize the default blending of AnimationTree, which might be interesting in some cases. Fun fact : If you set this node to be processed after my PPIK Nodes, it will inertialize the transition of the bones, faking an animation instead of blending between current position of the animation and desired target. Recommended process priority = Mixer.priority + 2. 
 
-In the `Checkout` step, we checkout the code.
-In the `🔗 GDExtension Build` step, we are using the reusable action:
-```yml
-uses: godotengine/godot-cpp-template/.github/actions/build@main
-with:
-  platform: ${{ matrix.platform }}
-  arch: ${{ matrix.arch }}
-  float-precision: single
-  build-target-type: template_release
-```
-with the parameters from the matrix.
+- Spring ( GDScript )
+  This is a small package of functions related to spring as defined by https://theorangeduck.com/page/spring-roll-call. Not all functions are there, and some are missing a quaternion equivalent. The other problem is that I need to use Dictionary as return values in most cases, but this will be solve when Godot add Structure object. Some functions will be added as needed, but change will be documented.
 
-As a result of this step, the binaries will be built in the `bin` folder (as specified in the SConstruct file).
+- Circularbuffer ( GDScript )
+  A wrapper around `Boost.Circular_buffer<Variant>`. 
 
-Note: for macos, you will have to build the binary as a `.dylib` in a `EXTENSION-NAME.framework` folder. The framework folder should also have a `Resources` folder with a file called `Info.plist`. Without this file, signing will fail.
+## Status
 
-Note: for iOS, the same should be as for MacOS, however the `Info.plist` file needs to be close to the `.dylib`, instead of in a `Resources` folder (If this is not done, the build will fail to upload to the App Store).
+The project is currently in a working state but still under development. Please note that everything is subject to changes.
 
-So, in our case, the builds should be:
+Not ready, WIP: MMAnimationLibrary and any MotionFeatures.
+Stable : PPIKs, PPInertialization. CircularBuffer
+Somewhat Stable : Spring, MMAnimationPlayer
 
-```sh
-bin/EXTENSION-NAME.macos.template_debug.framework/EXTENSION-NAME.macos.template_release
-bin/EXTENSION-NAME.ios.template_debug.framework/EXTENSION-NAME.ios.template_release.arm64.dylib
+## Documentation
 
-Afterwards, you want to set in the `.gdextension` file the paths to the `.framework` folder, instead of the `.dylib` file (Note that for the `.dylib` binary, the extension is not needed, you could have a file without any extension and it would still work).
+Documentation is currently missing. We are actively working on it.
 
-In the `name: Mac Sign` step, we are signing the generated mac binaries.
-We are reusing the following action:
-```yml
-uses: godotengine/godot-cpp-template/.github/actions/sign@main
-with:
-  FRAMEWORK_PATH: bin/macos/macos.framework
-  APPLE_CERT_BASE64: ${{ secrets.APPLE_CERT_BASE64 }}
-  APPLE_CERT_PASSWORD: ${{ secrets.APPLE_CERT_PASSWORD }}
-  APPLE_DEV_PASSWORD: ${{ secrets.APPLE_DEV_PASSWORD }}
-  APPLE_DEV_ID: ${{ secrets.APPLE_DEV_ID }}
-  APPLE_DEV_TEAM_ID: ${{ secrets.APPLE_DEV_TEAM_ID }}
-  APPLE_DEV_APP_ID: ${{ secrets.APPLE_DEV_APP_ID }}
-```
-As you can see, this action requires some secrets to be configured in order to run. Also, you need to tell it the path to the `.framework` folder, where you have both the binary (`.dylib` file) and the `Resources` folder with the `Info.plist` file.
+## Demo
 
-## Configuration - Mac Signing Secrets
+A demo is not available at this moment. We have a working demo with our assets and animations, but due to licensing restrictions, we cannot share them. We are working on creating a tutorial.
 
-In order to sign the Mac binary, you need to configure the following secrets:
-`APPLE_CERT_BASE64`, `APPLE_CERT_PASSWORD`, `APPLE_DEV_PASSWORD`, `APPLE_DEV_ID`, `APPLE_DEV_TEAM_ID`, `APPLE_DEV_APP_ID`. These secrets are stored in the example above in the Github secrets for repositories. The names of the secrets have to match the names of the secrets you use for your action. For more on this, read the [Creating secrets for a repository](https://docs.github.com/en/actions/security-guides/using-secrets-in-github-actions#creating-secrets-for-a-repository) article from Github.
+## About the Implementation
 
-These secrets are then passed down to the `godotengine/godot-cpp-template/.github/actions/sign@main` action that signs the binary.
+The implementation is based around the ideas described in [Simon Clavet's video](https://www.youtube.com/watch?v=jcpIrw38E-s).
 
-In order to configure these secrets, you will need:
+The goal of this library is to provide a generic set of utilities and ease the management of the data required for Motion Matching. It is extracted from my projects in the hope to help others and also provide a small framework for others to contribute.
 
-- A Mac
-- An Apple ID enrolled in Apple Developer Program (99 USD per year)
-- A `Resources/Info.plist` in the `framework` folder. Take the one in this project as an example. Be careful to set CFBundleExecutable to the **EXACT** lib name, otherwise it won't work. Also, don't put strange names in the CFBundleName and other such places. Try to only use letters and spaces. Errors will be extremly vague if not impossible to debug.
+## Learning Resources for Motion Matching
 
-For the actions you will need to set the following inputs. Store them as secrets in GitHub:
+To learn more about Motion Matching, you can refer to the following resources:
 
-- APPLE_CERT_BASE64
-- APPLE_CERT_PASSWORD
-- APPLE_DEV_ID
-- APPLE_DEV_TEAM_ID
-- APPLE_DEV_PASSWORD
-- APPLE_DEV_APP_ID
-
-You will find here a guide on how to create all of them. Go to [developer.apple.com](developer.apple.com):
-
-- Create an Apple ID if you don’t have one already.
-- Use your Apple ID to register in the Apple Developer Program.
-- Accept all agreements from the Apple Developer Page.
-
-### APPLE_DEV_ID - Apple ID
-
-- Your email used for your Apple ID.
-
-- APPLE_DEV_ID = email@provider.com
-
-### APPLE_DEV_TEAM_ID - Apple Team ID
-
-- Go to [developer.apple.com](https://developer.apple.com). Go to account.
-- Go to membership details. Copy Team ID.
-
-- APPLE_DEV_TEAM_ID = `1ABCD23EFG`
-
-### APPLE_DEV_PASSWORD - Apple App-Specific Password
-
-- Create [Apple App-Specific Password](https://support.apple.com/en-us/102654). Copy the password.
-
-- APPLE_DEV_PASSWORD = `abcd-abcd-abcd-abcd`
-
-### APPLE_CERT_BASE64 and APPLE_CERT_PASSWORD and APPLE_DEV_APP_ID
-
-- Go to [developer.apple.com](https://developer.apple.com). Go to account.
-- Go to certificates.
-- Click on + at Certificates tab. Create Developer ID Application. Click Continue.
-- Leave profile type as is. [Create a certificate signing request from a mac](https://developer.apple.com/help/account/create-certificates/create-a-certificate-signing-request). You can use your own name and email address. Save the file to disk. You will get a file called `CertificateSigningRequest.certSigningRequest`. Upload it to the Developer ID Application request. Click Continue.
-- Download the certificate. You will get a file `developerID_application.cer`.
-- On a Mac, right click and select open. Add it to the login keychain. In the Keychain Access app that opened, login Keychain tab, go to Keys, sort by date modified, expand your key (the key should have name you entered at common name `Common Name`), right click the expanded certificate, get info, and copy the text at Details -> Subject Name -> Common Name.
-Eg.
-- APPLE_DEV_APP_ID = `Developer ID Application: Common Name (1ABCD23EFG)`
-
-- Then, select the certificate, right click and click export. At file format select p12. When exporting, set a password for the certificate. This will be APPLE_CERT_PASSWORD. You will get a `Certificates.p12` file.
-
-Eg.
-- APPLE_CERT_PASSWORD = `<password_set_when_exporting_p12>`
-
-- Then you need to make a base64 file out of it, by running:
-```
-base64 -i Certificates.p12 -o Certificates.base64
-```
-
-- Copy the contents of the generated file:
-Eg.
-- `APPLE_CERT_BASE64` = `...`(A long text file)
-
-After these secrets are obtained, all that remains is to set them in Github secrets and then use them in the Github action, eg. in the above Github action usage example, this part:
-
-```
-- name: Mac Sign
-  if: ${{ matrix.platform == 'macos' && env.APPLE_CERT_BASE64 }}
-  env:
-    APPLE_CERT_BASE64: ${{ secrets.APPLE_CERT_BASE64 }}
-  uses: godotengine/godot-cpp-template/.github/actions/sign@main
-  with:
-    FRAMEWORK_PATH: bin/macos/macos.framework
-    APPLE_CERT_BASE64: ${{ secrets.APPLE_CERT_BASE64 }}
-    APPLE_CERT_PASSWORD: ${{ secrets.APPLE_CERT_PASSWORD }}
-    APPLE_DEV_PASSWORD: ${{ secrets.APPLE_DEV_PASSWORD }}
-    APPLE_DEV_ID: ${{ secrets.APPLE_DEV_ID }}
-    APPLE_DEV_TEAM_ID: ${{ secrets.APPLE_DEV_TEAM_ID }}
-```
+1. [Introduction video](https://www.gdcvault.com/play/1023280/Motion-Matching-and-The-Road)
+2. [O3DE implementation blog](https://github.com/o3de/o3de/tree/development/Gems/MotionMatching)
+3. [Daniel Holden aka OrangeDuck's blog](https://theorangeduck.com/)
+   - [Spring algorithm and controller](https://theorangeduck.com/page/spring-roll-call)
+   - [Motion Matching implementation](https://theorangeduck.com/page/code-vs-data-driven-displacement)
+   - [Fitting Motion with Animation](https://theorangeduck.com/page/fitting-code-driven-displacement)
+4. [UFC 3 Geoff Harrower Talk about events](https://www.gdcvault.com/play/1025228/Real-Player-Motion-Tech-in)
