@@ -197,10 +197,7 @@ jobs:
                         ${{ github.workspace }}/godot-cpp/include
                         ${{ github.workspace }}/godot-cpp/gen
                     key: ${{ runner.os }}-${{ env.SUBMODULE_HASH }}
-
-            -   name: Check compiler version
-                run: '$CXX --version'
-            
+                                
             # -   name: Compile Godot Library
             #     if: steps.cache-godot-cpp.outputs.cache-hit != 'true'
             #     run: |
