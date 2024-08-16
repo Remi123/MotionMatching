@@ -104,7 +104,7 @@ jobs:
               platform: linux
               arch: x86_64
               toolset: gcc
-              platform_version: 24.04
+              platform_version: 20.04
               precision: single
             - identifier: linux-debug-double
               os: ubuntu-latest
@@ -114,7 +114,7 @@ jobs:
               platform: linux
               arch: x86_64
               toolset: gcc
-              platform_version: 24.04
+              platform_version: 20.04
               precision: double
             - identifier: linux-release-single
               os: ubuntu-latest
@@ -124,7 +124,7 @@ jobs:
               platform: linux
               arch: x86_64
               toolset: gcc
-              platform_version: 24.04
+              platform_version: 20.04
               precision: single
             - identifier: linux-release-double
               os: ubuntu-latest
@@ -134,7 +134,7 @@ jobs:
               platform: linux
               arch: x86_64
               toolset: gcc
-              platform_version: 24.04
+              platform_version: 20.04
               precision: double   
                 
         steps:
