@@ -5,7 +5,7 @@
 #include <godot_cpp/classes/ref_counted.hpp>
 #include <godot_cpp/core/class_db.hpp>
 #include <godot_cpp/core/method_bind.hpp>
-#include <godot_cpp/variant/Variant.hpp>
+#include <godot_cpp/variant/variant.hpp>
 #include <godot_cpp/variant/packed_float32_array.hpp>
 #include <type_traits>
 #include <vector>
