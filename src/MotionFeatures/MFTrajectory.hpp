@@ -37,6 +37,7 @@
 #include <MotionFeatures/MotionFeatures.hpp>
 #include <Util/Util.hpp>
 
+#include <format>
 #include <cmath>
 
 using namespace godot;

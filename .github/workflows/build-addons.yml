@@ -99,42 +99,42 @@ jobs:
             - identifier: linux-debug-single
               os: ubuntu-latest
               name: 🐧 Linux Debug (Single Precision)
-              runner: ubuntu-22.04
+              runner: ubuntu-24.04
               target: template_debug
               platform: linux
               arch: x86_64
               toolset: gcc
-              platform_version: 20.04
+              platform_version: 24.04
               precision: single
             - identifier: linux-debug-double
               os: ubuntu-latest
               name: 🐧 Linux Debug (Double Precision)
-              runner: ubuntu-22.04
+              runner: ubuntu-24.04
               target: template_debug
               platform: linux
               arch: x86_64
               toolset: gcc
-              platform_version: 20.04
+              platform_version: 24.04
               precision: double
             - identifier: linux-release-single
               os: ubuntu-latest
               name: 🐧 Linux Release (Single Precision)
-              runner: ubuntu-22.04
+              runner: ubuntu-24.04
               target: template_release
               platform: linux
               arch: x86_64
               toolset: gcc
-              platform_version: 20.04
+              platform_version: 24.04
               precision: single
             - identifier: linux-release-double
               os: ubuntu-latest
               name: 🐧 Linux Release (Double Precision)
-              runner: ubuntu-22.04
+              runner: ubuntu-24.04
               target: template_release
               platform: linux
               arch: x86_64
               toolset: gcc
-              platform_version: 20.04
+              platform_version: 24.04
               precision: double   
                 
         steps:
@@ -197,7 +197,7 @@ jobs:
                         ${{ github.workspace }}/godot-cpp/include
                         ${{ github.workspace }}/godot-cpp/gen
                     key: ${{ runner.os }}-${{ env.SUBMODULE_HASH }}
-                                
+
             # -   name: Compile Godot Library
             #     if: steps.cache-godot-cpp.outputs.cache-hit != 'true'
             #     run: |
