@@ -52,15 +52,14 @@ public:
 		return Array::make("Vx", "Vy", "Vz");
 	}
 
-	PackedFloat32Array bake_pose(Ref<MMAnimationLibrary> mmlib, String animation_name, float time)
-	{
+	PackedFloat32Array bake_pose(Ref<MMAnimationLibrary> mmlib, String animation_name, float time) {
 		ERR_FAIL_COND_V_EDMSG(mmlib->skeleton_path.is_empty(), {}, "SkeletonPath is Empty");
 		ERR_FAIL_COND_V_EDMSG(mmlib->skeleton_profile == nullptr, {}, "SkeletonProfile is null");
 		ERR_FAIL_COND_V_EDMSG(mmlib->skeleton_profile->get_root_bone().is_empty(), {}, "No Root bone to extract data");
 		Ref<Animation> anim = mmlib->get_animation(animation_name);
 		auto _root_bone_track = u::str(mmlib->skeleton_path) + ":" + mmlib->skeleton_profile->get_root_bone();
 
-		kform root_motion = get_root_model_kform(mmlib->skeleton_profile,anim,time,_root_bone_track);
+		kform root_motion = get_root_model_kform(mmlib->skeleton_profile, anim, time, _root_bone_track);
 
 		PackedFloat32Array result{};
 		result.append(root_motion.vel.x);
@@ -68,8 +67,6 @@ public:
 		result.append(root_motion.vel.z);
 		return result;
 	}
-
-
 
 	PackedFloat32Array serialize_charbody3d(CharacterBody3D *body) {
 		PackedFloat32Array result{};
@@ -93,11 +90,10 @@ public:
 		return v_query.distance_to(v_data) * weight;
 	}
 
-
-	virtual void show_debug_info(Ref<EditorNode3DGizmo> gizmo, Ref<MMAnimationLibrary> library , String animation_name, float timestamp,Skeleton3D * skel) const {
+	virtual void show_debug_info(Ref<EditorNode3DGizmo> gizmo, Ref<MMAnimationLibrary> library, String animation_name, float timestamp, Skeleton3D *skel) const {
 		Ref<Animation> animation = library->get_animation(animation_name);
 		String root_bone_path = String(library->skeleton_path) + ":" + library->skeleton_profile->get_root_bone();
-		Vector3 local_vel = get_root_model_kform(library->skeleton_profile,animation,timestamp,root_bone_path).vel;
+		Vector3 local_vel = get_root_model_kform(library->skeleton_profile, animation, timestamp, root_bone_path).vel;
 		PackedVector3Array lines{};
 		auto root_bone_tr = skel->get_bone_global_pose(skel->find_bone(library->skeleton_profile->get_root_bone()));
 
@@ -109,7 +105,7 @@ public:
 			gizmo->get_plugin()->create_material(material_name, debug_color);
 		}
 		auto mat = gizmo->get_plugin()->get_material(material_name, gizmo);
-		gizmo->add_lines(lines,mat);
+		gizmo->add_lines(lines, mat);
 	}
 
 protected:
@@ -136,11 +132,13 @@ protected:
 		ClassDB::bind_method(D_METHOD("get_weights"), &MFRootVelocity::get_weights);
 		ClassDB::bind_method(D_METHOD("get_dimension"), &MFRootVelocity::get_dimension);
 
-		ClassDB::bind_method(D_METHOD("bake_pose","animation_library", "animation_name", "time"), &MFRootVelocity::bake_pose);
+		ClassDB::bind_method(D_METHOD("bake_pose", "animation_library", "animation_name", "time"), &MFRootVelocity::bake_pose);
 
 		ClassDB::bind_method(D_METHOD("calculate_cost", "query", "data"), &MFRootVelocity::calculate_cost);
 
-		ClassDB::bind_method(D_METHOD("show_debug_info", "gizmo", "lib" ,"animation_name","timestamp" "skeleton"), &MFRootVelocity::show_debug_info);
+		ClassDB::bind_method(D_METHOD("show_debug_info", "gizmo", "lib", "animation_name", "timestamp"
+																						   "skeleton"),
+				&MFRootVelocity::show_debug_info);
 	}
 
 	GETSET(Color, debug_color, godot::Color(1.0f, 1.0f, 1.0f));

@@ -1,0 +1,49 @@
+[gd_scene load_steps=9 format=3 uid="uid://6flglvor4ovs"]
+
+[ext_resource type="Texture2D" uid="uid://bkyqrq1o4d3sm" path="res://addons/kenney_prototype_textures/dark/texture_05.png" id="1_003o2"]
+[ext_resource type="PackedScene" uid="uid://yyuwsiyi6vc1" path="res://scenes/Characters/character.tscn" id="2_q6if2"]
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_xljkg"]
+sky_top_color = Color(0.14902, 0.454902, 0.694118, 1)
+
+[sub_resource type="Sky" id="Sky_cbv34"]
+sky_material = SubResource("ProceduralSkyMaterial_xljkg")
+
+[sub_resource type="Environment" id="Environment_1wst2"]
+background_mode = 2
+sky = SubResource("Sky_cbv34")
+ambient_light_source = 3
+tonemap_mode = 3
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ur2ki"]
+albedo_texture = ExtResource("1_003o2")
+uv1_triplanar = true
+
+[sub_resource type="BoxMesh" id="BoxMesh_oapco"]
+material = SubResource("StandardMaterial3D_ur2ki")
+size = Vector3(1000, 0.1, 1000)
+
+[sub_resource type="ConvexPolygonShape3D" id="ConvexPolygonShape3D_wknx8"]
+points = PackedVector3Array(-500, -0.05, -500, -500, 0.05, -500, 500, -0.05, -500, -500, -0.05, 500, -500, 0.05, 500, 500, 0.05, -500, 500, -0.05, 500, 500, 0.05, 500)
+
+[node name="DemoScene" type="Node3D"]
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_1wst2")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="WorldEnvironment"]
+transform = Transform3D(1, 0, 0, 0, 0.381925, 0.924193, 0, -0.924193, 0.381925, 0, 1.66641, 0)
+
+[node name="Level" type="Node3D" parent="."]
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Level"]
+mesh = SubResource("BoxMesh_oapco")
+skeleton = NodePath("../..")
+
+[node name="StaticBody3D" type="StaticBody3D" parent="Level/MeshInstance3D"]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Level/MeshInstance3D/StaticBody3D"]
+shape = SubResource("ConvexPolygonShape3D_wknx8")
+
+[node name="Character" parent="." instance=ExtResource("2_q6if2")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.0500001, 0)

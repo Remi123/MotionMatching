@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="MMIKTwoBone3D" inherits="Node3D" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/godotengine/godot/master/doc/class.xsd">
+	<brief_description>
+	</brief_description>
+	<description>
+	</description>
+	<tutorials>
+	</tutorials>
+	<members>
+		<member name="active" type="bool" setter="set_active" getter="get_active" default="false">
+		</member>
+		<member name="bone_A" type="String" setter="set_bone_A" getter="get_bone_A" default="&quot;&quot;">
+		</member>
+		<member name="bone_B" type="String" setter="set_bone_B" getter="get_bone_B" default="&quot;&quot;">
+		</member>
+		<member name="bone_C" type="String" setter="set_bone_C" getter="get_bone_C" default="&quot;&quot;">
+		</member>
+		<member name="forward" type="Vector3" setter="set_forward" getter="get_forward" default="Vector3(0, 0, -1)">
+		</member>
+		<member name="mixer" type="AnimationMixer" setter="set_mixer" getter="get_mixer">
+		</member>
+		<member name="skeleton" type="Skeleton3D" setter="set_skeleton" getter="get_skeleton">
+		</member>
+	</members>
+	<signals>
+		<signal name="post_calculation">
+			<description>
+			</description>
+		</signal>
+		<signal name="pre_calculation">
+			<description>
+			</description>
+		</signal>
+	</signals>
+</class>

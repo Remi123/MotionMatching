@@ -15,26 +15,22 @@
 
 #include <godot_cpp/classes/animation_mixer.hpp>
 #include <godot_cpp/classes/skeleton3d.hpp>
+#include <godot_cpp/classes/skeleton_modifier3d.hpp>
 
 #include <Math/KForm.hpp>
 #include <Util/Util.hpp>
 
 using namespace godot;
 
-struct MMIKTwoBone3D : godot::Node3D {
-	GDCLASS(MMIKTwoBone3D, Node3D);
+struct MMIKTwoBone3D : godot::SkeletonModifier3D {
+	GDCLASS(MMIKTwoBone3D, SkeletonModifier3D);
 
 public:
 	using u = godot::UtilityFunctions;
 
-	GETSET(AnimationMixer *, mixer, nullptr);
-	GETSET(Skeleton3D *, skeleton, nullptr);
-
 	GETSET(String, bone_A); // UpLeg
 	GETSET(String, bone_B); // Leg
 	GETSET(String, bone_C); // Heel
-
-	GETSET(bool, active);
 
 	GETSET(Vector3, forward, Vector3(0, 0, -1));
 
@@ -47,19 +43,15 @@ public:
 		BONE_COUNT
 	};
 
-	virtual void _process(double delta) override {
-		if (mixer != nullptr && mixer->get_callback_mode_process() == AnimationMixer::AnimationCallbackModeProcess::ANIMATION_CALLBACK_MODE_PROCESS_IDLE)
-			advance(delta);
-	}
-
-	virtual void _physics_process(double delta) override {
-		if (mixer != nullptr && mixer->get_callback_mode_process() == AnimationMixer::AnimationCallbackModeProcess::ANIMATION_CALLBACK_MODE_PROCESS_PHYSICS)
+	virtual void _process_modification() {
+		// Find delta
+		const float delta = get_skeleton()->get_modifier_callback_mode_process() == Skeleton3D::ModifierCallbackModeProcess::MODIFIER_CALLBACK_MODE_PROCESS_IDLE ? get_process_delta_time() : get_physics_process_delta_time();
+		if (is_active())
 			advance(delta);
 	}
 
 	void advance(double delta) {
-		if (active == false || skeleton == nullptr || mixer == nullptr || !mixer->is_active())
-			return;
+		auto * skeleton = get_skeleton();
 		kforms locals{ BONE_COUNT }, globals{ BONE_COUNT };
 		if (bone_A.is_empty() || bone_B.is_empty() || bone_C.is_empty()) {
 			return;
@@ -71,7 +63,6 @@ public:
 		if (bone_A_id == -1 || bone_B_id == -1 || bone_C_id == -1) {
 			return;
 		};
-		emit_signal("pre_calculation");
 
 		locals.pos[BONE_ROOT] = skeleton->get_bone_pose_position(bone_A_id);
 		locals.rot[BONE_ROOT] = skeleton->get_bone_pose_rotation(bone_A_id);
@@ -80,13 +71,13 @@ public:
 
 		locals.pos[BONE_MIDDLE] = skeleton->get_bone_pose_position(bone_B_id);
 		locals.rot[BONE_MIDDLE] = skeleton->get_bone_pose_rotation(bone_B_id);
-		kform middle_global = (kform)globals[BONE_ROOT] * (kform)locals[BONE_MIDDLE]; 
+		kform middle_global = (kform)globals[BONE_ROOT] * (kform)locals[BONE_MIDDLE];
 		globals.pos[BONE_MIDDLE] = skeleton->get_bone_global_pose(bone_B_id).origin;
 		globals.rot[BONE_MIDDLE] = skeleton->get_bone_global_pose(bone_B_id).basis.get_rotation_quaternion();
 
 		locals.pos[BONE_REACH] = skeleton->get_bone_pose_position(bone_C_id);
 		locals.rot[BONE_REACH] = skeleton->get_bone_pose_rotation(bone_C_id);
-		kform reach_global = (kform)globals[BONE_MIDDLE] * (kform)locals[BONE_REACH]; 
+		kform reach_global = (kform)globals[BONE_MIDDLE] * (kform)locals[BONE_REACH];
 		globals.pos[BONE_REACH] = skeleton->get_bone_global_pose(bone_C_id).origin;
 		globals.rot[BONE_REACH] = skeleton->get_bone_global_pose(bone_C_id).basis.get_rotation_quaternion();
 
@@ -99,7 +90,7 @@ public:
 		auto target_local_to_skeleton = skeleton->get_global_transform().inverse() * get_global_transform();
 		auto target_rotation = (globals.rot[BONE_MIDDLE]).xform(forward);
 
-		if (Engine::get_singleton()->is_editor_hint()){
+		if (Engine::get_singleton()->is_editor_hint()) {
 			target_rotation = target_local_to_skeleton.xform(forward);
 		}
 
@@ -167,11 +158,6 @@ public:
 
 protected:
 	static void _bind_methods() {
-		ADD_SIGNAL(MethodInfo("pre_calculation"));
-		ADD_SIGNAL(MethodInfo("post_calculation"));
-		ClassDB::bind_method(D_METHOD("set_active", "value"), &MMIKTwoBone3D::set_active);
-		ClassDB::bind_method(D_METHOD("get_active"), &MMIKTwoBone3D::get_active);
-		godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::BOOL, "active"), "set_active", "get_active");
 
 		ClassDB::bind_method(D_METHOD("set_bone_A", "value"), &MMIKTwoBone3D::set_bone_A);
 		ClassDB::bind_method(D_METHOD("get_bone_A"), &MMIKTwoBone3D::get_bone_A);
@@ -186,13 +172,5 @@ protected:
 		ClassDB::bind_method(D_METHOD("set_forward", "value"), &MMIKTwoBone3D::set_forward);
 		ClassDB::bind_method(D_METHOD("get_forward"), &MMIKTwoBone3D::get_forward);
 		::godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::VECTOR3, "forward"), "set_forward", "get_forward");
-
-		ClassDB::bind_method(D_METHOD("set_mixer", "value"), &MMIKTwoBone3D::set_mixer);
-		ClassDB::bind_method(D_METHOD("get_mixer"), &MMIKTwoBone3D::get_mixer);
-		godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::OBJECT, "mixer", PROPERTY_HINT_NODE_TYPE, "AnimationMixer", PROPERTY_USAGE_SCRIPT_VARIABLE | PROPERTY_USAGE_DEFAULT), "set_mixer", "get_mixer");
-
-		ClassDB::bind_method(D_METHOD("set_skeleton", "value"), &MMIKTwoBone3D::set_skeleton);
-		ClassDB::bind_method(D_METHOD("get_skeleton"), &MMIKTwoBone3D::get_skeleton);
-		godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::OBJECT, "skeleton", PROPERTY_HINT_NODE_TYPE, "Skeleton3D", PROPERTY_USAGE_SCRIPT_VARIABLE | PROPERTY_USAGE_DEFAULT), "set_skeleton", "get_skeleton");
 	}
 };

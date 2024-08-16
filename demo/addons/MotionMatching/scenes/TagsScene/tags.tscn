@@ -1,0 +1,60 @@
+[gd_scene load_steps=2 format=3 uid="uid://dre3pynuy4g67"]
+
+[ext_resource type="Script" path="res://addons/MotionMatching/scenes/TagsScene/TagsPanel.gd" id="1_eq3tu"]
+
+[node name="Tags" type="MarginContainer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 2
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 2
+script = ExtResource("1_eq3tu")
+metadata/_tab_index = 1
+metadata/_edit_use_anchors_ = true
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="HBoxContainer" type="CenterContainer" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 4
+
+[node name="TextCategory" type="LineEdit" parent="VBoxContainer/HBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "Enter comma-separated name for your categories (Standing=1,Crouching=2,...)"
+expand_to_text_length = true
+
+[node name="HSeparator" type="HSeparator" parent="VBoxContainer"]
+layout_mode = 2
+
+[node name="PanelContainer" type="PanelContainer" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="ScrollContainer" type="ScrollContainer" parent="VBoxContainer/PanelContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+vertical_scroll_mode = 2
+
+[node name="Tracklist" type="VBoxContainer" parent="VBoxContainer/PanelContainer/ScrollContainer"]
+unique_name_in_owner = true
+clip_contents = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="PopupMenu" type="PopupMenu" parent="."]
+unique_name_in_owner = true
+size = Vector2i(134, 100)
+item_count = 1
+item_0/text = "Add New Tag"
+
+[connection signal="text_submitted" from="VBoxContainer/HBoxContainer/TextCategory" to="." method="_on_text_category_text_submitted"]
+[connection signal="gui_input" from="VBoxContainer/PanelContainer/ScrollContainer" to="." method="_on_scroll_container_gui_input"]
+[connection signal="index_pressed" from="PopupMenu" to="." method="_on_popup_menu_index_pressed"]

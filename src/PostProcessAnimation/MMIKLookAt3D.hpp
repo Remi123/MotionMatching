@@ -13,45 +13,37 @@
 #include <godot_cpp/templates/vector.hpp>
 #include <godot_cpp/variant/node_path.hpp>
 
-
 #include <godot_cpp/classes/animation_mixer.hpp>
 #include <godot_cpp/classes/skeleton3d.hpp>
-
+#include <godot_cpp/classes/skeleton_modifier3d.hpp>
 
 #include <Math/KForm.hpp>
 #include <Util/Util.hpp>
 
 using namespace godot;
 
-struct MMIKLookAt3D : godot::Node3D {
-	GDCLASS(MMIKLookAt3D, Node3D);
+struct MMIKLookAt3D : godot::SkeletonModifier3D {
+	GDCLASS(MMIKLookAt3D, SkeletonModifier3D);
+
 public:
 	using u = godot::UtilityFunctions;
 
-	GETSET(AnimationMixer *, mixer, nullptr);
-	GETSET(Skeleton3D *, skeleton, nullptr);
-
 	GETSET(String, bone);
-	GETSET(bool, active);
 
-	virtual void _process(double delta) override {
-		if (mixer != nullptr && mixer->get_callback_mode_process() == AnimationMixer::AnimationCallbackModeProcess::ANIMATION_CALLBACK_MODE_PROCESS_IDLE)
-			advance(delta);
-	}
-
-	virtual void _physics_process(double delta) override {
-		if (mixer != nullptr && mixer->get_callback_mode_process() == AnimationMixer::AnimationCallbackModeProcess::ANIMATION_CALLBACK_MODE_PROCESS_PHYSICS)
+	virtual void _process_modification() {
+		// Find delta
+		const float delta = get_skeleton()->get_modifier_callback_mode_process() == Skeleton3D::ModifierCallbackModeProcess::MODIFIER_CALLBACK_MODE_PROCESS_IDLE ? get_process_delta_time() : get_physics_process_delta_time();
+		if (is_active())
 			advance(delta);
 	}
 
 	void advance(double delta) {
-		if (active == false || bone.is_empty() || skeleton == nullptr || !mixer->is_active())
+		if (is_active() == false || bone.is_empty())
 			return;
+		auto * skeleton = get_skeleton();
 		int bone_id = skeleton->find_bone(bone);
 		if (bone_id == -1)
-			return;
-
-		emit_signal("pre_calculation");
+			return;		
 
 		Vector3 target_pos = get_global_position();
 		Vector3 bone_global_pos = skeleton->get_global_position() + skeleton->get_bone_global_pose(bone_id).origin;
@@ -64,27 +56,12 @@ public:
 		// Rotate the head to face toward the target
 		Quaternion bone_local_rot = skeleton->get_bone_pose_rotation(bone_id);
 		skeleton->set_bone_pose_rotation(bone_id, bone_local_rot * diff);
-		emit_signal("post_calculation");
 	}
 
 protected:
 	static void _bind_methods() {
-		ADD_SIGNAL(MethodInfo("pre_calculation"));
-		ADD_SIGNAL(MethodInfo("post_calculation"));
-		ClassDB::bind_method(D_METHOD("set_active", "value"), &MMIKLookAt3D::set_active);
-		ClassDB::bind_method(D_METHOD("get_active"), &MMIKLookAt3D::get_active);
-		godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::BOOL, "active"), "set_active", "get_active");
-
 		ClassDB::bind_method(D_METHOD("set_bone", "value"), &MMIKLookAt3D::set_bone);
 		ClassDB::bind_method(D_METHOD("get_bone"), &MMIKLookAt3D::get_bone);
 		godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::STRING, "bone"), "set_bone", "get_bone");
-
-		ClassDB::bind_method(D_METHOD("set_mixer", "value"), &MMIKLookAt3D::set_mixer);
-		ClassDB::bind_method(D_METHOD("get_mixer"), &MMIKLookAt3D::get_mixer);
-		godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::OBJECT, "mixer", PROPERTY_HINT_NODE_TYPE, "AnimationMixer", PROPERTY_USAGE_SCRIPT_VARIABLE | PROPERTY_USAGE_DEFAULT), "set_mixer", "get_mixer");
-
-		ClassDB::bind_method(D_METHOD("set_skeleton", "value"), &MMIKLookAt3D::set_skeleton);
-		ClassDB::bind_method(D_METHOD("get_skeleton"), &MMIKLookAt3D::get_skeleton);
-		godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::OBJECT, "skeleton", PROPERTY_HINT_NODE_TYPE, "Skeleton3D", PROPERTY_USAGE_SCRIPT_VARIABLE | PROPERTY_USAGE_DEFAULT), "set_skeleton", "get_skeleton");
 	}
 };

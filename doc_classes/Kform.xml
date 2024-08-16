@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="Kform" inherits="RefCounted" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/godotengine/godot/master/doc/class.xsd">
+	<brief_description>
+	</brief_description>
+	<description>
+	</description>
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="character_prediction">
+			<return type="Vector3" />
+			<param index="0" name="lin_acc" type="Vector3" />
+			<param index="1" name="desired_velocity" type="Vector3" />
+			<param index="2" name="desired_ang" type="Quaternion" />
+			<param index="3" name="halflife_vel" type="float" />
+			<param index="4" name="halflife_ang" type="float" />
+			<param index="5" name="dt" type="float" />
+			<description>
+			</description>
+		</method>
+		<method name="character_update">
+			<return type="Vector3" />
+			<param index="0" name="lin_acc" type="Vector3" />
+			<param index="1" name="desired_velocity" type="Vector3" />
+			<param index="2" name="desired_ang" type="Quaternion" />
+			<param index="3" name="halflife_vel" type="float" />
+			<param index="4" name="halflife_ang" type="float" />
+			<param index="5" name="dt" type="float" />
+			<description>
+			</description>
+		</method>
+		<method name="divide">
+			<return type="Kform" />
+			<param index="0" name="_unnamed_arg0" type="Kform" />
+			<description>
+			</description>
+		</method>
+		<method name="inverse">
+			<return type="void" />
+			<description>
+				Inverse the kform
+			</description>
+		</method>
+		<method name="multiply">
+			<return type="Kform" />
+			<param index="0" name="_unnamed_arg0" type="Kform" />
+			<description>
+			</description>
+		</method>
+	</methods>
+	<members>
+		<member name="angular_velocity" type="Vector3" setter="set_angular_velocity" getter="get_angular_velocity" default="Vector3(0, 0, 0)">
+		</member>
+		<member name="linear_velocity" type="Vector3" setter="set_linear_velocity" getter="get_linear_velocity" default="Vector3(0, 0, 0)">
+		</member>
+		<member name="position" type="Vector3" setter="set_position" getter="get_position" default="Vector3(0, 0, 0)">
+		</member>
+		<member name="rotation" type="Quaternion" setter="set_rotation" getter="get_rotation" default="Quaternion(0, 0, 0, 1)">
+		</member>
+		<member name="scalar_velocity" type="Vector3" setter="set_scalar_velocity" getter="get_scalar_velocity" default="Vector3(0, 0, 0)">
+		</member>
+		<member name="scale" type="Vector3" setter="set_scale" getter="get_scale" default="Vector3(1, 1, 1)">
+		</member>
+	</members>
+</class>

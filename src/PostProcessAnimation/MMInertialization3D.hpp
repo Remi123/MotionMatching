@@ -13,21 +13,19 @@
 #include <godot_cpp/templates/vector.hpp>
 #include <godot_cpp/variant/node_path.hpp>
 
-#include <godot_cpp/classes/animation_mixer.hpp>
 #include <godot_cpp/classes/skeleton3d.hpp>
-#include <godot_cpp/classes/skeleton_modifier3d.hpp>
 #include <godot_cpp/classes/skeleton_ik3d.hpp>
-
+#include <godot_cpp/classes/skeleton_modifier3d.hpp>
 
 #include <Math/KForm.hpp>
 
 #include <MotionFeatures/MFBonesInfo.hpp>
 
-
 using namespace godot;
 
-struct MMInertialization3D : godot::SkeletonIK3D {
-	GDCLASS(MMInertialization3D, SkeletonIK3D);
+// TODO : Inherit SkeletonModifier
+struct MMInertialization3D : godot::SkeletonModifier3D {
+	GDCLASS(MMInertialization3D, SkeletonModifier3D);
 	friend class MFBonesInfo;
 
 public:
@@ -42,34 +40,16 @@ public:
 
 	kforms offsets = { 0 };
 	kforms bones = { 0 };
-	kforms bone_model = {0};
-
-	GETSET(AnimationMixer *, mixer, nullptr);
-	Skeleton3D *skeleton{ nullptr };
-	Skeleton3D *get_skeleton() { return skeleton; }
-	void set_skeleton(Skeleton3D *value) {
-		skeleton = value;
-		inertialize_reset();
-	}
+	kforms bone_model = { 0 };
 
 	GETSET(float, halflife, 0.1f);
-	GETSET(float, ratio, 1.0f);
-
-	bool active{ true };
-	bool get_active() { return active; }
-	void set_active(bool value) {
-		active = value;
-		inertialize_reset();
-	}
 
 	virtual void _ready() override {
 		inertialize_reset();
-		Callable advance_func = callable_mp(this,&MMInertialization3D::advance).bind(0.016);
-
-		this->connect("modification_processed",advance_func);
 	}
 
 	void inertialize_reset() {
+		auto *skeleton = get_skeleton();
 		if (skeleton == nullptr)
 			return;
 		const auto bone_count = skeleton->get_bone_count();
@@ -84,11 +64,9 @@ public:
 
 			offsets.reset(b);
 		}
-		for(int id = 0; id < skeleton->get_bone_count(); ++id)
-		{
+		for (int id = 0; id < skeleton->get_bone_count(); ++id) {
 			int parent = skeleton->get_bone_parent(id);
-			if(parent != -1)
-			{
+			if (parent != -1) {
 				bone_model[id] = (kform)bone_model[parent] * (kform)bones[id];
 			} else {
 				bone_model[id] = (kform)bones[id];
@@ -96,19 +74,17 @@ public:
 		}
 	}
 
-	virtual void _process(double delta) override {
-		return;
-		if (mixer != nullptr && mixer->get_callback_mode_process() == AnimationMixer::AnimationCallbackModeProcess::ANIMATION_CALLBACK_MODE_PROCESS_IDLE)
-			advance(delta);
-	}
-
-	virtual void _physics_process(double delta) override {
-		return;
-		if (mixer != nullptr && mixer->get_callback_mode_process() == AnimationMixer::AnimationCallbackModeProcess::ANIMATION_CALLBACK_MODE_PROCESS_PHYSICS)
+	virtual void _process_modification() {
+		// Find delta
+		const float delta = get_skeleton()->get_modifier_callback_mode_process() == Skeleton3D::ModifierCallbackModeProcess::MODIFIER_CALLBACK_MODE_PROCESS_IDLE ? get_process_delta_time() : get_physics_process_delta_time();
+		if (is_active())
 			advance(delta);
 	}
 
 	void advance(double delta) {
+		auto *skeleton = get_skeleton();
+		if (is_active() == false || skeleton == nullptr)
+			return;
 		switch (type) {
 			case InertializationType::Simple: {
 				_simple(delta);
@@ -119,12 +95,11 @@ public:
 				break;
 			}
 		}
-		for(int id = 0; id < skeleton->get_bone_count(); ++id)
-		{
+
+		for (int id = 0; id < skeleton->get_bone_count(); ++id) {
 			int parent = skeleton->get_bone_parent(id);
 			kform step{};
-			if(parent != -1)
-			{
+			if (parent != -1) {
 				step = (kform)bone_model[parent] * (kform)bones[id];
 			} else {
 				step = (kform)bones[id];
@@ -135,13 +110,11 @@ public:
 			bone_model.ang[id] = step.ang;
 			bone_model.scl[id] = step.scl;
 			bone_model.svl[id] = step.svl;
-			
 		}
 	}
 
 	void _simple(double delta) {
-		if (active == false || skeleton == nullptr || !mixer->is_active())
-			return;
+		auto *skeleton = get_skeleton();
 
 		bones.reserve(skeleton->get_bone_count());
 		offsets.reserve(skeleton->get_bone_count());
@@ -165,7 +138,8 @@ public:
 	}
 
 	void _decay(double delta) {
-		if (active == false || skeleton == nullptr || !mixer->is_active())
+		auto *skeleton = get_skeleton();
+		if (is_active() == false || skeleton == nullptr)
 			return;
 
 		bones.reserve(skeleton->get_bone_count());
@@ -206,8 +180,8 @@ public:
 		}
 	}
 
-	Dictionary get_bone_model(StringName bone)const{
-		return (Dictionary)bone_model[skeleton->find_bone(bone)];
+	Dictionary get_bone_model(StringName bone) const {
+		return (Dictionary)bone_model[get_skeleton()->find_bone(bone)];
 	}
 
 protected:
@@ -216,23 +190,11 @@ protected:
 		ClassDB::bind_method(D_METHOD("get_type"), &MMInertialization3D::get_type);
 		ADD_PROPERTY(PropertyInfo(Variant::INT, "type", godot::PROPERTY_HINT_ENUM, "Simple"), "set_type", "get_type");
 
-		ClassDB::bind_method(D_METHOD("set_active", "value"), &MMInertialization3D::set_active, DEFVAL(true));
-		ClassDB::bind_method(D_METHOD("get_active"), &MMInertialization3D::get_active);
-		godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::BOOL, "active"), "set_active", "get_active");
-
 		ClassDB::bind_method(D_METHOD("set_halflife", "value"), &MMInertialization3D::set_halflife);
 		ClassDB::bind_method(D_METHOD("get_halflife"), &MMInertialization3D::get_halflife);
 		godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT, "halflife", PROPERTY_HINT_RANGE, "0.0,1.0,0.01,or_greater"), "set_halflife", "get_halflife");
 
-		ClassDB::bind_method(D_METHOD("set_mixer", "value"), &MMInertialization3D::set_mixer);
-		ClassDB::bind_method(D_METHOD("get_mixer"), &MMInertialization3D::get_mixer);
-		godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::OBJECT, "mixer", PROPERTY_HINT_NODE_TYPE, "AnimationMixer", PROPERTY_USAGE_SCRIPT_VARIABLE | PROPERTY_USAGE_DEFAULT), "set_mixer", "get_mixer");
-
-		ClassDB::bind_method(D_METHOD("set_skeleton", "value"), &MMInertialization3D::set_skeleton);
-		ClassDB::bind_method(D_METHOD("get_skeleton"), &MMInertialization3D::get_skeleton);
-		godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::OBJECT, "skeleton", PROPERTY_HINT_NODE_TYPE, "Skeleton3D", PROPERTY_USAGE_SCRIPT_VARIABLE | PROPERTY_USAGE_DEFAULT), "set_skeleton", "get_skeleton");
-
-		ClassDB::bind_method(D_METHOD("get_bone_model","bone"),&MMInertialization3D::get_bone_model);
+		ClassDB::bind_method(D_METHOD("get_bone_model", "bone"), &MMInertialization3D::get_bone_model);
 
 		BIND_ENUM_CONSTANT(Simple);
 		BIND_ENUM_CONSTANT(OffsetDecay);

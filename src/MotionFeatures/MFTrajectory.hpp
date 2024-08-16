@@ -9,10 +9,12 @@
 
 #include <godot_cpp/classes/editor_plugin.hpp>
 #include <godot_cpp/core/class_db.hpp>
+#include <godot_cpp/core/error_macros.hpp>
 #include <godot_cpp/core/method_bind.hpp>
 #include <godot_cpp/templates/hash_map.hpp>
 #include <godot_cpp/templates/local_vector.hpp>
 #include <godot_cpp/templates/vector.hpp>
+
 
 #include <godot_cpp/classes/time.hpp>
 
@@ -69,6 +71,33 @@ public:
 		Direction
 	};
 
+	PackedFloat32Array serialize(const Kform local_kform) {
+		PackedFloat32Array result{};
+		std::bitset<32> bit(options);
+		if (bit.test(Options::Position)) {
+			const auto pos = local_kform.get_pos();
+			result.append(pos.x);
+			if (coordinate == Coordinates::XYZ)
+				result.append(pos.y);
+			result.append(pos.z);
+		}
+		if (bit.test(Options::Velocity)) {
+			const auto vel = local_kform.get_vel();
+			result.append(vel.x);
+			if (coordinate == Coordinates::XYZ)
+				result.append(vel.y);
+			result.append(vel.z);
+		}
+		if (bit.test(Options::Direction)) {
+			const auto dir = local_kform.get_rot().xform(Vector3(0, 0, 1));
+			result.append(dir.x);
+			if (coordinate == Coordinates::XYZ)
+				result.append(dir.y);
+			result.append(dir.z);
+		}
+		return result;
+	}
+
 protected:
 	static void _bind_methods() {
 		ClassDB::bind_method(D_METHOD("set_time_offset", "value"), &MFTrajectoryOptions::set_time_offset, DEFVAL(0.0));
@@ -92,18 +121,12 @@ protected:
 struct MFTrajectory : public MotionFeature {
 	GDCLASS(MFTrajectory, MotionFeature)
 public:
-	virtual ~MFTrajectory() = default;
-
 	Skeleton3D *skeleton{ nullptr };
 	Skeleton3D *get_skeleton() { return skeleton; }
 	void set_skeleton(Skeleton3D *value) { skeleton = value; }
 	String root_bone_track = "%GeneralSkeleton:Root";
 
 	GETSET(TypedArray<MFTrajectoryOptions>, options);
-
-	GETSET(PackedFloat32Array, past_time_dt);
-	GETSET(PackedFloat32Array, future_time_dt);
-	GETSET(bool, use_y_coordinate, false);
 
 	GETSET(float, weight_history_pos, 1.0f);
 	GETSET(float, weight_prediction_pos, 1.0f);
@@ -133,7 +156,7 @@ public:
 			}
 		}
 		// Standardize
-		return MMUtil::standardize(result);
+		return MMUtil::softmax(result);
 	}
 
 	PackedStringArray get_hints() const {
@@ -245,50 +268,15 @@ public:
 		return result;
 	}
 
-	// TODO Fix
-	PackedFloat32Array serialize(PackedVector3Array array) {
-		PackedFloat32Array result;
-
-		int counter = 0;
+	// TODO : Add check for same nb of kform
+	PackedFloat32Array serialize_trajectory_local(const TypedArray<Kform> local_kform) {
+		ERR_FAIL_COND_V_MSG(local_kform.size() != options.size(), {}, "local_kform isn't the same size as the number of options.");
+		PackedFloat32Array result{};
 		for (int i = 0; i < options.size(); ++i) {
 			MFTrajectoryOptions *opt = cast_to<MFTrajectoryOptions>(options[i]);
-			std::bitset<32> bit = opt->options;
-			for (int o = 0; o < bit.size(); ++o) {
-				Vector3 I = array[counter];
-				if (opt->coordinate == MFTrajectoryOptions::Coordinates::XZ) {
-					result.append(I.x);
-					result.append(I.z);
-				} else if (opt->coordinate == MFTrajectoryOptions::Coordinates::XYZ) {
-					result.append(I.x);
-					result.append(I.y);
-					result.append(I.z);
-				}
-				++counter;
-			}
-		}
-		return result;
-	}
-
-	// TODO Fix for options
-	PackedFloat32Array serialize_trajectory_local(PackedVector3Array p_history_pos, PackedVector3Array p_future_pos, PackedVector3Array p_future_dir) {
-		PackedFloat32Array result{};
-		for (auto elem : p_history_pos) {
-			result.append(elem.x);
-			if (use_y_coordinate)
-				result.append(elem.y);
-			result.append(elem.z);
-		}
-		for (auto elem : p_future_pos) {
-			result.append(elem.x);
-			if (use_y_coordinate)
-				result.append(elem.y);
-			result.append(elem.z);
-		}
-		for (auto elem : p_future_dir) {
-			result.append(elem.x);
-			if (use_y_coordinate)
-				result.append(elem.y);
-			result.append(elem.z);
+			ERR_FAIL_COND_V_EDMSG(opt == nullptr, {}, "MFTrajectoryOption object is null");
+			const PackedFloat32Array _to_append = opt->serialize(*cast_to<Kform>(local_kform[i]));
+			result.append_array(_to_append);
 		}
 		return result;
 	}
@@ -330,7 +318,7 @@ public:
 protected:
 	static void _bind_methods() {
 		{
-			ClassDB::bind_method(D_METHOD("serialize_trajectory_local", "history_local_pos", "prediction_local_pos", "prediction_local_direction"), &MFTrajectory::serialize_trajectory_local);
+			ClassDB::bind_method(D_METHOD("serialize_trajectory_local", "local_kforms"), &MFTrajectory::serialize_trajectory_local);
 			// ClassDB::bind_method(D_METHOD("serialize", "unnormalized_values_local_to_character"), &MFTrajectory::serialize);
 		}
 
@@ -339,20 +327,6 @@ protected:
 		ClassDB::bind_method(D_METHOD("set_options", "value"), &MFTrajectory::set_options);
 		ClassDB::bind_method(D_METHOD("get_options"), &MFTrajectory::get_options);
 		godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::ARRAY, "options", godot::PROPERTY_HINT_TYPE_STRING, u::str(Variant::OBJECT) + '/' + u::str(Variant::BASIS) + ":MFTrajectoryOptions", PROPERTY_USAGE_DEFAULT), "set_options", "get_options");
-
-		PackedFloat32Array m_default{};
-		m_default.push_back(0.2);
-		m_default.push_back(0.4);
-		ClassDB::bind_method(D_METHOD("set_past_time_dt", "value"), &MFTrajectory::set_past_time_dt, (m_default));
-		ClassDB::bind_method(D_METHOD("get_past_time_dt"), &MFTrajectory::get_past_time_dt);
-		godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "past_time_dt"), "set_past_time_dt", "get_past_time_dt");
-		ClassDB::bind_method(D_METHOD("set_future_time_dt", "value"), &MFTrajectory::set_future_time_dt);
-		ClassDB::bind_method(D_METHOD("get_future_time_dt"), &MFTrajectory::get_future_time_dt);
-		godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "future_time_dt"), "set_future_time_dt", "get_future_time_dt");
-
-		ClassDB::bind_method(D_METHOD("set_use_y_coordinate", "value"), &MFTrajectory::set_use_y_coordinate, false);
-		ClassDB::bind_method(D_METHOD("get_use_y_coordinate"), &MFTrajectory::get_use_y_coordinate);
-		godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::BOOL, "use_y_coordinate"), "set_use_y_coordinate", "get_use_y_coordinate");
 
 		ClassDB::bind_method(D_METHOD("set_debug_color_history", "value"), &MFTrajectory::set_debug_color_history);
 		ClassDB::bind_method(D_METHOD("get_debug_color_history"), &MFTrajectory::get_debug_color_history);

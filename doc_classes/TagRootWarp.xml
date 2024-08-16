@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="TagRootWarp" inherits="TagAnimation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/godotengine/godot/master/doc/class.xsd">
+	<brief_description>
+	</brief_description>
+	<description>
+	</description>
+	<tutorials>
+	</tutorials>
+	<members>
+		<member name="rotation_type" type="int" setter="set_rotation_type" getter="get_rotation_type" enum="TagRootWarp.rotation_type_t" default="0">
+		</member>
+		<member name="warp_rule" type="int" setter="set_warp_rule" getter="get_warp_rule" enum="TagRootWarp.warp_rule_t" default="0">
+		</member>
+	</members>
+	<constants>
+		<constant name="Z" value="0" enum="warp_rule_t">
+		</constant>
+		<constant name="Zr" value="1" enum="warp_rule_t">
+		</constant>
+		<constant name="XY" value="2" enum="warp_rule_t">
+		</constant>
+		<constant name="XYr" value="3" enum="warp_rule_t">
+		</constant>
+		<constant name="XYZ" value="4" enum="warp_rule_t">
+		</constant>
+		<constant name="XYZr" value="5" enum="warp_rule_t">
+		</constant>
+		<constant name="R" value="6" enum="warp_rule_t">
+		</constant>
+		<constant name="Align" value="0" enum="rotation_type_t">
+		</constant>
+		<constant name="Facing" value="1" enum="rotation_type_t">
+		</constant>
+	</constants>
+</class>

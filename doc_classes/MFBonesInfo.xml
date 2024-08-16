@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="MFBonesInfo" inherits="MotionFeature" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/godotengine/godot/master/doc/class.xsd">
+	<brief_description>
+	</brief_description>
+	<description>
+	</description>
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="bake_pose">
+			<return type="PackedFloat32Array" />
+			<param index="0" name="animation_library" type="MMAnimationLibrary" />
+			<param index="1" name="animation_name" type="String" />
+			<param index="2" name="time" type="float" />
+			<description>
+			</description>
+		</method>
+		<method name="get_dimension" qualifiers="const">
+			<return type="int" />
+			<description>
+			</description>
+		</method>
+		<method name="get_hints" qualifiers="const">
+			<return type="PackedStringArray" />
+			<description>
+			</description>
+		</method>
+		<method name="get_weights" qualifiers="const">
+			<return type="PackedFloat32Array" />
+			<description>
+			</description>
+		</method>
+		<method name="serialize_MMAnimationPlayer">
+			<return type="PackedFloat32Array" />
+			<param index="0" name="body" type="MMAnimationLibrary" />
+			<param index="1" name="_unnamed_arg1" type="MMAnimationPlayer" />
+			<description>
+			</description>
+		</method>
+		<method name="serialize_MMInertialization3D">
+			<return type="PackedFloat32Array" />
+			<param index="0" name="body" type="MMInertialization3D" />
+			<description>
+			</description>
+		</method>
+		<method name="show_debug_info">
+			<return type="void" />
+			<param index="0" name="gizmo" type="EditorNode3DGizmo" />
+			<param index="1" name="lib" type="MMAnimationLibrary" />
+			<param index="2" name="animation_name" type="String" />
+			<param index="3" name="timestampskeleton" type="float" />
+			<param index="4" name="_unnamed_arg4" type="Skeleton3D" />
+			<description>
+			</description>
+		</method>
+	</methods>
+	<members>
+		<member name="Bones Names" type="PackedStringArray" setter="set_bone_names" getter="get_bone_names" default="PackedStringArray()">
+		</member>
+		<member name="bone_info_type" type="int" setter="set_bone_info_type" getter="get_bone_info_type" default="0">
+		</member>
+		<member name="debug_color_position" type="Color" setter="set_debug_color_position" getter="get_debug_color_position" default="Color(1, 1, 1, 1)">
+		</member>
+		<member name="debug_color_velocity" type="Color" setter="set_debug_color_velocity" getter="get_debug_color_velocity" default="Color(0, 0, 0, 1)">
+		</member>
+		<member name="inertialization_halflife" type="float" setter="set_inertialization_halflife" getter="get_inertialization_halflife" default="0.1">
+		</member>
+		<member name="relative_to_bone" type="String" setter="set_relative_to_bone" getter="get_relative_to_bone" default="&quot;&quot;">
+		</member>
+		<member name="weight_bone_ang" type="float" setter="set_weight_bone_ang" getter="get_weight_bone_ang" default="1.0">
+		</member>
+		<member name="weight_bone_pos" type="float" setter="set_weight_bone_pos" getter="get_weight_bone_pos" default="1.0">
+		</member>
+		<member name="weight_bone_vel" type="float" setter="set_weight_bone_vel" getter="get_weight_bone_vel" default="1.0">
+		</member>
+		<member name="weight_inertialization" type="float" setter="set_weight_inertialization" getter="get_weight_inertialization" default="1.0">
+		</member>
+	</members>
+</class>

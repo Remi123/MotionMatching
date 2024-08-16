@@ -1,4 +1,7 @@
 #pragma once
+
+#include <godot_cpp/core/gdvirtual.gen.inc>
+#include <godot_cpp/classes/engine.hpp>
 #include <godot_cpp/classes/curve.hpp>
 #include <godot_cpp/core/class_db.hpp>
 #include <godot_cpp/core/method_bind.hpp>
@@ -8,6 +11,7 @@
 #include <ranges>
 
 #include <Util/Util.hpp>
+
 
 using namespace godot;
 using u = godot::UtilityFunctions;
@@ -20,14 +24,14 @@ public:
 	real_t timestamp{};
 	real_t get_timestamp() { return timestamp; }
 	void set_timestamp(real_t value) {
-		const real_t snap = Engine::get_singleton()->get_physics_ticks_per_second();
+		const real_t snap = godot::Engine::get_singleton()->get_physics_ticks_per_second();
 		timestamp = std::max(real_t(0.0), std::floor(value * snap) / snap);
 		emit_changed();
 	}
 	real_t duration{ real_t(0.016) };
 	real_t get_duration() { return duration; }
 	void set_duration(real_t value) {
-		const real_t snap = Engine::get_singleton()->get_physics_ticks_per_second();
+		const real_t snap = godot::Engine::get_singleton()->get_physics_ticks_per_second();
 		duration = std::abs(value); // std::max(real_t(0.0), std::floor(value * snap) / snap );
 		emit_changed();
 	}

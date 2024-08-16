@@ -1,56 +1,63 @@
 #!/usr/bin/env python
-from glob import glob
-from pathlib import Path
-import fnmatch
 import os
 
 
-try:
-    env = Environment()
-    print(env.ARGUMENTS)
-except:
-    # Default tools with no platform defaults to gnu toolchain.
-    # We apply platform specific toolchains via our custom tools.
-    env = Environment(tools=["default"], PLATFORM="")
-
-# TODO: Do not copy environment after godot-cpp/test is updated <https://github.com/godotengine/godot-cpp/blob/master/test/SConstruct>.
-# env["gdextension_dir"]=Dir("gdextension_api_files/")
-env.Append(gdextension_dir= ("gdextension_api_files/"))
-Export('env')
-env = SConscript("godot-cpp/SConstruct")
+def normalize_path(val, env):
+    return val if os.path.isabs(val) else os.path.join(env.Dir("#").abspath, val)
 
 
-# AddOption("gdextension_dir","gdextension_api_files/")
+def validate_parent_dir(key, val, env):
+    if not os.path.isdir(normalize_path(os.path.dirname(val), env)):
+        raise UserError("'%s' is not a directory: %s" % (key, os.path.dirname(val)))
 
 
+libname = "MotionMatching"
+projectdir = "demo"
 
-# For some reason the 
-# print(env["CPPDEFINES"])
-# print(env["CXXFLAGS"])
-# print(env["disable_exceptions"])
-# if env["disable_exceptions"]:
-#     if env.get("is_msvc", False):
-#         # env.Append(CPPDEFINES=[("_HAS_EXCEPTIONS", 0)])
-#         env.Append(CXXFLAGS=["/EHsc"])
-#     else:
-#         env.Append(CXXFLAGS=["-fno-exceptions"])
-# elif env.get("is_msvc", False):
-#     env.Append(CXXFLAGS=["/EHsc"])
+localEnv = Environment(tools=["default"], PLATFORM="")
 
+customs = ["custom.py"]
+customs = [os.path.abspath(path) for path in customs]
 
-# Initial options inheriting from CLI args
-opts = Variables([], ARGUMENTS)
+opts = Variables(customs, ARGUMENTS)
 opts.Add("Boost_INCLUDE_DIR", "boost library include path", "")
 opts.Add("Boost_LIBRARY_DIRS", "boost library library path", "")
 opts.Add("precision","floating point precision","single")
 
-opts.Update(env)
+opts.Add(
+    BoolVariable(
+        key="compiledb",
+        help="Generate compilation DB (`compile_commands.json`) for external tools",
+        default=localEnv.get("compiledb", False),
+    )
+)
+opts.Add(
+    PathVariable(
+        key="compiledb_file",
+        help="Path to a custom `compile_commands.json` file",
+        default=localEnv.get("compiledb_file", "compile_commands.json"),
+        validator=validate_parent_dir,
+    )
+)
+opts.Update(localEnv)
+
+Help(opts.GenerateHelpText(localEnv))
+
+env = localEnv.Clone()
+env["compiledb"] = False
+
 boost_path = Dir(env['Boost_INCLUDE_DIR'])
 
-env["precision"] = env['precision']
 
-# Add Included files.
-env.Append(CPPPATH=["src/","thirdparty/",boost_path])
+env.Tool("compilation_db")
+compilation_db = env.CompilationDatabase(
+    normalize_path(localEnv["compiledb_file"], localEnv)
+)
+env.Alias("compiledb", compilation_db)
+
+# env.Append(gdextension_dir= ("gdextension_api_files/"))
+
+env = SConscript("godot-cpp/SConstruct", {"env": env, "customs": customs})
 
 # Require C++20
 if env.get("is_msvc", False):
@@ -63,53 +70,28 @@ else:
     wtmp = wtmp.replace("-std=c++17","-std=c++20")
     env.Replace(CXXFLAGS = wtmp)
 
-sources = []
-for root,dirnames,filenames in os.walk("./src/"):
-    for filename in fnmatch.filter(filenames,"*.cpp"):
-        print(os.path.join(root, filename))
-        sources.append(Glob(os.path.join(root, filename)))
-for root,dirnames,filenames in os.walk("./thirdparty/"):
-    for filename in fnmatch.filter(filenames,"*.cpp"):
-        sources.append(Glob(os.path.join(root, filename)))
+env.Append(CPPPATH=["src/",boost_path])
+sources = Glob("src/*.cpp")
 
+if env["target"] in ["editor", "template_debug"]:
+    doc_data = env.GodotCPPDocData("src/gen/doc_data.gen.cpp", source=Glob("doc_classes/*.xml"))
+    sources.append(doc_data)
 
+file = "{}{}{}".format(libname, env["suffix"], env["SHLIBSUFFIX"])
 
+if env["platform"] == "macos" or env["platform"] == "ios":
+    platlibname = "{}.{}.{}".format(libname, env["platform"], env["target"])
+    file = "{}.framework/{}".format(env["platform"], platlibname, platlibname)
 
-# Find gdextension path even if the directory or extension is renamed (e.g. project/addons/example/example.gdextension).
-# (extension_path,) = glob("project/addons/*/*.gdextension")
+libraryfile = "bin/{}/{}".format(env["platform"], file)
+library = env.SharedLibrary(
+    libraryfile,
+    source=sources,
+)
 
-# Find the addon path (e.g. project/addons/example).
-addon_path = "addons/MotionMatching/"
+copy = env.InstallAs("{}/addons/{}/bin/{}/lib{}".format(projectdir,libname, env["platform"], file), library)
 
-# Find the project name from the gdextension file (e.g. example).
-project_name = "MotionMatching"
-
-# TODO: Cache is disabled currently.
-scons_cache_path = os.environ.get("SCONS_CACHE")
-if scons_cache_path != None:
-    CacheDir(scons_cache_path)
-    print("Scons cache enabled... (path: '" + scons_cache_path + "')")
-
-
-if env["platform"] == "macos":
-    library = env.SharedLibrary(
-        addon_path + "bin/lib{0}.{1}.{2}.framework/{0}.{1}.{2}".format(
-            project_name,
-            env["platform"],
-            env["target"],
-        ),
-        source=sources,
-    )
-else:
-    library = env.SharedLibrary(
-        addon_path + "bin/lib{}.{}.{}.{}{}".format(
-            project_name,
-            env["platform"],
-            env["target"],
-            env["arch"],
-            env["SHLIBSUFFIX"],
-        ),
-        source=sources,
-    )
-
-Default(library)
+default_args = [library, copy]
+if localEnv.get("compiledb", False):
+    default_args += [compilation_db]
+Default(*default_args)

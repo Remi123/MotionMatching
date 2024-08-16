@@ -18,11 +18,11 @@ public:
 	GETSET(Color, debug_color_position, godot::Color(1.0f, 1.0f, 1.0f));
 	GETSET(Color, debug_color_velocity, godot::Color(0.0f, 0.0f, 0.0f));
 
-	GETSET(real_t, weight_bone_pos);
-	GETSET(real_t, weight_bone_vel);
-	GETSET(real_t, weight_bone_rot);
-	GETSET(real_t, weight_bone_ang);
-	GETSET(real_t, weight_inertialization);
+	GETSET(real_t, weight_bone_pos,1.0);
+	GETSET(real_t, weight_bone_vel,1.0);
+	GETSET(real_t, weight_bone_rot,1.0);
+	GETSET(real_t, weight_bone_ang,1.0);
+	GETSET(real_t, weight_inertialization,1.0);
 
 	GETSET(String, relative_to_bone, "");
 
@@ -163,11 +163,11 @@ public:
 		PackedFloat32Array result{};
 		for (size_t i = 0; i < bone_names.size(); ++i) {
 			String bone = bone_names[i];
-			int id = node->skeleton->find_bone(bone);
+			int id = node->get_skeleton()->find_bone(bone);
 
 			kform kbone = (kform)node->bone_model[id];
-			if(!relative_to_bone.is_empty()){
-				const int relative_id = node->skeleton->find_bone(relative_to_bone);
+			if (!relative_to_bone.is_empty()) {
+				const int relative_id = node->get_skeleton()->find_bone(relative_to_bone);
 				kbone = kform(node->bone_model[relative_id]).inverse() * kbone;
 			}
 			Vector3 const pos = kbone.pos, vel = kbone.vel, dir = kbone.rot.xform(Vector3(0, 0, 1)), ang = kbone.ang;
@@ -202,14 +202,14 @@ public:
 		return result;
 	}
 
-	PackedFloat32Array serialize_mmplayer(Ref<MMAnimationLibrary> mmlib,MMAnimationPlayer *mm_player) {
+	PackedFloat32Array serialize_mmplayer(Ref<MMAnimationLibrary> mmlib, MMAnimationPlayer *mm_player) {
 		ERR_FAIL_NULL_V_MSG(mm_player, {}, "MMAnimationPlayer is null");
 		constexpr size_t size = 3;
 		PackedFloat32Array result{};
 		{
 			for (size_t i = 0; i < bone_names.size(); ++i) {
 				kform kbone = mm_player->_get_model_kform(bone_names[i]);
-				if(!relative_to_bone.is_empty()){
+				if (!relative_to_bone.is_empty()) {
 					kbone = mm_player->_get_model_kform(relative_to_bone).inverse() * kbone;
 				}
 				Vector3 const pos = kbone.pos, vel = kbone.vel, dir = kbone.rot.xform(Vector3(0, 0, 1)), ang = kbone.ang;
@@ -268,7 +268,7 @@ public:
 			Ref<PrismMesh> mesh{};
 			mesh.instantiate();
 			mesh->set_size(Vector3{ 1, 1.2, 1 } * 0.05);
-			gizmo->add_mesh(mesh, mat, global.rotated_local(Vector3(0, 0, 1), Math::deg_to_rad(90.0)));
+			gizmo->add_mesh(mesh, mat, global);
 
 			gizmo->add_lines(Array::make((root_tr * (Transform3D)relative).origin, global.origin), mat);
 			gizmo->add_lines(Array::make(global.origin, global.xform(kbone.vel)), mat);
@@ -332,7 +332,7 @@ protected:
 		ClassDB::bind_method(D_METHOD("get_weights"), &MFBonesInfo::get_weights);
 		ClassDB::bind_method(D_METHOD("get_dimension"), &MFBonesInfo::get_dimension);
 
-		ClassDB::bind_method(D_METHOD("bake_pose","animation_library", "animation_name", "time"), &MFBonesInfo::bake_pose);
+		ClassDB::bind_method(D_METHOD("bake_pose", "animation_library", "animation_name", "time"), &MFBonesInfo::bake_pose);
 
 		ClassDB::bind_method(D_METHOD("show_debug_info", "gizmo", "lib", "animation_name", "timestamp"
 																						   "skeleton"),

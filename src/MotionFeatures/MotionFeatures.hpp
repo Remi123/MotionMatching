@@ -92,13 +92,12 @@ public:
 
 	auto serialize_variants(const Variant **args, GDExtensionInt arg_count, GDExtensionCallError &error) -> PackedFloat32Array {
 		PackedFloat32Array result{};
-		for(auto i = 0; i < arg_count;++i)
-		{
-			serialize_variant(*(args[i]),result);
+		for (auto i = 0; i < arg_count; ++i) {
+			serialize_variant(*(args[i]), result);
 		}
 		return result;
 	}
-	
+
 	static void serialize_variant(const Variant &v, PackedFloat32Array &result) {
 		using namespace godot;
 		if (v.get_type() == Variant::BOOL) {
@@ -137,8 +136,7 @@ public:
 			result.append(q.y);
 			result.append(q.z);
 			result.append(q.w);
-		}
-		else if (v.get_type() == Variant::PACKED_FLOAT32_ARRAY){
+		} else if (v.get_type() == Variant::PACKED_FLOAT32_ARRAY) {
 			result.append_array((PackedFloat32Array)v);
 		}
 	}

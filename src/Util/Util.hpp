@@ -2,6 +2,7 @@
 
 #include <cmath>
 #include <godot_cpp/classes/global_constants.hpp>
+#include <godot_cpp/classes/ref_counted.hpp>
 #include <godot_cpp/core/class_db.hpp>
 #include <godot_cpp/core/method_bind.hpp>
 #include <godot_cpp/variant/Variant.hpp>
@@ -29,6 +30,7 @@
 	ClassDB::bind_method(D_METHOD(STR(get_##variable)), &type::get_##variable);          \
 	::godot::ClassDB::add_property(get_class_static(), PropertyInfo(variant_type, #variable, __VA_ARGS__), STR(set_##variable), STR(get_##variable));
 
+using namespace godot;
 struct MMUtil : godot::RefCounted {
 	GDCLASS(MMUtil, RefCounted)
 public:
@@ -70,9 +72,26 @@ public:
 		return output;
 	}
 
+	static Quaternion get_twist(const Quaternion q,const Vector3 p_axis) {
+		Vector3 rotationAxis = Vector3(q.x, q.y, q.z);
+		double dotProd = p_axis.dot(rotationAxis);
+		Vector3 projection = p_axis * dotProd;
+		Quaternion twist = Quaternion(projection.x, projection.y, projection.z, q.w).normalized();
+		if (dotProd < 0.0) {
+			twist = -twist;
+		}
+		return twist;
+	}
+
+	static Quaternion get_swing(const Quaternion q, const Vector3 p_axis) {
+		return q * MMUtil::get_twist(q,p_axis).inverse();
+	}
+
 protected:
 	static void _bind_methods() {
 		ClassDB::bind_static_method("MMUtil", D_METHOD("standardize", "arr_f32"), &MMUtil::standardize);
 		ClassDB::bind_static_method("MMUtil", D_METHOD("softmax", "arr_f32"), &MMUtil::softmax);
+		ClassDB::bind_static_method("MMUtil", D_METHOD("get_twist", "quaternion","axis"), &MMUtil::get_twist);
+		ClassDB::bind_static_method("MMUtil", D_METHOD("get_swing", "quaternion","axis"), &MMUtil::get_swing);
 	}
 };

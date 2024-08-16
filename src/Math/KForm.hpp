@@ -7,8 +7,6 @@
 #include <cmath>
 #include <numeric>
 
-#include <boost/container/vector.hpp>
-
 #include "godot_cpp/core/math.hpp"
 #include "godot_cpp/variant/vector3.hpp"
 #include <godot_cpp/variant/utility_functions.hpp>
@@ -26,7 +24,6 @@
 #include <godot_cpp/variant/dictionary.hpp>
 
 #include <Math/Spring.hpp>
-#include <Util/Util.hpp>
 
 using namespace godot;
 
@@ -315,18 +312,16 @@ static kform get_global_kform(Ref<SkeletonProfile> skel, Ref<Animation> anim, do
 			});
 }
 
-struct Kform : public RefCounted{
+struct Kform : public RefCounted {
 	GDCLASS(Kform, RefCounted);
 
 private:
-	
-
 public:
-kform k{};
-#define VAR(type,variable)\
-	type get_##variable() { return k.variable; } \
-	void set_##variable(type value) {          \
-		k.variable = value;                      \
+	kform k{};
+#define VAR(type, variable)                            \
+	type get_##variable() const { return k.variable; } \
+	void set_##variable(type value) {                  \
+		k.variable = value;                            \
 	}
 	VAR(Vector3, pos);
 	VAR(Quaternion, rot);
@@ -371,6 +366,36 @@ kform k{};
 		return result;
 	}
 
+	TypedArray<Kform> character_prediction(
+			Vector3 linear_acceleration,
+			Vector3 desired_velocity,
+			Quaternion desired_rotation,
+			real_t halflife_velocity, real_t halflife_rotation,
+			PackedFloat32Array deltas) {
+		TypedArray<Kform> result{};
+		for (auto dt : deltas) {
+			kform _k = k;
+			auto a = linear_acceleration;
+			Spring::_character_update(_k.pos, _k.vel, a, _k.rot, _k.ang, desired_velocity, desired_rotation, halflife_velocity, halflife_rotation, dt);
+			Ref<Kform> r{};
+			r.instantiate();
+			r->k = k;
+			result.append(r);
+		}
+		return result;
+	}
+
+	Vector3 character_update(
+			Vector3 linear_acceleration,
+			Vector3 desired_velocity,
+			Quaternion desired_rotation,
+			real_t halflife_velocity, real_t halflife_rotation,
+			real_t delta) {
+		auto a = linear_acceleration;
+		Spring::_character_update(k.pos, k.vel, a, k.rot, k.ang, desired_velocity, desired_rotation, halflife_velocity, halflife_rotation, delta);
+		return a;
+	}
+
 protected:
 	static void _bind_methods() {
 		ClassDB::bind_method(D_METHOD("set_position", "value"), &Kform::set_pos);
@@ -400,5 +425,8 @@ protected:
 		ClassDB::bind_method(D_METHOD("inverse"), &Kform::inverse);
 		ClassDB::bind_method(D_METHOD("multiply"), &Kform::multiply);
 		ClassDB::bind_method(D_METHOD("divide"), &Kform::divide);
+
+		ClassDB::bind_method(D_METHOD("character_update", "lin_acc", "desired_velocity", "desired_ang", "halflife_vel", "halflife_ang", "dt"), &Kform::character_update);
+		ClassDB::bind_method(D_METHOD("character_prediction", "lin_acc", "desired_velocity", "desired_ang", "halflife_vel", "halflife_ang", "dt"), &Kform::character_update);
 	}
 };

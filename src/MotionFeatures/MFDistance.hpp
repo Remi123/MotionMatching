@@ -73,12 +73,10 @@ public:
 		return hints;
 	}
 
-	PackedFloat32Array bake_pose(Ref<MMAnimationLibrary> mmlib, String animation_name, float time){
-
+	PackedFloat32Array bake_pose(Ref<MMAnimationLibrary> mmlib, String animation_name, float time) {
 		Ref<Animation> animation = mmlib->get_animation(animation_name);
 		String root_bone_track = u::str(mmlib->skeleton_path) + ":" + mmlib->skeleton_profile->get_root_bone();
 		Transform3D rest_pose = mmlib->skeleton_profile->get_reference_pose(mmlib->skeleton_profile->find_bone(mmlib->skeleton_profile->get_root_bone()));
-		
 
 		PackedFloat32Array result = {};
 		std::vector<Ref<TagMFEvent>> current_events{};
@@ -104,8 +102,8 @@ public:
 			Vector3 root_pos{}, anchor_pos{};
 			Quaternion root_rot{};
 			// Step 1 : Get root bone transform
-			Transform3D root_gtr = (Transform3D)get_global_kform(mmlib->skeleton_profile,animation,time,u::str(mmlib->skeleton_path) + ":" + mmlib->skeleton_profile->get_root_bone());
-			Transform3D anchor_gtr {};
+			Transform3D root_gtr = (Transform3D)get_global_kform(mmlib->skeleton_profile, animation, time, u::str(mmlib->skeleton_path) + ":" + mmlib->skeleton_profile->get_root_bone());
+			Transform3D anchor_gtr{};
 			// Step 2 : Get anchor point pos
 			if (event->anchor_point_strategy == TagMFDistance::Strategy::RootPos) {
 				kform const anchor_bone = get_global_kform(mmlib->skeleton_profile, animation, event->timestamp, u::str(mmlib->skeleton_path) + ":" + mmlib->skeleton_profile->get_root_bone());
@@ -113,14 +111,14 @@ public:
 				anchor_gtr = (Transform3D)anchor_bone;
 			} else if (event->anchor_point_strategy == TagMFDistance::Strategy::AnchorPoint) {
 				anchor_pos = event->reference_position;
-				anchor_gtr = Transform3D(Basis{},event->reference_position);
+				anchor_gtr = Transform3D(Basis{}, event->reference_position);
 			} else if (event->anchor_point_strategy == TagMFDistance::Strategy::AnchorBone) {
 				kform const anchor_bone = get_global_kform(mmlib->skeleton_profile, animation, event->timestamp, u::str(mmlib->skeleton_path) + ":" + event->reference_bone);
 				anchor_pos = anchor_bone.pos;
 				anchor_gtr = (Transform3D)anchor_bone;
 			}
 
-			value = ( root_gtr.inverse() * anchor_gtr).origin;
+			value = (root_gtr.inverse() * anchor_gtr).origin;
 
 			result.append(value.x);
 			result.append(value.y);
@@ -156,6 +154,6 @@ public:
 
 		ClassDB::bind_method(D_METHOD("get_hints"), &MFDistance::get_hints);
 
-		ClassDB::bind_method(D_METHOD("bake_pose", "mm_animation_library" , "animation_name", "time"), &MFDistance::bake_pose);
+		ClassDB::bind_method(D_METHOD("bake_pose", "mm_animation_library", "animation_name", "time"), &MFDistance::bake_pose);
 	}
 };

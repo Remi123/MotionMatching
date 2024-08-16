@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="SetRangeIndex" inherits="Resource" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/godotengine/godot/master/doc/class.xsd">
+	<brief_description>
+		Classe representing multi range of integer.  Concatenate ranges that overlap. Only store the limits of the ranges.
+	</brief_description>
+	<description>
+	</description>
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="AddRange">
+			<return type="void" />
+			<param index="0" name="from" type="int" />
+			<param index="1" name="to" type="int" />
+			<description>
+			</description>
+		</method>
+		<method name="Difference">
+			<return type="void" />
+			<param index="0" name="other" type="SetRangeIndex" />
+			<description>
+			</description>
+		</method>
+		<method name="Fix">
+			<return type="void" />
+			<description>
+				In case you manipulate the range property and you want to fix the overlaps.
+			</description>
+		</method>
+		<method name="Intersection">
+			<return type="void" />
+			<param index="0" name="other" type="SetRangeIndex" />
+			<description>
+			</description>
+		</method>
+		<method name="RemoveRange">
+			<return type="void" />
+			<param index="0" name="from" type="int" />
+			<param index="1" name="to" type="int" />
+			<description>
+			</description>
+		</method>
+		<method name="Union">
+			<return type="void" />
+			<param index="0" name="other" type="SetRangeIndex" />
+			<description>
+			</description>
+		</method>
+	</methods>
+	<members>
+		<member name="ranges" type="RangeIndex[]" setter="set_ranges" getter="get_ranges" default="[]">
+		</member>
+	</members>
+</class>

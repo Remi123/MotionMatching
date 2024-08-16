@@ -201,7 +201,7 @@ jobs:
             -   name: Compile Godot Library
                 if: steps.cache-godot-cpp.outputs.cache-hit != 'true'
                 run: |
-                      scons -j8 platform=${{ matrix.platform }} target=${{ matrix.target }} arch=${{ matrix.arch }}
+                      scons platform=${{ matrix.platform }} target=${{ matrix.target }} arch=${{ matrix.arch }}
                 working-directory: godot-cpp
 
             -   name: Compile Addon

@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="MMAnimationPlayer" inherits="AnimationPlayer" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/godotengine/godot/master/doc/class.xsd">
+	<brief_description>
+	</brief_description>
+	<description>
+	</description>
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="get_global_bone_info">
+			<return type="Dictionary" />
+			<param index="0" name="bone_name" type="StringName" />
+			<description>
+			</description>
+		</method>
+		<method name="get_inertialized_root_motion_angular">
+			<return type="Quaternion" />
+			<param index="0" name="delta_time" type="float" />
+			<description>
+			</description>
+		</method>
+		<method name="get_inertialized_root_motion_velocity">
+			<return type="Vector3" />
+			<description>
+			</description>
+		</method>
+		<method name="get_local_bone_info">
+			<return type="Dictionary" />
+			<param index="0" name="bone_name" type="StringName" />
+			<description>
+			</description>
+		</method>
+		<method name="get_model_bone_info">
+			<return type="Dictionary" />
+			<param index="0" name="bone_name" type="StringName" />
+			<description>
+			</description>
+		</method>
+		<method name="get_root_model_bone_info">
+			<return type="Dictionary" />
+			<param index="0" name="bone_name" type="StringName" />
+			<description>
+			</description>
+		</method>
+		<method name="inertialize_reset">
+			<return type="void" />
+			<param index="0" name="reset_bones" type="bool" default="false" />
+			<description>
+			</description>
+		</method>
+		<method name="request_animation">
+			<return type="bool" />
+			<param index="0" name="animation" type="StringName" />
+			<param index="1" name="timestamp" type="float" default="0.0" />
+			<param index="2" name="new_halflife" type="float" default="-1.0" />
+			<description>
+			</description>
+		</method>
+		<method name="request_pose">
+			<return type="void" />
+			<param index="0" name="animation" type="StringName" />
+			<param index="1" name="timestamp" type="float" default="0.0" />
+			<param index="2" name="new_halflife" type="float" default="-1.0" />
+			<description>
+			</description>
+		</method>
+	</methods>
+	<members>
+		<member name="halflife" type="float" setter="set_halflife" getter="get_halflife" default="0.1">
+		</member>
+		<member name="motion_tag" type="int" setter="set_motion_tag" getter="get_motion_tag" enum="MMAnimationPlayer.Motion_Tags" default="0">
+		</member>
+	</members>
+	<signals>
+		<signal name="post_calculation">
+			<description>
+			</description>
+		</signal>
+		<signal name="pre_calculation">
+			<description>
+			</description>
+		</signal>
+	</signals>
+	<constants>
+		<constant name="NoTag" value="0" enum="Motion_Tags">
+		</constant>
+		<constant name="StartUp" value="1" enum="Motion_Tags">
+		</constant>
+		<constant name="Active" value="2" enum="Motion_Tags">
+		</constant>
+		<constant name="Recovery" value="3" enum="Motion_Tags">
+		</constant>
+	</constants>
+</class>
