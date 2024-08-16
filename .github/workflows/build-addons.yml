@@ -14,7 +14,7 @@ on:
   workflow_dispatch:
 
 env:
-    LIBRARY_PATH: demos/addons/MotionMatching/bin
+    LIBRARY_PATH: demos/addons/MotionMatching/
 
 jobs:
     build:
