@@ -103,7 +103,7 @@ public:
 		return result;
 	}
 
-	friend static kform operator*(const kform parent, const kform w) {
+	friend kform operator*(const kform parent, const kform w) {
 		kform out;
 		out.pos = parent.rot.xform(w.pos * parent.scl) + parent.pos;
 		out.rot = parent.rot * w.rot;
@@ -115,7 +115,7 @@ public:
 		out.svl = w.svl + parent.svl;
 		return out;
 	}
-	friend static kform operator/(const kform v, const kform w) {
+	friend kform operator/(const kform v, const kform w) {
 		kform out;
 		out.pos = v.rot.xform_inv(w.pos - v.pos);
 		out.rot = v.rot.inverse() * w.rot;

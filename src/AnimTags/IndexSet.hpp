@@ -1,7 +1,6 @@
 #pragma once
 #include <algorithm>
 #include <bitset>
-#include <format>
 #include <iostream>
 #include <iterator>
 #include <memory>

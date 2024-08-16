@@ -38,7 +38,6 @@
 #include <Util/Util.hpp>
 
 #include <cmath>
-#include <format>
 
 using namespace godot;
 using u = godot::UtilityFunctions;
