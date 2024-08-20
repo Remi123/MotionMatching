@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="MMInertialization3D" inherits="SkeletonModifier3D" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/godotengine/godot/master/doc/class.xsd">
+	<brief_description>
+	</brief_description>
+	<description>
+	</description>
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="get_bone_model" qualifiers="const">
+			<return type="Dictionary" />
+			<param index="0" name="bone" type="StringName" />
+			<description>
+			</description>
+		</method>
+	</methods>
+	<members>
+		<member name="halflife" type="float" setter="set_halflife" getter="get_halflife" default="0.1">
+		</member>
+		<member name="type" type="int" setter="set_type" getter="get_type" enum="MMInertialization3D.InertializationType" default="0">
+		</member>
+	</members>
+	<constants>
+		<constant name="Simple" value="0" enum="InertializationType">
+		</constant>
+		<constant name="OffsetDecay" value="1" enum="InertializationType">
+		</constant>
+	</constants>
+</class>

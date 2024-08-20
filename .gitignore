@@ -1,42 +1,53 @@
-# Import settings
-*.import
+# Godot 4+ specific ignores
+.godot/
 
-# Prerequisites
-*.d
 
-# Compiled Object files
-*.slo
-*.lo
+demo/assets/**
+!demo/assets/animations
+!demo/assets/animations/.gitkeep
+!demo/assets/resources
+!demo/assets/resources/.gitkeep
+!demo/assets/models/**
+# Ignore library files but not the gdextension file
+# demo/addons/MotionMatching/bin/*
+
+!demo/addons/MotionMatching/editor/**
+!*/libMotionMatching*
+!demo/addons/MotionMatching/MotionMatching.gdextension
+.sconsign*.dblite
+
+src/gen/*
+
+!*.gitkeep
+
+# Ignore custom.py
+custom.py
+
+# Ignore generated compile_commands.json
+compile_commands.json
+
+# Binaries
 *.o
+*.os
+*.so
 *.obj
-
-
-# Precompiled Headers
-*.gch
-*.pch
-
-# Compiled Dynamic libraries
-*.dylib
+*.bc
+*.pyc
+*.dblite
 *.pdb
-*.dll
-*.ilk
+*.lib
+*.config
+*.creator
+*.creator.user
+*.files
+*.includes
+*.idb
 *.exp
 
-# Fortran module files
-*.mod
-*.smod
+# Other stuff
+*.log
 
-# Compiled Static libraries
-*.lai
-*.la
-*.a
-*.lib
-
-# Executables
-*.exe
-*.out
-*.app
-
-# Scons 
-.vscode/
-.sconsign.dblite
+# VSCode
+.vscode/*
+!.vscode/extensions.json
+.DS_Store

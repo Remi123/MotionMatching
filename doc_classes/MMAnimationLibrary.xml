@@ -1,0 +1,287 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="MMAnimationLibrary" inherits="AnimationLibrary" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/godotengine/godot/master/doc/class.xsd">
+	<brief_description>
+	</brief_description>
+	<description>
+	</description>
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="bake_data">
+			<return type="void" />
+			<description>
+			</description>
+		</method>
+		<method name="get_BIAS_LR_MAX">
+			<return type="PackedFloat32Array" />
+			<description>
+			</description>
+		</method>
+		<method name="get_BIAS_LR_MIN">
+			<return type="PackedFloat32Array" />
+			<description>
+			</description>
+		</method>
+		<method name="get_BIAS_SM_MAX">
+			<return type="PackedFloat32Array" />
+			<description>
+			</description>
+		</method>
+		<method name="get_BIAS_SM_MIN">
+			<return type="PackedFloat32Array" />
+			<description>
+			</description>
+		</method>
+		<method name="get_LR_MAX">
+			<return type="PackedFloat32Array" />
+			<description>
+			</description>
+		</method>
+		<method name="get_LR_MIN">
+			<return type="PackedFloat32Array" />
+			<description>
+			</description>
+		</method>
+		<method name="get_Rng_Start">
+			<return type="PackedInt32Array" />
+			<description>
+			</description>
+		</method>
+		<method name="get_Rng_Stop">
+			<return type="PackedInt32Array" />
+			<description>
+			</description>
+		</method>
+		<method name="get_SM_MAX">
+			<return type="PackedFloat32Array" />
+			<description>
+			</description>
+		</method>
+		<method name="get_SM_MIN">
+			<return type="PackedFloat32Array" />
+			<description>
+			</description>
+		</method>
+		<method name="get_curvecost">
+			<return type="Dictionary" />
+			<description>
+			</description>
+		</method>
+		<method name="get_curvecost_animname">
+			<return type="Curve" />
+			<param index="0" name="anim" type="StringName" />
+			<description>
+			</description>
+		</method>
+		<method name="get_db_anim_category">
+			<return type="PackedInt32Array" />
+			<description>
+			</description>
+		</method>
+		<method name="get_db_anim_index">
+			<return type="PackedInt32Array" />
+			<description>
+			</description>
+		</method>
+		<method name="get_db_anim_timestamp">
+			<return type="PackedFloat32Array" />
+			<description>
+			</description>
+		</method>
+		<method name="get_indicies_of_animations">
+			<return type="SetRangeIndex" />
+			<description>
+			</description>
+		</method>
+		<method name="get_indicies_of_category">
+			<return type="SetRangeIndex" />
+			<param index="0" name="mask" type="int" />
+			<description>
+			</description>
+		</method>
+		<method name="get_pose_tags">
+			<return type="TagInfo[]" />
+			<param index="0" name="animation_name" type="String" />
+			<param index="1" name="time" type="float" />
+			<description>
+			</description>
+		</method>
+		<method name="get_stats">
+			<return type="Array" />
+			<description>
+			</description>
+		</method>
+		<method name="prints_dimensions">
+			<return type="void" />
+			<description>
+			</description>
+		</method>
+		<method name="query_pose_aabb">
+			<return type="Dictionary[]" />
+			<param index="0" name="options" type="QueryOptions" />
+			<description>
+			</description>
+		</method>
+		<method name="query_pose_noacceleration">
+			<return type="Dictionary[]" />
+			<param index="0" name="options" type="QueryOptions" />
+			<description>
+			</description>
+		</method>
+		<method name="recalculate_weights">
+			<return type="void" />
+			<description>
+			</description>
+		</method>
+		<method name="sample_bone_global">
+			<return type="Kform" />
+			<param index="0" name="animation_name" type="StringName" />
+			<param index="1" name="time" type="float" />
+			<param index="2" name="bone_path" type="NodePath" />
+			<description>
+			</description>
+		</method>
+		<method name="sample_bone_local">
+			<return type="Kform" />
+			<param index="0" name="animation_name" type="StringName" />
+			<param index="1" name="time" type="float" />
+			<param index="2" name="bone_path" type="NodePath" />
+			<description>
+			</description>
+		</method>
+		<method name="sample_bone_model">
+			<return type="Kform" />
+			<param index="0" name="animation_name" type="StringName" />
+			<param index="1" name="time" type="float" />
+			<param index="2" name="bone_path" type="NodePath" />
+			<description>
+			</description>
+		</method>
+		<method name="sample_bone_rootmotion">
+			<return type="Kform" />
+			<param index="0" name="animation_name" type="StringName" />
+			<param index="1" name="time" type="float" />
+			<param index="2" name="bone_path" type="NodePath" />
+			<description>
+			</description>
+		</method>
+		<method name="set_BIAS_LR_MAX">
+			<return type="void" />
+			<param index="0" name="value" type="PackedFloat32Array" />
+			<description>
+			</description>
+		</method>
+		<method name="set_BIAS_LR_MIN">
+			<return type="void" />
+			<param index="0" name="value" type="PackedFloat32Array" />
+			<description>
+			</description>
+		</method>
+		<method name="set_BIAS_SM_MAX">
+			<return type="void" />
+			<param index="0" name="value" type="PackedFloat32Array" />
+			<description>
+			</description>
+		</method>
+		<method name="set_BIAS_SM_MIN">
+			<return type="void" />
+			<param index="0" name="value" type="PackedFloat32Array" />
+			<description>
+			</description>
+		</method>
+		<method name="set_LR_MAX">
+			<return type="void" />
+			<param index="0" name="value" type="PackedFloat32Array" />
+			<description>
+			</description>
+		</method>
+		<method name="set_LR_MIN">
+			<return type="void" />
+			<param index="0" name="value" type="PackedFloat32Array" />
+			<description>
+			</description>
+		</method>
+		<method name="set_Rng_Start">
+			<return type="void" />
+			<param index="0" name="value" type="PackedInt32Array" />
+			<description>
+			</description>
+		</method>
+		<method name="set_Rng_Stop">
+			<return type="void" />
+			<param index="0" name="value" type="PackedInt32Array" />
+			<description>
+			</description>
+		</method>
+		<method name="set_SM_MAX">
+			<return type="void" />
+			<param index="0" name="value" type="PackedFloat32Array" />
+			<description>
+			</description>
+		</method>
+		<method name="set_SM_MIN">
+			<return type="void" />
+			<param index="0" name="value" type="PackedFloat32Array" />
+			<description>
+			</description>
+		</method>
+		<method name="set_curvecost">
+			<return type="void" />
+			<param index="0" name="value" type="Dictionary" />
+			<description>
+			</description>
+		</method>
+		<method name="set_db_anim_category">
+			<return type="void" />
+			<param index="0" name="value" type="PackedInt32Array" />
+			<description>
+			</description>
+		</method>
+		<method name="set_db_anim_index">
+			<return type="void" />
+			<param index="0" name="value" type="PackedInt32Array" />
+			<description>
+			</description>
+		</method>
+		<method name="set_db_anim_timestamp">
+			<return type="void" />
+			<param index="0" name="value" type="PackedFloat32Array" />
+			<description>
+			</description>
+		</method>
+	</methods>
+	<members>
+		<member name="BOUND_LR_SIZE" type="int" setter="set_BOUND_LR_SIZE" getter="get_BOUND_LR_SIZE" default="64">
+		</member>
+		<member name="BOUND_SM_SIZE" type="int" setter="set_BOUND_SM_SIZE" getter="get_BOUND_SM_SIZE" default="16">
+		</member>
+		<member name="MotionData" type="PackedFloat32Array" setter="set_MotionData" getter="get_MotionData" default="PackedFloat32Array()">
+		</member>
+		<member name="category_hint_string" type="String" setter="set_category_hint_string" getter="get_category_hint_string" default="&quot;&quot;">
+		</member>
+		<member name="db_biases" type="PackedFloat32Array" setter="set_db_biases" getter="get_db_biases" default="PackedFloat32Array()">
+		</member>
+		<member name="default_continuation_bias" type="float" setter="set_default_continuation_bias" getter="get_default_continuation_bias" default="0.0">
+		</member>
+		<member name="dimension_means" type="PackedFloat32Array" setter="set_dimension_means" getter="get_dimension_means" default="PackedFloat32Array()">
+		</member>
+		<member name="dimension_stddev" type="PackedFloat32Array" setter="set_dimension_stddev" getter="get_dimension_stddev" default="PackedFloat32Array()">
+		</member>
+		<member name="motion_features" type="MotionFeature[]" setter="set_motion_features" getter="get_motion_features" default="[]">
+		</member>
+		<member name="nb_dimensions" type="int" setter="set_nb_dimensions" getter="get_nb_dimensions" default="0">
+		</member>
+		<member name="nb_poses" type="int" setter="set_nb_poses" getter="get_nb_poses" default="0">
+		</member>
+		<member name="skeleton_path" type="StringName" setter="set_skeleton_path" getter="get_skeleton_path" default="&amp;&quot;&quot;">
+		</member>
+		<member name="skeleton_profile" type="SkeletonProfile" setter="set_skeleton_profile" getter="get_skeleton_profile">
+		</member>
+		<member name="tags" type="TagInfo[]" setter="set_tags" getter="get_tags" default="[]">
+		</member>
+		<member name="time_interval" type="float" setter="set_time_interval" getter="get_time_interval" default="0.1">
+		</member>
+		<member name="weights" type="PackedFloat32Array" setter="set_weights" getter="get_weights" default="PackedFloat32Array()">
+		</member>
+	</members>
+</class>

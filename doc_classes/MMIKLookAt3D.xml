@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="MMIKLookAt3D" inherits="Node3D" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/godotengine/godot/master/doc/class.xsd">
+	<brief_description>
+	</brief_description>
+	<description>
+	</description>
+	<tutorials>
+	</tutorials>
+	<members>
+		<member name="active" type="bool" setter="set_active" getter="get_active" default="false">
+		</member>
+		<member name="bone" type="String" setter="set_bone" getter="get_bone" default="&quot;&quot;">
+		</member>
+		<member name="mixer" type="AnimationMixer" setter="set_mixer" getter="get_mixer">
+		</member>
+		<member name="skeleton" type="Skeleton3D" setter="set_skeleton" getter="get_skeleton">
+		</member>
+	</members>
+	<signals>
+		<signal name="post_calculation">
+			<description>
+			</description>
+		</signal>
+		<signal name="pre_calculation">
+			<description>
+			</description>
+		</signal>
+	</signals>
+</class>

@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="MFEvents" inherits="MotionFeature" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/godotengine/godot/master/doc/class.xsd">
+	<brief_description>
+	</brief_description>
+	<description>
+	</description>
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="bake_pose">
+			<return type="PackedFloat32Array" />
+			<param index="0" name="mm_animation_library" type="MMAnimationLibrary" />
+			<param index="1" name="animation" type="String" />
+			<param index="2" name="time" type="float" />
+			<description>
+			</description>
+		</method>
+		<method name="get_dimension" qualifiers="const">
+			<return type="int" />
+			<description>
+			</description>
+		</method>
+		<method name="get_hints" qualifiers="const">
+			<return type="PackedStringArray" />
+			<description>
+			</description>
+		</method>
+		<method name="get_weights" qualifiers="const">
+			<return type="PackedFloat32Array" />
+			<description>
+			</description>
+		</method>
+	</methods>
+	<members>
+		<member name="embed_as_frames" type="bool" setter="set_embed_as_frames" getter="get_embed_as_frames" default="false">
+		</member>
+		<member name="events_names" type="PackedStringArray" setter="set_events_names" getter="get_events_names" default="PackedStringArray()">
+		</member>
+		<member name="max_signed_time" type="float" setter="set_max_signed_time" getter="get_max_signed_time" default="2.0">
+		</member>
+	</members>
+	<constants>
+		<constant name="Timing" value="0" enum="EventType">
+		</constant>
+		<constant name="EmbedValue" value="1" enum="EventType">
+		</constant>
+	</constants>
+</class>

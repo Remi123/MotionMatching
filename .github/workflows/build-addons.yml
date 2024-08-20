@@ -14,7 +14,7 @@ on:
   workflow_dispatch:
 
 env:
-    LIBRARY_PATH: addons/MotionMatching/bin
+    LIBRARY_PATH: demo/addons/MotionMatching/
 
 jobs:
     build:
@@ -99,7 +99,7 @@ jobs:
             - identifier: linux-debug-single
               os: ubuntu-latest
               name: 🐧 Linux Debug (Single Precision)
-              runner: ubuntu-22.04
+              runner: ubuntu-24.04
               target: template_debug
               platform: linux
               arch: x86_64
@@ -109,7 +109,7 @@ jobs:
             - identifier: linux-debug-double
               os: ubuntu-latest
               name: 🐧 Linux Debug (Double Precision)
-              runner: ubuntu-22.04
+              runner: ubuntu-24.04
               target: template_debug
               platform: linux
               arch: x86_64
@@ -119,7 +119,7 @@ jobs:
             - identifier: linux-release-single
               os: ubuntu-latest
               name: 🐧 Linux Release (Single Precision)
-              runner: ubuntu-22.04
+              runner: ubuntu-24.04
               target: template_release
               platform: linux
               arch: x86_64
@@ -129,7 +129,7 @@ jobs:
             - identifier: linux-release-double
               os: ubuntu-latest
               name: 🐧 Linux Release (Double Precision)
-              runner: ubuntu-22.04
+              runner: ubuntu-24.04
               target: template_release
               platform: linux
               arch: x86_64
@@ -160,7 +160,7 @@ jobs:
                 id: install-boost
                 uses: MarkusJx/install-boost@v2.4.4
                 with:
-                    boost_version: 1.81.0
+                    boost_version: 1.83.0
                     # The toolset used to compile boost, e.g. "msvc"
                     toolset: ${{ matrix.toolset }} # optional, default is 
                     # The platform version boost was compiled on, e.g. "18.04"
@@ -197,16 +197,15 @@ jobs:
                         ${{ github.workspace }}/godot-cpp/include
                         ${{ github.workspace }}/godot-cpp/gen
                     key: ${{ runner.os }}-${{ env.SUBMODULE_HASH }}
-            
-            -   name: Compile Godot Library
-                if: steps.cache-godot-cpp.outputs.cache-hit != 'true'
-                run: |
-                      scons -j8 platform=${{ matrix.platform }} target=${{ matrix.target }} arch=${{ matrix.arch }}
-                working-directory: godot-cpp
+
+            # -   name: Compile Godot Library
+            #     if: steps.cache-godot-cpp.outputs.cache-hit != 'true'
+            #     run: |
+            #           scons platform=${{ matrix.platform }} target=${{ matrix.target }} arch=${{ matrix.arch }} precision=${{ matrix.precision }} 
+            #     working-directory: godot-cpp
 
             -   name: Compile Addon
                 run:  scons  
-                        disable_exceptions=false
                         platform=${{ matrix.platform }} 
                         target=${{ matrix.target }} 
                         arch=${{ matrix.arch }} 

@@ -1,0 +1,11 @@
+[gd_scene load_steps=3 format=3 uid="uid://wk0nm1n18m4n"]
+
+[ext_resource type="PackedScene" uid="uid://ws63tatc17cq" path="res://addons/MotionMatching/controls/Tags/EventBar/event_bar.tscn" id="1_rfw1y"]
+[ext_resource type="Texture2D" uid="uid://xbscafx042dq" path="res://addons/MotionMatching/icons/categories.res" id="2_mqnnn"]
+
+[node name="EventBar" instance=ExtResource("1_rfw1y")]
+
+[node name="Button" parent="MarginContainer" index="0"]
+theme_type_variation = &"CategoryButton"
+text = "CategoryMF"
+icon = ExtResource("2_mqnnn")

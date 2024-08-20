@@ -1,0 +1,13 @@
+[gd_scene load_steps=3 format=3 uid="uid://b7a6t74o0gurc"]
+
+[ext_resource type="PackedScene" uid="uid://ws63tatc17cq" path="res://addons/MotionMatching/controls/Tags/EventBar/event_bar.tscn" id="1_2n6pj"]
+[ext_resource type="Texture2D" uid="uid://jvcrioes2c0n" path="res://addons/MotionMatching/icons/junk.res" id="2_34o1s"]
+
+[node name="EventBar" instance=ExtResource("1_2n6pj")]
+offset_top = -11.5
+offset_bottom = 11.5
+
+[node name="Button" parent="MarginContainer" index="0"]
+theme_type_variation = &"JunkButton"
+text = "JunkMF"
+icon = ExtResource("2_34o1s")

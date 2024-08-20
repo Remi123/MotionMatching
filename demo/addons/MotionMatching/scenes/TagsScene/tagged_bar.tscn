@@ -1,0 +1,50 @@
+[gd_scene load_steps=4 format=3 uid="uid://k1u326tu28tv"]
+
+[ext_resource type="Texture2D" uid="uid://jvcrioes2c0n" path="res://addons/MotionMatching/icons/junk.res" id="1_tsxyu"]
+[ext_resource type="Script" path="res://addons/MotionMatching/scenes/TagsScene/tagged_bar.gd" id="2_pwmyi"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_n1rc7"]
+bg_color = Color(0.19864, 0.1092, 0.78, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.4161, 0.464835, 0.57, 1)
+
+[node name="TaggedBar" type="Button"]
+custom_minimum_size = Vector2(0, 30)
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 31.0
+grow_horizontal = 2
+size_flags_horizontal = 3
+button_mask = 3
+text = "Choose a Tag type in the Inspector"
+alignment = 0
+script = ExtResource("2_pwmyi")
+
+[node name="Panel" type="Panel" parent="."]
+unique_name_in_owner = true
+show_behind_parent = true
+custom_minimum_size = Vector2(1, 0)
+layout_direction = 2
+layout_mode = 1
+anchors_preset = 9
+anchor_bottom = 1.0
+offset_right = 106.0
+grow_vertical = 2
+size_flags_horizontal = 0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_n1rc7")
+
+[node name="PopupMenu" type="PopupMenu" parent="."]
+unique_name_in_owner = true
+size = Vector2i(110, 100)
+item_count = 2
+item_0/text = "Duplicate"
+item_0/id = 1
+item_1/text = "Delete"
+item_1/icon = ExtResource("1_tsxyu")
+item_1/id = 1
+
+[connection signal="gui_input" from="." to="." method="_on_gui_input"]

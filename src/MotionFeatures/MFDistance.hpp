@@ -1,0 +1,159 @@
+#pragma once
+
+#include <godot_cpp/variant/utility_functions.hpp>
+
+#include <godot_cpp/classes/global_constants.hpp>
+#include <godot_cpp/classes/node.hpp>
+#include <godot_cpp/variant/node_path.hpp>
+#include <godot_cpp/variant/variant.hpp>
+
+#include <godot_cpp/classes/editor_plugin.hpp>
+#include <godot_cpp/core/class_db.hpp>
+#include <godot_cpp/core/method_bind.hpp>
+#include <godot_cpp/templates/hash_map.hpp>
+#include <godot_cpp/templates/local_vector.hpp>
+#include <godot_cpp/templates/vector.hpp>
+
+#include <godot_cpp/classes/time.hpp>
+
+#include <godot_cpp/classes/animation.hpp>
+#include <godot_cpp/classes/animation_library.hpp>
+#include <godot_cpp/classes/animation_player.hpp>
+
+#include <godot_cpp/classes/resource.hpp>
+#include <godot_cpp/classes/skeleton3d.hpp>
+#include <godot_cpp/classes/skeleton_profile.hpp>
+
+#include <godot_cpp/classes/box_mesh.hpp>
+#include <godot_cpp/classes/editor_node3d_gizmo.hpp>
+#include <godot_cpp/classes/editor_node3d_gizmo_plugin.hpp>
+#include <godot_cpp/classes/standard_material3d.hpp>
+
+#include <algorithm>
+#include <limits>
+
+#include <MMAnimationLibrary.hpp>
+#include <MotionFeatures/MFEvents.hpp>
+
+using namespace godot;
+
+struct MFDistance : public MotionFeature {
+	GDCLASS(MFDistance, MotionFeature)
+	Ref<MMAnimationLibrary> mmlib = nullptr;
+	std::vector<Ref<TagMFDistance>> animation_events{};
+
+public:
+	GETSET(bool, relative_rotation, false);
+	enum EmbeddedAxis {
+		X,
+		Y,
+		Z
+	};
+	std::bitset<3> embedded_axis{};
+	int get_embedded_axis() { return embedded_axis.to_ulong(); }
+	void set_embedded_axis(int value) { embedded_axis = std::bitset<3>(value); }
+
+	GETSET(float, default_value, (1 << 30));
+	GETSET(bool, use_only_start, false);
+	GETSET(godot::PackedStringArray, events_names);
+
+	static constexpr float delta = 0.016f;
+
+	int get_dimension() const { return events_names.size() * 3; }
+
+	PackedFloat32Array get_weights() const { return Array::make(1.0f, 1.0f, 1.0f); }
+
+	PackedStringArray get_hints() const {
+		PackedStringArray hints = {};
+		for (auto e : events_names) {
+			hints.append(e + ":x");
+			hints.append(e + ":y");
+			hints.append(e + ":z");
+		}
+		return hints;
+	}
+
+	PackedFloat32Array bake_pose(Ref<MMAnimationLibrary> mmlib, String animation_name, float time) {
+		Ref<Animation> animation = mmlib->get_animation(animation_name);
+		String root_bone_track = u::str(mmlib->skeleton_path) + ":" + mmlib->skeleton_profile->get_root_bone();
+		Transform3D rest_pose = mmlib->skeleton_profile->get_reference_pose(mmlib->skeleton_profile->find_bone(mmlib->skeleton_profile->get_root_bone()));
+
+		PackedFloat32Array result = {};
+		std::vector<Ref<TagMFEvent>> current_events{};
+		const float time_offset = 1.0f / Engine::get_singleton()->get_physics_ticks_per_second();
+		// Get current events tags.
+		for (Ref<TagMFDistance> tag : animation_events) {
+			if (tag->timestamp <= time && time < tag->timestamp + tag->duration + time_offset) {
+				current_events.push_back(tag);
+			}
+		}
+
+		for (auto i = 0; i < events_names.size(); ++i) {
+			const auto event_name = events_names[i];
+			auto it = std::find_if(animation_events.begin(), animation_events.end(), [event_name](Ref<TagMFDistance> event) { return event->event_name == event_name; });
+			if (it == animation_events.end()) {
+				result.append(default_value);
+				continue;
+			}
+			const auto event = *it;
+			Vector3 value{};
+
+			// Find distance from Root bone to the point depending on the tag.
+			Vector3 root_pos{}, anchor_pos{};
+			Quaternion root_rot{};
+			// Step 1 : Get root bone transform
+			Transform3D root_gtr = (Transform3D)get_global_kform(mmlib->skeleton_profile, animation, time, u::str(mmlib->skeleton_path) + ":" + mmlib->skeleton_profile->get_root_bone());
+			Transform3D anchor_gtr{};
+			// Step 2 : Get anchor point pos
+			if (event->anchor_point_strategy == TagMFDistance::Strategy::RootPos) {
+				kform const anchor_bone = get_global_kform(mmlib->skeleton_profile, animation, event->timestamp, u::str(mmlib->skeleton_path) + ":" + mmlib->skeleton_profile->get_root_bone());
+				anchor_pos = anchor_bone.pos;
+				anchor_gtr = (Transform3D)anchor_bone;
+			} else if (event->anchor_point_strategy == TagMFDistance::Strategy::AnchorPoint) {
+				anchor_pos = event->reference_position;
+				anchor_gtr = Transform3D(Basis{}, event->reference_position);
+			} else if (event->anchor_point_strategy == TagMFDistance::Strategy::AnchorBone) {
+				kform const anchor_bone = get_global_kform(mmlib->skeleton_profile, animation, event->timestamp, u::str(mmlib->skeleton_path) + ":" + event->reference_bone);
+				anchor_pos = anchor_bone.pos;
+				anchor_gtr = (Transform3D)anchor_bone;
+			}
+
+			value = (root_gtr.inverse() * anchor_gtr).origin;
+
+			result.append(value.x);
+			result.append(value.y);
+			result.append(value.z);
+		}
+
+		return result;
+	}
+
+	static void _bind_methods() {
+		ClassDB::bind_method(D_METHOD("set_events_names", "value"), &MFDistance::set_events_names);
+		ClassDB::bind_method(D_METHOD("get_events_names"), &MFDistance::get_events_names);
+		godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_STRING_ARRAY, "events_names"), "set_events_names", "get_events_names");
+
+		ClassDB::bind_method(D_METHOD("set_relative_rotation", "value"), &MFDistance::set_relative_rotation, DEFVAL(false));
+		ClassDB::bind_method(D_METHOD("get_relative_rotation"), &MFDistance::get_relative_rotation);
+		godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::BOOL, "relative_rotation"), "set_relative_rotation", "get_relative_rotation");
+
+		// auto prop_axis = PropertyInfo(Variant::INT,"embedded_axis"
+		//             ,PROPERTY_HINT_ENUM,"Magnitude,X,Y,Z"
+		//             ,PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_UPDATE_ALL_IF_MODIFIED);
+		// ClassDB::bind_method( D_METHOD("set_embedded_axis" ,"value"), &MFDistance::set_embedded_axis);
+		// ClassDB::bind_method( D_METHOD("get_embedded_axis" ), &MFDistance::get_embedded_axis);
+		// godot::ClassDB::add_property(get_class_static(), prop_axis, "set_embedded_axis", "get_embedded_axis");
+
+		ClassDB::bind_method(D_METHOD("set_default_value", "value"), &MFDistance::set_default_value, DEFVAL(real_t(int32_t(1 << 30))));
+		ClassDB::bind_method(D_METHOD("get_default_value"), &MFDistance::get_default_value);
+		godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT, "default_value"), "set_default_value", "get_default_value");
+
+		ClassDB::bind_method(D_METHOD("get_dimension"), &MFDistance::get_dimension);
+
+		ClassDB::bind_method(D_METHOD("get_weights"), &MFDistance::get_weights);
+
+		ClassDB::bind_method(D_METHOD("get_hints"), &MFDistance::get_hints);
+
+		ClassDB::bind_method(D_METHOD("bake_pose", "mm_animation_library", "animation_name", "time"), &MFDistance::bake_pose);
+	}
+};

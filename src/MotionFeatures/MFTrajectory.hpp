@@ -1,17 +1,20 @@
 #pragma once
 
+#include <godot_cpp/core/math.hpp>
 #include <godot_cpp/variant/utility_functions.hpp>
 
 #include <godot_cpp/classes/global_constants.hpp>
 #include <godot_cpp/classes/node.hpp>
 #include <godot_cpp/variant/node_path.hpp>
 
+#include <godot_cpp/classes/editor_plugin.hpp>
 #include <godot_cpp/core/class_db.hpp>
+#include <godot_cpp/core/error_macros.hpp>
 #include <godot_cpp/core/method_bind.hpp>
-#include <godot_cpp/templates/vector.hpp>
 #include <godot_cpp/templates/hash_map.hpp>
 #include <godot_cpp/templates/local_vector.hpp>
-#include <godot_cpp/classes/editor_plugin.hpp>
+#include <godot_cpp/templates/vector.hpp>
+
 
 #include <godot_cpp/classes/time.hpp>
 
@@ -19,292 +22,346 @@
 #include <godot_cpp/classes/animation_library.hpp>
 #include <godot_cpp/classes/animation_player.hpp>
 
-#include <godot_cpp/classes/skeleton3d.hpp>
 #include <godot_cpp/classes/resource.hpp>
+#include <godot_cpp/classes/skeleton3d.hpp>
 
+#include <godot_cpp/classes/box_mesh.hpp>
 #include <godot_cpp/classes/editor_node3d_gizmo.hpp>
 #include <godot_cpp/classes/editor_node3d_gizmo_plugin.hpp>
 #include <godot_cpp/classes/standard_material3d.hpp>
-#include <godot_cpp/classes/box_mesh.hpp>
 
+#include <godot_cpp/classes/prism_mesh.hpp>
+
+#include <MMAnimationLibrary.hpp>
+#include <Math/KForm.hpp>
 #include <MotionFeatures/MotionFeatures.hpp>
+#include <Util/Util.hpp>
+
+#include <cmath>
 
 using namespace godot;
 using u = godot::UtilityFunctions;
 
-// Macro setup. Mostly there to simplify writing all those
-#define GETSET(type,variable,...) type variable{__VA_ARGS__}; type get_##variable(){return  variable;} void set_##variable(type value){variable = value;}
-
-struct MFTrajectory : public MotionFeature{
-    GDCLASS(MFTrajectory,MotionFeature)
-
-
-    virtual ~MFTrajectory() = default;
-
-    Skeleton3D* skeleton{nullptr}; Skeleton3D* get_skeleton(){return skeleton;} void set_skeleton(Skeleton3D* value){skeleton = value;}
-    String root_bone_track = "%GeneralSkeleton:Root";
-
-    GETSET(NodePath,character_path);
-
-    GETSET(float,halflife_velocity,0.2);
-    GETSET(float,halflife_angular_velocity,0.13);
-
-    GETSET(PackedFloat32Array,past_time_dt);
-    GETSET(PackedFloat32Array,future_time_dt);
-
-    GETSET(float,weight_history_pos,1.0f);
-    GETSET(float,weight_prediction_pos,1.0f);
-    GETSET(float,weight_prediction_angle,1.0f);
-    virtual PackedFloat32Array get_weights() override{
-        PackedFloat32Array result{};
-        for(auto i =0; i < 2 * past_time_dt.size(); ++i)
-        {
-            result.append(weight_history_pos);
-        }
-        for(auto i =0; i < 2 * future_time_dt.size(); ++i)
-        {
-            result.append(weight_prediction_pos);
-        }
-        for(auto i =0; i < 1 * future_time_dt.size(); ++i)
-        {
-            result.append(weight_prediction_angle);
-        }
-        return result;
-    }
-
-
+struct MFTrajectoryOptions : public Resource {
+	GDCLASS(MFTrajectoryOptions, Resource)
 public:
-    virtual int get_dimension() override
-    {
-        // Offset for each
-        const size_t past_pos =  2 * past_time_dt.size();
-        const size_t future_pos = 2 * future_time_dt.size();
-        const size_t future_rot_angle = future_time_dt.size();
-        return past_pos + future_pos + future_rot_angle ;
-    }
+	GETSET(float, time_offset, 0.0f)
+	GETSET(float, weights, 1.0f);
+	GETSET(int, coordinate, Coordinates::XYZ)
+	GETSET(int, options, 3);
+	GETSET(Color, debug_color, Color{ "RED" });
 
-    int root_tracks[3] = {0,0,0};
-    Vector3 start_pos,start_vel,end_pos,end_vel;
-    Quaternion start_rot,end_rot, end_ang_vel;
-    float start_time = 0.0f, end_time = 0.0f;
+	int get_dimensions() {
+		if (coordinate == Coordinates::XZ)
+			return 2 * std::bitset<32>(options).count();
+		else if (coordinate == Coordinates::XYZ)
+			return 3 * std::bitset<32>(options).count();
+		else
+			return 0;
+	}
 
-    virtual bool setup_profile(NodePath skeleton_path,Ref<SkeletonProfile> skeleton_profile) override{
-        ERR_FAIL_COND_V_EDMSG(skeleton_path.is_empty(), false,"SkeletonPath is Empty");
-        ERR_FAIL_COND_V_EDMSG(skeleton_profile == nullptr, false,"SkeletonProfile is null");
-        ERR_FAIL_COND_V_EDMSG(skeleton_profile->get_root_bone().is_empty(),false,"No Root bone to extract data");
-        root_bone_track = u::str(skeleton_path) + ":" + skeleton_profile->get_root_bone();
-        return true;
-    };
+	enum Coordinates {
+		XZ,
+		XYZ
+	};
+	enum Options {
+		Position,
+		Velocity,
+		Direction
+	};
 
-    virtual bool setup_for_animation(Ref<Animation> animation) override
-    {
-        start_time = 0.1f;
-        end_time = std::floor(animation->get_length() * 10)/10.0f;
-        root_tracks[0] = animation->find_track(root_bone_track, Animation::TrackType::TYPE_POSITION_3D);
-        root_tracks[1] = animation->find_track(root_bone_track, Animation::TrackType::TYPE_ROTATION_3D);
-        root_tracks[2] = animation->find_track(root_bone_track, Animation::TrackType::TYPE_SCALE_3D);
-        {
-            start_pos = animation->position_track_interpolate(root_tracks[0], 0.0);
-            start_rot = animation->rotation_track_interpolate(root_tracks[1], 0.0);
-            start_vel = (animation->position_track_interpolate(root_tracks[0], 0.1) - start_pos) / 0.1;
-        }
-        {
-            end_pos = animation->position_track_interpolate(root_tracks[0], end_time);
-            end_rot = animation->rotation_track_interpolate(root_tracks[1], end_time);
-            end_vel = (end_pos - animation->position_track_interpolate(root_tracks[0], end_time - 0.1)) / 0.1;
+	PackedFloat32Array serialize(const Kform local_kform) {
+		PackedFloat32Array result{};
+		std::bitset<32> bit(options);
+		if (bit.test(Options::Position)) {
+			const auto pos = local_kform.get_pos();
+			result.append(pos.x);
+			if (coordinate == Coordinates::XYZ)
+				result.append(pos.y);
+			result.append(pos.z);
+		}
+		if (bit.test(Options::Velocity)) {
+			const auto vel = local_kform.get_vel();
+			result.append(vel.x);
+			if (coordinate == Coordinates::XYZ)
+				result.append(vel.y);
+			result.append(vel.z);
+		}
+		if (bit.test(Options::Direction)) {
+			const auto dir = local_kform.get_rot().xform(Vector3(0, 0, 1));
+			result.append(dir.x);
+			if (coordinate == Coordinates::XYZ)
+				result.append(dir.y);
+			result.append(dir.z);
+		}
+		return result;
+	}
 
-            end_ang_vel = animation->rotation_track_interpolate(root_tracks[1], animation->get_length() - delta - 0.1).inverse() * animation->rotation_track_interpolate(root_tracks[1], animation->get_length() - delta);
-        }
-        return true;
-    }
-
-    virtual PackedFloat32Array bake_animation_pose(Ref<Animation> animation,float time)override 
-    {
-        PackedFloat32Array result{};
-        Vector3 curr_pos = animation->position_track_interpolate(root_tracks[0],time);
-        Quaternion curr_rot = animation->rotation_track_interpolate(root_tracks[1],time);
-
-        for (size_t index = 0; index < past_time_dt.size(); ++index)
-        {
-            const float t = time - abs(past_time_dt[index]);
-            Vector3 pos{};
-            Quaternion rot{};
-            if (t >= 0.0f)
-            { // The offset can be accessed through the anim data
-                pos = animation->position_track_interpolate(root_tracks[0], t) - curr_pos;
-                rot = animation->rotation_track_interpolate(root_tracks[1], t);
-                pos = curr_rot.xform_inv(pos);
-            }
-            else
-            { // The offset must be calculated using the starting velocity and extrapoling
-                pos = start_pos + (start_vel * t) - curr_pos;
-                pos = curr_rot.xform_inv(pos);
-            }
-            result.push_back(pos.x);
-            result.push_back(pos.z);
-        }
-        for (size_t index = 0; index < future_time_dt.size(); ++index)
-        {
-            const float t = time + abs(future_time_dt[index]);
-            Vector3 pos{};
-            Quaternion rot{};
-            if (t <= end_time)
-            { // The offset can be accessed through the anim data
-                pos = animation->position_track_interpolate(root_tracks[0], t) - curr_pos;
-                rot = animation->rotation_track_interpolate(root_tracks[1], t);
-                pos = curr_rot.xform_inv(pos);
-            }
-            else
-            { // The offset must be calculated using the end velocity and extrapoling
-                pos = end_pos + end_vel * (t - end_time) - curr_pos;
-                pos = curr_rot.xform_inv(pos);
-            }
-
-
-            result.push_back(pos.x);
-            result.push_back(pos.z);
-        }
-        for (size_t index = 0; index < future_time_dt.size(); ++index)
-        {
-            const float t = time + abs(future_time_dt[index]);
-            Vector3 pos{};
-            Quaternion rot{};
-            if (t <= end_time)
-            { // The offset can be accessed through the anim data
-                rot = animation->rotation_track_interpolate(root_tracks[1], t) * curr_rot.inverse();
-            }
-            else
-            { // The offset must be calculated using the end velocity and extrapoling
-                rot = animation->rotation_track_interpolate(root_tracks[1], animation->get_length() - delta) * curr_rot.inverse();
-            }
-            
-            result.push_back(rot.get_euler_xyz().y);
-        }
-        return result;
-    }
-
-    GETSET(PackedVector3Array,history_pos)
-    GETSET(PackedVector3Array,future_pos)
-    GETSET(PackedFloat32Array,future_dir)
-
-    PackedFloat32Array serialize_trajectory_local(PackedVector3Array history_pos,PackedVector3Array future_pos,PackedFloat32Array future_dir)
-    {
-        PackedFloat32Array result{};
-        for(auto elem: history_pos)
-        {
-            result.append(elem.x);
-            result.append(elem.z);
-        }
-        for(auto elem: future_pos)
-        {
-            result.append(elem.x);
-            result.append(elem.z);
-        }
-        result.append_array(future_dir);
-        return result;
-    }
-
-    protected:
-    static void _bind_methods() {
-
-        {
-            ClassDB::bind_method(D_METHOD("serialize_trajectory_local", "history_local_pos","prediction_local_pos","prediction_local_dir_angle"), &MFTrajectory::serialize_trajectory_local);
-        }
-
-        ClassDB::bind_method( D_METHOD("set_weight_history_pos","value"), &MFTrajectory::set_weight_history_pos ); ClassDB::bind_method( D_METHOD("get_weight_history_pos"), &MFTrajectory::get_weight_history_pos); godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT,"weight_history_pos"), "set_weight_history_pos", "get_weight_history_pos");
-        ClassDB::bind_method( D_METHOD("set_weight_prediction_pos","value"), &MFTrajectory::set_weight_prediction_pos ); ClassDB::bind_method( D_METHOD("get_weight_prediction_pos"), &MFTrajectory::get_weight_prediction_pos); godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT,"weight_prediction_pos"), "set_weight_prediction_pos", "get_weight_prediction_pos");
-        ClassDB::bind_method( D_METHOD("set_weight_prediction_angle","value"), &MFTrajectory::set_weight_prediction_angle ); ClassDB::bind_method( D_METHOD("get_weight_prediction_angle"), &MFTrajectory::get_weight_prediction_angle); godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT,"weight_prediction_angle"), "set_weight_prediction_angle", "get_weight_prediction_angle");
-
-        ClassDB::add_property_group(get_class_static(), "Nodes & Resources Sources", "");
-        {
-            PackedFloat32Array m_default{};
-            m_default.push_back(0.2);m_default.push_back(0.4);
-            ClassDB::bind_method( D_METHOD("set_past_time_dt","value"), &MFTrajectory::set_past_time_dt,(m_default)); ClassDB::bind_method( D_METHOD("get_past_time_dt"), &MFTrajectory::get_past_time_dt); godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY,"past_time_dt"), "set_past_time_dt", "get_past_time_dt");
-            ClassDB::bind_method( D_METHOD("set_future_time_dt","value"), &MFTrajectory::set_future_time_dt ); ClassDB::bind_method( D_METHOD("get_future_time_dt"), &MFTrajectory::get_future_time_dt); godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY,"future_time_dt"), "set_future_time_dt", "get_future_time_dt");
-            
-            ClassDB::bind_method(D_METHOD("set_debug_color_history", "value"), &MFTrajectory::set_debug_color_history);
-            ClassDB::bind_method(D_METHOD("get_debug_color_history"), &MFTrajectory::get_debug_color_history);
-            godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::COLOR, "debug_color_history"), "set_debug_color_history", "get_debug_color_history");
-
-            ClassDB::bind_method(D_METHOD("set_debug_color_future", "value"), &MFTrajectory::set_debug_color_future);
-            ClassDB::bind_method(D_METHOD("get_debug_color_future"), &MFTrajectory::get_debug_color_future);
-            godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::COLOR, "debug_color_future"), "set_debug_color_future", "get_debug_color_future");
-        
-        }
-        ClassDB::add_property_group(get_class_static(), "Queries to fill", "query");
-        {
-            //BINDER_PROPERTY_PARAMS(MFTrajectory, Variant::PACKED_VECTOR3_ARRAY, history_pos);
-            ClassDB::bind_method(D_METHOD("set_history_pos", "value"), &MFTrajectory::set_history_pos);
-            ClassDB::bind_method(D_METHOD("get_history_pos"), &MFTrajectory::get_history_pos);
-            godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_VECTOR3_ARRAY, "query_history_pos"), "set_history_pos", "get_history_pos");
-
-            //BINDER_PROPERTY_PARAMS(MFTrajectory, Variant::PACKED_VECTOR3_ARRAY, future_pos);
-            ClassDB::bind_method(D_METHOD("set_future_pos", "value"), &MFTrajectory::set_future_pos);
-            ClassDB::bind_method(D_METHOD("get_future_pos"), &MFTrajectory::get_future_pos);
-            godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_VECTOR3_ARRAY, "query_future_pos"), "set_future_pos", "get_future_pos");
-            
-            //BINDER_PROPERTY_PARAMS(MFTrajectory, Variant::PACKED_FLOAT32_ARRAY, future_dir);
-            ClassDB::bind_method(D_METHOD("set_future_dir", "value"), &MFTrajectory::set_future_dir);
-            ClassDB::bind_method(D_METHOD("get_future_dir"), &MFTrajectory::get_future_dir);
-            godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "query_future_dir"), "set_future_dir", "get_future_dir");
-        }
-        ClassDB::add_property_group(get_class_static(), "", "");
-
-        ClassDB::bind_method( D_METHOD("get_weights"), &MFTrajectory::get_weights);
-        ClassDB::bind_method( D_METHOD("get_dimension"), &MFTrajectory::get_dimension);
-        
-        ClassDB::bind_method( D_METHOD("setup_for_animation","animation"), &MFTrajectory::setup_for_animation);
-        ClassDB::bind_method( D_METHOD("bake_animation_pose","animation","time"), &MFTrajectory::bake_animation_pose);
-        
-        ClassDB::bind_method( D_METHOD("debug_pose_gizmo","gizmo","data","root_transform"), &MFTrajectory::debug_pose_gizmo);
-    }
-
-    GETSET(Color,debug_color_history,godot::Color(1.0f,1.0f,1.0f));
-    GETSET(Color,debug_color_future,godot::Color(0.0f,0.0f,0.0f));
-
-    virtual void debug_pose_gizmo(Ref<EditorNode3DGizmo> gizmo, const PackedFloat32Array data,godot::Transform3D tr = godot::Transform3D{})override
-    {
-        const auto mat_name_history = "history" + get_path();
-        const auto mat_name_future = "future" + get_path();
-        if(gizmo->get_plugin()->get_material(mat_name_history,gizmo) == nullptr)
-        {
-            gizmo->get_plugin()->create_material(mat_name_history,debug_color_history);
-        }
-        if(gizmo->get_plugin()->get_material(mat_name_future,gizmo) == nullptr)
-        {
-            gizmo->get_plugin()->create_material(mat_name_future,debug_color_future);
-        }
-        // if (data.size() == get_dimension())
-        {
-            constexpr int s = 3;
-            auto history = gizmo->get_plugin()->get_material(mat_name_history,gizmo);
-            history->set_albedo(debug_color_history);
-            auto future = gizmo->get_plugin()->get_material(mat_name_future,gizmo);
-            future->set_albedo(debug_color_future);
-            for(size_t i = 0; i < past_time_dt.size(); ++i)
-            {
-                const size_t offset = i * 2;
-                Vector3 pos = Vector3(data[offset + 0],0,data[offset + 1]); 
-                pos = tr.xform(pos);
-                gizmo->add_lines(Array::make(pos, pos + Vector3(0,1,0)), history);               
-            }
-            const size_t pos_offset = past_time_dt.size();
-            const size_t traj_offset = past_time_dt.size() * 2 + future_time_dt.size() * 2;
-            for(size_t i = 0; i < future_time_dt.size(); ++i)
-            {
-                const size_t offset = (pos_offset + i) * 2;
-                Vector3 pos = Vector3(data[offset + 0],0,data[offset + 1]); 
-                Vector3 traj = tr.xform(Vector3(0,0,1)).rotated(Vector3(0,1,0),data[traj_offset + i]);
-                pos = tr.xform(pos);
-                // traj = tr.xform(traj);
-                gizmo->add_lines(Array::make(pos, pos + traj), future);          
-            }
-
-        }
-    }
+protected:
+	static void _bind_methods() {
+		ClassDB::bind_method(D_METHOD("set_time_offset", "value"), &MFTrajectoryOptions::set_time_offset, DEFVAL(0.0));
+		ClassDB::bind_method(D_METHOD("get_time_offset"), &MFTrajectoryOptions::get_time_offset);
+		::godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT, "time_offset"), "set_time_offset", "get_time_offset");
+		ClassDB::bind_method(D_METHOD("set_weights", "value"), &MFTrajectoryOptions::set_weights, DEFVAL(1.0));
+		ClassDB::bind_method(D_METHOD("get_weights"), &MFTrajectoryOptions::get_weights);
+		::godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT, "weights"), "set_weights", "get_weights");
+		ClassDB::bind_method(D_METHOD("set_coordinate", "value"), &MFTrajectoryOptions::set_coordinate);
+		ClassDB::bind_method(D_METHOD("get_coordinate"), &MFTrajectoryOptions::get_coordinate);
+		::godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::INT, "coordinate", PROPERTY_HINT_ENUM, "XY,XYZ", PROPERTY_USAGE_DEFAULT), "set_coordinate", "get_coordinate");
+		ClassDB::bind_method(D_METHOD("set_options", "value"), &MFTrajectoryOptions::set_options, DEFVAL(3));
+		ClassDB::bind_method(D_METHOD("get_options"), &MFTrajectoryOptions::get_options);
+		::godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::INT, "options", PROPERTY_HINT_FLAGS, "Position,Velocity,Direction,", PROPERTY_USAGE_DEFAULT), "set_options", "get_options");
+		ClassDB::bind_method(D_METHOD("set_debug_color", "value"), &MFTrajectoryOptions::set_debug_color, Color{ "RED" });
+		ClassDB::bind_method(D_METHOD("get_debug_color"), &MFTrajectoryOptions::get_debug_color);
+		::godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::COLOR, "debug_color"), "set_debug_color", "get_debug_color");
+	}
 };
 
-#undef MAKE_RESOURCE_TYPE_HINT
-#undef GETSET
-#undef STR
-#undef STRING_PREFIX
+struct MFTrajectory : public MotionFeature {
+	GDCLASS(MFTrajectory, MotionFeature)
+public:
+	Skeleton3D *skeleton{ nullptr };
+	Skeleton3D *get_skeleton() { return skeleton; }
+	void set_skeleton(Skeleton3D *value) { skeleton = value; }
+	String root_bone_track = "%GeneralSkeleton:Root";
+
+	GETSET(TypedArray<MFTrajectoryOptions>, options);
+
+	GETSET(float, weight_history_pos, 1.0f);
+	GETSET(float, weight_prediction_pos, 1.0f);
+	GETSET(float, weight_prediction_angle, 1.0f);
+
+public:
+	int get_dimension() const {
+		int result = 0;
+		for (int i = 0; i < options.size(); ++i) {
+			auto *option = cast_to<MFTrajectoryOptions>(options[i]);
+			if (option) {
+				result += option->get_dimensions();
+			}
+		}
+		return result;
+	}
+
+	PackedFloat32Array get_weights() const {
+		PackedFloat32Array result{};
+		for (int i = 0; i < options.size(); ++i) {
+			auto *option = cast_to<MFTrajectoryOptions>(options[i]);
+			if (option) {
+				float weight = option->weights;
+				for (int w = 0; w < option->get_dimensions(); ++w) {
+					result.append(weight);
+				}
+			}
+		}
+		// Standardize
+		return MMUtil::softmax(result);
+	}
+
+	PackedStringArray get_hints() const {
+		PackedStringArray result{};
+		for (int i = 0; i < options.size(); ++i) {
+			auto *option = cast_to<MFTrajectoryOptions>(options[i]);
+			if (option) {
+				std::bitset<32> bit = option->options;
+				for (int o = 0; o < bit.size(); ++o) {
+					String I = "";
+					if (o == 0 && bit.test(MFTrajectoryOptions::Options::Position)) {
+						I = "P";
+					} else if (o == 1 && bit.test(MFTrajectoryOptions::Options::Velocity)) {
+						I = "V";
+					} else if (o == 2 && bit.test(MFTrajectoryOptions::Options::Direction)) {
+						I = "D";
+					}
+					if (I.is_empty()) {
+						continue;
+					}
+					if (option->coordinate == MFTrajectoryOptions::Coordinates::XZ) {
+						result.append(vformat("%sx%f",I,option->time_offset));
+						result.append(vformat("%sz%f",I,option->time_offset));
+					} else if (option->coordinate == MFTrajectoryOptions::Coordinates::XYZ) {
+						result.append(vformat("%sx%f",I,option->time_offset));
+						result.append(vformat("%sy%f",I,option->time_offset));
+						result.append(vformat("%sz%f",I,option->time_offset));
+					}
+				}
+			}
+		}
+		return result;
+	}
+
+	SkeletonProfile *profile = nullptr;
+	MMAnimationLibrary *m_library = nullptr;
+
+	kform _get_global_root_kform(Ref<MMAnimationLibrary> p_lib, Ref<Animation> animation, float time) {
+		auto root_path = u::str(p_lib->get_skeleton_path()) + ":" + p_lib->get_skeleton_profile()->get_root_bone();
+		if (0.0 <= time && time <= animation->get_length()) {
+			// In range
+			return get_global_kform(p_lib->skeleton_profile, animation, time, root_bone_track);
+		} else if (animation->get_loop_mode() == Animation::LOOP_NONE) {
+			// Take last ( or first) velocities and extrapolate as if it continue.
+			auto starting_kform = get_global_kform(p_lib->skeleton_profile, animation, 0.0, root_path);
+			auto ending_kform = get_global_kform(p_lib->skeleton_profile, animation, animation->get_length() - 0.032f, root_path);
+			kform to_extrapolate = std::signbit(time) ? starting_kform : ending_kform;
+			float delta = std::signbit(time) ? time : time - animation->get_length();
+			to_extrapolate.pos += to_extrapolate.vel * delta;
+			to_extrapolate.rot = Spring::quat_integrate_angular_velocity(to_extrapolate.ang, to_extrapolate.rot, delta);
+			return to_extrapolate;
+		} else if (animation->get_loop_mode() == Animation::LOOP_LINEAR) {
+			// Loop X time, then add the kform at the modulo.
+			auto starting_kform = get_global_kform(p_lib->skeleton_profile, animation, 0.0, root_path);
+			auto ending_kform = get_global_kform(p_lib->skeleton_profile, animation, animation->get_length() - 0.032f, root_path);
+			float delta = std::signbit(time) ? time : time - animation->get_length();
+			Transform3D entire_k = std::signbit(time) ? (starting_kform.inverse() * ending_kform).inverse() : (starting_kform.inverse() * ending_kform);
+			Transform3D looped = starting_kform;
+			for (int loop = 0; loop < abs(floor((time) / animation->get_length())); ++loop) {
+				looped = looped * entire_k;
+			}
+			kform reference = starting_kform.remove_velocities();
+			float safe_time = Math::fposmod(time, (float)animation->get_length());
+			kform safe_k = reference.inverse() * get_global_kform(p_lib->skeleton_profile, animation, safe_time, root_bone_track);
+
+			return (kform)looped * safe_k;
+		} else {
+			return get_global_kform(p_lib->skeleton_profile, animation, time, root_bone_track);
+		}
+	}
+
+	PackedFloat32Array bake_pose(Ref<MMAnimationLibrary> mmlib, String animation_name, float time) {
+		ERR_FAIL_COND_V_EDMSG(mmlib->skeleton_path.is_empty(), {}, "SkeletonPath is Empty");
+		ERR_FAIL_COND_V_EDMSG(mmlib->skeleton_profile == nullptr, {}, "SkeletonProfile is null");
+		ERR_FAIL_COND_V_EDMSG(mmlib->get_skeleton_profile()->get_root_bone().is_empty(), {}, "No Root bone to extract data");
+		root_bone_track = String(mmlib->skeleton_path) + ':' + mmlib->skeleton_profile->get_root_bone();
+		PackedFloat32Array result{};
+		Ref<Animation> animation = mmlib->get_animation(animation_name);
+
+		const kform current = get_global_kform(mmlib->skeleton_profile, animation, time, root_bone_track);
+		for (int i = 0; i < options.size(); ++i) {
+			auto *option = cast_to<MFTrajectoryOptions>(options[i]);
+			if (option) {
+				kform global = _get_global_root_kform(mmlib, animation, time + option->time_offset);
+				kform difference = current.remove_velocities().inverse() * global;
+				std::bitset<32> bit = option->options;
+				for (int o = 0; o < bit.size(); ++o) {
+					Vector3 I{};
+					if (o == MFTrajectoryOptions::Options::Position && bit.test(MFTrajectoryOptions::Options::Position)) {
+						I = difference.pos;
+					} else if (o == MFTrajectoryOptions::Options::Velocity && bit.test(MFTrajectoryOptions::Options::Velocity)) {
+						I = difference.vel;
+					} else if (o == MFTrajectoryOptions::Options::Direction && bit.test(MFTrajectoryOptions::Options::Direction)) {
+						I = difference.rot.xform(Vector3(0, 0, 1));
+					} else {
+						continue;
+					}
+					if (option->coordinate == MFTrajectoryOptions::Coordinates::XZ) {
+						result.append(I.x);
+						result.append(I.z);
+					} else if (option->coordinate == MFTrajectoryOptions::Coordinates::XYZ) {
+						result.append(I.x);
+						result.append(I.y);
+						result.append(I.z);
+					}
+				}
+			}
+		}
+		return result;
+	}
+
+	// TODO : Add check for same nb of kform
+	PackedFloat32Array serialize_trajectory_local(const TypedArray<Kform> local_kform) {
+		ERR_FAIL_COND_V_MSG(local_kform.size() != options.size(), {}, "local_kform isn't the same size as the number of options.");
+		PackedFloat32Array result{};
+		for (int i = 0; i < options.size(); ++i) {
+			MFTrajectoryOptions *opt = cast_to<MFTrajectoryOptions>(options[i]);
+			ERR_FAIL_COND_V_EDMSG(opt == nullptr, {}, "MFTrajectoryOption object is null");
+			const PackedFloat32Array _to_append = opt->serialize(*cast_to<Kform>(local_kform[i]));
+			result.append_array(_to_append);
+		}
+		return result;
+	}
+
+	virtual void show_debug_info(Ref<EditorNode3DGizmo> gizmo, Ref<MMAnimationLibrary> library, String animation_name, float time, Skeleton3D *skel) {
+		auto root_bone_tr = skel->get_bone_global_pose(skel->find_bone(library->skeleton_profile->get_root_bone()));
+
+		Ref<Animation> animation = library->get_animation(animation_name);
+		const kform current = get_global_kform(library->skeleton_profile, animation, time, root_bone_track);
+		for (int i = 0; i < options.size(); ++i) {
+			auto *option = cast_to<MFTrajectoryOptions>(options[i]);
+
+			if (option) {
+				kform global = _get_global_root_kform(library, animation, time + option->time_offset);
+				kform offset = current.remove_velocities().inverse() * global;
+
+				const auto material_name = "traj" + get_path();
+				if (gizmo->get_plugin()->get_material(material_name, gizmo) == nullptr) {
+					gizmo->get_plugin()->create_material(material_name, option->debug_color);
+				}
+				auto mat = gizmo->get_plugin()->get_material(material_name, gizmo);
+
+				Ref<PrismMesh> mesh{};
+				mesh.instantiate();
+				mesh->set_size(Vector3(1, 1.1, 1) * 0.1);
+				std::bitset<32> bit = option->options;
+				Transform3D global_point{};
+				global_point.origin = global.pos;
+				global_point.set_basis(global.rot);
+				gizmo->add_mesh(mesh, mat, global_point.rotated_local(Vector3(1, 0, 0), godot::Math::deg_to_rad(90.0)));
+
+				if (bit.test(MFTrajectoryOptions::Options::Velocity)) {
+					gizmo->add_lines(Array::make(global.pos, root_bone_tr.xform(offset.vel)), mat);
+				}
+			}
+		}
+	}
+
+protected:
+	static void _bind_methods() {
+		{
+			ClassDB::bind_method(D_METHOD("serialize_trajectory_local", "local_kforms"), &MFTrajectory::serialize_trajectory_local);
+			// ClassDB::bind_method(D_METHOD("serialize", "unnormalized_values_local_to_character"), &MFTrajectory::serialize);
+		}
+
+		ClassDB::bind_method(D_METHOD("get_hints"), &MFTrajectory::get_hints);
+
+		ClassDB::bind_method(D_METHOD("set_options", "value"), &MFTrajectory::set_options);
+		ClassDB::bind_method(D_METHOD("get_options"), &MFTrajectory::get_options);
+		godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::ARRAY, "options", godot::PROPERTY_HINT_TYPE_STRING, u::str(Variant::OBJECT) + '/' + u::str(Variant::BASIS) + ":MFTrajectoryOptions", PROPERTY_USAGE_DEFAULT), "set_options", "get_options");
+
+		ClassDB::bind_method(D_METHOD("set_debug_color_history", "value"), &MFTrajectory::set_debug_color_history);
+		ClassDB::bind_method(D_METHOD("get_debug_color_history"), &MFTrajectory::get_debug_color_history);
+		godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::COLOR, "debug_color_history"), "set_debug_color_history", "get_debug_color_history");
+
+		ClassDB::bind_method(D_METHOD("set_weight_history_pos", "value"), &MFTrajectory::set_weight_history_pos);
+		ClassDB::bind_method(D_METHOD("get_weight_history_pos"), &MFTrajectory::get_weight_history_pos);
+		godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT, "weight_history_pos"), "set_weight_history_pos", "get_weight_history_pos");
+		ClassDB::bind_method(D_METHOD("set_weight_prediction_pos", "value"), &MFTrajectory::set_weight_prediction_pos);
+		ClassDB::bind_method(D_METHOD("get_weight_prediction_pos"), &MFTrajectory::get_weight_prediction_pos);
+		godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT, "weight_prediction_pos"), "set_weight_prediction_pos", "get_weight_prediction_pos");
+		ClassDB::bind_method(D_METHOD("set_weight_prediction_angle", "value"), &MFTrajectory::set_weight_prediction_angle);
+		ClassDB::bind_method(D_METHOD("get_weight_prediction_angle"), &MFTrajectory::get_weight_prediction_angle);
+		godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::FLOAT, "weight_prediction_angle"), "set_weight_prediction_angle", "get_weight_prediction_angle");
+
+		ClassDB::add_property_group(get_class_static(), "Nodes & Resources Sources", "");
+		{
+			ClassDB::bind_method(D_METHOD("set_debug_color_future", "value"), &MFTrajectory::set_debug_color_future);
+			ClassDB::bind_method(D_METHOD("get_debug_color_future"), &MFTrajectory::get_debug_color_future);
+			godot::ClassDB::add_property(get_class_static(), PropertyInfo(Variant::COLOR, "debug_color_future"), "set_debug_color_future", "get_debug_color_future");
+		}
+		ClassDB::add_property_group(get_class_static(), "Queries to fill", "query");
+		{
+			//BINDER_PROPERTY_PARAMS(MFTrajectory, Variant::PACKED_VECTOR3_ARRAY, history_pos);
+		}
+		ClassDB::add_property_group(get_class_static(), "", "");
+
+		ClassDB::bind_method(D_METHOD("get_weights"), &MFTrajectory::get_weights);
+		ClassDB::bind_method(D_METHOD("get_dimension"), &MFTrajectory::get_dimension);
+
+		ClassDB::bind_method(D_METHOD("bake_pose", "animation_library", "animation_name", "time"), &MFTrajectory::bake_pose);
+		ClassDB::bind_method(D_METHOD("show_debug_info", "gizmo", "lib", "animation_name", "timestamp"
+																						   "skeleton"),
+				&MFTrajectory::show_debug_info);
+	}
+
+	GETSET(Color, debug_color_history, godot::Color(1.0f, 1.0f, 1.0f));
+	GETSET(Color, debug_color_future, godot::Color(0.0f, 0.0f, 0.0f));
+};
