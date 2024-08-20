@@ -9,7 +9,7 @@ var preview_scene : MMPreviewSkeleton
 const MM_BOTTOM_SCENE = preload("res://addons/MotionMatching/scenes/bottom_scene/MM_BottomScene.tscn")
 var bottom_panel_instance : MMBottonScene
 
-var gizmo_skeleton := MMEditorGizmoSkeletonPlugin.new(self)
+var gizmo_skeleton :MMEditorGizmoSkeletonPlugin
 
 var current_lib : MMAnimationLibrary = null:
 	set(value):
@@ -30,6 +30,7 @@ func _get_plugin_icon() -> Texture2D:
 func _enter_tree() -> void:
 	prints("MotionMatching Plugin Enter tree")
 	#	Gizmo
+	gizmo_skeleton = MMEditorGizmoSkeletonPlugin.new(self)
 	add_node_3d_gizmo_plugin(gizmo_skeleton)
 	# 	PreviewScene	
 	var found := EditorInterface.get_open_scenes().find(preview_scene_path)

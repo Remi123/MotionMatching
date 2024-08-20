@@ -13,11 +13,11 @@
 using namespace godot;
 namespace mm {
 namespace impl {
-static void MMEMITCHANGED(Resource *that) {
+static inline void MMEMITCHANGED(Resource *that) {
 	// Call emit_changed signal
 	that->emit_changed();
 }
-static void MMEMITCHANGED(Object *that) {
+static inline void MMEMITCHANGED(Object *that) {
 	// Nothing
 }
 }; //namespace impl

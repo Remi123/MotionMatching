@@ -46,8 +46,8 @@
 
 using namespace godot;
 
-struct MMQueryOptions : public godot::RefCounted {
-	GDCLASS(MMQueryOptions, RefCounted)
+struct MMQueryOptions : public godot::Resource {
+	GDCLASS(MMQueryOptions, Resource)
 	using u = godot::UtilityFunctions;
 
 public:
@@ -546,6 +546,7 @@ public:
 			data["cost"] = best_cost;
 			data["animation"] = anim_name;
 			data["timestamp"] = std::move(anim_time);
+			data["category"] = db_anim_category[best_index];
 
 			result.append(data);
 		}
@@ -694,6 +695,7 @@ public:
 			data["cost"] = best_cost;
 			data["animation"] = anim_name;
 			data["timestamp"] = std::move(anim_time);
+			data["category"] = db_anim_category[best_index];
 
 			result.append(data);
 		}

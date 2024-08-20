@@ -9,7 +9,8 @@ demo/assets/**
 !demo/assets/resources/.gitkeep
 !demo/assets/models/**
 # Ignore library files but not the gdextension file
-demo/addons/MotionMatching/bin/**
+demo/addons/MotionMatching/bin/*
+!demo/addons/MotionMatching/bin/**/*.template_debug.*.dll
 !demo/addons/MotionMatching/bin/android
 demo/addons/MotionMatching/bin/android/*
 !demo/addons/MotionMatching/bin/android/.gitkeep

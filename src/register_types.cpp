@@ -44,8 +44,9 @@ void initialize_gdextension_types(ModuleInitializationLevel p_level) {
 	GDREGISTER_ABSTRACT_CLASS(MMUtil);
 
 	GDREGISTER_CLASS(MMAnimationPlayer);
-	GDREGISTER_CLASS(MMAnimationLibrary);
 	GDREGISTER_CLASS(MMQueryOptions);
+	GDREGISTER_CLASS(MMAnimationLibrary);
+
 
 	{ // Motion Features Resources
 		GDREGISTER_VIRTUAL_CLASS(MotionFeature);

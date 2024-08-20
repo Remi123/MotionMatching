@@ -4,17 +4,28 @@ class_name simpleMotionMatchingSetupTimer extends Timer
 @onready var mm_inertialization_3d: MMInertialization3D = %"MMInertialization3D"
 @onready var best_index = -1
 @onready var animation_tree: AnimationTree = %AnimationTree
+@onready var body :simpleMMCharacterBody = owner
 
 
 func _on_timeout():
 	var query := PackedFloat32Array()
+	# this is important to be in order.
 	var bones_feature :MFBonesInfo= MM.motion_features[0]
 	var root_velocity_feature :MFRootVelocity= MM.motion_features[1]
+	#var trajectory_feature :MFTrajectory = MM.motion_features[2]
 	
+	# in order
 	query.append_array(bones_feature.serialize_MMInertialization3D(mm_inertialization_3d))
 	query.append_array(root_velocity_feature.serialize_CharacterBody3d(owner))
 
-	
+	# var prediction = body.kform.character_prediction( linear_acceleration,
+	# 		# desired_velocity,
+	# 		desired_rotation,
+	# 		real_t halflife_velocity, real_t halflife_rotation,
+	# 		deltas
+
+
+	# Construct the query	
 	var queryoptions := MMQueryOptions.new()
 	queryoptions.query = query
 	queryoptions.custom_weights = MM.weights
