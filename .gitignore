@@ -10,6 +10,7 @@ demo/assets/**
 !demo/assets/models/**
 # Ignore library files but not the gdextension file
 demo/addons/MotionMatching/bin/*
+!*.dll
 !demo/addons/MotionMatching/bin/**/*.template_debug.*.dll
 !demo/addons/MotionMatching/bin/android
 demo/addons/MotionMatching/bin/android/*
